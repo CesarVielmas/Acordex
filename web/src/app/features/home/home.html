@@ -1,0 +1,100 @@
+<div class="max-w-full mx-auto flex flex-col pt-stack-md gap-stack-lg px-4 md:px-6 pb-10">
+    <!-- Vibras del Momento (Stories) -->
+    <section class="animate-slide-up relative group/stories" style="animation-delay: 0.1s;">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">auto_awesome</span>
+                Vibras en Vivo
+            </h3>
+            <button class="text-primary text-sm font-label-bold hover:underline transition-all">Ver todas</button>
+        </div>
+        
+        <!-- Navigation Arrows (Desktop only) -->
+        <button (click)="scrollStories(-1)" 
+                class="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -ml-4 z-20 w-10 h-10 rounded-full bg-surface-container-highest/80 backdrop-blur-xl border border-white/10 items-center justify-center text-primary shadow-xl opacity-0 group-hover/stories:opacity-100 transition-all hover:bg-primary hover:text-on-primary">
+            <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <button (click)="scrollStories(1)" 
+                class="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 -mr-4 z-20 w-10 h-10 rounded-full bg-surface-container-highest/80 backdrop-blur-xl border border-white/10 items-center justify-center text-primary shadow-xl opacity-0 group-hover/stories:opacity-100 transition-all hover:bg-primary hover:text-on-primary">
+            <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+
+        <!-- Horizontal Scrollable Container -->
+        <div #storyScroll class="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth">
+            <app-story-card *ngFor="let story of stories"
+                [authorName]="story.authorName"
+                [authorAvatar]="story.authorAvatar"
+                [thumbnailUrl]="story.thumbnailUrl"
+                [isVideo]="story.isVideo">
+            </app-story-card>
+        </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Feed (Posts & Reviews) -->
+        <div class="lg:col-span-2 flex flex-col gap-8">
+            
+            <!-- Posts Feed -->
+            <section class="animate-slide-up" style="animation-delay: 0.2s;">
+                <h3 class="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">dynamic_feed</span>
+                    Publicaciones Recientes
+                </h3>
+                <div class="flex flex-col gap-6">
+                    <app-post-card *ngFor="let post of posts; let i = index"
+                        [authorName]="post.authorName"
+                        [authorAvatar]="post.authorAvatar"
+                        [timeAgo]="post.timeAgo"
+                        [content]="post.content"
+                        [mediaUrl]="post.mediaUrl"
+                        [likes]="post.likes"
+                        [comments]="post.comments">
+                    </app-post-card>
+                </div>
+            </section>
+
+            <!-- Reviews Feed -->
+            <section class="animate-slide-up" style="animation-delay: 0.3s;">
+                <h3 class="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">reviews</span>
+                    Experiencias de la Comunidad
+                </h3>
+                <div class="flex flex-col gap-6">
+                    <app-review-card *ngFor="let review of reviews"
+                        [userName]="review.userName"
+                        [userAvatar]="review.userAvatar"
+                        [eventName]="review.eventName"
+                        [bandName]="review.bandName"
+                        [rating]="review.rating"
+                        [content]="review.content"
+                        [timeAgo]="review.timeAgo">
+                    </app-review-card>
+                </div>
+            </section>
+        </div>
+
+        <!-- Right Column: Recommendations -->
+        <div class="animate-slide-up" style="animation-delay: 0.4s;">
+            <div class="sticky top-[100px] flex flex-col gap-6">
+                <h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">stars</span>
+                    Recomendados para ti
+                </h3>
+                <div class="flex flex-col gap-4">
+                    <app-band-card *ngFor="let band of recommendedBands"
+                        [imageUrl]="band.imageUrl"
+                        [imageAlt]="band.imageAlt"
+                        [tag]="band.tag"
+                        [rating]="band.rating"
+                        [name]="band.name"
+                        [location]="band.location"
+                        [availability]="band.availability"
+                        [isFeatured]="band.isFeatured">
+                    </app-band-card>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

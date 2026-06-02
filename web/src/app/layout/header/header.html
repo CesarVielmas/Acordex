@@ -1,0 +1,39 @@
+<header class="bg-[#1A1A1A]/80 backdrop-blur-md sticky top-0 z-50 border-b border-white/10 flex items-center justify-between w-full px-6 h-[72px] transition-all duration-300">
+    <!-- Left Section: Profile (Mobile) / Toggle (Desktop) -->
+    <div class="flex items-center md:w-1/4 gap-4">
+        <!-- Desktop Hamburger Toggle -->
+        <button (click)="layoutService.toggleSidebar()" class="hidden md:flex text-primary hover:text-primary-container transition-all hover:scale-110 active:scale-95">
+            <span class="material-symbols-outlined text-[28px]">{{ layoutService.isSidebarCollapsed() ? 'menu_open' : 'menu' }}</span>
+        </button>
+
+        <div
+            class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden border border-outline-variant md:hidden cursor-pointer hover:border-primary/50 transition-colors">
+            <span class="material-symbols-outlined text-on-surface-variant">person</span>
+        </div>
+    </div>
+
+    <!-- Center Section: Branding (Mobile) or Title (Desktop) -->
+    <div class="flex-1 flex justify-center items-center gap-3">
+        <!-- Logo & Text (Mobile only) -->
+        <div class="flex items-center gap-2 md:hidden">
+            <h1 class="font-['Epilogue'] font-bold text-xl font-black text-primary tracking-tighter">ACORDEX</h1>
+            <img src="acordex_without_bg.png" alt="Acordex Logo" class="w-10 h-10 object-contain">
+        </div>
+        
+        <!-- Dashboard Title (Desktop only) -->
+        <h1 class="hidden md:block font-['Epilogue'] font-bold text-xl text-on-surface tracking-tight uppercase truncate">
+            {{ layoutService.pageTitle() }}
+        </h1>
+    </div>
+
+    <!-- Right Section: Actions -->
+    <div class="flex items-center justify-end gap-4 md:w-1/4">
+        <button class="text-primary hover:text-primary-container transition-colors active:scale-95 duration-200">
+            <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <div
+            class="hidden md:flex w-10 h-10 rounded-full bg-surface-container-highest items-center justify-center overflow-hidden border border-outline-variant cursor-pointer hover:border-primary/50 transition-colors">
+            <span class="material-symbols-outlined text-on-surface-variant">person</span>
+        </div>
+    </div>
+</header>

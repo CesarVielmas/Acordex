@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Events and Tickets - Banda Gala</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700&amp;family=Epilogue:wght@600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#2a2a2a",
+                        "surface-tint": "#e9c349",
+                        "surface-container": "#201f1f",
+                        "tertiary-fixed-dim": "#e9c400",
+                        "surface": "#131313",
+                        "secondary-fixed-dim": "#ffb4a8",
+                        "on-secondary-fixed": "#410000",
+                        "on-tertiary": "#3a3000",
+                        "primary": "#f2ca50",
+                        "on-error-container": "#ffdad6",
+                        "surface-dim": "#131313",
+                        "tertiary-fixed": "#ffe16d",
+                        "inverse-primary": "#735c00",
+                        "inverse-on-surface": "#313030",
+                        "primary-fixed-dim": "#e9c349",
+                        "outline-variant": "#4d4635",
+                        "on-secondary": "#690000",
+                        "on-surface-variant": "#d0c5af",
+                        "tertiary": "#f2cc00",
+                        "secondary-fixed": "#ffdad4",
+                        "secondary-container": "#920703",
+                        "surface-container-lowest": "#0e0e0e",
+                        "error-container": "#93000a",
+                        "on-primary-container": "#554300",
+                        "on-primary": "#3c2f00",
+                        "inverse-surface": "#e5e2e1",
+                        "on-primary-fixed-variant": "#574500",
+                        "on-tertiary-container": "#534400",
+                        "background": "#131313",
+                        "on-error": "#690005",
+                        "error": "#ffb4ab",
+                        "primary-fixed": "#ffe088",
+                        "primary-container": "#d4af37",
+                        "on-tertiary-fixed": "#221b00",
+                        "on-surface": "#e5e2e1",
+                        "on-background": "#e5e2e1",
+                        "on-primary-fixed": "#241a00",
+                        "surface-variant": "#353534",
+                        "tertiary-container": "#d2b100",
+                        "outline": "#99907c",
+                        "surface-bright": "#393939",
+                        "on-secondary-fixed-variant": "#920703",
+                        "surface-container-low": "#1c1b1b",
+                        "secondary": "#ffb4a8",
+                        "on-tertiary-fixed-variant": "#544600",
+                        "on-secondary-container": "#ff9a8a",
+                        "surface-container-highest": "#353534"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "gutter": "16px",
+                        "container-margin": "24px",
+                        "unit": "8px",
+                        "stack-lg": "48px",
+                        "stack-md": "24px"
+                    },
+                    "fontFamily": {
+                        "display-xl": ["Epilogue"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "headline-md": ["Epilogue"],
+                        "headline-lg": ["Epilogue"],
+                        "body-md": ["Be Vietnam Pro"],
+                        "label-bold": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "display-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-bold": ["14px", { "lineHeight": "20px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background text-on-background min-h-screen pb-[120px] pt-[80px] font-body-md text-body-md selection:bg-primary-container selection:text-on-primary-container">
+    <!-- TopAppBar -->
+    <header
+        class="fixed top-0 w-full z-50 bg-[#1A1A1A]/80 backdrop-blur-md border-b border-white/10 flex justify-between items-center px-6 py-4">
+        <div class="flex items-center gap-4">
+            <div class="h-10 w-10 rounded-full bg-surface-container-high overflow-hidden border border-outline/20">
+                <img alt="User profile photo" class="h-full w-full object-cover"
+                    data-alt="A close up portrait photo of an individual representing a user avatar in a modern software interface. The portrait features moody, high contrast lighting with subtle warm golden tones reflecting off the subject, set against a deep charcoal background to perfectly match a premium dark mode UI aesthetic. The mood is professional yet cinematic."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOM3XiZYqZ5S7iW-0m6ozlDOIN1oJdH533PLWU9q5Txp1zoEjpo_WSbkg0GH06hwW1dWpNRfbVWvP19DSf_EW9KjdQztSb40PDIfdixZj-Mnub3ENZ4DLOrI6bJST5LEe_iTQu3o-uh23jHA5cp77dHMDanwKuzGOvQSI778L4PpAau_nTlLoZzUhGwrKLp2sOh7Frcykc4JUjYn9yPOBGfz5qGaC9o3k9WWS0p8D7cNZaD69bEhn16hM01Mu9Pe8-N0RaTq9f5Hs" />
+            </div>
+            <h1 class="text-xl font-black text-[#D4AF37] tracking-tighter font-['Epilogue']">Banda Gala</h1>
+        </div>
+        <button class="text-[#D4AF37] hover:text-[#D4AF37] transition-colors active:scale-95 duration-200">
+            <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+        </button>
+    </header>
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-container-margin md:px-stack-lg">
+        <header class="mb-stack-lg mt-stack-md">
+            <h2 class="font-display-xl text-display-xl text-primary mb-unit">Próximos Eventos</h2>
+            <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Asegura tus accesos para las galas y
+                conciertos más exclusivos de la temporada. Vive la experiencia.</p>
+        </header>
+        <!-- Bento Grid Layout for Events -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-stack-md">
+            <!-- Event Card 1 -->
+            <article
+                class="relative flex flex-col bg-surface-container-high rounded-xl overflow-hidden border border-outline-variant/50 shadow-lg group">
+                <div class="h-64 w-full relative overflow-hidden bg-surface">
+                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        data-alt="A dramatic, high-contrast poster image for a live Banda music concert. The scene captures a massive outdoor arena at night, illuminated by striking spotlights piercing through atmospheric smoke. The color palette revolves around a deep, immersive black canvas punctuated by vibrant metallic gold accents simulating brass instruments reflecting stage lights. The mood is electrifying, prestigious, and celebratory, perfectly aligning with a modern corporate yet festive aesthetic."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBn5YNsp8Swg0q0SGm8jeu6ZVz8b44-B9qtueXTHKEsUpFnI7e_9gllAAV_aCsHZHaiAVErKdwuzJM2YAcc9D-oS5mD8h1RMViV4ygLLhrdDICdoIuSwx7bgAwryuQYUYB_q-mVMx0as2Fa5Z1ac15xt0tEPFSuPUeuE1cENsVvyDipE4WTiCEMOz0Q58k8pGbChddOBHt8FEjAFqnXGYyQ2KusBph6WyCLRsuhcmRwGxTKyOJTgkCmN3o7iGcCkx4iiynHu6IWbxA" />
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-surface-container-high via-surface-container-high/40 to-transparent">
+                    </div>
+                    <div
+                        class="absolute top-4 left-4 bg-surface-container-lowest/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-outline/30 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[18px]">calendar_today</span>
+                        <span class="font-label-bold text-label-bold text-on-surface">15 Nov 2024</span>
+                    </div>
+                </div>
+                <div class="p-container-margin flex flex-col flex-grow relative z-10 -mt-12">
+                    <h3 class="font-headline-lg text-headline-lg text-on-surface mb-unit leading-tight">Gala Sinaloense
+                        VIP</h3>
+                    <div class="flex items-center gap-2 text-on-surface-variant font-body-md text-body-md mb-stack-md">
+                        <span class="material-symbols-outlined text-primary/80">location_on</span>
+                        <span>Arena Monterrey</span>
+                    </div>
+                    <div class="mt-auto pt-stack-sm border-t border-outline-variant/30 border-dashed">
+                        <button
+                            class="w-full mt-4 bg-primary text-on-primary font-label-bold text-label-bold py-3.5 rounded-lg shadow-[0_4px_14px_0_rgba(212,175,55,0.39)] hover:bg-primary-fixed hover:shadow-[0_6px_20px_rgba(212,175,55,0.23)] transition-all duration-200 flex justify-center items-center gap-2">
+                            <span>Comprar Boletos</span>
+                            <span class="material-symbols-outlined text-[20px]">confirmation_number</span>
+                        </button>
+                    </div>
+                </div>
+            </article>
+            <!-- Event Card 2 -->
+            <article
+                class="relative flex flex-col bg-surface-container-high rounded-xl overflow-hidden border border-outline-variant/50 shadow-lg group">
+                <div class="h-64 w-full relative overflow-hidden bg-surface">
+                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        data-alt="An atmospheric and premium promotional image for an exclusive live music event. The visual features an abstract, glassmorphic rendering of a concert stage, glowing subtly against a pure charcoal dark mode background. Soft, tonal layers of golden light create depth and a sense of luxury, reminiscent of a high-end VIP lounge after hours. The overall vibe is sophisticated, vibrant, and perfectly suited for a high-value ticketing platform."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcCmK2O8LiUrz8S3Z8rVYTF2KvBXNugSwQp78x6VCyEoSHOEjhrbgcxJDaEsUf7Lwp9h_TCu7wPAKDh3doMxxvZpXPCJ19JrqNChF33SdUI2oNL9jCtEkecmtWz8d5d3H8cLjWh8qI7Jw340gN8lfFIrwddsM5JkQS8cuKCCHs9Y3134SiAJizMLvK0Mfzo-OzpTM__OIBfOPa8neU8PlkQ1T5Cb9sJ0j2t8ch-Mb0Ize8Fn6_-OwXKtYpVy7-PoVFRGhnqI_0oLY" />
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-surface-container-high via-surface-container-high/40 to-transparent">
+                    </div>
+                    <div
+                        class="absolute top-4 left-4 bg-surface-container-lowest/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-outline/30 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[18px]">calendar_today</span>
+                        <span class="font-label-bold text-label-bold text-on-surface">28 Nov 2024</span>
+                    </div>
+                </div>
+                <div class="p-container-margin flex flex-col flex-grow relative z-10 -mt-12">
+                    <h3 class="font-headline-lg text-headline-lg text-on-surface mb-unit leading-tight">Noche de Metales
+                    </h3>
+                    <div class="flex items-center gap-2 text-on-surface-variant font-body-md text-body-md mb-stack-md">
+                        <span class="material-symbols-outlined text-primary/80">location_on</span>
+                        <span>Auditorio Telmex</span>
+                    </div>
+                    <div class="mt-auto pt-stack-sm border-t border-outline-variant/30 border-dashed">
+                        <button
+                            class="w-full mt-4 bg-primary text-on-primary font-label-bold text-label-bold py-3.5 rounded-lg shadow-[0_4px_14px_0_rgba(212,175,55,0.39)] hover:bg-primary-fixed hover:shadow-[0_6px_20px_rgba(212,175,55,0.23)] transition-all duration-200 flex justify-center items-center gap-2">
+                            <span>Comprar Boletos</span>
+                            <span class="material-symbols-outlined text-[20px]">confirmation_number</span>
+                        </button>
+                    </div>
+                </div>
+            </article>
+            <!-- Event Card 3 -->
+            <article
+                class="relative flex flex-col bg-surface-container-high rounded-xl overflow-hidden border border-outline-variant/50 shadow-lg group">
+                <div class="h-64 w-full relative overflow-hidden bg-surface">
+                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        data-alt="A dynamic, high-energy image capturing a live brass band performance. The composition is sleek and modern, utilizing a deep dark mode aesthetic with profound black backgrounds. Crisp, highly polished golden trumpets and trombones catch sharp points of studio lighting, creating a luxurious and celebratory glassmorphic effect. The mood is exhilarating and professional, tailored for an upscale event booking interface."
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSaiVdHEIuUMBk7BlrExFEg9DWu9YUu0dxfBLM1x1KWq_ZczzEGVBp260xE9HXMjE4_i3xhe5TRGaP4WWyVwSULBOEkBEYE69Jc68Fm2TgYO1tLUTbDZku72AIvZ07aWSc3v-LoRYSuNZCpDBWZKC3M6z2p7QicQi1JlOLYL2f89vHfGe1nfmn3TJSoAVC0F2DDNALF7W8emRTb8jE3oc1L_FOp4F65o9IPSP1X978d_wBHfw6daRDUoT3R3Yoif4R5At0a5PgnC4" />
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-surface-container-high via-surface-container-high/40 to-transparent">
+                    </div>
+                    <div
+                        class="absolute top-4 left-4 bg-surface-container-lowest/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-outline/30 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[18px]">calendar_today</span>
+                        <span class="font-label-bold text-label-bold text-on-surface">05 Dic 2024</span>
+                    </div>
+                </div>
+                <div class="p-container-margin flex flex-col flex-grow relative z-10 -mt-12">
+                    <h3 class="font-headline-lg text-headline-lg text-on-surface mb-unit leading-tight">Encuentro de
+                        Bandas</h3>
+                    <div class="flex items-center gap-2 text-on-surface-variant font-body-md text-body-md mb-stack-md">
+                        <span class="material-symbols-outlined text-primary/80">location_on</span>
+                        <span>Plaza de Toros México</span>
+                    </div>
+                    <div class="mt-auto pt-stack-sm border-t border-outline-variant/30 border-dashed">
+                        <button
+                            class="w-full mt-4 bg-primary text-on-primary font-label-bold text-label-bold py-3.5 rounded-lg shadow-[0_4px_14px_0_rgba(212,175,55,0.39)] hover:bg-primary-fixed hover:shadow-[0_6px_20px_rgba(212,175,55,0.23)] transition-all duration-200 flex justify-center items-center gap-2">
+                            <span>Comprar Boletos</span>
+                            <span class="material-symbols-outlined text-[20px]">confirmation_number</span>
+                        </button>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="fixed bottom-0 left-0 w-full flex justify-around items-center pt-3 pb-6 px-4 z-50 rounded-t-lg bg-[#1A1A1A]/90 backdrop-blur-xl border-t border-[#D4AF37]/20 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] md:hidden">
+        <a class="flex flex-col items-center justify-center text-gray-500 opacity-70 hover:bg-white/5 p-2 rounded-lg transition-all active:scale-90"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="search">search</span>
+            <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">Explore</span>
+        </a>
+        <!-- Active Tab: Events -->
+        <a class="flex flex-col items-center justify-center text-[#D4AF37] scale-110 transition-transform p-2 rounded-lg active:scale-90"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="confirmation_number"
+                style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+            <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest text-[#D4AF37]">Events</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-gray-500 opacity-70 hover:bg-white/5 p-2 rounded-lg transition-all active:scale-90"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="history">history</span>
+            <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">History</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-gray-500 opacity-70 hover:bg-white/5 p-2 rounded-lg transition-all active:scale-90"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+            <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">Profile</span>
+        </a>
+    </nav>
+</body>
+
+</html>

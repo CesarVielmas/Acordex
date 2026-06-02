@@ -1,0 +1,20 @@
+<div class="max-w-full mx-auto px-4 md:px-6 pb-10">
+    <header class="mb-stack-lg mt-stack-md animate-slide-up" style="animation-delay: 0.1s;">
+        <h2 class="font-display-xl text-display-xl text-primary mb-unit">Próximos Eventos</h2>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+            Asegura tus accesos para las galas y conciertos más exclusivos de la temporada. Vive la experiencia.
+        </p>
+    </header>
+    
+    <!-- Bento Grid Layout for Events -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-stack-md animate-slide-up" style="animation-delay: 0.2s;">
+        <app-event-card *ngFor="let event of events"
+            [imageUrl]="event.imageUrl"
+            [imageAlt]="event.imageAlt"
+            [date]="event.date"
+            [title]="event.title"
+            [location]="event.location"
+            mode="upcoming">
+        </app-event-card>
+    </div>
+</div>

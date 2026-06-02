@@ -1,0 +1,17 @@
+<div class="max-w-full mx-auto px-4 md:px-6 pt-stack-md pb-10">
+    <div class="mb-stack-lg animate-slide-up" style="animation-delay: 0.1s;">
+        <h2 class="font-display-xl text-display-xl text-on-surface mb-unit">Historial</h2>
+        <p class="font-body-lg text-body-lg text-on-surface-variant">Eventos Asistidos</p>
+    </div>
+    <div class="flex flex-col gap-stack-md animate-slide-up" style="animation-delay: 0.2s;">
+        <app-event-card *ngFor="let event of historyEvents"
+            [imageUrl]="event.imageUrl"
+            [imageAlt]="event.imageAlt"
+            [date]="event.date"
+            [title]="event.title"
+            [location]="event.location"
+            [mode]="event.mode"
+            [rating]="event.rating">
+        </app-event-card>
+    </div>
+</div>

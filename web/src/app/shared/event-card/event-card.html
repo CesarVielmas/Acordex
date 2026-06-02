@@ -1,0 +1,97 @@
+<article [ngClass]="{
+    'flex-col': mode === 'upcoming',
+    'flex-col md:flex-row shadow-lg': mode !== 'upcoming',
+    'opacity-80 hover:opacity-100 transition-opacity': mode === 'history_done'
+}" class="relative flex bg-surface-container-high rounded-xl overflow-hidden border border-outline-variant/50 shadow-lg group hover:shadow-2xl hover:border-primary/30 transition-all duration-300 animate-fade-in">
+    
+    <!-- Image Section -->
+    <div [ngClass]="{
+        'h-64 w-full': mode === 'upcoming',
+        'w-full md:w-72 h-56 md:h-auto': mode === 'history_review',
+        'w-full md:w-72 h-48 md:h-auto': mode === 'history_done'
+    }" class="relative bg-surface-container-lowest overflow-hidden">
+        
+        <img [src]="imageUrl" [alt]="title" [attr.data-alt]="imageAlt"
+            [ngClass]="{
+                'transition-transform duration-700 group-hover:scale-105': mode === 'upcoming',
+                'mix-blend-luminosity opacity-70': mode === 'history_review',
+                'mix-blend-luminosity opacity-40': mode === 'history_done'
+            }" class="w-full h-full object-cover" />
+        
+        <!-- Overlays -->
+        <div *ngIf="mode === 'upcoming'" class="absolute inset-0 bg-gradient-to-t from-surface-container-high via-surface-container-high/40 to-transparent"></div>
+        <div *ngIf="mode !== 'upcoming'" class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/50 to-transparent md:bg-gradient-to-r md:from-transparent md:to-surface-container"></div>
+        
+        <!-- Badges -->
+        <div *ngIf="mode === 'upcoming'" class="absolute top-4 left-4 bg-surface-container-lowest/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-outline/30 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[18px]">calendar_today</span>
+            <span class="font-label-bold text-label-bold text-on-surface">{{ date }}</span>
+        </div>
+        <div *ngIf="mode === 'history_review'" class="absolute top-4 left-4">
+            <span class="px-3 py-1 rounded bg-surface/80 backdrop-blur-sm text-tertiary-fixed font-label-bold text-[10px] uppercase tracking-widest border border-tertiary-fixed/30">
+                Requiere Reseña
+            </span>
+        </div>
+    </div>
+
+    <!-- Content Section -->
+    <div [ngClass]="{
+        'p-container-margin -mt-12 flex-grow z-10': mode === 'upcoming',
+        'p-gutter md:p-stack-md flex-1 flex flex-col justify-between': mode !== 'upcoming'
+    }" class="relative flex flex-col">
+        
+        <div>
+            <div *ngIf="mode !== 'upcoming'" class="flex items-center gap-2 mb-unit text-on-surface-variant">
+                <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                <span class="font-label-bold text-label-bold tracking-wider uppercase">{{ date }}</span>
+            </div>
+            
+            <h3 [ngClass]="{
+                'font-headline-lg text-headline-lg text-on-surface mb-unit leading-tight': mode !== 'history_done',
+                'font-headline-md text-headline-md text-on-surface-variant mb-unit': mode === 'history_done'
+            }">{{ title }}</h3>
+            
+            <p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-1.5" [ngClass]="{'mb-stack-md': mode === 'upcoming'}">
+                <span class="material-symbols-outlined text-primary/80" *ngIf="mode === 'upcoming'">location_on</span>
+                <span class="material-symbols-outlined text-[18px]" *ngIf="mode !== 'upcoming'">location_on</span>
+                <span>{{ location }}</span>
+            </p>
+        </div>
+        
+        <!-- Action Area -->
+        <div *ngIf="mode === 'upcoming'" class="mt-auto pt-stack-sm border-t border-outline-variant/30 border-dashed">
+            <button class="w-full mt-4 bg-primary text-on-primary font-label-bold text-label-bold py-3.5 rounded-lg shadow-[0_4px_14px_0_rgba(212,175,55,0.39)] hover:bg-primary-fixed hover:shadow-[0_6px_20px_rgba(212,175,55,0.23)] transition-all duration-200 flex justify-center items-center gap-2">
+                <span>Comprar Boletos</span>
+                <span class="material-symbols-outlined text-[20px]">confirmation_number</span>
+            </button>
+        </div>
+        
+        <div *ngIf="mode === 'history_review'" class="mt-stack-md pt-stack-sm border-t border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-stack-sm">
+            <div class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-outline text-3xl cursor-pointer hover:text-primary transition-colors">star</span>
+                <span class="material-symbols-outlined text-outline text-3xl cursor-pointer hover:text-primary transition-colors">star</span>
+                <span class="material-symbols-outlined text-outline text-3xl cursor-pointer hover:text-primary transition-colors">star</span>
+                <span class="material-symbols-outlined text-outline text-3xl cursor-pointer hover:text-primary transition-colors">star</span>
+                <span class="material-symbols-outlined text-outline text-3xl cursor-pointer hover:text-primary transition-colors">star</span>
+            </div>
+            <button class="bg-primary text-on-primary font-label-bold text-label-bold px-6 py-3 rounded-full hover:bg-primary-fixed transition-colors shadow-[0_0_20px_rgba(242,202,80,0.2)]">
+                Dejar Reseña
+            </button>
+        </div>
+        
+        <div *ngIf="mode === 'history_done'" class="mt-stack-sm pt-stack-sm border-t border-outline-variant/30 flex flex-col sm:flex-row sm:items-center justify-between gap-stack-sm">
+            <div class="flex items-center gap-1">
+                <!-- Using fixed 4 stars for visual purpose as in template -->
+                <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">star</span>
+                <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">star</span>
+                <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">star</span>
+                <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">star</span>
+                <span class="material-symbols-outlined text-outline text-2xl">star</span>
+                <span class="ml-2 font-label-bold text-label-bold text-on-surface-variant">{{ rating | number:'1.1-1' }}</span>
+            </div>
+            <button class="border border-secondary-container text-secondary-container font-label-bold text-label-bold px-6 py-2 rounded-full hover:bg-secondary-container/10 transition-colors">
+                Ver Detalles
+            </button>
+        </div>
+    </div>
+</article>

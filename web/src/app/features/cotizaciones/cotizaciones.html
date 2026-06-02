@@ -1,0 +1,64 @@
+<div class="max-w-full mx-auto flex flex-col pt-stack-md gap-stack-md px-4 md:px-6 pb-10">
+    <div class="animate-slide-up" style="animation-delay: 0.1s;">
+        <h1 class="font-display-xl text-display-xl text-primary mb-2">Cotizaciones</h1>
+        <p class="font-body-md text-body-md text-on-surface-variant">Encuentra y reserva el talento ideal para tu evento.</p>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="relative">
+        <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <span class="material-symbols-outlined text-outline-variant">search</span>
+        </div>
+        <input class="w-full bg-surface-container-high text-on-surface border-0 border-b-[1px] border-primary-container focus:border-primary-container focus:ring-0 rounded-t-lg pl-12 pr-4 py-4 font-body-md text-body-md placeholder:text-outline-variant transition-colors"
+               placeholder="Search bands, genres, or locations..." type="text" />
+    </div>
+
+    <!-- Filters -->
+    <div>
+        <app-filter-pills 
+            [filters]="filters" 
+            [activeFilter]="activeFilter" 
+            (filterSelected)="onFilterSelected($event)">
+        </app-filter-pills>
+    </div>
+
+    <!-- Destacados Section -->
+    <section class="mt-2 animate-slide-up" style="animation-delay: 0.2s;">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-headline-md text-headline-md text-on-surface">Destacado</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-stack-md">
+            <app-band-card
+                class="md:col-span-2 lg:col-span-3"
+                [imageUrl]="featuredBand.imageUrl"
+                [imageAlt]="featuredBand.imageAlt"
+                [tag]="featuredBand.tag"
+                [rating]="featuredBand.rating"
+                [name]="featuredBand.name"
+                [location]="featuredBand.location"
+                [availability]="featuredBand.availability"
+                [isFeatured]="featuredBand.isFeatured">
+            </app-band-card>
+        </div>
+    </section>
+
+    <!-- Available Groups Section -->
+    <section class="mt-stack-md flex flex-col gap-stack-sm animate-slide-up" style="animation-delay: 0.3s;">
+        <div class="flex justify-between items-center mb-2">
+            <h3 class="font-headline-md text-headline-md text-on-surface">Grupos Disponibles</h3>
+            <button class="text-primary text-sm font-label-bold hover:text-primary-fixed transition-colors">Ver Todos</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-stack-md">
+            <app-band-card *ngFor="let band of availableBands"
+                [imageUrl]="band.imageUrl"
+                [imageAlt]="band.imageAlt"
+                [tag]="band.tag"
+                [rating]="band.rating"
+                [name]="band.name"
+                [location]="band.location"
+                [availability]="band.availability"
+                [isFeatured]="band.isFeatured">
+            </app-band-card>
+        </div>
+    </section>
+</div>
