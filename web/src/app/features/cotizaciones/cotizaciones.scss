@@ -1,0 +1,87 @@
+// Cotizaciones Styles and Custom Form overrides
+
+// Custom animations
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+// Styling date picker indicator calendar icon to fit in dark mode
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85) sepia(1) saturate(3) hue-rotate(5deg);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  &:hover {
+    opacity: 1;
+  }
+}
+
+// Customize select drop-down arrow
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white' opacity='0.5'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 32px !important;
+}
+
+select option {
+  background-color: #141414;
+  color: white;
+}
+
+// Form focus transitions
+input, select, textarea {
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+// Custom progress-bar transition
+.transition-all {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+// Custom star icons styling inside select buttons
+.material-symbols-outlined {
+  font-variation-settings: 'wght' 300, 'opsz' 22;
+}
+
+// Custom scrollbar for suggestions dropdown
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 9px;
+  }
+}
+
+// Accent highlights
+.focus-within-accent {
+  &:focus-within {
+    border-color: rgba(242, 202, 80, 0.4) !important;
+    box-shadow: 0 0 15px rgba(242, 202, 80, 0.08);
+  }
+}
+
+// Center event type button content
+.grid button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}

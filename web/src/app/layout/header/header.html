@@ -1,25 +1,20 @@
 <header class="bg-[#1A1A1A]/80 backdrop-blur-md sticky top-0 z-50 border-b border-white/10 flex items-center justify-between w-full px-6 h-[72px] transition-all duration-300">
-    <!-- Left Section: Profile (Mobile) / Toggle (Desktop) -->
+    <!-- Left Section: Branding (Mobile) / Toggle (Desktop) -->
     <div class="flex items-center md:w-1/4 gap-4">
         <!-- Desktop Hamburger Toggle -->
         <button (click)="layoutService.toggleSidebar()" class="hidden md:flex text-primary hover:text-primary-container transition-all hover:scale-110 active:scale-95">
             <span class="material-symbols-outlined text-[28px]">{{ layoutService.isSidebarCollapsed() ? 'menu_open' : 'menu' }}</span>
         </button>
 
-        <div
-            class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden border border-outline-variant md:hidden cursor-pointer hover:border-primary/50 transition-colors">
-            <span class="material-symbols-outlined text-on-surface-variant">person</span>
-        </div>
-    </div>
-
-    <!-- Center Section: Branding (Mobile) or Title (Desktop) -->
-    <div class="flex-1 flex justify-center items-center gap-3">
         <!-- Logo & Text (Mobile only) -->
         <div class="flex items-center gap-2 md:hidden">
             <h1 class="font-['Epilogue'] font-bold text-xl font-black text-primary tracking-tighter">ACORDEX</h1>
             <img src="acordex_without_bg.png" alt="Acordex Logo" class="w-10 h-10 object-contain">
         </div>
-        
+    </div>
+
+    <!-- Center Section: Title (Desktop) -->
+    <div class="flex-1 flex justify-center items-center">
         <!-- Dashboard Title (Desktop only) -->
         <h1 class="hidden md:block font-['Epilogue'] font-bold text-xl text-on-surface tracking-tight uppercase truncate">
             {{ layoutService.pageTitle() }}
@@ -28,12 +23,189 @@
 
     <!-- Right Section: Actions -->
     <div class="flex items-center justify-end gap-4 md:w-1/4">
-        <button class="text-primary hover:text-primary-container transition-colors active:scale-95 duration-200">
+        <!-- Notifications Button -->
+        <button (click)="toggleNotifications($event)" 
+                class="relative text-primary hover:text-primary-container transition-all hover:scale-105 active:scale-95 duration-200 animate-bell-hover w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border border-white/10 hover:border-primary/50"
+                aria-label="Notificaciones">
             <span class="material-symbols-outlined">notifications</span>
+            @if (unreadNotificationsCount() > 0) {
+                <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 animate-pulse">
+                    {{ unreadNotificationsCount() }}
+                </span>
+            }
         </button>
-        <div
-            class="hidden md:flex w-10 h-10 rounded-full bg-surface-container-highest items-center justify-center overflow-hidden border border-outline-variant cursor-pointer hover:border-primary/50 transition-colors">
-            <span class="material-symbols-outlined text-on-surface-variant">person</span>
-        </div>
+
+        <!-- Calendar Button -->
+        <button (click)="toggleCalendar($event)" 
+                class="relative text-primary hover:text-primary-container transition-all hover:scale-105 active:scale-95 duration-200 animate-calendar-hover w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border border-white/10 hover:border-primary/50"
+                aria-label="Calendario de Eventos">
+            <span class="material-symbols-outlined">calendar_month</span>
+            <!-- Small dot indicator -->
+            <span class="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+            <span class="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full"></span>
+        </button>
     </div>
+
+    <!-- Dropdowns (positioned relative to <header> on desktop, viewport-centered on mobile) -->
+    <!-- Notifications Panel -->
+    @if (showNotifications()) {
+        <div class="fixed top-[76px] left-0 right-0 mx-auto w-[calc(100%-2rem)] max-w-[360px] sm:absolute sm:top-[72px] sm:right-6 sm:left-auto sm:mx-0 sm:w-[360px] sm:mt-2 bg-[#1E1E1E] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden transform origin-top sm:origin-top-right animate-scale-up">
+            <!-- Header -->
+            <div class="p-4 border-b border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="font-['Epilogue'] font-bold text-base text-on-surface">Notificaciones</span>
+                    @if (unreadNotificationsCount() > 0) {
+                        <span class="bg-primary/20 text-primary text-[10px] px-2 py-0.5 rounded-full font-bold">
+                            {{ unreadNotificationsCount() }} nuevas
+                        </span>
+                    }
+                </div>
+                <button (click)="markAllAsRead()" class="text-xs text-primary hover:underline font-semibold">
+                    Marcar todo leído
+                </button>
+            </div>
+
+            <!-- List -->
+            <div class="max-h-[320px] overflow-y-auto pr-1">
+                @if (notifications().length === 0) {
+                    <div class="p-8 text-center text-on-surface-variant text-sm">
+                        <span class="material-symbols-outlined text-4xl opacity-30 mb-2">notifications_off</span>
+                        <p>No tienes notificaciones</p>
+                    </div>
+                } @else {
+                    @for (notif of notifications(); track notif.id) {
+                        <div (click)="clickNotification(notif)"
+                             class="p-4 border-b border-white/5 hover:bg-white/5 transition-all flex gap-3 cursor-pointer relative group/item"
+                             [class.bg-white/[0.02]]="!notif.read">
+                            <!-- Unread Indicator Line -->
+                            @if (!notif.read) {
+                                <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+                            }
+                            <!-- Icon -->
+                            <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                                 [class]="notif.read ? 'bg-white/5 text-on-surface-variant' : 'bg-primary/10 text-primary'">
+                                <span class="material-symbols-outlined text-lg">{{ notif.icon }}</span>
+                            </div>
+                            <!-- Text Content -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between gap-1 mb-0.5">
+                                    <h4 class="text-xs font-bold text-on-surface truncate" [class.text-primary]="!notif.read">
+                                        {{ notif.title }}
+                                    </h4>
+                                    <span class="text-[10px] text-on-surface-variant shrink-0">{{ notif.time }}</span>
+                                </div>
+                                <p class="text-xs text-on-surface-variant leading-relaxed line-clamp-2">
+                                    {{ notif.message }}
+                                </p>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Footer -->
+            <div class="p-3 bg-white/[0.02] border-t border-white/10 text-center">
+                <button class="text-xs text-primary hover:text-primary-container font-semibold transition-colors">
+                    Ver todo el historial
+                </button>
+            </div>
+        </div>
+    }
+
+    <!-- Calendar Panel -->
+    @if (showCalendar()) {
+        <div class="fixed top-[76px] left-0 right-0 mx-auto w-[calc(100%-2rem)] max-w-[360px] sm:absolute sm:top-[72px] sm:right-6 sm:left-auto sm:mx-0 sm:w-[360px] sm:mt-2 bg-[#1E1E1E] border border-white/10 rounded-2xl shadow-2xl z-50 p-4 transform origin-top sm:origin-top-right animate-scale-up">
+            <!-- Header Navigation -->
+            <div class="flex items-center justify-between mb-4">
+                <button (click)="prevMonth($event)" 
+                        class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/5 text-on-surface-variant hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined text-lg">chevron_left</span>
+                </button>
+                <h3 class="font-['Epilogue'] font-bold text-xs text-on-surface uppercase tracking-wide">
+                    {{ monthName() }}
+                </h3>
+                <button (click)="nextMonth($event)" 
+                        class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/5 text-on-surface-variant hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined text-lg">chevron_right</span>
+                </button>
+            </div>
+
+            <!-- Weekdays -->
+            <div class="grid grid-cols-7 text-center mb-1">
+                @for (dayName of weekdays; track dayName) {
+                    <span class="text-[11px] font-bold text-on-surface-variant uppercase py-1">
+                        {{ dayName }}
+                    </span>
+                }
+            </div>
+
+            <!-- Days Grid with Multi-event Support -->
+            <div class="grid grid-cols-7 gap-1">
+                @for (day of calendarDays(); track day.date.getTime()) {
+                    <div class="aspect-square flex items-center justify-center relative group/day">
+                        <!-- Day Cell Button -->
+                        <button (click)="onDayClick(day.date)"
+                                class="w-8 h-8 rounded-lg text-xs font-semibold flex items-center justify-center transition-all focus:outline-none hover:scale-105 active:scale-95"
+                                [ngClass]="{
+                                    'text-white/20': !day.currentMonth,
+                                    'text-on-surface hover:bg-white/10': day.currentMonth && !day.isToday,
+                                    'border border-primary text-primary font-bold shadow-md shadow-primary/10': day.isToday
+                                }">
+                            {{ day.day }}
+                        </button>
+
+                        <!-- Event Dot Indicators (Supports Multiple Events) -->
+                        @if (day.events.length > 0) {
+                            <div class="flex gap-0.5 justify-center absolute bottom-1.5 left-1/2 -translate-x-1/2 w-full max-w-[28px] overflow-hidden">
+                                @for (event of day.events; track event.id) {
+                                    <span class="w-1 h-1 rounded-full shrink-0" 
+                                          [style.backgroundColor]="event.color"></span>
+                                }
+                            </div>
+                            
+                            <!-- Premium Tooltip for Multi-Event List -->
+                            <div class="pointer-events-none absolute bottom-full mb-2 scale-90 opacity-0 group-hover/day:scale-100 group-hover/day:opacity-100 transition-all duration-200 bg-[#252525] border border-white/10 px-3 py-2.5 rounded-xl shadow-xl z-50 text-left w-52 flex flex-col gap-2">
+                                <!-- Arrow -->
+                                <div class="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-t-[4px] border-t-[#252525] border-x-[4px] border-x-transparent"></div>
+                                
+                                @for (event of day.events; track event.id) {
+                                    <div class="flex flex-col border-b border-white/5 last:border-0 pb-1.5 last:pb-0">
+                                        <div class="flex items-center gap-1.5 mb-0.5">
+                                            <span class="w-1.5 h-1.5 rounded-full shrink-0" [style.backgroundColor]="event.color"></span>
+                                            <div class="font-bold text-[10px] uppercase tracking-wider truncate" [style.color]="event.color">
+                                                {{ event.title }}
+                                            </div>
+                                        </div>
+                                        <div class="text-[10px] text-white/70 leading-snug">
+                                            {{ event.description }}
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Legend -->
+            <div class="mt-4 pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-1 text-[9px] text-on-surface-variant font-bold">
+                <div class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-[#F2CA50]"></span>
+                    <span>Cotización</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-[#10B981]"></span>
+                    <span>Concierto</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-[#3B82F6]"></span>
+                    <span>Firma</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-[#8B5CF6]"></span>
+                    <span>Festival</span>
+                </div>
+            </div>
+        </div>
+    }
 </header>

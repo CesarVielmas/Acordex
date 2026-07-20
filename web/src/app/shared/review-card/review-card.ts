@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -15,8 +15,17 @@ export class ReviewCard {
   @Input() rating: number = 0;
   @Input() content: string = '';
   @Input() timeAgo: string = '';
+  @Input() likes: number = 0;
+  @Input() isLiked: boolean = false;
+
+  @Output() likeToggle = new EventEmitter<boolean>();
 
   get starsArray() {
     return Array(5).fill(0).map((_, i) => i < this.rating);
+  }
+
+  onLikeClick(event: MouseEvent) {
+    event.stopPropagation();
+    this.likeToggle.emit(!this.isLiked);
   }
 }

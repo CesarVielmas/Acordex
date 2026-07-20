@@ -1,66 +1,111 @@
-<aside class="h-full bg-surface-container-lowest border-r border-white/10 flex flex-col transition-all duration-300 ease-in-out"
-       [ngClass]="layoutService.isSidebarCollapsed() ? 'w-20' : 'w-64'">
+<aside
+    class="relative h-full bg-surface-container-lowest border-r border-white/10 flex flex-col transition-all duration-300 ease-in-out"
+    [ngClass]="layoutService.isSidebarCollapsed() ? 'w-20' : 'w-64'">
     <!-- Brand -->
-    <div class="h-[72px] flex items-center justify-center border-b border-white/10 gap-3 overflow-hidden">
+    <div class="h-[72px] flex items-center justify-center border-b border-white/10 overflow-hidden transition-all duration-300"
+        [ngClass]="layoutService.isSidebarCollapsed() ? 'gap-0' : 'gap-3'">
         <h1 class="font-['Epilogue'] font-bold text-2xl font-black text-primary tracking-tighter pt-2 transition-all duration-300"
             [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 w-0 -translate-x-10' : 'opacity-100 w-auto translate-x-0'">
             ACORDEX
         </h1>
-        <img src="acordex_without_bg.png" alt="Acordex Logo" 
-             class="w-11 h-11 object-contain transition-transform duration-300"
-             [ngClass]="layoutService.isSidebarCollapsed() ? 'scale-110' : 'scale-100'">
+        <img src="acordex_without_bg.png" alt="Acordex Logo"
+            class="w-11 h-11 object-contain transition-transform duration-300"
+            [ngClass]="layoutService.isSidebarCollapsed() ? 'scale-110' : 'scale-100'">
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 px-4 py-6 flex flex-col gap-2 overflow-hidden">
+    <nav class="flex-1 px-4 py-6 flex flex-col gap-2 transition-all duration-300"
+        [ngClass]="layoutService.isSidebarCollapsed() ? 'overflow-visible' : 'overflow-hidden'">
+
         <a routerLink="/inicio" routerLinkActive="bg-primary/10 text-primary border-r-2 border-primary"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-bold group overflow-hidden"
-            [title]="layoutService.isSidebarCollapsed() ? 'Inicio' : ''">
+            class="flex items-center py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-bold group relative"
+            [ngClass]="layoutService.isSidebarCollapsed() ? 'justify-center px-0 gap-0 overflow-visible' : 'justify-start px-4 gap-3 overflow-hidden'">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform shrink-0">home</span>
             <span class="transition-all duration-300 whitespace-nowrap"
-                  [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 translate-x-10' : 'opacity-100 translate-x-0'">
+                [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 translate-x-10 w-0 h-0 overflow-hidden' : 'opacity-100 translate-x-0 w-auto'">
                 Inicio
             </span>
+            <!-- Tooltip -->
+            <div class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-surface-container-high border border-white/10 text-on-surface text-sm font-label-bold rounded-lg shadow-xl opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap z-[100] flex items-center gap-2"
+                [class.hidden]="!layoutService.isSidebarCollapsed()"
+                [class.md:flex]="layoutService.isSidebarCollapsed()">
+                <span>Inicio</span>
+                <span class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+            </div>
         </a>
+
         <a routerLink="/cotizaciones" routerLinkActive="bg-primary/10 text-primary border-r-2 border-primary"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-bold overflow-hidden"
-            [title]="layoutService.isSidebarCollapsed() ? 'Cotizaciones' : ''">
-            <span class="material-symbols-outlined shrink-0">request_quote</span>
+            class="flex items-center py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-bold group relative"
+            [ngClass]="layoutService.isSidebarCollapsed() ? 'justify-center px-0 gap-0 overflow-visible' : 'justify-start px-4 gap-3 overflow-hidden'">
+            <span
+                class="material-symbols-outlined group-hover:scale-110 transition-transform shrink-0">request_quote</span>
             <span class="transition-all duration-300 whitespace-nowrap"
-                  [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 translate-x-10' : 'opacity-100 translate-x-0'">
+                [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 translate-x-10 w-0 h-0 overflow-hidden' : 'opacity-100 translate-x-0 w-auto'">
                 Cotizaciones
             </span>
+            <!-- Tooltip -->
+            <div class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-surface-container-high border border-white/10 text-on-surface text-sm font-label-bold rounded-lg shadow-xl opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap z-[100] flex items-center gap-2"
+                [class.hidden]="!layoutService.isSidebarCollapsed()"
+                [class.md:flex]="layoutService.isSidebarCollapsed()">
+                <span>Cotizaciones</span>
+                <span class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+            </div>
         </a>
+
         <a routerLink="/events" routerLinkActive="bg-primary/10 text-primary border-r-2 border-primary"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-bold overflow-hidden"
-            [title]="layoutService.isSidebarCollapsed() ? 'Eventos' : ''">
-            <span class="material-symbols-outlined shrink-0">confirmation_number</span>
+            class="flex items-center py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-bold group relative"
+            [ngClass]="layoutService.isSidebarCollapsed() ? 'justify-center px-0 gap-0 overflow-visible' : 'justify-start px-4 gap-3 overflow-hidden'">
+            <span
+                class="material-symbols-outlined group-hover:scale-110 transition-transform shrink-0">confirmation_number</span>
             <span class="transition-all duration-300 whitespace-nowrap"
-                  [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 translate-x-10' : 'opacity-100 translate-x-0'">
+                [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 translate-x-10 w-0 h-0 overflow-hidden' : 'opacity-100 translate-x-0 w-auto'">
                 Eventos
             </span>
+            <!-- Tooltip -->
+            <div class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-surface-container-high border border-white/10 text-on-surface text-sm font-label-bold rounded-lg shadow-xl opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap z-[100] flex items-center gap-2"
+                [class.hidden]="!layoutService.isSidebarCollapsed()"
+                [class.md:flex]="layoutService.isSidebarCollapsed()">
+                <span>Eventos</span>
+                <span class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+            </div>
         </a>
+
         <a routerLink="/history" routerLinkActive="bg-primary/10 text-primary border-r-2 border-primary"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-bold overflow-hidden"
-            [title]="layoutService.isSidebarCollapsed() ? 'Historial' : ''">
-            <span class="material-symbols-outlined shrink-0">history</span>
+            class="flex items-center py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-bold group relative"
+            [ngClass]="layoutService.isSidebarCollapsed() ? 'justify-center px-0 gap-0 overflow-visible' : 'justify-start px-4 gap-3 overflow-hidden'">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform shrink-0">history</span>
             <span class="transition-all duration-300 whitespace-nowrap"
-                  [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 translate-x-10' : 'opacity-100 translate-x-0'">
+                [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 translate-x-10 w-0 h-0 overflow-hidden' : 'opacity-100 translate-x-0 w-auto'">
                 Historial
             </span>
+            <!-- Tooltip -->
+            <div class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-surface-container-high border border-white/10 text-on-surface text-sm font-label-bold rounded-lg shadow-xl opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap z-[100] flex items-center gap-2"
+                [class.hidden]="!layoutService.isSidebarCollapsed()"
+                [class.md:flex]="layoutService.isSidebarCollapsed()">
+                <span>Historial</span>
+                <span class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+            </div>
         </a>
     </nav>
 
     <!-- Footer Profile -->
-    <div class="p-4 border-t border-white/10 mt-auto overflow-hidden">
+    <div class="p-4 border-t border-white/10 mt-auto transition-all duration-300"
+        [ngClass]="layoutService.isSidebarCollapsed() ? 'overflow-visible' : 'overflow-hidden'">
         <a routerLink="/profile" routerLinkActive="bg-primary/10 text-primary"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-bold overflow-hidden"
-            [title]="layoutService.isSidebarCollapsed() ? 'Perfil' : ''">
-            <span class="material-symbols-outlined shrink-0">person</span>
+            class="flex items-center py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all font-label-bold group relative"
+            [ngClass]="layoutService.isSidebarCollapsed() ? 'justify-center px-0 gap-0 overflow-visible' : 'justify-start px-4 gap-3 overflow-hidden'">
+            <span class="material-symbols-outlined group-hover:scale-110 transition-transform shrink-0">person</span>
             <span class="transition-all duration-300 whitespace-nowrap"
-                  [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 translate-x-10' : 'opacity-100 translate-x-0'">
+                [ngClass]="layoutService.isSidebarCollapsed() ? 'opacity-0 translate-x-10 w-0 h-0 overflow-hidden' : 'opacity-100 translate-x-0 w-auto'">
                 Perfil
             </span>
+            <!-- Tooltip -->
+            <div class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-1.5 bg-surface-container-high border border-white/10 text-on-surface text-sm font-label-bold rounded-lg shadow-xl opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap z-[100] flex items-center gap-2"
+                [class.hidden]="!layoutService.isSidebarCollapsed()"
+                [class.md:flex]="layoutService.isSidebarCollapsed()">
+                <span>Perfil</span>
+                <span class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+            </div>
         </a>
     </div>
 </aside>

@@ -20,3 +20,312 @@
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: rgba(242, 202, 80, 0.6);
 }
+
+@keyframes slideLeft {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-left {
+  animation: slideLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpEnter {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-comment-enter {
+  animation: slideUpEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpExit {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+}
+
+.animate-comment-exit {
+  animation: slideUpExit 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpComments {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up-comments {
+  animation: slideUpComments 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Card level slide/bounce transition animations */
+@keyframes cardEntry {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.card-anim-entry {
+  animation: cardEntry 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cardSlideInRightA {
+  0% {
+    transform: translateX(140px) scale(0.88) rotate(4deg);
+    opacity: 0.7;
+    filter: blur(1px);
+  }
+  70% {
+    transform: translateX(-8px) scale(1.01) rotate(-0.5deg);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: translateX(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes cardSlideInRightB {
+  0% {
+    transform: translateX(140px) scale(0.88) rotate(4deg);
+    opacity: 0.7;
+    filter: blur(1px);
+  }
+  70% {
+    transform: translateX(-8px) scale(1.01) rotate(-0.5deg);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: translateX(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.card-anim-next-a {
+  animation: cardSlideInRightA 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.card-anim-next-b {
+  animation: cardSlideInRightB 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cardSlideInLeftA {
+  0% {
+    transform: translateX(-140px) scale(0.88) rotate(-4deg);
+    opacity: 0.7;
+    filter: blur(1px);
+  }
+  70% {
+    transform: translateX(8px) scale(1.01) rotate(0.5deg);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: translateX(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes cardSlideInLeftB {
+  0% {
+    transform: translateX(-140px) scale(0.88) rotate(-4deg);
+    opacity: 0.7;
+    filter: blur(1px);
+  }
+  70% {
+    transform: translateX(8px) scale(1.01) rotate(0.5deg);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: translateX(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.card-anim-prev-a {
+  animation: cardSlideInLeftA 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.card-anim-prev-b {
+  animation: cardSlideInLeftB 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Lightbox Animations & Custom Scrollbars */
+@keyframes lightboxFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-lightbox-fade-in {
+  animation: lightboxFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes lightboxZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-lightbox-zoom-in {
+  animation: lightboxZoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+// Styling for Lightbox Action Pills matching PostCard
+.action-pill {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.65);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.liked-pill {
+  background: rgba(242, 202, 80, 0.08);
+  border-color: rgba(242, 202, 80, 0.22);
+  color: #f2ca50;
+  box-shadow: 0 2px 10px rgba(242, 202, 80, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    background: rgba(242, 202, 80, 0.12);
+    border-color: rgba(242, 202, 80, 0.35);
+    color: #f5d165;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(242, 202, 80, 0.12);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@keyframes expandHeight {
+  from {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    max-height: 80px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-expand-height {
+  animation: expandHeight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+// Map hover borders
+.group\/map {
+  transition: border-color 0.3s ease;
+  
+  &:hover {
+    border-color: rgba(242, 202, 80, 0.25);
+  }
+}
+
+@keyframes slideLeftSearch {
+  from {
+    max-width: 0%;
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    max-width: 100%;
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-left-search {
+  animation: slideLeftSearch 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes musicBeat {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.3);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-music-beat {
+  display: inline-block;
+  animation: musicBeat 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}

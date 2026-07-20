@@ -1,0 +1,11 @@
+// Premium Band Card styling
+.group:hover {
+  img {
+    filter: brightness(1.05);
+  }
+}
+
+// Custom star styling
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+}

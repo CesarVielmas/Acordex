@@ -1,20 +1,606 @@
 <div class="max-w-full mx-auto px-4 md:px-6 pb-10">
-    <header class="mb-stack-lg mt-stack-md animate-slide-up" style="animation-delay: 0.1s;">
-        <h2 class="font-display-xl text-display-xl text-primary mb-unit">Próximos Eventos</h2>
-        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
-            Asegura tus accesos para las galas y conciertos más exclusivos de la temporada. Vive la experiencia.
+    <header class="mb-stack-lg mt-stack-md animate-slide-up text-center flex flex-col items-center justify-center" style="animation-delay: 0.1s;">
+        <h2 class="font-display-xl text-display-xl text-primary mb-unit text-center">Próximos Eventos</h2>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-3xl text-center mx-auto">
+            {{ subtitleText() }}
         </p>
     </header>
-    
-    <!-- Bento Grid Layout for Events -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-stack-md animate-slide-up" style="animation-delay: 0.2s;">
-        <app-event-card *ngFor="let event of events"
-            [imageUrl]="event.imageUrl"
-            [imageAlt]="event.imageAlt"
-            [date]="event.date"
-            [title]="event.title"
-            [location]="event.location"
-            mode="upcoming">
-        </app-event-card>
+
+    <!-- Horizontal Day Slider Container (Only shown when showSlider is true) -->
+    @if (showSlider()) {
+        <div class="mb-8 p-6 rounded-2xl bg-[#1E1E1E]/60 backdrop-blur-md border border-white/10 shadow-xl animate-slide-up" style="animation-delay: 0.15s;">
+            <!-- Slider Header Navigation -->
+            <div class="flex items-center justify-between mb-4 px-2">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-xl">calendar_month</span>
+                    <h3 class="font-['Epilogue'] font-bold text-sm md:text-base text-on-surface uppercase tracking-wider">
+                        Calendario de Eventos
+                    </h3>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
+                    <button (click)="prevSliderMonth()" 
+                            class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-on-surface-variant hover:text-primary transition-all hover:scale-105 active:scale-95">
+                        <span class="material-symbols-outlined text-lg">chevron_left</span>
+                    </button>
+                    <span class="font-['Epilogue'] font-black text-xs md:text-sm text-on-surface min-w-[100px] text-center tracking-wide">
+                        {{ getSliderMonthName() }}
+                    </span>
+                    <button (click)="nextSliderMonth()" 
+                            class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 text-on-surface-variant hover:text-primary transition-all hover:scale-105 active:scale-95">
+                        <span class="material-symbols-outlined text-lg">chevron_right</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scrollable Day Cards Row -->
+            <div class="flex gap-3 overflow-x-auto py-3 px-1 scrollbar-thin scrollbar-thumb-white/10 scroll-smooth">
+                @for (day of sliderDays(); track day.dateStr) {
+                    <button (click)="selectSliderDay(day.dateStr)"
+                            [ngClass]="{
+                                'bg-primary text-on-primary border-primary shadow-lg shadow-primary/20 scale-105 z-10': selectedDateStr() === day.dateStr,
+                                'bg-white/[0.02] border-white/5 hover:bg-white/5 hover:border-white/10 text-on-surface-variant': selectedDateStr() !== day.dateStr
+                            }"
+                            class="flex-shrink-0 w-16 h-20 rounded-2xl border flex flex-col items-center justify-between py-3 transition-all duration-300 relative group/day-btn focus:outline-none">
+                        <!-- Day Name -->
+                        <span [ngClass]="selectedDateStr() === day.dateStr ? 'text-on-primary/80' : 'text-on-surface-variant/60'" 
+                              class="text-[10px] font-bold tracking-wider uppercase font-['Epilogue']">
+                            {{ day.dayName }}
+                        </span>
+                        <!-- Day Number -->
+                        <span [ngClass]="selectedDateStr() === day.dateStr ? 'text-on-primary font-black' : 'text-on-surface font-bold'" 
+                              class="text-lg leading-none font-['Epilogue'] mt-0.5">
+                            {{ day.dayNumber }}
+                        </span>
+                        
+                        <!-- Event Indicators -->
+                        <div class="flex gap-0.5 justify-center mt-1 w-full max-w-[40px] overflow-hidden">
+                            @if (day.hasConcert) {
+                                <span class="w-1.5 h-1.5 rounded-full shrink-0" 
+                                      [ngClass]="selectedDateStr() === day.dateStr ? 'bg-on-primary' : 'bg-[#10B981]'"></span>
+                            }
+                            @if (day.hasFestival) {
+                                <span class="w-1.5 h-1.5 rounded-full shrink-0" 
+                                      [ngClass]="selectedDateStr() === day.dateStr ? 'bg-on-primary' : 'bg-[#8B5CF6]'"></span>
+                            }
+                            @if (day.hasQuote) {
+                                <span class="w-1.5 h-1.5 rounded-full shrink-0" 
+                                      [ngClass]="selectedDateStr() === day.dateStr ? 'bg-on-primary' : 'bg-[#F2CA50]'"></span>
+                            }
+                            @if (day.hasFirma) {
+                                <span class="w-1.5 h-1.5 rounded-full shrink-0" 
+                                      [ngClass]="selectedDateStr() === day.dateStr ? 'bg-on-primary' : 'bg-[#3B82F6]'"></span>
+                            }
+                        </div>
+                    </button>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Categorized Day Events Section (Only shown when a date is selected) -->
+    @if (selectedDateStr()) {
+        <!-- Day Banner -->
+        <div class="mb-8 p-4 rounded-xl bg-surface-container-high border border-primary/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-2xl">event_upcoming</span>
+                <div>
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Eventos para el {{ getFormattedDateLong() }}</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant">Conciertos, festivales, firmas y cotizaciones agendadas</p>
+                </div>
+            </div>
+            <button (click)="clearDateFilter()" class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 text-xs font-semibold text-primary transition-all border border-white/10 hover:border-primary/30">
+                <span>Ver Todos</span>
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+
+        @if (filteredEvents().length > 0) {
+            <div class="flex flex-col gap-10 animate-slide-up" style="animation-delay: 0.2s;">
+                
+                <!-- Category 1: Conciertos y Festivales -->
+                @if (conciertosYFestivales().length > 0) {
+                    <div>
+                        <h3 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2 pb-2 border-b border-white/5">
+                            <span class="material-symbols-outlined text-emerald-500">music_note</span>
+                            <span>Conciertos & Festivales</span>
+                            <span class="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-2 py-0.5 rounded-full ml-1">
+                                {{ conciertosYFestivales().length }}
+                            </span>
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            @for (event of conciertosYFestivales(); track event.id) {
+                                <div [ngClass]="event.type === 'festival' ? 'border-purple-500/30 hover:border-purple-500/50 shadow-purple-500/5' : 'border-emerald-500/30 hover:border-emerald-500/50 shadow-emerald-500/5'"
+                                     class="relative flex flex-col justify-between h-96 rounded-2xl overflow-hidden border bg-[#1E1E1E]/80 backdrop-blur-md group hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300">
+                                    <!-- Card Image Background -->
+                                    <div class="absolute inset-0 z-0">
+                                        <img [src]="event.imageUrl" [alt]="event.title" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 brightness-50" />
+                                        <div class="absolute inset-0 bg-gradient-to-t from-[#151515] via-[#151515]/40 to-transparent"></div>
+                                    </div>
+                                    
+                                    <!-- Top Badges -->
+                                    <div class="relative z-10 p-5 flex justify-between items-start">
+                                        <span [ngClass]="event.type === 'festival' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30 shadow-md shadow-purple-500/10' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-md shadow-emerald-500/10'" 
+                                              class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border backdrop-blur-sm">
+                                            {{ event.type }}
+                                        </span>
+                                        <span class="text-xs font-bold text-white bg-black/40 px-2.5 py-1 rounded-lg backdrop-blur-sm border border-white/5 flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-sm text-primary">schedule</span>
+                                            {{ event.description.split('•')[1]?.trim() || 'Hora pendiente' }}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Bottom Info -->
+                                    <div class="relative z-10 p-6 pt-0 mt-auto">
+                                        <h4 class="font-headline-md text-headline-md text-white mb-2 leading-tight group-hover:text-primary transition-colors font-bold font-['Epilogue']">
+                                            {{ event.title }}
+                                        </h4>
+                                        <p class="text-xs text-white/70 mb-4 line-clamp-2 leading-relaxed">
+                                            {{ event.description.split('•')[0]?.trim() }}
+                                        </p>
+                                        <div class="flex items-center justify-between gap-4 pt-3 border-t border-white/10">
+                                            <span class="text-xs text-white/80 flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-sm text-primary">location_on</span>
+                                                <span class="truncate max-w-[120px]">{{ event.location }}</span>
+                                            </span>
+                                            <button (click)="goToBuyTickets(event.id)" class="bg-primary text-on-primary font-label-bold text-[11px] px-4 py-2 rounded-lg hover:bg-primary-fixed hover:scale-105 active:scale-95 transition-all flex items-center gap-1 shadow-md shadow-primary/20">
+                                                <span>Comprar Boletos</span>
+                                                <span class="material-symbols-outlined text-xs">confirmation_number</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Category 2: Mis Cotizaciones y Reservas -->
+                @if (misCotizaciones().length > 0) {
+                    <div>
+                        <h3 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2 pb-2 border-b border-white/5">
+                            <span class="material-symbols-outlined text-amber-500">payments</span>
+                            <span>Mis Cotizaciones y Reservas</span>
+                            <span class="bg-amber-500/10 text-amber-400 text-xs font-bold px-2 py-0.5 rounded-full ml-1">
+                                {{ misCotizaciones().length }}
+                            </span>
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            @for (event of misCotizaciones(); track event.id) {
+                                <div class="rounded-2xl border border-[#F2CA50]/20 bg-[#1E1E1E]/80 backdrop-blur-md overflow-hidden hover:border-[#F2CA50]/50 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group shadow-xl">
+                                    <div class="h-40 relative bg-surface-container-lowest overflow-hidden">
+                                        <img [src]="event.imageUrl" [alt]="event.title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-[0.7]" />
+                                        <div class="absolute inset-0 bg-gradient-to-t from-[#1E1E1E] to-transparent"></div>
+                                        <span class="absolute top-4 left-4 bg-[#F2CA50]/20 border border-[#F2CA50]/30 text-[#F2CA50] px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase backdrop-blur-sm">
+                                            cotización
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="p-6">
+                                        <div class="flex items-center justify-between mb-3 gap-2">
+                                            <h4 class="font-headline-sm text-headline-sm text-on-surface font-bold font-['Epilogue'] group-hover:text-primary transition-colors truncate">
+                                                {{ event.title }}
+                                            </h4>
+                                            <span class="bg-green-500/15 text-green-400 border border-green-500/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wide shrink-0">
+                                                Aprobada
+                                            </span>
+                                        </div>
+                                        <p class="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-2">
+                                            {{ event.description.split('•')[0]?.trim() }}
+                                        </p>
+                                        
+                                        <div class="flex items-center justify-between border-t border-white/5 pt-4">
+                                            <div class="flex flex-col gap-1 text-[11px] text-on-surface-variant">
+                                                <span class="flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-xs text-primary">location_on</span>
+                                                    <span class="truncate max-w-[130px]">{{ event.location }}</span>
+                                                </span>
+                                                <span class="flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-xs text-primary">schedule</span>
+                                                    <span>{{ event.description.split('•')[1]?.trim() || '18:00' }}</span>
+                                                </span>
+                                            </div>
+                                            <button (click)="openContract(event)" class="bg-[#F2CA50] text-[#1E1E1E] hover:bg-[#F2CA50]/80 hover:scale-105 active:scale-95 transition-all text-xs font-black px-4 py-2.5 rounded-lg shadow-md shadow-[#F2CA50]/10">
+                                                Ver Contrato
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Category 3: Firmas y Prensa -->
+                @if (firmasYPrensa().length > 0) {
+                    <div>
+                        <h3 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2 pb-2 border-b border-white/5">
+                            <span class="material-symbols-outlined text-blue-500">rate_review</span>
+                            <span>Firmas & Prensa</span>
+                            <span class="bg-blue-500/10 text-blue-400 text-xs font-bold px-2 py-0.5 rounded-full ml-1">
+                                {{ firmasYPrensa().length }}
+                            </span>
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            @for (event of firmasYPrensa(); track event.id) {
+                                <div class="p-6 rounded-2xl bg-[#1E1E1E]/80 backdrop-blur-md border border-blue-500/20 hover:border-blue-500/40 hover:-translate-y-1.5 transition-all duration-300 relative overflow-hidden group shadow-xl">
+                                    <div class="absolute -right-12 -bottom-12 w-28 h-28 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-colors"></div>
+                                    
+                                    <div class="flex justify-between items-start mb-4">
+                                        <span class="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">
+                                            firma / prensa
+                                        </span>
+                                        <span class="text-xs font-bold text-on-surface-variant flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-sm text-primary">schedule</span>
+                                            {{ event.description.split('•')[1]?.trim() || 'Hora pendiente' }}
+                                        </span>
+                                    </div>
+                                    
+                                    <h4 class="font-headline-sm text-headline-sm text-on-surface mb-2 font-bold font-['Epilogue'] group-hover:text-primary transition-colors">{{ event.title }}</h4>
+                                    <p class="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-2">
+                                        {{ event.description.split('•')[0]?.trim() }}
+                                    </p>
+                                    
+                                    <div class="flex items-center justify-between border-t border-white/5 pt-4">
+                                        <div class="flex items-center gap-1 text-xs text-on-surface-variant">
+                                            <span class="material-symbols-outlined text-sm text-primary">location_on</span>
+                                            <span>{{ event.location }}</span>
+                                        </div>
+                                        <button (click)="goToFirmaPrensa(event.id)" class="border border-blue-500/30 text-blue-300 hover:bg-blue-500/20 hover:scale-105 active:scale-95 text-xs font-semibold px-4 py-2 rounded-lg transition-all">
+                                            Detalles
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                
+            </div>
+        } @else {
+            <!-- Premium Empty State for Day View -->
+            <div class="flex flex-col items-center justify-center text-center p-10 md:p-14 bg-[#1E1E1E]/80 backdrop-blur-md border border-outline-variant/30 rounded-2xl mb-10 max-w-2xl mx-auto shadow-inner">
+                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <span class="material-symbols-outlined text-3xl text-primary">calendar_today</span>
+                </div>
+                <h4 class="font-headline-md text-headline-md text-on-surface mb-2">Sin eventos programados</h4>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-md mb-6 leading-relaxed">
+                    No hay conciertos, firmas, festivales o cotizaciones agendadas para el <span class="text-primary font-semibold">{{ getFormattedDateLong() }}</span>.
+                </p>
+                <button (click)="clearDateFilter()" class="bg-primary text-on-primary font-label-bold text-label-bold px-6 py-3 rounded-lg hover:bg-primary-fixed hover:scale-105 active:scale-95 transition-all duration-200 shadow-md shadow-primary/20">
+                    Explorar Todos los Eventos
+                </button>
+            </div>
+        }
+    }
+
+    <!-- General View: Events Grouped by Day (Shown when no date is selected) -->
+    @if (!selectedDateStr()) {
+        @if (generalEventsGroupedByDay().length > 0) {
+            <div class="flex flex-col gap-12 animate-slide-up" style="animation-delay: 0.2s;">
+                @for (group of generalEventsGroupedByDay(); track group.dateStr) {
+                    <div class="border-l-2 border-primary/20 pl-6 ml-2 relative">
+                        <!-- Timeline Bullet -->
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-[#1A1A1A] border-2 border-primary flex items-center justify-center">
+                            <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                        </div>
+                        
+                        <!-- Day Header -->
+                        <h3 class="font-headline-sm text-headline-sm text-primary mb-6 font-bold flex items-center gap-2 font-['Epilogue']">
+                            <span class="material-symbols-outlined text-lg text-primary/80">event_note</span>
+                            <span>{{ group.dateLong }}</span>
+                        </h3>
+
+                        <div class="flex flex-col gap-8">
+                            <!-- Category 1: Conciertos y Festivales -->
+                            @if (group.conciertosYFestivales.length > 0) {
+                                <div class="animate-fade-in">
+                                    <h4 class="font-title-sm text-title-sm text-emerald-400 mb-4 flex items-center gap-1.5 text-xs font-black tracking-widest uppercase font-['Epilogue']">
+                                        <span class="material-symbols-outlined text-sm text-emerald-500">music_note</span>
+                                        <span>Conciertos & Festivales</span>
+                                    </h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        @for (event of group.conciertosYFestivales; track event.id) {
+                                            <div [ngClass]="event.type === 'festival' ? 'border-purple-500/30 hover:border-purple-500/50 shadow-purple-500/5' : 'border-emerald-500/30 hover:border-emerald-500/50 shadow-emerald-500/5'"
+                                                 class="relative flex flex-col justify-between h-96 rounded-2xl overflow-hidden border bg-[#1E1E1E]/80 backdrop-blur-md group hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300">
+                                                <!-- Card Image Background -->
+                                                <div class="absolute inset-0 z-0">
+                                                    <img [src]="event.imageUrl" [alt]="event.title" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 brightness-50" />
+                                                    <div class="absolute inset-0 bg-gradient-to-t from-[#151515] via-[#151515]/40 to-transparent"></div>
+                                                </div>
+                                                
+                                                <!-- Top Badges -->
+                                                <div class="relative z-10 p-5 flex justify-between items-start">
+                                                    <span [ngClass]="event.type === 'festival' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30 shadow-md shadow-purple-500/10' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-md shadow-emerald-500/10'" 
+                                                          class="px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border backdrop-blur-sm">
+                                                        {{ event.type }}
+                                                    </span>
+                                                    <span class="text-xs font-bold text-white bg-black/40 px-2.5 py-1 rounded-lg backdrop-blur-sm border border-white/5 flex items-center gap-1.5">
+                                                        <span class="material-symbols-outlined text-sm text-primary">schedule</span>
+                                                        {{ event.description.split('•')[1]?.trim() || 'Hora pendiente' }}
+                                                    </span>
+                                                </div>
+                                                
+                                                <!-- Bottom Info -->
+                                                <div class="relative z-10 p-6 pt-0 mt-auto">
+                                                    <h4 class="font-headline-md text-headline-md text-white mb-2 leading-tight group-hover:text-primary transition-colors font-bold font-['Epilogue']">
+                                                        {{ event.title }}
+                                                    </h4>
+                                                    <p class="text-xs text-white/70 mb-4 line-clamp-2 leading-relaxed">
+                                                        {{ event.description.split('•')[0]?.trim() }}
+                                                    </p>
+                                                    <div class="flex items-center justify-between gap-4 pt-3 border-t border-white/10">
+                                                        <span class="text-xs text-white/80 flex items-center gap-1">
+                                                            <span class="material-symbols-outlined text-sm text-primary">location_on</span>
+                                                            <span class="truncate max-w-[120px]">{{ event.location }}</span>
+                                                        </span>
+                                                        <button (click)="goToBuyTickets(event.id)" class="bg-primary text-on-primary font-label-bold text-[11px] px-4 py-2 rounded-lg hover:bg-primary-fixed hover:scale-105 active:scale-95 transition-all flex items-center gap-1 shadow-md shadow-primary/20">
+                                                            <span>Comprar Boletos</span>
+                                                            <span class="material-symbols-outlined text-xs">confirmation_number</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Category 2: Mis Cotizaciones -->
+                            @if (group.misCotizaciones.length > 0) {
+                                <div class="animate-fade-in">
+                                    <h4 class="font-title-sm text-title-sm text-amber-400 mb-4 flex items-center gap-1.5 text-xs font-black tracking-widest uppercase font-['Epilogue']">
+                                        <span class="material-symbols-outlined text-sm text-amber-500">payments</span>
+                                        <span>Mis Cotizaciones y Reservas</span>
+                                    </h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        @for (event of group.misCotizaciones; track event.id) {
+                                            <div class="rounded-2xl border border-[#F2CA50]/20 bg-[#1E1E1E]/80 backdrop-blur-md overflow-hidden hover:border-[#F2CA50]/50 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group shadow-xl">
+                                                <div class="h-40 relative bg-surface-container-lowest overflow-hidden">
+                                                    <img [src]="event.imageUrl" [alt]="event.title" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-[0.7]" />
+                                                    <div class="absolute inset-0 bg-gradient-to-t from-[#1E1E1E] to-transparent"></div>
+                                                    <span class="absolute top-4 left-4 bg-[#F2CA50]/20 border border-[#F2CA50]/30 text-[#F2CA50] px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase backdrop-blur-sm">
+                                                        cotización
+                                                    </span>
+                                                </div>
+                                                
+                                                <div class="p-6">
+                                                    <div class="flex items-center justify-between mb-3 gap-2">
+                                                        <h4 class="font-headline-sm text-headline-sm text-on-surface font-bold font-['Epilogue'] group-hover:text-primary transition-colors truncate">
+                                                            {{ event.title }}
+                                                        </h4>
+                                                        <span class="bg-green-500/15 text-green-400 border border-green-500/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wide shrink-0">
+                                                            Aprobada
+                                                        </span>
+                                                    </div>
+                                                    <p class="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-2">
+                                                        {{ event.description.split('•')[0]?.trim() }}
+                                                    </p>
+                                                    
+                                                    <div class="flex items-center justify-between border-t border-white/5 pt-4">
+                                                        <div class="flex flex-col gap-1 text-[11px] text-on-surface-variant">
+                                                            <span class="flex items-center gap-1">
+                                                                <span class="material-symbols-outlined text-xs text-primary">location_on</span>
+                                                                <span class="truncate max-w-[130px]">{{ event.location }}</span>
+                                                            </span>
+                                                            <span class="flex items-center gap-1">
+                                                                <span class="material-symbols-outlined text-xs text-primary">schedule</span>
+                                                                <span>{{ event.description.split('•')[1]?.trim() || '18:00' }}</span>
+                                                            </span>
+                                                        </div>
+                                                        <button (click)="openContract(event)" class="bg-[#F2CA50] text-[#1E1E1E] hover:bg-[#F2CA50]/80 hover:scale-105 active:scale-95 transition-all text-xs font-black px-4 py-2.5 rounded-lg shadow-md shadow-[#F2CA50]/10">
+                                                            Ver Contrato
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Category 3: Firmas y Prensa -->
+                            @if (group.firmasYPrensa.length > 0) {
+                                <div class="animate-fade-in">
+                                    <h4 class="font-title-sm text-title-sm text-blue-400 mb-4 flex items-center gap-1.5 text-xs font-black tracking-widest uppercase font-['Epilogue']">
+                                        <span class="material-symbols-outlined text-sm text-blue-500">rate_review</span>
+                                        <span>Firmas & Prensa</span>
+                                    </h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        @for (event of group.firmasYPrensa; track event.id) {
+                                            <div class="p-6 rounded-2xl bg-[#1E1E1E]/80 backdrop-blur-md border border-blue-500/20 hover:border-blue-500/40 hover:-translate-y-1.5 transition-all duration-300 relative overflow-hidden group shadow-xl">
+                                                <div class="absolute -right-12 -bottom-12 w-28 h-28 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-colors"></div>
+                                                
+                                                <div class="flex justify-between items-start mb-4">
+                                                    <span class="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">
+                                                        firma / prensa
+                                                    </span>
+                                                    <span class="text-xs font-bold text-on-surface-variant flex items-center gap-1">
+                                                        <span class="material-symbols-outlined text-sm text-primary">schedule</span>
+                                                        {{ event.description.split('•')[1]?.trim() || 'Hora pendiente' }}
+                                                    </span>
+                                                </div>
+                                                
+                                                <h4 class="font-headline-sm text-headline-sm text-on-surface mb-2 font-bold font-['Epilogue'] group-hover:text-primary transition-colors">{{ event.title }}</h4>
+                                                <p class="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-2">
+                                                    {{ event.description.split('•')[0]?.trim() }}
+                                                </p>
+                                                
+                                                <div class="flex items-center justify-between border-t border-white/5 pt-4">
+                                                    <div class="flex items-center gap-1 text-xs text-on-surface-variant">
+                                                        <span class="material-symbols-outlined text-sm text-primary">location_on</span>
+                                                        <span>{{ event.location }}</span>
+                                                    </div>
+                                                    <button (click)="goToFirmaPrensa(event.id)" class="border border-blue-500/30 text-blue-300 hover:bg-blue-500/20 hover:scale-105 active:scale-95 text-xs font-semibold px-4 py-2 rounded-lg transition-all">
+                                                        Detalles
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        } @else {
+            <!-- Empty state when no events in general range -->
+            <div class="flex flex-col items-center justify-center text-center p-12 bg-[#1E1E1E]/80 backdrop-blur-md border border-outline-variant/30 rounded-2xl mb-10 max-w-2xl mx-auto shadow-inner animate-fade-in">
+                <span class="material-symbols-outlined text-4xl text-primary mb-3">calendar_today</span>
+                <h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">Sin eventos próximos</h4>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-sm mb-4 leading-relaxed">
+                    No hay cotizaciones activas o eventos agendados para este periodo.
+                </p>
+            </div>
+        }
+    }
+
+    <!-- General Upcoming Events Section (Only shown as fallback when day is empty or when general view is empty) -->
+    @if ((selectedDateStr() && filteredEvents().length === 0) || (!selectedDateStr() && generalEventsGroupedByDay().length === 0)) {
+        <div class="mt-10 animate-slide-up" style="animation-delay: 0.3s;">
+            <h3 class="font-headline-md text-headline-md text-on-surface mb-6 border-b border-white/5 pb-2 flex items-center gap-2" *ngIf="selectedDateStr()">
+                <span class="material-symbols-outlined text-primary text-xl">star</span>
+                Próximos Eventos Destacados
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-stack-md">
+                <app-event-card *ngFor="let event of events"
+                    [id]="event.id"
+                    [imageUrl]="event.imageUrl"
+                    [imageAlt]="event.imageAlt"
+                    [date]="event.date"
+                    [title]="event.title"
+                    [location]="event.location"
+                    (buy)="goToBuyTickets($event)"
+                    mode="upcoming">
+                </app-event-card>
+            </div>
+        </div>
+    }
+    <!-- Contract Modal Section -->
+    <div *ngIf="isContractModalOpen() && selectedContractEvent() as quote" 
+         (click)="closeContract()"
+         class="fixed inset-0 z-[120] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 overflow-y-auto animate-lightbox-fade-in animate-scale-in">
+        
+        <!-- Close Button -->
+        <button (click)="closeContract()" 
+                class="absolute top-4 right-4 z-[130] w-11 h-11 rounded-full bg-black/45 border border-white/10 hover:bg-black/60 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-xl">
+            <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+
+        <!-- Contract Layout Container (Floats like paper) -->
+        <div class="relative w-full max-w-2xl flex flex-col gap-6" (click)="$event.stopPropagation()">
+            
+            <!-- Paper Sheet -->
+            <div class="bg-[#FCFBFA] border border-[#d6cfc7] rounded-2xl p-8 md:p-12 shadow-2xl text-[#1e1e1e] font-serif text-xs md:text-sm leading-relaxed max-h-[72vh] overflow-y-auto relative select-text select-all">
+                
+                <!-- Official Seals & Watermarks -->
+                <div class="absolute right-10 top-10 w-24 h-24 border-4 border-double border-[#b59f7c]/35 rounded-full flex flex-col items-center justify-center text-[#b59f7c]/40 text-[7px] font-black uppercase text-center select-none rotate-12">
+                    <span class="font-sans">ACORDEX</span>
+                    <span class="font-sans">SOPORTE LEGAL</span>
+                    <span class="font-sans">CERTIFICADO</span>
+                </div>
+
+                <div class="text-center mb-8 border-b-2 border-[#1e1e1e]/15 pb-6">
+                    <span class="text-[9px] uppercase font-sans font-black tracking-widest text-[#b59f7c] block mb-2">CONTRATO PRESTACIÓN DE SERVICIOS</span>
+                    <h3 class="text-base md:text-xl font-bold uppercase tracking-wider text-[#1e1e1e]">CONTRATO DE CONTRATACIÓN MUSICAL</h3>
+                    <span class="text-[9.5px] font-sans text-black/50 block mt-1">Folio de Referencia: ACX-{{ quote.id * 17 }}</span>
+                </div>
+
+                <!-- Contract Clauses -->
+                <div class="flex flex-col gap-5 text-justify font-light text-black/85">
+                    <p>
+                        Conste por el presente documento el **Contrato de Prestación de Servicios Musicales** que celebran, por una parte, **ACORDEX S.A. DE C.V.** en representación de la agrupación **{{ quote.title }}** (en lo sucesivo denominado como "EL ARTISTA"), y por la otra parte, el solicitante registrado de la cotización (en lo sucesivo denominado como "EL CONTRATANTE"), al tenor de las siguientes cláusulas:
+                    </p>
+
+                    <div>
+                        <strong class="font-bold text-[#1e1e1e]">CLÁUSULA PRIMERA: OBJETO DEL CONTRATO</strong>
+                        <p class="mt-1">
+                            EL ARTISTA se compromete a realizar una presentación musical en vivo con su staff y equipo completo de integrantes, de acuerdo con los requerimientos logísticos y técnicos acordados para el evento.
+                        </p>
+                    </div>
+
+                    <div>
+                        <strong class="font-bold text-[#1e1e1e]">CLÁUSULA SEGUNDA: LOGÍSTICA DEL EVENTO</strong>
+                        <p class="mt-1">
+                            El evento se llevará a cabo bajo las siguientes condiciones acordadas de ubicación y fecha:
+                        </p>
+                        <ul class="list-disc list-inside mt-1.5 flex flex-col gap-1 font-sans text-[11px] bg-black/5 p-3 rounded-lg border border-black/5 text-black/90">
+                            <li><strong>Agrupación:</strong> {{ quote.title }}</li>
+                            <li><strong>Fecha del Evento:</strong> {{ quote.date | date:'dd / MM / yyyy' }}</li>
+                            <li><strong>Sede / Recinto:</strong> {{ quote.location || 'Dirección acordada' }}</li>
+                            <li><strong>Horario de Presentación:</strong> {{ quote.description.split('•')[1]?.trim() || '18:00 hrs' }}</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <strong class="font-bold text-[#1e1e1e]">CLÁUSULA TERCERA: REQUISITOS TÉCNICOS</strong>
+                        <p class="mt-1">
+                            EL CONTRATANTE se compromete a proveer los requerimientos mínimos de audio, iluminación, escenario adecuado y acometida eléctrica requeridos para la presentación, a menos que se especifique la contratación del paquete técnico completo de Acordex.
+                        </p>
+                    </div>
+
+                    <div>
+                        <strong class="font-bold text-[#1e1e1e]">CLÁUSULA CUARTA: HONORARIOS Y CONDICIONES DE PAGO</strong>
+                        <p class="mt-1">
+                            El costo estimado para esta prestación asciende a la cantidad cotizada formalmente en el sistema. Para reservar de forma definitiva la fecha en la agenda de EL ARTISTA, se requiere la liquidación del 50% de anticipo al firmar este acuerdo, liquidándose el 50% restante 15 días antes del evento.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Signatures section -->
+                <div class="grid grid-cols-2 gap-8 mt-12 pt-8 border-t border-black/10 text-center font-sans text-[10px]">
+                    
+                    <!-- Artist / Representative signature -->
+                    <div class="flex flex-col items-center">
+                        <div class="h-14 flex items-center justify-center relative select-none">
+                            <span class="font-['Charm'] text-lg font-bold text-blue-800 rotate-[-4deg] opacity-75">Don Pedro Reyes</span>
+                        </div>
+                        <div class="w-full border-t border-black/40 mt-1"></div>
+                        <span class="font-bold text-black/75 mt-1">REPRESENTANTE DEL ARTISTA</span>
+                        <span class="text-[8px] text-black/40 mt-0.5">Acordex Booking</span>
+                    </div>
+
+                    <!-- Client signature -->
+                    <div class="flex flex-col items-center">
+                        <div class="h-14 flex items-center justify-center relative w-full">
+                            <!-- NOT SIGNED STATE -->
+                            <button *ngIf="!isContractSigned()" 
+                                    (click)="signContract()"
+                                    class="px-3.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-300 active:scale-95 shadow-md">
+                                Firmar Contrato
+                            </button>
+                            
+                            <!-- SIGNED STAMP STATE -->
+                            <div *ngIf="isContractSigned()" class="flex flex-col items-center justify-center animate-scale-in text-emerald-800 text-center select-none leading-tight font-sans font-bold border border-dashed border-emerald-600/35 p-1 rounded bg-emerald-50/50">
+                                <span class="text-[7.5px] uppercase tracking-wider text-emerald-700">FIRMADO DIGITALMENTE</span>
+                                <span class="font-['Charm'] text-xs font-bold text-emerald-800 italic mt-0.5">CONTRATANTE ACORDEX</span>
+                                <span class="text-[6.5px] text-emerald-600/70 font-mono mt-0.5">HASH: 9a8f2bc7de</span>
+                            </div>
+                        </div>
+                        <div class="w-full border-t border-black/40 mt-1"></div>
+                        <span class="font-bold text-black/75 mt-1">EL CONTRATANTE</span>
+                        <span class="text-[8px] text-black/40 mt-0.5">Firma Electrónica Autorizada</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Print Option Buttons -->
+            <div class="flex gap-3 justify-end">
+                <button (click)="closeContract()" 
+                        class="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold rounded-xl transition-all duration-300 active:scale-95 uppercase tracking-wider">
+                    Cerrar Contrato
+                </button>
+                <button onclick="window.print()"
+                        class="px-6 py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 uppercase tracking-wider">
+                    <span class="material-symbols-outlined text-sm leading-none">print</span>
+                    Imprimir Contrato
+                </button>
+            </div>
+
+        </div>
     </div>
 </div>

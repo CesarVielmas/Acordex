@@ -1,0 +1,52 @@
+// --- DANCING BELL ANIMATION ---
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(15deg); }
+  30% { transform: rotate(-15deg); }
+  45% { transform: rotate(10deg); }
+  60% { transform: rotate(-10deg); }
+  75% { transform: rotate(5deg); }
+  85% { transform: rotate(-5deg); }
+}
+
+.animate-bell-hover {
+  &:hover {
+    .material-symbols-outlined {
+      display: inline-block;
+      transform-origin: top center;
+      animation: bellRing 0.8s ease-in-out;
+    }
+  }
+}
+
+// --- 3D PAGE FLIP CALENDAR ANIMATION ---
+@keyframes calendarFlip {
+  0% { transform: rotateY(0deg); }
+  50% { transform: rotateY(180deg) scale(1.15); color: #F2CA50; }
+  100% { transform: rotateY(360deg); }
+}
+
+.animate-calendar-hover {
+  &:hover {
+    .material-symbols-outlined {
+      display: inline-block;
+      animation: calendarFlip 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  }
+}
+
+// --- SCALE UP POPUP ANIMATION ---
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

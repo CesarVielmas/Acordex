@@ -1,17 +1,22 @@
-<article class="bg-surface-container/60 backdrop-blur-md rounded-xl p-5 shadow-lg border border-white/5 hover:bg-surface-container-high transition-colors animate-fade-in group">
+<article class="bg-[#151515]/60 border border-white/[0.05] hover:border-primary/20 backdrop-blur-xl rounded-2xl p-5 shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#1b1b1b]/80 cursor-pointer flex flex-col relative overflow-hidden group">
+    <!-- Decorative Large Quote Mark -->
+    <span class="absolute top-2 right-4 text-white/[0.015] text-8xl font-serif select-none pointer-events-none group-hover:text-primary/[0.025] transition-colors duration-500">“</span>
+
     <div class="flex flex-col md:flex-row gap-4">
         <!-- Avatar & Rating -->
-        <div class="flex md:flex-col items-center md:items-start gap-4 md:w-48 shrink-0">
-            <img [src]="userAvatar" [alt]="userName" class="w-12 h-12 rounded-full object-cover border border-white/10" />
+        <div class="flex md:flex-col items-center md:items-start gap-3 md:w-44 shrink-0">
+            <div class="p-[1px] rounded-full bg-gradient-to-tr from-primary/45 to-transparent">
+                <img [src]="userAvatar" [alt]="userName" class="w-11 h-11 rounded-full object-cover border border-[#151515]" />
+            </div>
             <div>
-                <h4 class="font-label-bold text-on-surface">{{ userName }}</h4>
-                <p class="text-xs text-on-surface-variant flex items-center gap-1 mb-1">
-                    <span class="material-symbols-outlined text-[14px]">schedule</span>
+                <h4 class="font-['Epilogue'] font-black text-xs md:text-sm uppercase tracking-wider text-white leading-none">{{ userName }}</h4>
+                <p class="text-[9px] text-white/40 font-['Be_Vietnam_Pro'] font-light flex items-center gap-1 mt-1.5 mb-1.5">
+                    <span class="material-symbols-outlined text-[11px] text-primary/50">schedule</span>
                     {{ timeAgo }}
                 </p>
                 <!-- Stars -->
                 <div class="flex items-center gap-0.5 text-primary">
-                    <span *ngFor="let isFilled of starsArray" class="material-symbols-outlined text-[16px]" [style.font-variation-settings]="isFilled ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">
+                    <span *ngFor="let isFilled of starsArray" class="material-symbols-outlined text-[13px]" [style.font-variation-settings]="isFilled ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">
                         star
                     </span>
                 </div>
@@ -20,19 +25,38 @@
 
         <!-- Review Content -->
         <div class="flex-1 flex flex-col justify-center">
-            <div class="mb-2">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/5 text-xs font-label-bold text-on-surface-variant border border-white/10">
-                    <span class="material-symbols-outlined text-[14px] text-primary">mic</span>
+            <div class="mb-2.5 flex flex-wrap gap-1.5">
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/5 text-[9.5px] font-['Be_Vietnam_Pro'] font-light text-white/70 border border-white/[0.06] select-none">
+                    <span class="material-symbols-outlined text-[12px] text-primary/70">mic</span>
                     {{ bandName }}
                 </span>
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/5 text-xs font-label-bold text-on-surface-variant border border-white/10 ml-2">
-                    <span class="material-symbols-outlined text-[14px] text-primary">event</span>
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/5 text-[9.5px] font-['Be_Vietnam_Pro'] font-medium text-primary border border-primary/10 select-none">
+                    <span class="material-symbols-outlined text-[12px] text-primary/80">event</span>
                     {{ eventName }}
                 </span>
             </div>
-            <p class="text-body-md text-on-surface-variant italic leading-relaxed">
+            <p class="text-[12.5px] font-['Be_Vietnam_Pro'] text-white/80 font-light leading-relaxed italic pr-4">
                 "{{ content }}"
             </p>
+        </div>
+    </div>
+
+    <!-- Interactive Card Footer Row -->
+    <div class="flex items-center justify-between mt-4 pt-3.5 border-t border-white/[0.03]">
+        <!-- Like/Agreement Pill -->
+        <button (click)="onLikeClick($event)"
+                [ngClass]="isLiked ? 'bg-primary/10 border-primary/20 text-primary shadow-[0_2px_10px_rgba(242,202,80,0.08)]' : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'"
+                class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-['Epilogue'] tracking-wider border transition-all duration-300 select-none">
+            <span class="material-symbols-outlined text-xs leading-none" [ngClass]="isLiked ? 'animate-music-beat fill-current' : ''">
+                music_note
+            </span>
+            <span>{{ likes }}</span>
+        </button>
+
+        <!-- Micro-interaction action indicator -->
+        <div class="text-[9px] font-['Epilogue'] uppercase tracking-widest font-black text-primary flex items-center gap-1 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 select-none">
+            <span>Detalles del Evento</span>
+            <span class="material-symbols-outlined text-[12px]">arrow_forward</span>
         </div>
     </div>
 </article>

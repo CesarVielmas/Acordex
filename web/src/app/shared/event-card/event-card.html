@@ -60,7 +60,7 @@
         
         <!-- Action Area -->
         <div *ngIf="mode === 'upcoming'" class="mt-auto pt-stack-sm border-t border-outline-variant/30 border-dashed">
-            <button class="w-full mt-4 bg-primary text-on-primary font-label-bold text-label-bold py-3.5 rounded-lg shadow-[0_4px_14px_0_rgba(212,175,55,0.39)] hover:bg-primary-fixed hover:shadow-[0_6px_20px_rgba(212,175,55,0.23)] transition-all duration-200 flex justify-center items-center gap-2">
+            <button (click)="onBuyClick($event)" class="w-full mt-4 bg-primary text-on-primary font-label-bold text-label-bold py-3.5 rounded-lg shadow-[0_4px_14px_0_rgba(212,175,55,0.39)] hover:bg-primary-fixed hover:shadow-[0_6px_20px_rgba(212,175,55,0.23)] transition-all duration-200 flex justify-center items-center gap-2">
                 <span>Comprar Boletos</span>
                 <span class="material-symbols-outlined text-[20px]">confirmation_number</span>
             </button>

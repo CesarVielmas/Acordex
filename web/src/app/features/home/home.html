@@ -1,10 +1,11 @@
 <div class="max-w-full mx-auto flex flex-col pt-stack-md gap-stack-lg px-4 md:px-6 pb-10">
-    <!-- Vibras del Momento (Stories) -->
+    <!-- Historias en Vivo (Stories) -->
     <section class="animate-slide-up relative group/stories" style="animation-delay: 0.1s;">
         <div class="flex items-center justify-between mb-4">
             <h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">auto_awesome</span>
-                Vibras en Vivo
+                <span class="material-symbols-outlined text-primary">live_tv</span>
+                Historias en Vivo
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse ml-0.5"></span>
             </h3>
             <button class="text-primary text-sm font-label-bold hover:underline transition-all">Ver todas</button>
         </div>
@@ -25,76 +26,1024 @@
                 [authorName]="story.authorName"
                 [authorAvatar]="story.authorAvatar"
                 [thumbnailUrl]="story.thumbnailUrl"
-                [isVideo]="story.isVideo">
+                [isVideo]="story.isVideo"
+                [isFollowed]="story.isFollowed"
+                [videoUrl]="story.videoUrl || ''"
+                (followToggle)="toggleFollow(story)"
+                (cardClick)="openStory(story)">
             </app-story-card>
         </div>
     </section>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- Left Column: Feed (Posts & Reviews) -->
-        <div class="lg:col-span-2 flex flex-col gap-8">
+    <!-- Tabs & Search Controls Section -->
+    <div class="flex flex-col gap-4 border-b border-white/[0.04] pb-4 animate-slide-up" style="animation-delay: 0.15s;">
+        <div class="flex items-center justify-between gap-3">
+            <!-- Tabs Capsule -->
+            <div class="bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl rounded-full p-1 flex gap-1.5 select-none transition-all duration-300 shrink-0">
+                <!-- Publicaciones Tab -->
+                <button (click)="activeTab.set('posts')" 
+                        [ngClass]="[
+                          activeTab() === 'posts' ? 'bg-primary text-black font-semibold shadow-md shadow-primary/20 scale-[1.02]' : 'text-white/60 hover:text-white hover:bg-white/5',
+                          searchExpanded() ? 'w-10 h-10 p-0 rounded-full flex items-center justify-center' : 'px-5 py-2 rounded-full text-xs font-[\'Epilogue\'] tracking-wider flex items-center gap-2'
+                        ]"
+                        class="transition-all duration-300">
+                    <span class="material-symbols-outlined text-[16px] leading-none" [title]="searchExpanded() ? 'Publicaciones' : ''">dynamic_feed</span>
+                    <span *ngIf="!searchExpanded()" class="leading-none">Publicaciones</span>
+                </button>
+                
+                <!-- Experiencias Tab -->
+                <button (click)="activeTab.set('reviews')" 
+                        [ngClass]="[
+                          activeTab() === 'reviews' ? 'bg-primary text-black font-semibold shadow-md shadow-primary/20 scale-[1.02]' : 'text-white/60 hover:text-white hover:bg-white/5',
+                          searchExpanded() ? 'w-10 h-10 p-0 rounded-full flex items-center justify-center' : 'px-5 py-2 rounded-full text-xs font-[\'Epilogue\'] tracking-wider flex items-center gap-2'
+                        ]"
+                        class="transition-all duration-300">
+                    <span class="material-symbols-outlined text-[16px] leading-none" [title]="searchExpanded() ? 'Experiencias' : ''">reviews</span>
+                    <span *ngIf="!searchExpanded()" class="leading-none">Experiencias</span>
+                </button>
+            </div>
+
+            <!-- Search bar inline container -->
+            <div class="flex-1 flex items-center justify-end transition-all duration-500">
+                <!-- Collapsed Lupa Button -->
+                <button *ngIf="!searchExpanded()" 
+                        (click)="searchExpanded.set(true)"
+                        class="bg-white/[0.03] text-white/60 border border-white/[0.08] hover:text-white hover:bg-white/5 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-md">
+                    <span class="material-symbols-outlined text-lg leading-none">search</span>
+                </button>
+                
+                <!-- Expanded Inline Search Input -->
+                <div *ngIf="searchExpanded()" 
+                     class="w-full bg-[#181818]/65 border border-white/[0.06] rounded-full px-4 py-2 flex items-center gap-3 backdrop-blur-xl focus-within:border-primary/50 focus-within:shadow-[0_0_15px_rgba(242,202,80,0.08)] transition-all duration-300 animate-slide-left-search">
+                    <span class="material-symbols-outlined text-white/40 text-lg">search</span>
+                    <input type="text" 
+                           [ngModel]="searchQuery()" 
+                           (ngModelChange)="searchQuery.set($event)"
+                           [placeholder]="activeTab() === 'posts' ? 'Buscar publicaciones...' : 'Buscar reseñas...'"
+                           class="flex-1 bg-transparent text-xs text-white placeholder-white/30 focus:outline-none w-full font-['Be_Vietnam_Pro'] font-light">
+                    <button *ngIf="searchQuery()" 
+                            (click)="searchQuery.set('')"
+                            class="text-white/40 hover:text-white flex items-center justify-center">
+                        <span class="material-symbols-outlined text-base">close</span>
+                    </button>
+                    <button (click)="searchExpanded.set(false); searchQuery.set('')" 
+                            class="text-primary hover:text-primary-fixed text-xs font-bold font-['Epilogue'] tracking-wider ml-1 flex items-center justify-center shrink-0">
+                        <span class="hidden sm:inline">Cerrar</span>
+                        <span class="material-symbols-outlined text-base sm:hidden leading-none">arrow_back</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Bar (Adjustable parameters, visible ONLY when search is active) -->
+        <div *ngIf="searchExpanded()" 
+             class="flex items-end gap-3 text-xs border-t border-white/[0.04] pt-4 mt-2 select-none font-['Be_Vietnam_Pro'] overflow-x-auto no-scrollbar flex-nowrap -mx-4 px-4 md:mx-0 md:px-0 scroll-smooth animate-expand-height">
             
-            <!-- Posts Feed -->
-            <section class="animate-slide-up" style="animation-delay: 0.2s;">
-                <h3 class="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">dynamic_feed</span>
-                    Publicaciones Recientes
-                </h3>
+            <div class="hidden md:flex items-center gap-1.5 text-white/35 font-light text-[10px] uppercase tracking-widest mr-2 shrink-0 self-center">
+                <span class="material-symbols-outlined text-[13px] text-primary">tune</span>
+                Personalizar:
+            </div>
+            
+            <!-- Filters for Posts -->
+            <ng-container *ngIf="activeTab() === 'posts'">
+                <!-- Sort options -->
+                <div class="flex flex-col gap-1">
+                    <span class="text-[9px] text-white/30 uppercase tracking-wider font-light mb-0.5">Ordenar por</span>
+                    <div class="flex bg-white/[0.02] border border-white/[0.08] rounded-xl p-0.5">
+                        <button (click)="postsSortBy.set('newest')" 
+                                [ngClass]="postsSortBy() === 'newest' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">schedule</span>
+                            Recientes
+                        </button>
+                        <button (click)="postsSortBy.set('popular')" 
+                                [ngClass]="postsSortBy() === 'popular' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px] fill-current">music_note</span>
+                            Popularidad
+                        </button>
+                        <button (click)="postsSortBy.set('comments')" 
+                                [ngClass]="postsSortBy() === 'comments' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">chat_bubble</span>
+                            Comentados
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Format options -->
+                <div class="flex flex-col gap-1">
+                    <span class="text-[9px] text-white/30 uppercase tracking-wider font-light mb-0.5">Formato</span>
+                    <div class="flex bg-white/[0.02] border border-white/[0.08] rounded-xl p-0.5">
+                        <button (click)="postsMediaFilter.set('all')" 
+                                [ngClass]="postsMediaFilter() === 'all' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">grid_view</span>
+                            Todo
+                        </button>
+                        <button (click)="postsMediaFilter.set('image')" 
+                                [ngClass]="postsMediaFilter() === 'image' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">image</span>
+                            Fotos
+                        </button>
+                        <button (click)="postsMediaFilter.set('video')" 
+                                [ngClass]="postsMediaFilter() === 'video' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">movie</span>
+                            Videos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Date options -->
+                <div class="flex flex-col gap-1">
+                    <span class="text-[9px] text-white/30 uppercase tracking-wider font-light mb-0.5">Fecha</span>
+                    <div class="flex bg-white/[0.02] border border-white/[0.08] rounded-xl p-0.5">
+                        <button (click)="postsDateFilter.set('all')" 
+                                [ngClass]="postsDateFilter() === 'all' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">all_inclusive</span>
+                            Todo
+                        </button>
+                        <button (click)="postsDateFilter.set('today')" 
+                                [ngClass]="postsDateFilter() === 'today' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">today</span>
+                            Hoy
+                        </button>
+                        <button (click)="postsDateFilter.set('week')" 
+                                [ngClass]="postsDateFilter() === 'week' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">date_range</span>
+                            Esta semana
+                        </button>
+                    </div>
+                </div>
+            </ng-container>
+
+            <!-- Filters for Reviews -->
+            <ng-container *ngIf="activeTab() === 'reviews'">
+                <!-- Sort options -->
+                <div class="flex flex-col gap-1">
+                    <span class="text-[9px] text-white/30 uppercase tracking-wider font-light mb-0.5">Ordenar por</span>
+                    <div class="flex bg-white/[0.02] border border-white/[0.08] rounded-xl p-0.5">
+                        <button (click)="reviewsSortBy.set('newest')" 
+                                [ngClass]="reviewsSortBy() === 'newest' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">schedule</span>
+                            Recientes
+                        </button>
+                        <button (click)="reviewsSortBy.set('stars')" 
+                                [ngClass]="reviewsSortBy() === 'stars' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-3 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px] fill-current">star</span>
+                            Calificación
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Location options -->
+                <div class="flex flex-col gap-1">
+                    <span class="text-[9px] text-white/30 uppercase tracking-wider font-light mb-0.5">Ubicación</span>
+                    <div class="flex bg-white/[0.02] border border-white/[0.08] rounded-xl p-0.5">
+                        <button (click)="reviewsLocationFilter.set('all')" 
+                                [ngClass]="reviewsLocationFilter() === 'all' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">public</span>
+                            Todo
+                        </button>
+                        <button (click)="reviewsLocationFilter.set('Guadalajara')" 
+                                [ngClass]="reviewsLocationFilter() === 'Guadalajara' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">location_on</span>
+                            Guadalajara
+                        </button>
+                        <button (click)="reviewsLocationFilter.set('Monterrey')" 
+                                [ngClass]="reviewsLocationFilter() === 'Monterrey' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">location_on</span>
+                            Monterrey
+                        </button>
+                        <button (click)="reviewsLocationFilter.set('CDMX')" 
+                                [ngClass]="reviewsLocationFilter() === 'CDMX' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">location_on</span>
+                            CDMX
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Event category options -->
+                <div class="flex flex-col gap-1">
+                    <span class="text-[9px] text-white/30 uppercase tracking-wider font-light mb-0.5">Evento</span>
+                    <div class="flex bg-white/[0.02] border border-white/[0.08] rounded-xl p-0.5">
+                        <button (click)="reviewsCategoryFilter.set('all')" 
+                                [ngClass]="reviewsCategoryFilter() === 'all' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">music_note</span>
+                            Todos
+                        </button>
+                        <button (click)="reviewsCategoryFilter.set('wedding')" 
+                                [ngClass]="reviewsCategoryFilter() === 'wedding' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">favorite</span>
+                            Bodas
+                        </button>
+                        <button (click)="reviewsCategoryFilter.set('xv')" 
+                                [ngClass]="reviewsCategoryFilter() === 'xv' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">cake</span>
+                            XV Años
+                        </button>
+                        <button (click)="reviewsCategoryFilter.set('concert')" 
+                                [ngClass]="reviewsCategoryFilter() === 'concert' ? 'bg-primary text-black font-semibold' : 'text-white/60 hover:text-white'"
+                                class="px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">festival</span>
+                            Conciertos
+                        </button>
+                    </div>
+                </div>
+            </ng-container>
+        </div>
+    </div>
+
+    <div class="w-full max-w-6xl mx-auto flex flex-col gap-6">
+            
+            <!-- Posts Feed (shows if activeTab === 'posts') -->
+            <section *ngIf="activeTab() === 'posts'" class="animate-slide-up flex flex-col gap-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">dynamic_feed</span>
+                        Publicaciones Recientes
+                    </h3>
+                    <span class="text-xs text-white/40 font-['Be_Vietnam_Pro'] font-light">
+                        Mostrando {{ filteredPosts.length }} de {{ posts.length }}
+                    </span>
+                </div>
+                
                 <div class="flex flex-col gap-6">
-                    <app-post-card *ngFor="let post of posts; let i = index"
+                    <app-post-card *ngFor="let post of filteredPosts; let i = index"
                         [authorName]="post.authorName"
                         [authorAvatar]="post.authorAvatar"
                         [timeAgo]="post.timeAgo"
                         [content]="post.content"
                         [mediaUrl]="post.mediaUrl"
                         [likes]="post.likes"
-                        [comments]="post.comments">
+                        [comments]="post.comments"
+                        [tags]="post.tags || []"
+                        [isLikedInput]="post.isLiked || false"
+                        [commentsListInput]="post.commentsList || []"
+                        (likeToggle)="onPostLikeToggle(post, $event)"
+                        (commentAdded)="onPostCommentAdded(post, $event)"
+                        (imageClick)="openGlobalLightbox(post)">
                     </app-post-card>
+
+                    <div *ngIf="filteredPosts.length === 0" class="text-center py-12 bg-white/[0.02] border border-white/[0.06] rounded-3xl">
+                        <span class="material-symbols-outlined text-white/25 text-3xl mb-2">search_off</span>
+                        <p class="text-xs text-white/40 font-['Be_Vietnam_Pro']">No se encontraron publicaciones con tu búsqueda o filtros.</p>
+                    </div>
                 </div>
             </section>
 
-            <!-- Reviews Feed -->
-            <section class="animate-slide-up" style="animation-delay: 0.3s;">
-                <h3 class="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">reviews</span>
-                    Experiencias de la Comunidad
-                </h3>
-                <div class="flex flex-col gap-6">
-                    <app-review-card *ngFor="let review of reviews"
-                        [userName]="review.userName"
-                        [userAvatar]="review.userAvatar"
-                        [eventName]="review.eventName"
-                        [bandName]="review.bandName"
-                        [rating]="review.rating"
-                        [content]="review.content"
-                        [timeAgo]="review.timeAgo">
-                    </app-review-card>
+            <!-- Reviews Feed (shows if activeTab === 'reviews') -->
+            <section *ngIf="activeTab() === 'reviews'" class="animate-slide-up flex flex-col gap-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">reviews</span>
+                        Experiencias de la Comunidad
+                    </h3>
+                    <span class="text-xs text-white/40 font-['Be_Vietnam_Pro'] font-light">
+                        {{ groupedReviews.length }} Grupos reseñados
+                    </span>
+                </div>
+
+                <!-- Grouped Reviews Loop -->
+                <div class="flex flex-col gap-8">
+                    <div *ngFor="let group of groupedReviews" class="flex flex-col gap-4">
+                        <!-- Group Band Header (Premium glass card styling) -->
+                        <div class="flex items-center justify-between bg-gradient-to-r from-primary/10 to-transparent border-l-4 border-primary px-4 py-3 rounded-r-xl backdrop-blur-md">
+                            <div class="flex items-center gap-3">
+                                <img [src]="group.avatar" class="w-8 h-8 rounded-full object-cover border border-primary/20 shadow-sm" />
+                                <span class="font-['Epilogue'] font-black text-sm uppercase tracking-wider text-white">{{ group.bandName }}</span>
+                            </div>
+                            <span class="bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-primary/25 font-['Be_Vietnam_Pro']">
+                                {{ group.reviews.length }} {{ group.reviews.length === 1 ? 'opinión' : 'opiniones' }}
+                            </span>
+                        </div>
+
+                        <!-- Review Cards under this Band Group -->
+                        <div class="flex flex-col gap-4">
+                            <app-review-card *ngFor="let review of group.reviews"
+                                [userName]="review.userName"
+                                [userAvatar]="review.userAvatar"
+                                [eventName]="review.eventName"
+                                [bandName]="review.bandName"
+                                [rating]="review.rating"
+                                [content]="review.content"
+                                [timeAgo]="review.timeAgo"
+                                [likes]="review.likes || 0"
+                                [isLiked]="review.isLiked || false"
+                                (likeToggle)="onReviewLikeToggle(review, $event)"
+                                (click)="openEventDetails(review.eventId)"
+                                class="cursor-pointer block">
+                            </app-review-card>
+                        </div>
+                    </div>
+
+                    <div *ngIf="groupedReviews.length === 0" class="text-center py-12 bg-white/[0.02] border border-white/[0.06] rounded-3xl">
+                        <span class="material-symbols-outlined text-white/25 text-3xl mb-2">search_off</span>
+                        <p class="text-xs text-white/40 font-['Be_Vietnam_Pro']">No se encontraron experiencias con tu búsqueda o filtros.</p>
+                    </div>
                 </div>
             </section>
         </div>
+</div>
 
-        <!-- Right Column: Recommendations -->
-        <div class="animate-slide-up" style="animation-delay: 0.4s;">
-            <div class="sticky top-[100px] flex flex-col gap-6">
-                <h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">stars</span>
-                    Recomendados para ti
-                </h3>
-                <div class="flex flex-col gap-4">
-                    <app-band-card *ngFor="let band of recommendedBands"
-                        [imageUrl]="band.imageUrl"
-                        [imageAlt]="band.imageAlt"
-                        [tag]="band.tag"
-                        [rating]="band.rating"
-                        [name]="band.name"
-                        [location]="band.location"
-                        [availability]="band.availability"
-                        [isFeatured]="band.isFeatured">
-                    </app-band-card>
+<!-- Story Viewer Modal Overlay (TikTok & Youtube Live style) -->
+<div *ngIf="activeStory()" 
+     class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-2 md:p-6 transition-all duration-300">
+    
+    <!-- General Close Button -->
+    <button (click)="closeStory()" 
+            class="absolute top-4 right-4 z-50 w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95">
+        <span class="material-symbols-outlined">close</span>
+    </button>
+
+    <div class="relative flex flex-col md:flex-row items-center justify-center w-full max-w-[360px] md:max-w-none h-[640px] md:h-auto select-none">
+        
+        <!-- Left Navigation Arrow (outside on desktop, overlaying on mobile, hides on mobile if comments open) -->
+        <button (click)="navigateStory(-1, $event)"
+                [ngClass]="isSideCommentsOpen() ? 'hidden md:flex' : 'flex'"
+                class="absolute left-2 md:-left-14 top-1/2 -translate-y-1/2 z-45 w-9 h-9 rounded-full bg-black/40 border border-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 hover:scale-110 active:scale-90 transition-all shadow-xl cursor-pointer">
+            <span class="material-symbols-outlined text-xl">chevron_left</span>
+        </button>
+
+        <!-- 9:16 Video Player Container (with touch/swipe/click handlers for mobile navigation) -->
+        <div [ngClass]="isSideCommentsOpen() ? 'rounded-l-3xl rounded-r-none border-r-0 md:rounded-l-3xl' : 'rounded-3xl border-r border-white/10'"
+             (touchstart)="onTouchStart($event)"
+             (touchend)="onTouchEnd($event)"
+             (click)="onCardClick($event)"
+             class="relative w-full max-w-[360px] h-[640px] bg-black overflow-hidden shadow-2xl transition-all duration-500 flex flex-col justify-between z-10 {{ cardAnimationClass() }}">
+            
+            <!-- Inner Content Wrapper -->
+            <div *ngIf="videoActive()"
+                 class="w-full h-full flex flex-col justify-between absolute inset-0">
+
+                 <!-- Story Video (Plays with sound since user clicked to open, reloads on navigation) -->
+                 <video *ngIf="activeStory().isVideo" 
+                        [src]="activeStory().videoUrl" 
+                        autoplay 
+                        playsinline
+                        [loop]="!hasLearnedNavigation && hasPassedFirstStory"
+                        (ended)="onVideoEnded()"
+                        class="absolute inset-0 w-full h-full object-cover z-0">
+                 </video>
+                 <img *ngIf="!activeStory().isVideo" 
+                      [src]="activeStory().thumbnailUrl" 
+                      class="absolute inset-0 w-full h-full object-cover z-0">
+
+                 <!-- Dark Video Gradient (Overlaid at top and bottom for readability) -->
+                 <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/80 z-10 pointer-events-none"></div>
+
+                 <!-- Top Profile/Artist Header Info -->
+                 <div class="relative z-20 p-4 flex items-center justify-between pointer-events-none">
+                     <div class="flex items-center gap-2">
+                         <img [src]="activeStory().authorAvatar" class="w-9 h-9 rounded-full border border-primary object-cover shadow-md">
+                         <div class="flex flex-col">
+                             <span class="text-white text-xs font-bold font-['Epilogue'] drop-shadow-md">{{ activeStory().authorName }}</span>
+                             <span class="text-[9px] text-white/60">Hace 2 horas</span>
+                         </div>
+                     </div>
+                     <div class="flex items-center gap-1.5 bg-red-500 px-2.5 py-0.5 rounded-full shadow-md">
+                         <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                         <span class="text-[9px] text-white font-black uppercase tracking-wider">En Vivo</span>
+                     </div>
+                 </div>
+
+                 <!-- Floating Sidebar Buttons (TikTok style) -->
+                 <div class="absolute right-3 bottom-24 flex flex-col gap-4 items-center z-30">
+                     <!-- Like/Reaction Button -->
+                     <div class="flex flex-col items-center gap-1">
+                         <button (click)="toggleStoryLike($event)"
+                                 [ngClass]="isStoryLiked() ? 'bg-primary text-black shadow-lg shadow-primary/30 scale-105' : 'bg-black/40 text-white border border-white/10'"
+                                 class="w-11 h-11 rounded-full backdrop-blur-md flex items-center justify-center hover:scale-115 active:scale-95 transition-all shadow-md">
+                             <span class="material-symbols-outlined text-lg">music_note</span>
+                         </button>
+                         <span class="text-[10px] text-white font-bold drop-shadow-md">{{ storyLikeCount() }}</span>
+                     </div>
+
+                     <!-- Open Sidebar Comments Button -->
+                     <div class="flex flex-col items-center gap-1">
+                         <button (click)="openSideComments()"
+                                 class="w-11 h-11 rounded-full bg-black/40 text-white border border-white/10 backdrop-blur-md flex items-center justify-center hover:scale-115 active:scale-95 transition-all shadow-md">
+                             <span class="material-symbols-outlined text-lg">chat</span>
+                         </button>
+                         <span class="text-[10px] text-white font-bold drop-shadow-md">{{ activeStoryComments().length }}</span>
+                     </div>
+
+                     <!-- Share Button -->
+                     <div class="flex flex-col items-center gap-1">
+                         <button (click)="shareStory($event)"
+                                 class="w-11 h-11 rounded-full bg-black/40 text-white border border-white/10 backdrop-blur-md flex items-center justify-center hover:scale-115 active:scale-95 transition-all shadow-md">
+                             <span class="material-symbols-outlined text-lg">share</span>
+                         </button>
+                         <span class="text-[10px] text-white font-bold drop-shadow-md">Compartir</span>
+                     </div>
+                 </div>
+
+                 <!-- Live chat footer comments (Youtube streaming style - 1 by 1) -->
+                 <div *ngIf="showFooterComments() && showComment() && currentFooterComment()"
+                      (click)="openSideComments()"
+                      [ngClass]="isCommentLeaving() ? 'animate-comment-exit' : 'animate-comment-enter'"
+                      class="absolute bottom-28 left-4 right-16 z-30 flex gap-2 items-start bg-black/45 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 max-w-full hover:bg-black/60 transition-colors pointer-events-auto cursor-pointer">
+                     <img [src]="currentFooterComment().avatar" class="w-5 h-5 rounded-full object-cover mt-0.5 shrink-0">
+                     <div class="flex flex-col min-w-0">
+                         <span class="text-[9px] font-black text-primary">{{ currentFooterComment().userName }}</span>
+                         <span class="text-[10px] text-white/90 font-light leading-snug break-words">{{ currentFooterComment().text }}</span>
+                     </div>
+                 </div>
+
+                 <!-- Click to open side comments reminder -->
+                 <span *ngIf="showFooterComments()"
+                       (click)="openSideComments()"
+                       class="absolute bottom-20 left-5 z-30 text-[8px] text-white/55 hover:text-primary transition-colors flex items-center gap-1 font-bold uppercase tracking-wider cursor-pointer drop-shadow-md">
+                     <span class="material-symbols-outlined text-[10px]">chat</span>
+                     Hacer clic para comentar...
+                 </span>
+
+                 <!-- Bottom Video Caption & Artist Description -->
+                 <div class="relative z-20 p-4 pt-0 mt-auto pointer-events-none flex flex-col gap-1 bg-gradient-to-t from-black/80 via-black/40 to-transparent pb-4 w-full">
+                     <!-- Caption Text (Smaller, legible, compact) -->
+                     <p class="text-[9px] md:text-[10px] text-white/80 leading-normal drop-shadow-md font-['Epilogue'] font-normal select-none tracking-wide">
+                         <span class="material-symbols-outlined text-primary text-[9px] mr-0.5 align-middle">music_note</span>
+                         {{ activeStory().caption }}
+                     </p>
+                     <!-- Tags / Badges (At the very bottom/footer) -->
+                     <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                         <span *ngFor="let tag of activeStory().tags" class="text-primary/75 text-[7.5px] font-bold uppercase tracking-wider">
+                             {{ tag }}
+                         </span>
+                     </div>
+                 </div>
+
+                 <!-- Navigation Hint Overlay (Subtle, centered pulsing card, non-blocking) -->
+                 <div *ngIf="showNavigationHint()" 
+                      class="absolute inset-0 z-35 flex items-center justify-center pointer-events-none bg-transparent">
+                     <div class="flex flex-col items-center gap-1.5 bg-black/55 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-white/10 animate-pulse shadow-2xl">
+                         <span class="material-symbols-outlined text-primary text-2xl animate-bounce">
+                             <span class="hidden md:inline">arrow_forward</span>
+                             <span class="md:hidden">swipe_left</span>
+                         </span>
+                         <span class="text-white text-[8px] font-black uppercase tracking-widest font-['Epilogue']">
+                             <span class="hidden md:inline">Presionar →</span>
+                             <span class="md:hidden">Deslizar</span>
+                         </span>
+                     </div>
+                 </div>
+
+            </div>
+        </div>
+
+        <!-- Side Comments Panel (Slides in to right on desktop, slides up from bottom on mobile) -->
+        <div *ngIf="isSideCommentsOpen()"
+             class="absolute bottom-0 left-0 right-0 h-[55%] w-full md:relative md:bottom-auto md:left-auto md:right-auto md:h-[640px] md:w-[320px] bg-[#161616]/98 border-t border-white/10 md:border-t-0 md:border-l-0 rounded-t-3xl md:rounded-r-3xl md:rounded-t-none md:rounded-l-none backdrop-blur-xl overflow-hidden flex flex-col justify-between shadow-2xl z-40 md:z-20 animate-slide-up-comments md:animate-slide-left">
+            
+            <!-- Comments Title / Header -->
+            <div class="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-base">chat_bubble</span>
+                    <h4 class="font-['Epilogue'] text-xs font-black uppercase text-on-surface tracking-wider">Comentarios</h4>
+                    <span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        {{ activeStoryComments().length }}
+                    </span>
                 </div>
+                <button (click)="closeSideComments()" 
+                        class="w-6 h-6 rounded-lg hover:bg-white/5 flex items-center justify-center text-on-surface-variant hover:text-white transition-colors">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
+            </div>
+
+            <!-- Scrollable Comments Area -->
+            <div class="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-4 scrollbar-thin scrollbar-thumb-white/10">
+                <div *ngFor="let c of activeStoryComments()" class="flex gap-2.5 items-start">
+                    <img [src]="c.avatar" class="w-7 h-7 rounded-full object-cover shrink-0 border border-white/10 shadow-sm">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-baseline justify-between gap-2 mb-0.5">
+                            <span class="text-[11px] font-bold text-primary truncate">{{ c.userName }}</span>
+                            <span class="text-[9px] text-on-surface-variant/60 shrink-0">{{ c.time }}</span>
+                        </div>
+                        <p class="text-[11px] text-white/90 font-light leading-relaxed break-words">{{ c.text }}</p>
+                        
+                        <!-- Comment Actions (Like/Reply) -->
+                        <div class="flex items-center gap-3 mt-1.5 text-[9px]">
+                            <button (click)="likeComment(c)" 
+                                    [ngClass]="c.isLiked ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-primary'"
+                                    class="flex items-center gap-0.5 transition-colors">
+                                <span class="material-symbols-outlined text-[11px]">music_note</span>
+                                <span>{{ c.likes }}</span>
+                            </button>
+                            <button class="text-on-surface-variant hover:text-primary transition-colors">Responder</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Write New Comment Input -->
+            <div class="p-3 border-t border-white/5 bg-white/[0.01]">
+                <form (submit)="submitComment($event)" class="flex gap-2">
+                    <input type="text" 
+                           [ngModel]="newCommentText()" 
+                           (ngModelChange)="newCommentText.set($event)"
+                           name="newComment"
+                           placeholder="Añadir comentario..."
+                           class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-[11px] text-white placeholder-white/30 focus:outline-none focus:border-primary/50 transition-colors">
+                    <button type="submit" 
+                            class="bg-primary hover:bg-primary-fixed text-on-primary w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 shrink-0 shadow-md">
+                        <span class="material-symbols-outlined text-sm font-bold">send</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Navigation Arrow (outside wrapper on desktop, overlaying on mobile, hides on mobile if comments open) -->
+        <button (click)="navigateStory(1, $event)"
+                [ngClass]="isSideCommentsOpen() ? 'hidden md:flex' : 'flex'"
+                class="absolute right-2 md:-right-14 top-1/2 -translate-y-1/2 z-45 w-9 h-9 rounded-full bg-black/40 border border-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 hover:scale-110 active:scale-90 transition-all shadow-xl cursor-pointer">
+            <span class="material-symbols-outlined text-xl">chevron_right</span>
+        </button>
+    </div>
+</div>
+
+<!-- Global Fullscreen Lightbox Overlay (placed at root level to prevent CSS transform clipping bugs) -->
+<div *ngIf="activeLightboxPost()" 
+     (click)="closeGlobalLightbox()"
+     class="fixed inset-0 z-[100] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-0 md:p-6 animate-lightbox-fade-in">
+    
+    <!-- Close Button (Screen-level, floating top-right) -->
+    <button (click)="closeGlobalLightbox($event)" 
+            class="absolute top-4 right-4 z-[120] w-11 h-11 rounded-full bg-black/45 border border-white/10 hover:bg-black/60 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-xl">
+        <span class="material-symbols-outlined text-lg">close</span>
+    </button>
+
+    <!-- Blurred background layer for artistic depth -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
+        <img [src]="activeLightboxPost().mediaUrl" alt="" class="w-full h-full object-cover opacity-15 blur-3xl scale-125" />
+    </div>
+
+    <!-- Main Two-Column Container -->
+    <div class="relative w-full h-full md:w-full md:max-w-7xl md:h-[85vh] bg-[#141414] border-0 md:border border-white/[0.08] rounded-none md:rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-2xl animate-lightbox-zoom-in"
+         (click)="$event.stopPropagation()">
+        
+        <!-- Column 1: Image Viewport (Left) -->
+        <div class="w-full md:w-[60%] h-[40vh] md:h-full bg-black/30 flex items-center justify-center relative overflow-hidden border-b md:border-b-0 md:border-r border-white/[0.05] shrink-0">
+            <!-- Image element -->
+            <img [src]="activeLightboxPost().mediaUrl" alt="Post media zoom" class="w-full h-full object-contain z-10" />
+            <!-- Background glowing image -->
+            <img [src]="activeLightboxPost().mediaUrl" alt="" class="absolute inset-0 w-full h-full object-cover opacity-20 blur-3xl scale-110 z-0" />
+        </div>
+
+        <!-- Column 2: Details & Interactive Chat (Right) -->
+        <div class="w-full md:w-[40%] h-[calc(100vh-40vh)] md:h-full bg-[#161616]/98 flex flex-col justify-between overflow-y-auto">
+            
+            <!-- Sidebar Header -->
+            <div class="p-4 border-b border-white/[0.04] flex items-center gap-3 bg-white/[0.01]">
+                <div class="avatar-ring p-[2px] rounded-full bg-gradient-to-tr from-primary to-[#ff8f00] shrink-0">
+                    <img [src]="activeLightboxPost().authorAvatar" class="w-9 h-9 rounded-full object-cover border-2 border-[#161616]" />
+                </div>
+                <div class="flex flex-col min-w-0">
+                    <div class="flex items-center gap-1">
+                        <span class="text-xs font-['Epilogue'] font-black text-white uppercase tracking-wider truncate">{{ activeLightboxPost().authorName }}</span>
+                        <span class="material-symbols-outlined text-[13px] text-primary fill-current select-none">verified</span>
+                    </div>
+                    <span class="text-[9px] text-white/40 font-['Be_Vietnam_Pro'] font-light tracking-wide mt-0.5 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[9px] text-primary/60">schedule</span>
+                        {{ activeLightboxPost().timeAgo }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Sidebar Scrollable Container: Caption + Comments List -->
+            <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 scrollbar-thin scrollbar-thumb-white/10">
+                
+                <!-- Original Caption -->
+                <div class="flex gap-3 items-start pb-4 border-b border-white/[0.04]">
+                    <img [src]="activeLightboxPost().authorAvatar" class="w-7 h-7 rounded-full object-cover border border-primary/20 shrink-0 mt-0.5" />
+                    <div class="flex-1 min-w-0">
+                        <span class="text-[11px] font-['Epilogue'] font-bold text-white uppercase tracking-wider">{{ activeLightboxPost().authorName }}</span>
+                        <p class="text-[12px] font-['Be_Vietnam_Pro'] text-white/80 font-light leading-relaxed mt-1 break-words">
+                            {{ activeLightboxPost().content }}
+                          </p>
+                          <!-- Tags -->
+                          <div *ngIf="activeLightboxPost().tags && activeLightboxPost().tags.length > 0" class="flex flex-wrap gap-1 mt-2">
+                              <span *ngFor="let tag of activeLightboxPost().tags" class="text-[8.5px] font-['Be_Vietnam_Pro'] text-primary/90 bg-primary/5 border border-primary/10 rounded-full px-2 py-0.5 font-medium select-none">
+                                  {{ tag }}
+                              </span>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Comments List -->
+                  <div class="flex flex-col gap-3.5">
+                      <div *ngFor="let c of activeLightboxPost().commentsList" class="flex gap-3 items-start bg-white/[0.01] border border-white/[0.03] p-3 rounded-2xl">
+                          <img [src]="c.avatar" class="w-7 h-7 rounded-full object-cover shrink-0 border border-white/10 shadow-sm" />
+                          <div class="flex-1 min-w-0">
+                              <div class="flex items-baseline justify-between gap-2 mb-1">
+                                  <span class="text-[10px] font-['Epilogue'] font-black text-primary uppercase tracking-wide truncate">{{ c.userName }}</span>
+                                  <span class="text-[8px] text-white/35 font-light shrink-0">{{ c.time }}</span>
+                              </div>
+                              <p class="text-[11px] font-['Be_Vietnam_Pro'] text-white/85 font-light leading-relaxed break-words">{{ c.text }}</p>
+                          </div>
+                      </div>
+
+                      <div *ngIf="!activeLightboxPost().commentsList || activeLightboxPost().commentsList.length === 0" class="text-center py-8">
+                          <p class="text-[10px] text-white/30 italic">No hay comentarios aún. ¡Sé el primero!</p>
+                      </div>
+                  </div>
+
+              </div>
+
+              <!-- Sidebar Footer: Action Stats & Add Comment -->
+              <div class="border-t border-white/[0.04] bg-white/[0.01]">
+                  <!-- Action Pills -->
+                  <div class="p-4 flex items-center justify-between border-b border-white/[0.03]">
+                      <div class="flex items-center gap-3">
+                          <button (click)="toggleLightboxLike()"
+                                  [ngClass]="activeLightboxPost().isLiked ? 'liked-pill' : 'action-pill'"
+                                  class="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-['Epilogue'] tracking-wider border transition-all select-none">
+                              <span class="material-symbols-outlined text-sm" [ngClass]="activeLightboxPost().isLiked ? 'animate-music-beat fill-current' : ''">
+                                  music_note
+                              </span>
+                              <span>{{ activeLightboxPost().likes }}</span>
+                          </button>
+                          
+                          <span class="text-[10px] font-['Epilogue'] text-white/40 flex items-center gap-1.5 select-none">
+                              <span class="material-symbols-outlined text-sm">chat_bubble</span>
+                              {{ activeLightboxPost().commentsList?.length || 0 }} comentarios
+                          </span>
+                      </div>
+                  </div>
+
+                  <!-- Comment Input Form -->
+                  <div class="p-3">
+                      <form (submit)="submitLightboxComment($event)" class="flex gap-2">
+                          <div class="flex-1 bg-white/[0.03] border border-white/[0.08] rounded-full px-4 py-1.5 flex items-center gap-2 focus-within:border-primary/40 focus-within:bg-white/[0.05] transition-all">
+                              <input type="text" 
+                                     [ngModel]="newCommentText()" 
+                                     (ngModelChange)="newCommentText.set($event)"
+                                     name="lightboxComment"
+                                     placeholder="Escribe un comentario..."
+                                     class="flex-1 bg-transparent text-[11px] text-white placeholder-white/30 focus:outline-none w-full">
+                          </div>
+                          <button type="submit" 
+                                  class="bg-primary hover:bg-primary-fixed text-on-primary w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 shrink-0 shadow-md">
+                              <span class="material-symbols-outlined text-sm font-bold">send</span>
+                          </button>
+                      </form>
+                  </div>
+              </div>
+
+          </div>
+
+      </div>
+  </div>
+
+<!-- Event Details Modal (Community Experience Details) -->
+<div *ngIf="selectedEvent()" 
+     (click)="closeEventDetails()"
+     class="fixed inset-0 z-[105] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-0 md:p-6 animate-lightbox-fade-in">
+    
+    <!-- Close Button -->
+    <button (click)="closeEventDetails()" 
+            class="absolute top-4 right-4 z-[120] w-11 h-11 rounded-full bg-black/45 border border-white/10 hover:bg-black/60 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-xl">
+        <span class="material-symbols-outlined text-lg">close</span>
+    </button>
+
+    <!-- Modal Box -->
+    <div class="relative w-full h-full md:w-full md:max-w-6xl md:h-[85vh] md:max-h-[90vh] bg-[#141414] border-0 md:border border-white/[0.08] rounded-none md:rounded-3xl overflow-hidden flex flex-col md:flex-row shadow-2xl animate-lightbox-zoom-in"
+         (click)="$event.stopPropagation()">
+        
+        <!-- Left Side: Event Details & Location Map -->
+        <div class="w-full md:w-[50%] h-[50vh] md:h-full p-6 flex flex-col gap-5 border-b md:border-b-0 md:border-r border-white/[0.05] overflow-y-auto font-['Be_Vietnam_Pro'] shrink-0">
+            <div>
+                <span class="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 border border-primary/20 px-3 py-1 rounded-full w-fit mb-3 block">
+                    {{ selectedEvent().bandName }}
+                </span>
+                
+                <h2 class="text-xl md:text-2xl font-['Epilogue'] font-black uppercase text-white tracking-wide leading-tight">
+                    {{ selectedEvent().name }}
+                </h2>
+                
+                <div class="flex items-center gap-2 mt-2 text-xs text-white/40 font-light">
+                    <span class="material-symbols-outlined text-sm text-primary/60">calendar_today</span>
+                    {{ selectedEvent().date }}
+                </div>
+
+                <!-- Enriched Metadata Tags -->
+                <div class="flex flex-wrap gap-2 mt-3.5 select-none">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[9.5px] text-white/70 font-light">
+                        <span class="material-symbols-outlined text-[12px] text-primary">audiotrack</span>
+                        {{ selectedEvent().genre }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[9.5px] text-white/70 font-light">
+                        <span class="material-symbols-outlined text-[12px] text-primary">groups</span>
+                        {{ selectedEvent().capacity }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[9.5px] text-primary font-bold">
+                        <span class="material-symbols-outlined text-[12px] fill-current">star</span>
+                        {{ selectedEvent().ratingAvg }} promedio
+                    </span>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="bg-white/[0.02] border border-white/[0.05] p-4 rounded-2xl">
+                <p class="text-xs md:text-sm text-white/80 leading-relaxed font-light font-['Be_Vietnam_Pro']">
+                    {{ selectedEvent().details }}
+                </p>
+            </div>
+
+            <!-- Google Maps Real e Interactivo -->
+            <div class="flex flex-col gap-2.5">
+                <h4 class="text-xs font-['Epilogue'] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-primary">map</span>
+                    Ubicación en Google Maps
+                </h4>
+                
+                <div class="relative h-48 rounded-2xl border border-white/[0.08] overflow-hidden bg-[#181818] shadow-md group/map">
+                    <!-- Interactive Iframe Map (styled with premium dark filter to blend with dark mode UI) -->
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(110%);"
+                        loading="lazy"
+                        allowfullscreen
+                        referrerpolicy="no-referrer-when-downgrade"
+                        [src]="getSafeMapUrl(selectedEvent().googleMapsUrl)">
+                    </iframe>
+                    
+                    <!-- Location info Overlay -->
+                    <div class="absolute bottom-2 left-2 right-2 z-20 bg-black/85 backdrop-blur-md px-3 py-2 rounded-xl border border-white/5 flex items-center justify-between shadow-lg">
+                        <div class="flex flex-col min-w-0 pr-2">
+                            <span class="text-[8px] uppercase tracking-widest font-bold text-primary">Dirección</span>
+                            <span class="text-[10px] font-medium text-white truncate">{{ selectedEvent().locationName }}</span>
+                        </div>
+                        <a [href]="selectedEvent().googleMapsUrl" 
+                           target="_blank" 
+                           class="flex items-center gap-1 bg-primary hover:bg-primary-fixed text-on-primary px-3 py-1 rounded-lg text-[9px] font-bold transition-all shadow-md shrink-0">
+                            <span class="material-symbols-outlined text-xs">navigation</span>
+                            Abrir GPS
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Próximos Eventos en esta locación -->
+            <div class="flex flex-col gap-3 mt-2 border-t border-white/[0.05] pt-4">
+                <h4 class="text-xs font-['Epilogue'] font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-primary">event_upcoming</span>
+                    Próximos Eventos Programados
+                </h4>
+                
+                <div class="flex flex-col gap-3">
+                    <div *ngFor="let next of selectedEvent().upcomingEvents" 
+                         class="bg-white/[0.015] border border-white/[0.05] hover:border-primary/20 hover:bg-white/[0.03] transition-all duration-300 p-3.5 rounded-2xl flex items-center justify-between gap-4 group/event cursor-pointer">
+                        <div class="flex flex-col gap-1 min-w-0">
+                            <span class="text-[11px] font-semibold text-white truncate font-['Epilogue']">{{ next.name }}</span>
+                            <span class="text-[9.5px] text-white/50 truncate font-light">{{ next.bands }}</span>
+                            <div class="flex items-center gap-1.5 text-[8.5px] text-primary/80 mt-0.5">
+                                <span class="material-symbols-outlined text-[10px]">calendar_today</span>
+                                <span>{{ next.date }}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end shrink-0 gap-1.5">
+                            <span class="text-[10px] font-bold text-primary font-['Epilogue'] bg-primary/5 px-2 py-0.5 rounded border border-primary/10">
+                                {{ next.price }}
+                            </span>
+                            <span class="text-[8.5px] font-['Epilogue'] font-black uppercase text-white/30 group-hover/event:text-primary transition-all duration-300 flex items-center gap-0.5">
+                                Ver Boleto
+                                <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Event Reviews List -->
+        <div class="w-full md:w-[50%] h-[calc(100vh-50vh)] md:h-full bg-[#161616]/98 p-6 flex flex-col justify-between overflow-y-auto">
+            <div class="flex flex-col gap-4">
+                <h3 class="text-sm font-['Epilogue'] font-black uppercase text-white tracking-widest flex items-center gap-2 border-b border-white/[0.05] pb-3">
+                    <span class="material-symbols-outlined text-primary">rate_review</span>
+                    Reseñas de este Evento
+                    <span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full border border-primary/20">
+                        {{ selectedEvent().reviews.length }}
+                    </span>
+                </h3>
+
+                <!-- Review list -->
+                <div class="flex flex-col gap-4 max-h-[55vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
+                    <div *ngFor="let r of selectedEvent().reviews" class="bg-white/[0.015] border border-white/[0.04] p-4 rounded-2xl flex flex-col gap-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5">
+                                <img [src]="r.userAvatar" class="w-8 h-8 rounded-full object-cover border border-white/10" />
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-bold text-white">{{ r.userName }}</span>
+                                    <span class="text-[9px] text-white/40">{{ r.timeAgo }}</span>
+                                </div>
+                            </div>
+                            <!-- Stars -->
+                            <div class="flex gap-0.5 text-primary">
+                                <span *ngFor="let star of [1,2,3,4,5]; let i = index" class="material-symbols-outlined text-xs" 
+                                      [style.font-variation-settings]="i < r.rating ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">
+                                    star
+                                </span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-white/80 leading-relaxed italic font-['Be_Vietnam_Pro'] font-light">
+                            "{{ r.content }}"
+                        </p>
+                        
+                        <!-- Review Likes in Modal List -->
+                        <div class="flex items-center justify-between pt-2 border-t border-white/[0.03] mt-1">
+                            <button (click)="onReviewLikeToggle({ eventId: selectedEvent().id, userName: r.userName, content: r.content }, !r.isLiked); $event.stopPropagation()"
+                                    [ngClass]="r.isLiked ? 'bg-primary/10 border-primary/20 text-primary shadow-sm' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'"
+                                    class="flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[9px] font-['Epilogue'] border transition-all duration-300">
+                                <span class="material-symbols-outlined text-[10px] leading-none" [ngClass]="r.isLiked ? 'animate-music-beat fill-current' : ''">
+                                    music_note
+                                </span>
+                                <span>{{ r.likes || 0 }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-white/[0.05] mt-4 flex justify-end">
+                <button (click)="closeEventDetails()" 
+                        class="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-xs font-bold px-5 py-2 rounded-xl transition-all font-['Be_Vietnam_Pro']">
+                    Cerrar Detalles
+                </button>
             </div>
         </div>
 
     </div>
 </div>
+
+<!-- Floating Recommendations Widget Trigger -->
+<div class="fixed bottom-24 left-1/2 -translate-x-1/2 md:bottom-6 md:right-6 md:left-auto md:translate-x-0 z-40">
+    <button (click)="showRecommendations.set(!showRecommendations())"
+            [ngClass]="showRecommendations() ? 'bg-primary text-black scale-105 rotate-45 shadow-[0_0_20px_rgba(242,202,80,0.5)]' : 'bg-[#1a1a1a] text-primary border border-primary/30 shadow-lg hover:border-primary hover:text-white'"
+            class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95">
+        <span class="material-symbols-outlined text-2xl select-none">stars</span>
+    </button>
+</div>
+
+<!-- Floating Recommendations Popup Card (Enlarged and Enriched Info Card) -->
+<div *ngIf="showRecommendations()" 
+     (touchstart)="onTouchStartRec($event)"
+     (touchend)="onTouchEndRec($event)"
+     class="fixed bottom-[160px] left-1/2 -translate-x-1/2 md:bottom-24 md:right-6 md:left-auto md:translate-x-0 w-[calc(100vw-2rem)] sm:w-[420px] bg-[#161616]/95 border border-white/[0.08] backdrop-blur-xl rounded-3xl shadow-2xl z-45 p-5 animate-lightbox-zoom-in font-['Be_Vietnam_Pro'] select-none"
+     (click)="$event.stopPropagation()">
+    
+    <!-- Popup Header -->
+    <div class="flex items-center justify-between border-b border-white/[0.05] pb-3 mb-4">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-lg">stars</span>
+            <span class="text-xs font-['Epilogue'] font-black uppercase text-white tracking-widest">Sugerencias Destacadas</span>
+        </div>
+        <button (click)="showRecommendations.set(false)" class="text-white/40 hover:text-white flex items-center justify-center">
+            <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+    </div>
+
+    <!-- Active Recommendation content -->
+    <div *ngIf="activeRecommendations.length > 0 && activeRecommendations[recommendedIndex()]" class="flex flex-col gap-4">
+        <!-- Image & Tag -->
+        <div class="relative h-44 md:h-52 rounded-2xl border border-white/[0.06] overflow-hidden bg-black/40 shadow-md">
+            <img [src]="activeRecommendations[recommendedIndex()].imageUrl" class="w-full h-full object-cover" alt="" />
+            <span class="absolute top-3 left-3 bg-primary text-black font-['Epilogue'] font-black text-[9px] uppercase tracking-widest px-3 py-1 rounded-full shadow-md">
+                {{ activeRecommendations[recommendedIndex()].tag }}
+            </span>
+            <!-- Average rating -->
+            <div class="absolute bottom-3 right-3 bg-black/75 backdrop-blur-sm px-2.5 py-1 rounded-xl flex items-center gap-1 border border-white/5 text-[10px] text-white">
+                <span class="material-symbols-outlined text-primary text-[11px] fill-current">star</span>
+                {{ activeRecommendations[recommendedIndex()].rating }}
+            </div>
+        </div>
+
+        <!-- Name & Details -->
+        <div class="flex flex-col gap-2">
+            <h4 class="text-sm md:text-base font-['Epilogue'] font-black uppercase text-white tracking-wide leading-tight">
+                {{ activeRecommendations[recommendedIndex()].name }}
+            </h4>
+            
+            <!-- Location indicator -->
+            <div class="flex items-center gap-1.5 text-xs text-white/50 font-light">
+                <span class="material-symbols-outlined text-sm text-primary/60">location_on</span>
+                {{ activeRecommendations[recommendedIndex()].location }}
+            </div>
+            
+            <!-- Full details -->
+            <p class="text-[11px] text-white/60 font-light leading-relaxed line-clamp-3">
+                {{ activeRecommendations[recommendedIndex()].details }}
+            </p>
+
+            <!-- Availability Badge -->
+            <div class="flex items-center gap-1 text-[10px] mt-1">
+                <span class="text-white/30 font-light">Disponibilidad:</span>
+                <span class="text-primary font-medium bg-primary/5 border border-primary/10 rounded-full px-2.5 py-0.5">{{ activeRecommendations[recommendedIndex()].availability }}</span>
+            </div>
+        </div>
+
+        <!-- Nav Controls & View Action -->
+        <div class="flex items-center justify-between pt-3 border-t border-white/[0.04] mt-2">
+            <!-- Left/Right navigation arrows (Desktop helper, mobile uses swiping) -->
+            <div class="flex items-center gap-1.5">
+                <button (click)="navigateRecommendation(-1)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors">
+                    <span class="material-symbols-outlined text-base leading-none">chevron_left</span>
+                </button>
+                <span class="text-[10px] text-white/30 font-light select-none px-1.5">
+                    {{ recommendedIndex() + 1 }} / {{ activeRecommendations.length }}
+                </span>
+                <button (click)="navigateRecommendation(1)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-colors">
+                    <span class="material-symbols-outlined text-base leading-none">chevron_right</span>
+                </button>
+            </div>
+
+            <!-- Select Action Button -->
+            <button (click)="selectRecommendedItem(activeRecommendations[recommendedIndex()])" 
+                    class="bg-primary hover:bg-primary-fixed text-on-primary text-[10.5px] font-bold font-['Epilogue'] tracking-widest uppercase px-4.5 py-2 rounded-xl transition-all shadow-md">
+                Ver Detalles
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Selected Recommendation Details Modal Overlay -->
+<div *ngIf="selectedRecommendedItem()" 
+     (click)="selectedRecommendedItem.set(null)"
+     class="fixed inset-0 z-[105] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-4 animate-lightbox-fade-in">
+    
+    <!-- Close Button -->
+    <button (click)="selectedRecommendedItem.set(null)" 
+            class="absolute top-4 right-4 z-[120] w-11 h-11 rounded-full bg-black/45 border border-white/10 hover:bg-black/60 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-xl">
+        <span class="material-symbols-outlined text-lg">close</span>
+    </button>
+
+    <!-- Modal Card Box -->
+    <div class="relative w-full max-w-md bg-[#141414] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl animate-lightbox-zoom-in font-['Be_Vietnam_Pro']"
+         (click)="$event.stopPropagation()">
+        
+        <!-- Header Image -->
+        <div class="relative h-48 bg-black/50 border-b border-white/[0.05] overflow-hidden flex items-center justify-center">
+            <img [src]="selectedRecommendedItem().imageUrl" class="w-full h-full object-cover z-10" />
+            <img [src]="selectedRecommendedItem().imageUrl" class="absolute inset-0 w-full h-full object-cover opacity-20 blur-2xl scale-110 z-0" />
+            <span class="absolute top-4 left-4 bg-primary text-black font-['Epilogue'] font-black text-[9px] uppercase tracking-widest px-3 py-1 rounded-full shadow-md z-20">
+                {{ selectedRecommendedItem().tag }}
+            </span>
+        </div>
+
+        <!-- Body Details -->
+        <div class="p-6 flex flex-col gap-4">
+            <div>
+                <h3 class="text-lg md:text-xl font-['Epilogue'] font-black uppercase text-white tracking-wide leading-tight">
+                    {{ selectedRecommendedItem().name }}
+                </h3>
+                <div class="flex items-center gap-1.5 mt-2 text-xs text-white/40 font-light">
+                    <span class="material-symbols-outlined text-sm text-primary/60">location_on</span>
+                    {{ selectedRecommendedItem().location }}
+                </div>
+            </div>
+
+            <!-- Details text -->
+            <div class="bg-white/[0.02] border border-white/[0.05] p-4 rounded-2xl">
+                <p class="text-xs md:text-sm text-white/80 leading-relaxed font-light">
+                    {{ selectedRecommendedItem().details }}
+                </p>
+            </div>
+
+            <!-- Availability & Stats -->
+            <div class="flex items-center justify-between text-xs pt-2 border-t border-white/[0.04]">
+                <div class="flex flex-col">
+                    <span class="text-[9px] uppercase font-bold text-white/30 tracking-wider">Estado</span>
+                    <span class="text-primary font-medium mt-0.5">{{ selectedRecommendedItem().availability }}</span>
+                </div>
+                <div class="flex items-center gap-1 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
+                    <span class="material-symbols-outlined text-primary text-sm fill-current">star</span>
+                    <span class="text-white font-bold text-xs">{{ selectedRecommendedItem().rating }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Close -->
+        <div class="px-6 pb-6 pt-2 flex justify-end">
+            <button (click)="selectedRecommendedItem.set(null)" 
+                    class="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-xs font-bold px-5 py-2 rounded-xl transition-all font-['Be_Vietnam_Pro']">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+

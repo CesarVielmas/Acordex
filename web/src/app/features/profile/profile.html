@@ -1,83 +1,363 @@
-<div class="max-w-4xl mx-auto px-4 md:px-6 pt-stack-md pb-10 space-y-stack-md">
-    <!-- Profile Header Section -->
-    <section class="flex flex-col items-center pt-4 pb-6 animate-slide-up" style="animation-delay: 0.1s;">
-        <div class="relative w-32 h-32 mb-4 rounded-full p-[2px] bg-gradient-to-tr from-primary-container to-surface-container-highest shadow-[0_0_30px_rgba(212,175,55,0.15)]">
-            <img [alt]="user.name"
-                class="w-full h-full rounded-full object-cover border-[3px] border-surface-container-lowest"
-                [src]="user.profileUrl" />
+<div class="max-w-6xl mx-auto px-4 md:px-8 py-6 text-white font-['Be_Vietnam_Pro'] select-none">
+    
+    <!-- Title & Description -->
+    <div class="mb-8 animate-fade-in flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h2 class="font-['Epilogue'] font-black text-3xl uppercase tracking-wider text-white">Mi Perfil</h2>
+            <p class="text-xs text-white/50 font-light mt-1">
+                Administra tus credenciales, edita tu información de facturación, vincula tarjetas de crédito y gestiona tu suscripción.
+            </p>
         </div>
-        <h2 class="font-headline-lg text-headline-lg text-on-surface text-center tracking-tight">{{ user.name }}</h2>
-        <p class="font-body-md text-body-md text-on-surface-variant mt-1 text-center">{{ user.email }}</p>
-    </section>
+        
+        <!-- Subscription badge indicator -->
+        <div class="flex items-center gap-2 bg-[#F2CA50]/10 border border-[#F2CA50]/20 rounded-2xl px-4 py-2 text-[#F2CA50] text-xs font-bold shadow-lg">
+            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+            <span>Miembro {{ user().membership }}</span>
+        </div>
+    </div>
 
-    <!-- Tipo de Suscripción (Premium Card) -->
-    <section class="relative overflow-hidden rounded-xl bg-surface-container/80 backdrop-blur-xl border border-white/10 p-6 shadow-lg animate-slide-up" style="animation-delay: 0.2s;">
-        <!-- Decorative Glow -->
-        <div class="absolute -top-12 -right-12 w-40 h-40 bg-primary-container/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="relative z-10 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-            <div>
-                <h3 class="font-body-md text-body-md text-on-surface-variant mb-1">Tipo de Suscripción</h3>
-                <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary-container text-3xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
-                    <span class="font-headline-md text-headline-md text-primary-container tracking-wide">Premium VIP</span>
+    <!-- Success Toast message -->
+    <div *ngIf="successMsg()" 
+         class="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs flex items-center gap-3 animate-scale-in">
+        <span class="material-symbols-outlined text-lg shrink-0">check_circle</span>
+        <span>{{ successMsg() }}</span>
+    </div>
+
+    <!-- Main Profile Layout Grid (Responsive 2 Columns on Desktop) -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start animate-slide-up">
+        
+        <!-- LEFT COLUMN: Profile Summary & Section selectors -->
+        <div class="lg:col-span-1 flex flex-col gap-6 w-full">
+            
+            <!-- User summary card -->
+            <div class="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col items-center text-center relative overflow-hidden shadow-xl">
+                <div class="absolute -right-12 -top-12 w-24 h-24 bg-primary/5 rounded-full blur-xl"></div>
+                
+                <div class="relative w-24 h-24 mb-4 rounded-full p-[2px] bg-gradient-to-tr from-primary to-white/10 shadow-[0_0_25px_rgba(242,202,80,0.15)] shrink-0">
+                    <img [src]="user().profileUrl" 
+                         [alt]="user().name"
+                         class="w-full h-full rounded-full object-cover border-[3px] border-[#121212]" />
+                </div>
+
+                <h3 class="font-['Epilogue'] font-black text-sm uppercase text-white truncate max-w-full">
+                    {{ user().name }}
+                </h3>
+                <span class="text-[10px] text-white/40 truncate max-w-full mt-0.5">{{ user().email }}</span>
+                <span class="text-[9px] uppercase font-bold text-primary bg-primary/10 border border-primary/20 rounded px-2.5 py-0.5 mt-3 tracking-wider">
+                    {{ user().membership }}
+                </span>
+            </div>
+
+            <!-- Vertical navigation selectors on desktop, horizontal pills on mobile -->
+            <div class="flex flex-row lg:flex-col gap-2 overflow-x-auto no-scrollbar pb-2 lg:pb-0 shrink-0">
+                <button (click)="setSection('general')"
+                        [class]="activeSection() === 'general' ? 'bg-primary text-black font-black' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'"
+                        class="px-4 py-3 rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 text-left flex items-center gap-2.5 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm leading-none">person</span>
+                    <span>Información Personal</span>
+                </button>
+                <button (click)="setSection('payments')"
+                        [class]="activeSection() === 'payments' ? 'bg-primary text-black font-black' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'"
+                        class="px-4 py-3 rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 text-left flex items-center gap-2.5 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm leading-none">payment</span>
+                    <span>Métodos de Pago</span>
+                </button>
+                <button (click)="setSection('security')"
+                        [class]="activeSection() === 'security' ? 'bg-primary text-black font-black' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'"
+                        class="px-4 py-3 rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 text-left flex items-center gap-2.5 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm leading-none">security</span>
+                    <span>Seguridad</span>
+                </button>
+                <button (click)="setSection('membership')"
+                        [class]="activeSection() === 'membership' ? 'bg-primary text-black font-black' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'"
+                        class="px-4 py-3 rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 text-left flex items-center gap-2.5 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm leading-none">workspace_premium</span>
+                    <span>Suscripción</span>
+                </button>
+                
+                <div class="border-t border-white/5 pt-2 mt-2 hidden lg:block"></div>
+                
+                <button (click)="logout()"
+                        class="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 text-left flex items-center gap-2.5 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-sm leading-none">logout</span>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Active section panel -->
+        <div class="lg:col-span-3 w-full bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-xl">
+            
+            <!-- SECTION 1: GENERAL INFO / EDIT PROFILE -->
+            <div *ngIf="activeSection() === 'general'" class="flex flex-col gap-6 animate-scale-in">
+                <div class="border-b border-white/5 pb-4">
+                    <h3 class="font-['Epilogue'] font-black text-base uppercase text-white tracking-wide">Información Personal</h3>
+                    <p class="text-[10px] text-white/40 mt-0.5">Modifica tus datos básicos de contacto e imagen de perfil.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">Nombre Completo</label>
+                        <input type="text" 
+                               [(ngModel)]="editForm.name"
+                               placeholder="Nombre del usuario..."
+                               class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 focus:shadow-[0_0_15px_rgba(242,202,80,0.08)] outline-none transition-all">
+                    </div>
+                    
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">Teléfono de Contacto</label>
+                        <input type="text" 
+                               [(ngModel)]="editForm.phone"
+                               placeholder="Teléfono móvil..."
+                               class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 focus:shadow-[0_0_15px_rgba(242,202,80,0.08)] outline-none transition-all">
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">Ubicación / Ciudad</label>
+                        <input type="text" 
+                               [(ngModel)]="editForm.city"
+                               placeholder="Ciudad, Estado..."
+                               class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 focus:shadow-[0_0_15px_rgba(242,202,80,0.08)] outline-none transition-all">
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">URL de Avatar de Perfil</label>
+                        <input type="text" 
+                               [(ngModel)]="editForm.profileUrl"
+                               placeholder="https://images.unsplash.com/..."
+                               class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 focus:shadow-[0_0_15px_rgba(242,202,80,0.08)] outline-none transition-all">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 border-t border-white/5 pt-5 mt-4">
+                    <button (click)="resetEditForm()"
+                            class="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10.5px] font-bold rounded-xl uppercase tracking-wider transition-all active:scale-95">
+                        Restaurar
+                    </button>
+                    <button (click)="saveProfile()"
+                            class="px-6 py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-[10.5px] font-black rounded-xl uppercase tracking-wider transition-all shadow-[0_4px_18px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98]">
+                        Guardar Cambios
+                    </button>
                 </div>
             </div>
-            <button class="bg-primary-container text-on-primary-container font-label-bold text-label-bold px-6 py-3 rounded-lg hover:bg-primary transition-colors shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-                Gestionar
-            </button>
-        </div>
-    </section>
 
-    <!-- Información Personal Bento/List -->
-    <section class="bg-surface-container/50 backdrop-blur-md border border-white/5 rounded-xl overflow-hidden animate-slide-up" style="animation-delay: 0.3s;">
-        <h3 class="font-headline-md text-headline-md text-on-surface px-6 py-5 border-b border-white/10 bg-surface-container-high/40">
-            Información Personal
-        </h3>
-        <div class="flex flex-col">
-            <button class="flex items-center justify-between w-full px-6 py-4 hover:bg-white/5 transition-colors border-b border-white/5 group text-left">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:text-primary-container transition-colors">
-                        <span class="material-symbols-outlined">person</span>
-                    </div>
-                    <div>
-                        <span class="block font-body-md text-body-md text-on-surface font-semibold">Editar Perfil</span>
-                        <span class="block font-body-sm text-sm text-on-surface-variant mt-0.5">Nombre, teléfono, ubicación</span>
-                    </div>
+            <!-- SECTION 2: PAYMENT METHODS -->
+            <div *ngIf="activeSection() === 'payments'" class="flex flex-col gap-6 animate-scale-in">
+                <div class="border-b border-white/5 pb-4">
+                    <h3 class="font-['Epilogue'] font-black text-base uppercase text-white tracking-wide">Métodos de Pago Vinculados</h3>
+                    <p class="text-[10px] text-white/40 mt-0.5">Agrega o remueve de forma segura tus tarjetas de crédito y débito de facturación.</p>
                 </div>
-                <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary-container transition-colors">chevron_right</span>
-            </button>
-            <button class="flex items-center justify-between w-full px-6 py-4 hover:bg-white/5 transition-colors border-b border-white/5 group text-left">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:text-primary-container transition-colors">
-                        <span class="material-symbols-outlined">payment</span>
-                    </div>
-                    <div>
-                        <span class="block font-body-md text-body-md text-on-surface font-semibold">Métodos de Pago</span>
-                        <span class="block font-body-sm text-sm text-on-surface-variant mt-0.5">Tarjetas vinculadas, facturación</span>
-                    </div>
-                </div>
-                <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary-container transition-colors">chevron_right</span>
-            </button>
-            <button class="flex items-center justify-between w-full px-6 py-4 hover:bg-white/5 transition-colors group text-left">
-                <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:text-primary-container transition-colors">
-                        <span class="material-symbols-outlined">security</span>
-                    </div>
-                    <div>
-                        <span class="block font-body-md text-body-md text-on-surface font-semibold">Seguridad</span>
-                        <span class="block font-body-sm text-sm text-on-surface-variant mt-0.5">Contraseña, autenticación</span>
-                    </div>
-                </div>
-                <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary-container transition-colors">chevron_right</span>
-            </button>
-        </div>
-    </section>
 
-    <!-- Logout Action -->
-    <section class="pt-4 animate-slide-up" style="animation-delay: 0.4s;">
-        <button class="w-full flex items-center justify-center gap-3 py-4 rounded-lg border border-secondary-container/50 text-secondary hover:bg-secondary-container/10 transition-colors font-label-bold text-label-bold uppercase tracking-widest bg-surface-container/30 backdrop-blur-sm">
-            <span class="material-symbols-outlined">logout</span>
-            Cerrar Sesión
-        </button>
-    </section>
+                <!-- Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Loop Cards -->
+                    <div *ngFor="let card of cards()" 
+                         class="aspect-[1.586] rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.08] border border-white/15 p-5 flex flex-col justify-between relative overflow-hidden shadow-2xl group select-text select-all">
+                        <div class="absolute -right-10 -bottom-10 w-24 h-24 bg-primary/5 rounded-full blur-xl"></div>
+                        
+                        <!-- Top details -->
+                        <div class="flex justify-between items-start">
+                            <div class="flex flex-col">
+                                <span class="text-[8px] uppercase tracking-wider text-white/35 font-bold">Tarjeta de Pago</span>
+                                <span class="text-xs font-bold text-white uppercase tracking-widest mt-1">{{ card.type }} Card</span>
+                            </div>
+                            <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">
+                                {{ card.type === 'visa' ? 'credit_card' : 'account_balance_wallet' }}
+                            </span>
+                        </div>
+
+                        <!-- Card Number -->
+                        <span class="text-[15px] font-mono tracking-widest font-bold text-white/90 my-4 block select-all">
+                            {{ card.number }}
+                        </span>
+
+                        <!-- Bottom row -->
+                        <div class="flex justify-between items-end border-t border-white/5 pt-3">
+                            <div class="flex flex-col text-left">
+                                <span class="text-[7.5px] uppercase tracking-wider text-white/30 font-bold">Tarjetahabiente</span>
+                                <span class="text-[9.5px] font-bold text-white/80 truncate max-w-[130px]">{{ card.holder }}</span>
+                            </div>
+                            <div class="flex flex-col text-right">
+                                <span class="text-[7.5px] uppercase tracking-wider text-white/30 font-bold">Vence</span>
+                                <span class="text-[9.5px] font-bold text-white/80">{{ card.expiry }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Remove Overlay Button -->
+                        <button (click)="removeCard(card.id)"
+                                class="absolute top-3 right-3 w-7 h-7 rounded-full bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-md">
+                            <span class="material-symbols-outlined text-xs">delete</span>
+                        </button>
+                    </div>
+
+                    <!-- Add new Card form -->
+                    <div class="p-5 rounded-2xl border-2 border-dashed border-white/10 flex flex-col justify-between text-left gap-4 bg-white/[0.01]">
+                        <span class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">Agregar Nueva Tarjeta</span>
+                        
+                        <div class="flex flex-col gap-2.5 text-xs">
+                            <input type="text" 
+                                   [(ngModel)]="newCard.number"
+                                   placeholder="Número de Tarjeta (16 dígitos)..."
+                                   class="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-primary/50 transition-all font-mono tracking-widest text-[11px]">
+                            
+                            <input type="text" 
+                                   [(ngModel)]="newCard.holder"
+                                   placeholder="Nombre del Titular..."
+                                   class="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-primary/50 transition-all">
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" 
+                                       [(ngModel)]="newCard.expiry"
+                                       placeholder="MM/AA"
+                                       class="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-primary/50 transition-all text-center">
+                                <input type="password" 
+                                       [(ngModel)]="newCard.cvv"
+                                       placeholder="CVV"
+                                       class="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-primary/50 transition-all text-center">
+                            </div>
+                        </div>
+
+                        <button (click)="addCard()"
+                                class="w-full py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-[10px] font-black rounded-xl uppercase tracking-wider transition-all active:scale-95 mt-2 shadow-md">
+                            Vincular Tarjeta
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 3: SECURITY SETTINGS -->
+            <div *ngIf="activeSection() === 'security'" class="flex flex-col gap-6 animate-scale-in">
+                <div class="border-b border-white/5 pb-4">
+                    <h3 class="font-['Epilogue'] font-black text-base uppercase text-white tracking-wide">Seguridad de la Cuenta</h3>
+                    <p class="text-[10px] text-white/40 mt-0.5">Modifica tus contraseñas y configura factores de autenticación adicionales.</p>
+                </div>
+
+                <!-- 2FA Setup -->
+                <div class="p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] flex items-center justify-between shadow-inner">
+                    <div class="flex flex-col gap-1 text-left">
+                        <strong class="text-xs font-bold text-white">Autenticación de Dos Factores (2FA)</strong>
+                        <p class="text-[10.5px] text-white/50 leading-relaxed font-light">
+                            Requiere un código temporal desde tu app autenticadora (Google Authenticator) al iniciar sesión.
+                        </p>
+                    </div>
+                    
+                    <!-- Toggle switch -->
+                    <button (click)="toggle2FA()" 
+                            [class]="twoFactor() ? 'bg-primary border-primary justify-end' : 'bg-white/5 border-white/10 justify-start'"
+                            class="w-12 h-6.5 rounded-full border p-0.5 flex items-center transition-all duration-300">
+                        <div class="w-5.5 h-5.5 rounded-full bg-[#121212] shadow shadow-black"></div>
+                    </button>
+                </div>
+
+                <!-- Change password form -->
+                <div class="flex flex-col gap-4 text-left">
+                    <span class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">Cambiar Contraseña</span>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[9px] uppercase font-bold text-white/30 tracking-wider">Contraseña Actual</label>
+                            <input type="password" 
+                                   [(ngModel)]="securityForm.currentPassword"
+                                   placeholder="••••••••"
+                                   class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 outline-none transition-all">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[9px] uppercase font-bold text-white/30 tracking-wider">Nueva Contraseña</label>
+                            <input type="password" 
+                                   [(ngModel)]="securityForm.newPassword"
+                                   placeholder="Min 8 caracteres..."
+                                   class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 outline-none transition-all">
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[9px] uppercase font-bold text-white/30 tracking-wider">Confirmar Contraseña</label>
+                            <input type="password" 
+                                   [(ngModel)]="securityForm.confirmPassword"
+                                   placeholder="Repite la contraseña..."
+                                   class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 outline-none transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end border-t border-white/5 pt-5 mt-4">
+                    <button (click)="changePassword()"
+                            class="px-6 py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-[10.5px] font-black rounded-xl uppercase tracking-wider transition-all active:scale-95 shadow-[0_4px_18px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98]">
+                        Actualizar Contraseña
+                    </button>
+                </div>
+            </div>
+
+            <!-- SECTION 4: MEMBERSHIP DETAIL -->
+            <div *ngIf="activeSection() === 'membership'" class="flex flex-col gap-6 animate-scale-in text-left">
+                <div class="border-b border-white/5 pb-4">
+                    <h3 class="font-['Epilogue'] font-black text-base uppercase text-white tracking-wide">Membresía Activa</h3>
+                    <p class="text-[10px] text-white/40 mt-0.5">Consulta los privilegios especiales de tu membresía Acordex.</p>
+                </div>
+
+                <!-- Premium card graphics -->
+                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-600/10 via-amber-600/5 to-transparent border border-[#F2CA50]/20 p-6 md:p-8 flex flex-col md:flex-row md:justify-between md:items-center gap-6 shadow-2xl select-text">
+                    <div class="absolute -top-12 -right-12 w-48 h-48 bg-[#F2CA50]/15 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div>
+                        <span class="text-[8.5px] uppercase font-bold text-[#F2CA50] tracking-wider block mb-1">Membresía de Cuenta</span>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[#F2CA50] text-3xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+                            <span class="font-['Epilogue'] font-black text-xl md:text-2xl text-white tracking-wide uppercase">PREMIUM VIP</span>
+                        </div>
+                        <span class="text-[10px] text-white/40 block mt-2">Miembro activo desde el: {{ user().joinDate }}</span>
+                    </div>
+
+                    <button class="bg-[#F2CA50] hover:bg-[#F2CA50]/80 text-[#121212] font-black text-[10.5px] uppercase tracking-wider px-6 py-3 rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98]">
+                        Administrar Suscripción
+                    </button>
+                </div>
+
+                <!-- Privilege grid list -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div class="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] flex gap-3 text-xs">
+                        <span class="material-symbols-outlined text-[#F2CA50]">confirmation_number</span>
+                        <div>
+                            <strong class="text-white block font-bold">Preventas y Asientos Exclusivos</strong>
+                            <span class="text-white/50 text-[10px] font-light leading-normal block mt-0.5">
+                                Accede 24 horas antes al croquis y selecciona los mejores lugares frente al escenario.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] flex gap-3 text-xs">
+                        <span class="material-symbols-outlined text-[#F2CA50]">percent</span>
+                        <div>
+                            <strong class="text-white block font-bold">Recompensas del 20%</strong>
+                            <span class="text-white/50 text-[10px] font-light leading-normal block mt-0.5">
+                                Recibe un descuento de lealtad en tu historial cada vez que asistas a una presentación.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] flex gap-3 text-xs">
+                        <span class="material-symbols-outlined text-[#F2CA50]">badge</span>
+                        <div>
+                            <strong class="text-white block font-bold">Acceso a Prensa Acreditada</strong>
+                            <span class="text-white/50 text-[10px] font-light leading-normal block mt-0.5">
+                                Prioridad para acreditarte como medio o creador independiente con gafete digital.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] flex gap-3 text-xs">
+                        <span class="material-symbols-outlined text-[#F2CA50]">headset_mic</span>
+                        <div>
+                            <strong class="text-white block font-bold">Soporte Legal Concierge 24/7</strong>
+                            <span class="text-white/50 text-[10px] font-light leading-normal block mt-0.5">
+                                Atención concierge prioritaria para contratos, cancelaciones o aclaración de reclamos.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
