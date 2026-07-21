@@ -58,26 +58,31 @@
                 <p class="text-xs md:text-sm text-white/60 leading-relaxed font-light mb-4">
                     Este evento reúne a los medios de comunicación y fans en una sesión exclusiva. La primera parte consta de una rueda de prensa donde los artistas hablarán de sus próximos sencillos, giras y proyectos. Posteriormente se dará inicio a la firma oficial de autógrafos y sesión de fotografías para los asistentes acreditados.
                 </p>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mt-6">
+                    <!-- 1. Fecha -->
                     <div class="bg-white/5 border border-white/[0.04] p-3 rounded-xl flex items-center gap-3">
-                        <span class="material-symbols-outlined text-blue-400 text-xl">calendar_today</span>
+                        <span class="material-symbols-outlined text-blue-400 text-xl shrink-0">calendar_today</span>
                         <div class="flex flex-col min-w-0">
                             <span class="text-[8px] text-white/40 uppercase font-medium">Fecha</span>
-                            <span class="text-[10px] text-white font-bold truncate">{{ ev.date.getDate() }} / {{ ev.date.getMonth() + 1 }} / {{ ev.date.getFullYear() }}</span>
+                            <span class="text-[10px] sm:text-xs text-white font-bold truncate">{{ ev.date.getDate() }} / {{ ev.date.getMonth() + 1 }} / {{ ev.date.getFullYear() }}</span>
                         </div>
                     </div>
+
+                    <!-- 2. Fotografías -->
                     <div class="bg-white/5 border border-white/[0.04] p-3 rounded-xl flex items-center gap-3">
-                        <span class="material-symbols-outlined text-blue-400 text-xl">perm_identity</span>
-                        <div class="flex flex-col min-w-0">
-                            <span class="text-[8px] text-white/40 uppercase font-medium">Acceso Fan</span>
-                            <span class="text-[10px] text-white font-bold truncate uppercase">Solo Acreditados</span>
-                        </div>
-                    </div>
-                    <div class="bg-white/5 border border-white/[0.04] p-3 rounded-xl flex items-center gap-3">
-                        <span class="material-symbols-outlined text-blue-400 text-xl">photo_camera</span>
+                        <span class="material-symbols-outlined text-blue-400 text-xl shrink-0">photo_camera</span>
                         <div class="flex flex-col min-w-0">
                             <span class="text-[8px] text-white/40 uppercase font-medium">Fotografías</span>
-                            <span class="text-[10px] text-white font-bold truncate">Permitido</span>
+                            <span class="text-[10px] sm:text-xs text-white font-bold truncate">Permitido</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Acceso Fan (Spans full row on mobile so text NEVER clips) -->
+                    <div class="col-span-2 md:col-span-1 bg-white/5 border border-white/[0.04] p-3 rounded-xl flex items-center gap-3">
+                        <span class="material-symbols-outlined text-blue-400 text-xl shrink-0">perm_identity</span>
+                        <div class="flex flex-col min-w-0 flex-1">
+                            <span class="text-[8px] text-white/40 uppercase font-medium">Acceso Fan</span>
+                            <span class="text-[10px] sm:text-xs text-white font-bold uppercase tracking-wide">Solo Acreditados</span>
                         </div>
                     </div>
                 </div>
@@ -313,59 +318,62 @@
     <!-- PRESS ACCREDITATION WORKFLOW MODAL WINDOW -->
     <div *ngIf="isAccreditationModalOpen()" 
          (click)="closeAccreditation()"
-         class="fixed inset-0 z-[120] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 overflow-y-auto animate-lightbox-fade-in animate-scale-in">
+         class="fixed inset-0 z-[120] bg-black/90 backdrop-blur-2xl flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden animate-lightbox-fade-in font-['Be_Vietnam_Pro'] select-none">
         
-        <!-- Close Button -->
-        <button (click)="closeAccreditation()" 
-                class="absolute top-4 right-4 z-[130] w-11 h-11 rounded-full bg-black/45 border border-white/10 hover:bg-black/60 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-xl">
-            <span class="material-symbols-outlined text-lg">close</span>
-        </button>
-
-        <!-- Modal Box Container -->
-        <div class="relative w-full max-w-lg bg-[#121212] border border-white/[0.08] rounded-3xl p-6 flex flex-col shadow-2xl animate-lightbox-zoom-in my-8"
+        <!-- Modal Box Container (Bottom sheet on mobile, centered modal on desktop) -->
+        <div class="relative w-full max-w-lg max-h-[92vh] sm:max-h-[88vh] bg-[#121212] border-t border-x sm:border border-white/[0.12] rounded-t-[32px] sm:rounded-3xl p-4 sm:p-6 flex flex-col shadow-2xl overflow-y-auto scrollbar-none mt-auto sm:mt-0"
              (click)="$event.stopPropagation()">
+            
+            <!-- Mobile Handle Pill -->
+            <div (click)="closeAccreditation()" class="w-12 h-1.5 bg-white/20 hover:bg-white/35 rounded-full mx-auto mb-3 shrink-0 sm:hidden cursor-pointer active:scale-90 transition-all"></div>
+
+            <!-- Close Button -->
+            <button (click)="closeAccreditation()" 
+                    class="absolute top-4 right-4 z-[130] w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/80 border border-white/15 hover:bg-black text-white/70 hover:text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-xl">
+                <span class="material-symbols-outlined text-base sm:text-lg">close</span>
+            </button>
             
             <!-- CASE 1: Form not submitted yet -->
             <div *ngIf="!currentAccreditation()">
-                <span class="text-[8px] uppercase tracking-widest font-black text-blue-400 text-center block">Registro de Acreditación</span>
-                <h3 class="font-['Epilogue'] font-black text-lg text-white text-center uppercase mt-1 mb-5">
+                <span class="text-[8px] sm:text-[8.5px] uppercase tracking-widest font-black text-blue-400 text-center block">Registro de Acreditación</span>
+                <h3 class="font-['Epilogue'] font-black text-base sm:text-xl text-white text-center uppercase mt-0.5 mb-4">
                     Solicitud de Cobertura
                 </h3>
 
                 <!-- Type of Applicant selector toggle -->
-                <div class="grid grid-cols-2 gap-2 bg-white/[0.02] border border-white/[0.08] p-1.5 rounded-2xl mb-5">
+                <div class="grid grid-cols-2 gap-1.5 sm:gap-2 bg-white/[0.02] border border-white/[0.08] p-1 sm:p-1.5 rounded-2xl mb-4">
                     <button type="button"
                             (click)="setApplicantType('media')"
                             [ngClass]="applicantType() === 'media' ? 'bg-blue-500 text-white font-bold' : 'text-white/60 hover:text-white'"
-                            class="py-2.5 rounded-xl text-[10px] uppercase font-black tracking-wider transition-all">
+                            class="py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] uppercase font-black tracking-wider transition-all truncate">
                         Medio Oficial
                     </button>
                     <button type="button"
                             (click)="setApplicantType('independent')"
                             [ngClass]="applicantType() === 'independent' ? 'bg-blue-500 text-white font-bold' : 'text-white/60 hover:text-white'"
-                            class="py-2.5 rounded-xl text-[10px] uppercase font-black tracking-wider transition-all">
-                        Independiente / Freelance
+                            class="py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] uppercase font-black tracking-wider transition-all truncate">
+                        Freelance / Creador
                     </button>
                 </div>
 
-                <form (submit)="submitAccreditation($event)" class="flex flex-col gap-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form (submit)="submitAccreditation($event)" class="flex flex-col gap-3.5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div class="flex flex-col gap-1">
-                            <label class="text-[8.5px] font-bold text-white/45 uppercase tracking-wider">
-                                {{ applicantType() === 'media' ? 'Nombre del Medio' : 'Plataforma / Canal o Blog' }}
+                            <label class="text-[8px] sm:text-[8.5px] font-bold text-white/45 uppercase tracking-wider">
+                                {{ applicantType() === 'media' ? 'Nombre del Medio' : 'Plataforma / Canal' }}
                             </label>
                             <input type="text" 
                                    [placeholder]="applicantType() === 'media' ? 'Ej. El Sol de México' : 'Ej. Canal de YouTube / Blog'" 
                                    required
                                    [value]="accredMedium()"
                                    (input)="accredMedium.set($any($event.target).value)"
-                                   class="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 py-3 text-xs text-white placeholder-white/20 focus:border-blue-500/50 focus:bg-white/[0.04] transition-all outline-none" />
+                                   class="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white placeholder-white/20 focus:border-blue-500/50 focus:bg-white/[0.04] transition-all outline-none" />
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[8.5px] font-bold text-white/45 uppercase tracking-wider">Tipo de Cobertura</label>
+                            <label class="text-[8px] sm:text-[8.5px] font-bold text-white/45 uppercase tracking-wider">Tipo de Cobertura</label>
                             <select [value]="accredType()"
                                     (change)="accredType.set($any($event.target).value)"
-                                    class="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 py-3 text-xs text-white placeholder-white/20 focus:border-blue-500/50 focus:bg-white/[0.04] transition-all outline-none">
+                                    class="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white placeholder-white/20 focus:border-blue-500/50 focus:bg-white/[0.04] transition-all outline-none">
                                 <option value="Prensa Escrita" class="bg-[#121212]">Prensa Escrita / Diario</option>
                                 <option value="Fotografía Oficial" class="bg-[#121212]">Fotografía Oficial</option>
                                 <option value="Televisión / Video" class="bg-[#121212]">Televisión / Video</option>
@@ -375,7 +383,7 @@
                     </div>
 
                     <div class="flex flex-col gap-1">
-                        <label class="text-[8.5px] font-bold text-white/45 uppercase tracking-wider">
+                        <label class="text-[8px] sm:text-[8.5px] font-bold text-white/45 uppercase tracking-wider">
                             {{ applicantType() === 'media' ? 'Nombre del Reportero / Fotógrafo' : 'Nombre Completo del Solicitante' }}
                         </label>
                         <input type="text" 
@@ -383,45 +391,45 @@
                                required
                                [value]="accredName()"
                                (input)="accredName.set($any($event.target).value)"
-                               class="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 py-3 text-xs text-white placeholder-white/20 focus:border-blue-500/50 focus:bg-white/[0.04] transition-all outline-none" />
+                               class="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white placeholder-white/20 focus:border-blue-500/50 focus:bg-white/[0.04] transition-all outline-none" />
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div class="flex flex-col gap-1">
-                            <label class="text-[8.5px] font-bold text-white/45 uppercase tracking-wider">Correo de Contacto</label>
+                            <label class="text-[8px] sm:text-[8.5px] font-bold text-white/45 uppercase tracking-wider">Correo de Contacto</label>
                             <input type="email" 
-                                   placeholder="contacto@canalomedio.com" 
+                                   placeholder="contacto@medio.com" 
                                    required
                                    [value]="accredEmail()"
                                    (input)="accredEmail.set($any($event.target).value)"
-                                   class="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 py-3 text-xs text-white placeholder-white/20 focus:border-blue-500/50 focus:bg-white/[0.04] transition-all outline-none" />
+                                   class="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white placeholder-white/20 focus:border-blue-500/50 focus:bg-white/[0.04] transition-all outline-none" />
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-[8.5px] font-bold text-white/45 uppercase tracking-wider">
-                                {{ applicantType() === 'media' ? 'No. de Cédula de Prensa' : 'Identificación Oficial / INE (Simulado)' }}
+                            <label class="text-[8px] sm:text-[8.5px] font-bold text-white/45 uppercase tracking-wider">
+                                {{ applicantType() === 'media' ? 'No. de Cédula de Prensa' : 'INE / Identificación' }}
                             </label>
                             <input type="text" 
                                    placeholder="Ej. INE-8291823" 
                                    required
                                    [value]="accredId()"
                                    (input)="accredId.set($any($event.target).value)"
-                                   class="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl px-4 py-3 text-xs text-white placeholder-white/20 focus:border-blue-500/50 focus:bg-white/[0.04] transition-all outline-none" />
+                                   class="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white placeholder-white/20 focus:border-blue-500/50 focus:bg-white/[0.04] transition-all outline-none" />
                         </div>
                     </div>
 
                     <div class="flex flex-col gap-1">
-                        <label class="text-[8.5px] font-bold text-white/45 uppercase tracking-wider">
-                            {{ applicantType() === 'media' ? 'Carta de Asignación del Medio (PDF)' : 'Portafolio de Coberturas previas / Enlaces' }}
+                        <label class="text-[8px] sm:text-[8.5px] font-bold text-white/45 uppercase tracking-wider">
+                            {{ applicantType() === 'media' ? 'Carta de Asignación (PDF)' : 'Portafolio de Coberturas / Enlaces' }}
                         </label>
-                        <div class="w-full bg-white/[0.02] border border-dashed border-white/20 hover:border-blue-500/40 rounded-xl p-5 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all">
-                            <span class="material-symbols-outlined text-white/30 text-xl">upload_file</span>
-                            <span class="text-[10px] text-white/50">Cargar Archivo de Soporte (Máx. 5MB)</span>
-                            <span class="text-[8px] text-white/20">Arrastra o haz clic para subir tu acreditación</span>
+                        <div class="w-full bg-white/[0.02] border border-dashed border-white/20 hover:border-blue-500/40 rounded-xl p-3.5 sm:p-5 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all">
+                            <span class="material-symbols-outlined text-white/40 text-lg sm:text-xl">upload_file</span>
+                            <span class="text-[9.5px] sm:text-[10px] text-white/60 font-medium">Cargar Archivo de Soporte (Máx. 5MB)</span>
+                            <span class="text-[8px] text-white/30">Arrastra o haz clic para subir archivo</span>
                         </div>
                     </div>
 
                     <button type="submit" 
-                            class="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(59,130,246,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider mt-4">
+                            class="w-full py-3.5 sm:py-4 bg-blue-500 hover:bg-blue-600 text-white text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(59,130,246,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider mt-2">
                         <span class="material-symbols-outlined text-base">send</span>
                         <span>Enviar Solicitud</span>
                     </button>
@@ -433,35 +441,35 @@
                 
                 <!-- VIEW 2A: PENDING REVIEW -->
                 <div *ngIf="accred.status === 'pending'" class="w-full flex flex-col items-center text-center">
-                    <div class="w-14 h-14 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center mb-4">
-                        <span class="material-symbols-outlined text-2xl">hourglass_empty</span>
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center mb-3 sm:mb-4">
+                        <span class="material-symbols-outlined text-xl sm:text-2xl">hourglass_empty</span>
                     </div>
-                    <h4 class="font-['Epilogue'] font-black text-base text-white uppercase mb-1">Solicitud en Proceso de Revisión</h4>
-                    <p class="text-[10px] text-white/50 leading-relaxed font-light mb-6 px-4">
+                    <h4 class="font-['Epilogue'] font-black text-sm sm:text-base text-white uppercase mb-1">Solicitud en Proceso de Revisión</h4>
+                    <p class="text-[9.5px] sm:text-[10px] text-white/50 leading-relaxed font-light mb-4 sm:mb-6 px-2">
                         Tu acreditación ha sido enviada. Los administradores de Acordex revisarán tu portafolio/medio en las próximas horas.
                     </p>
 
                     <!-- Submitted Details List -->
-                    <div class="w-full bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 flex flex-col gap-2.5 text-left text-xs mb-6">
-                        <div class="flex justify-between">
-                            <span class="text-white/40">Solicitante:</span>
-                            <span class="font-bold text-white">{{ accred.journalistName }}</span>
+                    <div class="w-full bg-white/[0.02] border border-white/[0.05] rounded-2xl p-3.5 sm:p-4 flex flex-col gap-2 text-left text-xs mb-4 sm:mb-6">
+                        <div class="flex justify-between items-center gap-2">
+                            <span class="text-white/40 text-[10px] sm:text-xs">Solicitante:</span>
+                            <span class="font-bold text-white text-[10px] sm:text-xs truncate">{{ accred.journalistName }}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-white/40">Medio / Plataforma:</span>
-                            <span class="font-bold text-blue-400">{{ accred.mediumName }}</span>
+                        <div class="flex justify-between items-center gap-2">
+                            <span class="text-white/40 text-[10px] sm:text-xs">Medio / Plataforma:</span>
+                            <span class="font-bold text-blue-400 text-[10px] sm:text-xs truncate">{{ accred.mediumName }}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-white/40">Tipo:</span>
-                            <span class="font-bold text-white/80">{{ accred.accredType }} ({{ accred.applicantType === 'media' ? 'Medio' : 'Freelance' }})</span>
+                        <div class="flex justify-between items-center gap-2">
+                            <span class="text-white/40 text-[10px] sm:text-xs">Tipo:</span>
+                            <span class="font-bold text-white/80 text-[10px] sm:text-xs truncate">{{ accred.accredType }}</span>
                         </div>
                     </div>
 
                     <!-- TESTER SIMULATION PANEL -->
-                    <div class="w-full bg-blue-500/5 border border-blue-500/15 rounded-2xl p-4 flex flex-col gap-3 text-center mb-6">
-                        <span class="text-[8.5px] uppercase font-bold text-blue-400 tracking-wider">Panel de Simulación de Acreditación</span>
-                        <p class="text-[9px] text-white/40 font-light leading-relaxed">
-                            Simula la respuesta de los organizadores para revisar cómo se comportan los diferentes estados del trámite:
+                    <div class="w-full bg-blue-500/5 border border-blue-500/15 rounded-2xl p-3.5 sm:p-4 flex flex-col gap-2.5 text-center mb-4 sm:mb-6">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-blue-400 tracking-wider">Panel de Simulación de Acreditación</span>
+                        <p class="text-[8.5px] sm:text-[9px] text-white/40 font-light leading-relaxed">
+                            Simula la respuesta de los organizadores para revisar los estados del trámite:
                         </p>
                         <div class="grid grid-cols-2 gap-2 mt-1">
                             <button (click)="simulateApproval()"
@@ -478,25 +486,25 @@
 
                 <!-- VIEW 2B: APPROVED STATUS (Digital Badge) -->
                 <div *ngIf="accred.status === 'approved'" class="w-full flex flex-col items-center text-center">
-                    <div class="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mb-4">
-                        <span class="material-symbols-outlined text-2xl">verified</span>
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mb-3 sm:mb-4">
+                        <span class="material-symbols-outlined text-xl sm:text-2xl">verified</span>
                     </div>
-                    <h4 class="font-['Epilogue'] font-black text-base text-white uppercase mb-1">¡Acreditación Autorizada!</h4>
-                    <p class="text-[10px] text-white/50 leading-relaxed font-light mb-6 px-4">
+                    <h4 class="font-['Epilogue'] font-black text-sm sm:text-base text-white uppercase mb-1">¡Acreditación Autorizada!</h4>
+                    <p class="text-[9.5px] sm:text-[10px] text-white/50 leading-relaxed font-light mb-4 sm:mb-6 px-2">
                         Tu acreditación ha sido autorizada. Descarga tu credencial digital con acceso ALL ACCESS.
                     </p>
 
                     <!-- Holographic Digital Press Badge Pass Card -->
-                    <div class="w-full max-w-[320px] bg-gradient-to-br from-[#1b1b1b] to-[#0d0d0d] border-2 border-blue-500/40 rounded-3xl p-5 flex flex-col relative overflow-hidden shadow-2xl mb-6 text-left group/badge">
+                    <div class="w-full max-w-[290px] sm:max-w-[320px] bg-gradient-to-br from-[#1b1b1b] to-[#0d0d0d] border-2 border-blue-500/40 rounded-3xl p-4 sm:p-5 flex flex-col relative overflow-hidden shadow-2xl mb-5 text-left group/badge">
                         <div class="absolute -right-16 -top-16 w-36 h-36 bg-blue-500/10 rounded-full blur-2xl group-hover/badge:bg-blue-500/25 transition-all"></div>
-                        <div class="w-12 h-2.5 bg-black/45 border border-white/10 rounded-full mx-auto mb-4 relative z-10"></div>
+                        <div class="w-10 h-2 bg-black/45 border border-white/10 rounded-full mx-auto mb-3 relative z-10"></div>
 
-                        <div class="text-center pb-3.5 border-b border-white/5 relative z-10 flex flex-col gap-0.5">
-                            <span class="text-[8px] uppercase tracking-[0.25em] font-black text-blue-400">ACORDEX OFICIAL</span>
+                        <div class="text-center pb-3 border-b border-white/5 relative z-10 flex flex-col gap-0.5">
+                            <span class="text-[7.5px] sm:text-[8px] uppercase tracking-[0.2em] font-black text-blue-400">ACORDEX OFICIAL</span>
                             <h5 class="text-xs font-black uppercase text-white font-['Epilogue'] tracking-wider">{{ accred.accredType }}</h5>
                         </div>
 
-                        <div class="py-4 flex flex-col gap-3 relative z-10">
+                        <div class="py-3 sm:py-4 flex flex-col gap-2.5 sm:gap-3 relative z-10">
                             <div class="flex flex-col min-w-0">
                                 <span class="text-[7.5px] uppercase font-bold text-white/30">Reportero / Acreditado</span>
                                 <span class="text-xs font-black text-white truncate mt-0.5 font-['Epilogue']">{{ accred.journalistName }}</span>
@@ -505,7 +513,7 @@
                                 <span class="text-[7.5px] uppercase font-bold text-white/30">{{ accred.applicantType === 'media' ? 'Medio de Comunicación' : 'Plataforma / Canal' }}</span>
                                 <span class="text-xs font-bold text-blue-300 truncate mt-0.5">{{ accred.mediumName }}</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-2 mt-1">
+                            <div class="grid grid-cols-2 gap-2 mt-0.5">
                                 <div class="flex flex-col">
                                     <span class="text-[7.5px] uppercase font-bold text-white/30">ID Gafete</span>
                                     <span class="text-[10px] font-black text-white mt-0.5">{{ accred.cardId }}</span>
@@ -520,25 +528,25 @@
                             </div>
                         </div>
 
-                        <div class="border-t border-white/5 pt-4 flex items-center justify-between gap-4 relative z-10">
+                        <div class="border-t border-white/5 pt-3 flex items-center justify-between gap-3 relative z-10">
                             <div class="flex flex-col min-w-0">
-                                <span class="text-[7px] text-white/30 uppercase truncate">{{ ev.title }}</span>
-                                <span class="text-[7px] text-white/20 font-light mt-0.5 truncate">{{ ev.location }}</span>
+                                <span class="text-[7px] text-white/40 uppercase truncate">{{ ev.title }}</span>
+                                <span class="text-[7px] text-white/25 font-light mt-0.5 truncate">{{ ev.location }}</span>
                             </div>
-                            <div class="w-10 h-10 bg-white p-0.5 rounded-lg shrink-0 flex items-center justify-center border border-white/10 shadow-md">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 bg-white p-0.5 rounded-lg shrink-0 flex items-center justify-center border border-white/10 shadow-md">
                                 <img src="https://images.unsplash.com/photo-1546874177-9e664107314e?q=80&w=150&auto=format&fit=crop" class="w-full h-full object-cover filter contrast-[200%] grayscale" alt="QR" />
                             </div>
                         </div>
                     </div>
 
-                    <!-- Options -->
-                    <div class="flex gap-2.5 w-full">
+                    <!-- Options Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-2 w-full">
                         <button (click)="resetAccreditation()"
-                                class="flex-1 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-bold rounded-xl transition-all duration-300 active:scale-95 uppercase tracking-wider">
+                                class="w-full sm:flex-1 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-bold rounded-xl transition-all duration-300 active:scale-95 uppercase tracking-wider">
                             Eliminar Pase
                         </button>
                         <button onclick="window.print()"
-                                class="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(59,130,246,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 uppercase tracking-wider">
+                                class="w-full sm:flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(59,130,246,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 uppercase tracking-wider">
                             <span class="material-symbols-outlined text-sm leading-none">print</span>
                             Imprimir
                         </button>
@@ -547,24 +555,24 @@
 
                 <!-- VIEW 2C: REJECTED STATUS -->
                 <div *ngIf="accred.status === 'rejected'" class="w-full flex flex-col items-center text-center">
-                    <div class="w-14 h-14 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center mb-4">
-                        <span class="material-symbols-outlined text-2xl">cancel</span>
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center mb-3 sm:mb-4">
+                        <span class="material-symbols-outlined text-xl sm:text-2xl">cancel</span>
                     </div>
-                    <h4 class="font-['Epilogue'] font-black text-base text-white uppercase mb-1">Solicitud de Acreditación Rechazada</h4>
-                    <p class="text-[10px] text-white/50 leading-relaxed font-light mb-6 px-4">
+                    <h4 class="font-['Epilogue'] font-black text-sm sm:text-base text-white uppercase mb-1">Solicitud Rechazada</h4>
+                    <p class="text-[9.5px] sm:text-[10px] text-white/50 leading-relaxed font-light mb-4 sm:mb-6 px-2">
                         Lamentamos informarte que tu solicitud de cobertura no pudo ser aprobada en esta ocasión.
                     </p>
 
                     <!-- Rejection Reason Card -->
-                    <div class="w-full bg-red-500/5 border border-red-500/15 rounded-2xl p-4 text-left text-xs mb-6">
-                        <span class="text-[8.5px] uppercase font-bold text-red-400 tracking-wider block mb-1">Motivo del Rechazo:</span>
-                        <p class="text-[10px] text-white/60 font-light leading-relaxed">
+                    <div class="w-full bg-red-500/5 border border-red-500/15 rounded-2xl p-3.5 sm:p-4 text-left text-xs mb-4 sm:mb-6">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-red-400 tracking-wider block mb-1">Motivo del Rechazo:</span>
+                        <p class="text-[9.5px] sm:text-[10px] text-white/60 font-light leading-relaxed">
                             {{ accred.rejectionReason }}
                         </p>
                     </div>
 
                     <button (click)="resetAccreditation()"
-                            class="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(59,130,246,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider">
+                            class="w-full py-3.5 sm:py-4 bg-blue-500 hover:bg-blue-600 text-white text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(59,130,246,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider">
                         <span class="material-symbols-outlined text-base">refresh</span>
                         <span>Corregir Datos e Intentar Nuevamente</span>
                     </button>

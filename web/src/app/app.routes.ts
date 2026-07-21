@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Home } from './features/home/home';
 import { Cotizaciones } from './features/cotizaciones/cotizaciones';
+import { GrupoDetalle } from './features/grupo-detalle/grupo-detalle';
 import { Events } from './features/events/events';
 import { ComprarBoletos } from './features/events/comprar-boletos/comprar-boletos';
 import { SeleccionAsientos } from './features/events/seleccion-asientos/seleccion-asientos';
@@ -12,6 +13,7 @@ export const routes: Routes = [
     { path: '', redirectTo: 'inicio', pathMatch: 'full' },
     { path: 'inicio', component: Home },
     { path: 'cotizaciones', component: Cotizaciones },
+    { path: 'grupo/:id', component: GrupoDetalle },
     { path: 'events', component: Events },
     { path: 'events/comprar-boletos', component: ComprarBoletos },
     { path: 'events/seleccion-asientos', component: SeleccionAsientos },

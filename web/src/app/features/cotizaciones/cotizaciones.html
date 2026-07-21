@@ -1,202 +1,393 @@
-<div class="max-w-full mx-auto flex flex-col pt-stack-md gap-stack-md px-4 md:px-6 pb-10 font-['Be_Vietnam_Pro'] select-none">
-    
-    <!-- Title Section -->
+<div
+    class="max-w-full mx-auto flex flex-col pt-stack-md gap-stack-md px-4 sm:px-6 pb-12 font-['Be_Vietnam_Pro'] select-none">
+
+    <!-- Title Section with Premium Aesthetics -->
     <div class="animate-slide-up" style="animation-delay: 0.1s;">
-        <h1 class="font-['Epilogue'] font-black text-3xl md:text-4xl uppercase text-primary tracking-wide mb-2">Cotizaciones</h1>
-        <p class="text-xs md:text-sm text-white/50 font-light">Encuentra, cotiza y reserva el talento musical ideal para tu gran evento.</p>
+        <h1 class="font-['Epilogue'] font-black text-3xl sm:text-4xl uppercase text-primary tracking-wide mb-1.5 drop-shadow-md">
+            Cotizaciones
+        </h1>
+        <p class="text-xs sm:text-sm text-white/50 font-light max-w-2xl leading-relaxed">
+            Encuentra, cotiza y reserva el talento musical ideal para tu gran evento de forma directa y segura.
+        </p>
     </div>
 
-    <!-- Redesigned Search & Advanced Filters Trigger -->
-    <div class="flex gap-3 items-center animate-slide-up" style="animation-delay: 0.15s;">
-        <div class="relative flex-1">
-            <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-white/30">
-                <span class="material-symbols-outlined text-lg leading-none">search</span>
+    <!-- Redesigned Search & Advanced Filters Control Toolbar -->
+    <div class="flex flex-col gap-3 animate-slide-up" style="animation-delay: 0.15s;">
+        <div class="flex gap-2.5 sm:gap-3 items-center">
+            <div class="relative flex-1">
+                <div class="absolute inset-y-0 left-3.5 sm:left-4 flex items-center pointer-events-none text-primary/70">
+                    <span class="material-symbols-outlined text-base sm:text-lg leading-none">search</span>
+                </div>
+                <input
+                    class="w-full bg-[#161616]/90 border border-white/10 rounded-2xl sm:rounded-full pl-10 sm:pl-12 pr-4 py-3 sm:py-3.5 text-xs text-white placeholder-white/35 backdrop-blur-xl focus:border-primary/50 focus:shadow-[0_0_20px_rgba(242,202,80,0.12)] focus:outline-none transition-all duration-300 font-light"
+                    [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+                    placeholder="Buscar por agrupación, género o ciudad..." type="text" />
+                <button *ngIf="searchQuery()" (click)="searchQuery.set('')"
+                    class="absolute inset-y-0 right-3.5 flex items-center text-white/40 hover:text-white transition-colors">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
             </div>
-            <input class="w-full bg-[#181818]/65 border border-white/[0.06] rounded-full pl-12 pr-4 py-3.5 text-xs text-white placeholder-white/35 backdrop-blur-xl focus:border-primary/50 focus:shadow-[0_0_15px_rgba(242,202,80,0.08)] focus:outline-none transition-all duration-300 font-light"
-                   [ngModel]="searchQuery()" 
-                   (ngModelChange)="searchQuery.set($event)"
-                   placeholder="Buscar por nombre de agrupación o género..." type="text" />
+
+            <!-- Toggle Advanced Filters Button -->
+            <button (click)="showAdvancedFilters.set(!showAdvancedFilters())"
+                [ngClass]="showAdvancedFilters() ? 'bg-primary text-black border-primary/20 shadow-[0_0_20px_rgba(242,202,80,0.25)] font-bold' : 'bg-[#161616]/90 border-white/10 text-white/70 hover:text-white hover:border-primary/40'"
+                class="relative h-11 sm:h-12 px-4 sm:px-5 rounded-2xl sm:rounded-full border flex items-center gap-2 transition-all duration-300 backdrop-blur-xl shrink-0 active:scale-95 text-xs font-['Epilogue'] uppercase tracking-wider"
+                title="Filtros avanzados">
+                <span class="material-symbols-outlined text-base sm:text-lg leading-none">tune</span>
+                <span class="hidden sm:inline text-[10.5px]">Filtros</span>
+                <span *ngIf="hasActiveFilters()"
+                      class="w-2 h-2 bg-primary rounded-full animate-ping"></span>
+            </button>
         </div>
-        
-        <!-- Toggle Advanced Filters -->
-        <button (click)="showAdvancedFilters.set(!showAdvancedFilters())"
-                [ngClass]="showAdvancedFilters() ? 'bg-primary text-black border-primary/20 shadow-md' : 'bg-[#181818]/65 border-white/[0.06] text-white/70 hover:text-white'"
-                class="w-12 h-12 rounded-full border flex items-center justify-center transition-all duration-300 backdrop-blur-xl shrink-0">
-            <span class="material-symbols-outlined text-lg leading-none">tune</span>
-        </button>
+
+        <!-- Active Filter Indicator Badges Bar (Shows when filters are active) -->
+        <div *ngIf="hasActiveFilters()" class="flex flex-wrap items-center gap-1.5 pt-1 animate-fade-in">
+            <span class="text-[9px] text-white/35 font-bold uppercase tracking-wider mr-1">Filtros Activos:</span>
+            
+            <span *ngIf="activeFilter() !== 'Todos'" (click)="activeFilter.set('Todos')"
+                class="inline-flex items-center gap-1 bg-primary/10 border border-primary/30 text-primary text-[9.5px] px-2.5 py-1 rounded-full cursor-pointer hover:bg-primary/20 transition-all">
+                <span>Género: {{ activeFilter() }}</span>
+                <span class="material-symbols-outlined text-[10px]">close</span>
+            </span>
+
+            <span *ngIf="selectedCountry() !== 'Todos'" (click)="onCountryChange('Todos')"
+                class="inline-flex items-center gap-1 bg-primary/10 border border-primary/30 text-primary text-[9.5px] px-2.5 py-1 rounded-full cursor-pointer hover:bg-primary/20 transition-all">
+                <span>País: {{ selectedCountry() }}</span>
+                <span class="material-symbols-outlined text-[10px]">close</span>
+            </span>
+
+            <span *ngIf="selectedState() !== 'Todos'" (click)="selectedState.set('Todos')"
+                class="inline-flex items-center gap-1 bg-primary/10 border border-primary/30 text-primary text-[9.5px] px-2.5 py-1 rounded-full cursor-pointer hover:bg-primary/20 transition-all">
+                <span>Estado: {{ selectedState() }}</span>
+                <span class="material-symbols-outlined text-[10px]">close</span>
+            </span>
+
+            <span *ngIf="minRating() > 0" (click)="minRating.set(0)"
+                class="inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9.5px] px-2.5 py-1 rounded-full cursor-pointer hover:bg-amber-500/20 transition-all">
+                <span>⭐ {{ minRating() }}+</span>
+                <span class="material-symbols-outlined text-[10px]">close</span>
+            </span>
+
+            <span *ngIf="availabilityFilter() !== 'Todas'" (click)="availabilityFilter.set('Todas')"
+                class="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9.5px] px-2.5 py-1 rounded-full cursor-pointer hover:bg-emerald-500/20 transition-all">
+                <span>Disp: {{ availabilityFilter() }}</span>
+                <span class="material-symbols-outlined text-[10px]">close</span>
+            </span>
+
+            <button (click)="resetFilters()"
+                class="text-[9px] font-bold text-white/40 hover:text-primary underline ml-1 uppercase tracking-wider transition-colors">
+                Limpiar Todo
+            </button>
+        </div>
     </div>
 
-    <!-- Collapsible Hierarchical Geography & Date Filters Section -->
-    <div *ngIf="showAdvancedFilters()" 
-         class="bg-[#161616]/90 border border-white/[0.06] rounded-3xl p-5 flex flex-col gap-5 animate-expand-height font-['Be_Vietnam_Pro'] select-none animate-scale-in">
-        
-        <!-- 1st Row: Country -> State -> Municipality Dropdowns -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Country Select -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-[9px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[11px] text-primary/80">public</span>
-                    País
-                </label>
-                <select [ngModel]="selectedCountry()" 
-                        (ngModelChange)="onCountryChange($event)"
-                        class="bg-[#1b1b1b] text-white border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs focus:border-primary/50 focus:outline-none w-full font-light">
-                    <option *ngFor="let country of countries" [value]="country">{{ country }}</option>
-                </select>
+    <!-- Collapsible Hierarchical Geography, Genre & Interactive Sorting/Rating Filters Drawer -->
+    <div *ngIf="showAdvancedFilters()"
+        class="filter-glass-card border border-white/10 hover:border-primary/30 rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 flex flex-col items-center justify-center gap-2.5 animate-expand-height font-['Be_Vietnam_Pro'] select-none animate-scale-in shadow-2xl transition-all duration-300 w-full max-w-5xl mx-auto">
+
+        <!-- 3 Category Tabs (Apartados) - Centered on Desktop & Scrollable on Mobile -->
+        <div class="flex items-center justify-start sm:justify-center gap-1.5 overflow-x-auto w-full pb-1 scrollbar-none border-b border-white/[0.06]">
+            <button (click)="selectedFilterTab.set('genero')"
+                [ngClass]="selectedFilterTab() === 'genero' ? 'bg-primary text-black font-bold border-primary/30 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                class="px-3 py-1 rounded-xl border text-[9px] uppercase tracking-wider transition-all duration-200 shrink-0 flex items-center gap-1.5 active:scale-95">
+                <span class="material-symbols-outlined text-xs">music_note</span>
+                <span>Géneros Musicales</span>
+            </button>
+
+            <button (click)="selectedFilterTab.set('criterios')"
+                [ngClass]="selectedFilterTab() === 'criterios' ? 'bg-primary text-black font-bold border-primary/30 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                class="px-3 py-1 rounded-xl border text-[9px] uppercase tracking-wider transition-all duration-200 shrink-0 flex items-center gap-1.5 active:scale-95">
+                <span class="material-symbols-outlined text-xs">star</span>
+                <span>Calificación y Disponibilidad</span>
+            </button>
+
+            <button (click)="selectedFilterTab.set('ubicacion')"
+                [ngClass]="selectedFilterTab() === 'ubicacion' ? 'bg-primary text-black font-bold border-primary/30 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                class="px-3 py-1 rounded-xl border text-[9px] uppercase tracking-wider transition-all duration-200 shrink-0 flex items-center gap-1.5 active:scale-95">
+                <span class="material-symbols-outlined text-xs">pin_drop</span>
+                <span>Ubicación Geográfica</span>
+            </button>
+
+            <button *ngIf="hasActiveFilters()" (click)="resetFilters()"
+                class="ml-auto sm:ml-2 flex items-center gap-1 text-[8.5px] font-bold text-primary hover:text-primary-fixed uppercase tracking-wider bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg transition-all active:scale-95 shrink-0 shadow-inner">
+                <span class="material-symbols-outlined text-[11px]">rotate_left</span>
+                <span>Limpiar</span>
+            </button>
+        </div>
+
+        <!-- Single Compact Horizontal Line Content Row per Tab - Centered on Desktop -->
+        <div class="w-full flex items-center justify-start sm:justify-center">
+            <!-- TAB 1: Género Musical (Single Horizontal Line of Chips, Centered) -->
+            <div *ngIf="selectedFilterTab() === 'genero'" class="flex items-center justify-start sm:justify-center gap-1.5 overflow-x-auto w-full py-0.5 scrollbar-none whitespace-nowrap">
+                <button *ngFor="let filter of filters" (click)="onFilterSelected(filter)"
+                    [ngClass]="activeFilter() === filter ? 'bg-primary text-black border-primary/30 shadow-[0_2px_10px_rgba(242,202,80,0.2)] font-bold' : 'bg-white/5 border border-white/[0.08] text-white/70 hover:text-white hover:bg-white/10'"
+                    class="px-3 py-1.5 rounded-xl border text-[9.5px] uppercase tracking-wider transition-all duration-300 active:scale-95 shrink-0 flex items-center gap-1">
+                    <span *ngIf="activeFilter() === filter" class="material-symbols-outlined text-[11px] leading-none">check_circle</span>
+                    <span>{{ filter }}</span>
+                </button>
             </div>
 
-            <!-- State Select -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-[9px] font-bold text-white/45 uppercase tracking-wider flex items-center gap-1"
-                       [ngClass]="selectedCountry() === 'Todos' ? 'opacity-30' : ''">
-                    <span class="material-symbols-outlined text-[11px] text-primary/80">map</span>
-                    Estado
-                </label>
-                <select [disabled]="selectedCountry() === 'Todos'" 
-                        [ngModel]="selectedState()" 
+            <!-- TAB 2: Calificación, Ordenamiento y Disponibilidad (Single Compact Horizontal Line, Centered) -->
+            <div *ngIf="selectedFilterTab() === 'criterios'" class="flex items-center justify-start sm:justify-center gap-2 sm:gap-3 overflow-x-auto w-full py-0.5 scrollbar-none whitespace-nowrap">
+                <!-- Group A: Ordenar Por -->
+                <div class="flex items-center gap-1 shrink-0 bg-white/[0.03] border border-white/[0.06] p-1 rounded-xl">
+                    <span class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider px-1">Ordenar:</span>
+                    <button (click)="sortBy.set('none')"
+                        [ngClass]="sortBy() === 'none' ? 'bg-primary text-black font-bold border-primary/20 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                        class="px-2 py-1 rounded-lg border text-[9px] flex items-center gap-0.5 transition-all active:scale-95">
+                        Defecto
+                    </button>
+                    <button (click)="sortBy.set('rating')"
+                        [ngClass]="sortBy() === 'rating' ? 'bg-primary text-black font-bold border-primary/20 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                        class="px-2 py-1 rounded-lg border text-[9px] flex items-center gap-0.5 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-[10px] fill-current">star</span>
+                        Rating
+                    </button>
+                    <button (click)="sortBy.set('availability')"
+                        [ngClass]="sortBy() === 'availability' ? 'bg-primary text-black font-bold border-primary/20 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                        class="px-2 py-1 rounded-lg border text-[9px] flex items-center gap-0.5 transition-all active:scale-95">
+                        Disponibilidad
+                    </button>
+                </div>
+
+                <!-- Separator -->
+                <div class="w-px h-5 bg-white/10 shrink-0"></div>
+
+                <!-- Group B: Calificación Mínima -->
+                <div class="flex items-center gap-1 shrink-0 bg-white/[0.03] border border-white/[0.06] p-1 rounded-xl">
+                    <span class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider px-1">Estrellas:</span>
+                    <button (click)="minRating.set(0)"
+                        [ngClass]="minRating() === 0 ? 'bg-primary text-black font-bold border-primary/20 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                        class="px-2 py-1 rounded-lg border text-[9px] transition-all active:scale-95">
+                        Todas
+                    </button>
+                    <button (click)="minRating.set(4.5)"
+                        [ngClass]="minRating() === 4.5 ? 'bg-primary text-black font-bold border-primary/20 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                        class="px-2 py-1 rounded-lg border text-[9px] flex items-center gap-0.5 transition-all active:scale-95">
+                        4.5+ ⭐
+                    </button>
+                    <button (click)="minRating.set(4.8)"
+                        [ngClass]="minRating() === 4.8 ? 'bg-primary text-black font-bold border-primary/20 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                        class="px-2 py-1 rounded-lg border text-[9px] flex items-center gap-0.5 transition-all active:scale-95">
+                        4.8+ ⭐
+                    </button>
+                    <button (click)="minRating.set(5.0)"
+                        [ngClass]="minRating() === 5.0 ? 'bg-primary text-black font-bold border-primary/20 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                        class="px-2 py-1 rounded-lg border text-[9px] flex items-center gap-0.5 transition-all active:scale-95">
+                        5.0 ⭐
+                    </button>
+                </div>
+
+                <!-- Separator -->
+                <div class="w-px h-5 bg-white/10 shrink-0"></div>
+
+                <!-- Group C: Disponibilidad -->
+                <div class="flex items-center gap-1 shrink-0 bg-white/[0.03] border border-white/[0.06] p-1 rounded-xl">
+                    <span class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider px-1">Disponibilidad:</span>
+                    <button (click)="availabilityFilter.set('Todas')"
+                        [ngClass]="availabilityFilter() === 'Todas' ? 'bg-primary text-black font-bold border-primary/20 shadow-md' : 'bg-white/5 border border-white/[0.08] text-white/60 hover:text-white'"
+                        class="px-2 py-1 rounded-lg border text-[9px] transition-all active:scale-95">
+                        Todas
+                    </button>
+                    <button (click)="availabilityFilter.set('Alta')"
+                        [ngClass]="availabilityFilter() === 'Alta' ? 'bg-emerald-500 text-black font-bold border-emerald-400 shadow-md' : 'bg-white/5 border border-white/[0.08] text-emerald-400/80 hover:text-emerald-400'"
+                        class="px-2 py-1 rounded-lg border text-[9px] flex items-center gap-1 transition-all active:scale-95">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        Alta
+                    </button>
+                    <button (click)="availabilityFilter.set('Media')"
+                        [ngClass]="availabilityFilter() === 'Media' ? 'bg-amber-500 text-black font-bold border-amber-400 shadow-md' : 'bg-white/5 border border-white/[0.08] text-amber-400/80 hover:text-amber-400'"
+                        class="px-2 py-1 rounded-lg border text-[9px] flex items-center gap-1 transition-all active:scale-95">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                        Media
+                    </button>
+                    <button (click)="availabilityFilter.set('Limitada')"
+                        [ngClass]="availabilityFilter() === 'Limitada' ? 'bg-rose-500 text-white font-bold border-rose-400 shadow-md' : 'bg-white/5 border border-white/[0.08] text-rose-400/80 hover:text-rose-400'"
+                        class="px-2 py-1 rounded-lg border text-[9px] flex items-center gap-1 transition-all active:scale-95">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                        Limitada
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 3: Ubicación Geográfica (Single Compact Horizontal Line, Centered) -->
+            <div *ngIf="selectedFilterTab() === 'ubicacion'" class="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto w-full py-0.5 scrollbar-none whitespace-nowrap">
+                <!-- Country -->
+                <div class="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.06] px-2.5 py-1 rounded-xl shrink-0">
+                    <span class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider">País:</span>
+                    <select [ngModel]="selectedCountry()" (ngModelChange)="onCountryChange($event)"
+                        class="bg-[#181818] text-white border border-white/[0.08] rounded-lg px-2 py-1 text-xs focus:border-primary/50 focus:outline-none font-light">
+                        <option *ngFor="let country of countries" [value]="country">{{ country }}</option>
+                    </select>
+                </div>
+
+                <!-- State -->
+                <div class="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.06] px-2.5 py-1 rounded-xl shrink-0">
+                    <span class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider"
+                        [ngClass]="selectedCountry() === 'Todos' ? 'opacity-30' : ''">Estado:</span>
+                    <select [disabled]="selectedCountry() === 'Todos'" [ngModel]="selectedState()"
                         (ngModelChange)="onStateChange($event)"
-                        class="bg-[#1b1b1b] text-white border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs focus:border-primary/50 focus:outline-none w-full font-light disabled:opacity-30">
-                    <option value="Todos">Todos</option>
-                    <option *ngFor="let state of availableStates" [value]="state">{{ state }}</option>
-                </select>
-            </div>
+                        class="bg-[#181818] text-white border border-white/[0.08] rounded-lg px-2 py-1 text-xs focus:border-primary/50 focus:outline-none font-light disabled:opacity-30">
+                        <option value="Todos">Todos</option>
+                        <option *ngFor="let state of availableStates" [value]="state">{{ state }}</option>
+                    </select>
+                </div>
 
-            <!-- Municipality Select -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-[9px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-1"
-                       [ngClass]="selectedState() === 'Todos' ? 'opacity-30' : ''">
-                    <span class="material-symbols-outlined text-[11px] text-primary/80">location_city</span>
-                    Municipio
-                </label>
-                <select [disabled]="selectedState() === 'Todos'" 
-                        [ngModel]="selectedMunicipality()" 
+                <!-- Municipality -->
+                <div class="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.06] px-2.5 py-1 rounded-xl shrink-0">
+                    <span class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider"
+                        [ngClass]="selectedState() === 'Todos' ? 'opacity-30' : ''">Municipio:</span>
+                    <select [disabled]="selectedState() === 'Todos'" [ngModel]="selectedMunicipality()"
                         (ngModelChange)="selectedMunicipality.set($event)"
-                        class="bg-[#1b1b1b] text-white border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs focus:border-primary/50 focus:outline-none w-full font-light disabled:opacity-30">
-                    <option value="Todos">Todos</option>
-                    <option *ngFor="let mun of availableMunicipalities" [value]="mun">{{ mun }}</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- 2nd Row: Date filters -->
-        <div class="grid grid-cols-1 gap-4 border-t border-white/[0.04] pt-4">
-            <!-- Date Range Filter -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-[9px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-xs text-primary/80">date_range</span>
-                    Rango de Fechas
-                </label>
-                <div class="flex gap-2 items-center">
-                    <input type="date" 
-                           [ngModel]="filterDateStart()" 
-                           (ngModelChange)="filterDateStart.set($event)"
-                           class="flex-1 bg-[#1b1b1b] text-white border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs focus:border-primary/50 focus:outline-none font-light animate-scale-in" />
-                    <span class="text-white/20 text-xs font-light">a</span>
-                    <input type="date" 
-                           [ngModel]="filterDateEnd()" 
-                           (ngModelChange)="filterDateEnd.set($event)"
-                           class="flex-1 bg-[#1b1b1b] text-white border border-white/[0.08] rounded-xl px-3 py-2.5 text-xs focus:border-primary/50 focus:outline-none font-light animate-scale-in" />
+                        class="bg-[#181818] text-white border border-white/[0.08] rounded-lg px-2 py-1 text-xs focus:border-primary/50 focus:outline-none font-light disabled:opacity-30">
+                        <option value="Todos">Todos</option>
+                        <option *ngFor="let mun of availableMunicipalities" [value]="mun">{{ mun }}</option>
+                    </select>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Filters Section -->
-    <div class="animate-slide-up" style="animation-delay: 0.2s;">
-        <app-filter-pills 
-            [filters]="filters" 
-            [activeFilter]="activeFilter" 
-            (filterSelected)="onFilterSelected($event)">
-        </app-filter-pills>
-    </div>
-
     <!-- Available Groups Grid Section -->
-    <section class="mt-4 flex flex-col gap-4 animate-slide-up" style="animation-delay: 0.25s;">
-        <div class="flex justify-between items-center border-b border-white/[0.04] pb-2">
-            <h3 class="font-['Epilogue'] font-black text-sm uppercase tracking-widest text-white flex items-center gap-1.5">
+    <section class="mt-4 flex flex-col gap-4 animate-slide-up" style="animation-delay: 0.2s;">
+        <div class="flex justify-between items-center border-b border-white/[0.06] pb-2.5">
+            <h3 class="font-['Epilogue'] font-black text-sm uppercase tracking-widest text-white flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary text-base">groups</span>
                 Talentos Disponibles
             </h3>
-            <span class="text-[10px] text-white/40 font-light">Mostrando {{ filteredBands().length }} agrupaciones</span>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span class="text-[10px] text-white/50 font-medium">Mostrando {{ filteredBands().length }} agrupaciones</span>
+            </div>
         </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <app-band-card *ngFor="let band of filteredBands()"
-                (quote)="openQuoteModal(band)"
-                [imageUrl]="band.imageUrl"
-                [imageAlt]="band.imageAlt"
-                [tag]="band.tag"
-                [rating]="band.rating"
-                [name]="band.name"
-                [location]="band.location"
-                [availability]="band.availability"
-                [isFeatured]="band.isFeatured"
-                [managerPhone]="band.managerPhone"
-                [managerName]="band.managerName">
+
+        <!-- Dynamic Band Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            <app-band-card *ngFor="let band of filteredBands()" (quote)="openQuoteModal(band)" [bandId]="band.id"
+                [imageUrl]="band.imageUrl" [imageAlt]="band.imageAlt" [tag]="band.tag" [rating]="band.rating"
+                [name]="band.name" [location]="band.location" [availability]="band.availability"
+                [isFeatured]="band.isFeatured" [managerPhone]="band.managerPhone" [managerName]="band.managerName">
             </app-band-card>
         </div>
 
-        <!-- Empty State Search Result -->
-        <div *ngIf="filteredBands().length === 0" 
-             class="text-center py-16 bg-white/[0.01] border border-white/[0.04] rounded-3xl animate-slide-up">
-            <span class="material-symbols-outlined text-white/20 text-4xl mb-2">search_off</span>
-            <p class="text-xs text-white/40 font-light">No se encontraron agrupaciones que coincidan con la búsqueda o filtros aplicados.</p>
+        <!-- Premium Empty State Search Result -->
+        <div *ngIf="filteredBands().length === 0"
+            class="text-center py-16 px-6 bg-[#141414]/80 border border-white/10 rounded-3xl animate-scale-in flex flex-col items-center gap-3 shadow-2xl">
+            <div class="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-1 shadow-inner">
+                <span class="material-symbols-outlined text-3xl">search_off</span>
+            </div>
+            <h4 class="font-['Epilogue'] font-black text-white uppercase tracking-wider text-sm">Sin coincidencias de búsqueda</h4>
+            <p class="text-xs text-white/40 font-light max-w-md leading-relaxed">
+                No se encontraron agrupaciones musicales que coincidan con la búsqueda o filtros aplicados actualmente.
+            </p>
+            <button (click)="resetFilters()"
+                class="mt-2 px-5 py-2.5 bg-primary hover:bg-primary-fixed text-black font-['Epilogue'] font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">rotate_left</span>
+                <span>Restablecer Filtros</span>
+            </button>
         </div>
     </section>
 </div>
 
 <!-- Premium Highly Animated Multi-Step Quote Request Modal Form -->
-<div *ngIf="selectedBandToQuote()" 
-     (click)="closeQuoteModal()"
-     class="fixed inset-0 z-[105] bg-black/95 backdrop-blur-3xl flex items-end md:items-center justify-center p-0 md:p-6 animate-lightbox-fade-in font-['Be_Vietnam_Pro'] select-none">
-    
+<div *ngIf="selectedBandToQuote()" (click)="closeQuoteModal()"
+    [ngClass]="isQuoteModalClosing() ? 'animate-lightbox-fade-out' : 'animate-lightbox-fade-in'"
+    class="fixed inset-0 z-[105] flex items-end md:items-center justify-center p-0 md:p-6 font-['Be_Vietnam_Pro'] select-none">
+
     <!-- Close Button -->
-    <button (click)="closeQuoteModal()" 
-            class="absolute top-4 right-4 z-[120] w-11 h-11 rounded-full bg-black/45 border border-white/10 hover:bg-black/60 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-xl">
+    <button (click)="closeQuoteModal()"
+        class="absolute top-4 right-4 z-[120] w-11 h-11 rounded-full bg-black/45 border border-white/10 hover:bg-black/60 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-xl">
         <span class="material-symbols-outlined text-lg">close</span>
     </button>
 
     <!-- Modal Box -->
-    <div class="relative w-full h-[90vh] md:h-auto bg-[#121212]/95 border-t border-x md:border border-white/[0.08] rounded-t-[32px] md:rounded-3xl p-6 md:p-8 flex flex-col shadow-2xl animate-lightbox-zoom-in font-['Be_Vietnam_Pro'] select-none overflow-y-auto mt-auto md:mt-0"
-         (click)="$event.stopPropagation()">
-        
+    <div [ngClass]="isQuoteModalClosing() ? 'animate-slide-down-exit' : 'animate-slide-up-entry'"
+        class="relative w-full md:max-w-3xl lg:max-w-4xl xl:max-w-5xl md:mx-auto max-h-[92vh] md:max-h-[90vh] md:h-auto bg-[#121212]/95 border-t border-x md:border border-white/[0.08] rounded-t-[32px] md:rounded-3xl p-4 sm:p-6 md:p-8 flex flex-col shadow-[0_25px_60px_rgba(0,0,0,0.9)] font-['Be_Vietnam_Pro'] select-none overflow-y-auto mt-auto md:mt-0"
+        (click)="$event.stopPropagation()">
+
+        <!-- Mobile Handle Pill (Tap or Drag down to close) -->
+        <div (click)="closeQuoteModal()" class="w-12 h-1.5 bg-white/20 hover:bg-white/35 rounded-full mx-auto mb-3 shrink-0 md:hidden cursor-pointer active:scale-90 transition-all"></div>
+
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 w-full">
             <!-- Left Column: Form & Stepper -->
             <div class="md:col-span-7 flex flex-col justify-between min-h-[420px]">
                 <!-- Mobile compact header summary (Visible only on mobile) -->
-                <div class="flex md:hidden items-center gap-3 bg-white/[0.02] border border-white/[0.06] rounded-2xl p-3.5 mb-4 shadow-inner">
-                    <img [src]="selectedBandToQuote().imageUrl" [alt]="selectedBandToQuote().name" class="w-12 h-12 rounded-xl object-cover border border-white/10 shrink-0" />
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-1">
-                            <h4 class="font-['Epilogue'] font-black text-xs text-white uppercase tracking-wider truncate">{{ selectedBandToQuote().name }}</h4>
-                            <span class="material-symbols-outlined text-xs text-primary fill-current shrink-0">verified</span>
-                        </div>
-                        <p class="text-[8.5px] text-white/45 font-light truncate">Rep: {{ selectedBandToQuote().managerName }}</p>
-                    </div>
+                <div (click)="goToBandProfile()"
+                    class="flex md:hidden flex-col gap-2.5 bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/[0.08] hover:border-primary/40 rounded-2xl p-3.5 mb-4 shadow-xl cursor-pointer group transition-all">
                     
-                    <!-- Quick WhatsApp button on mobile -->
-                    <a [href]="'https://api.whatsapp.com/send?phone=' + selectedBandToQuote().managerPhone + '&text=Hola%20' + selectedBandToQuote().managerName + ',%20me%20gustar%C3%ADa%20cotizar%20la%20agrupaci%C3%B3n%20' + selectedBandToQuote().name + '%20para%20un%20evento.'"
-                       target="_blank"
-                       (click)="$event.stopPropagation()"
-                       title="Contactar al Manager por WhatsApp"
-                       class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center transition-all shrink-0 active:scale-95">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-4 h-4 fill-current">
-                            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
-                        </svg>
-                    </a>
+                    <!-- Top Row: Band Photo, Name, Rating & WhatsApp Button -->
+                    <div class="flex items-center gap-3">
+                        <div class="relative shrink-0">
+                            <img [src]="selectedBandToQuote().imageUrl" [alt]="selectedBandToQuote().name"
+                                class="w-12 h-12 rounded-xl object-cover border border-white/10 shadow-md group-hover:scale-105 transition-transform" />
+                            <!-- Rating badge overlay on image -->
+                            <span class="absolute -bottom-1 -right-1 bg-black/80 border border-amber-400/40 text-amber-400 text-[8px] font-bold px-1 py-0.2 rounded-md backdrop-blur-md flex items-center gap-0.5 shadow-sm">
+                                <span class="material-symbols-outlined text-[9px] fill-current">star</span>
+                                {{ selectedBandToQuote().rating }}
+                            </span>
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+                            <!-- Name & Verification -->
+                            <div class="flex items-center gap-1">
+                                <h4 class="font-['Epilogue'] font-black text-xs text-white uppercase tracking-wider truncate group-hover:text-primary transition-colors">
+                                    {{ selectedBandToQuote().name }}
+                                </h4>
+                                <span class="material-symbols-outlined text-xs text-primary fill-current shrink-0">verified</span>
+                            </div>
+
+                            <!-- Genre Badge & Location -->
+                            <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                <span class="bg-primary/10 border border-primary/25 text-primary text-[8.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md leading-none">
+                                    {{ selectedBandToQuote().tag }}
+                                </span>
+                                <span class="text-white/40 text-[9.5px] font-light truncate flex items-center gap-0.5">
+                                    <span class="material-symbols-outlined text-[10px] text-primary/70">pin_drop</span>
+                                    {{ selectedBandToQuote().location }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Quick WhatsApp button on mobile -->
+                        <a [href]="'https://api.whatsapp.com/send?phone=' + selectedBandToQuote().managerPhone + '&text=Hola%20' + selectedBandToQuote().managerName + ',%20me%20gustar%C3%ADa%20cotizar%20la%20agrupaci%C3%B3n%20' + selectedBandToQuote().name + '%20para%20un%20evento.'"
+                            target="_blank" (click)="$event.stopPropagation()" title="Contactar al Manager por WhatsApp"
+                            class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center transition-all shrink-0 active:scale-95">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-3.5 h-3.5 fill-current">
+                                <path
+                                    d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z" />
+                            </svg>
+                        </a>
+                    </div>
+
+                    <!-- Bottom Sub-Row: Manager Info & Availability Status Bar -->
+                    <div class="flex items-center justify-between border-t border-white/[0.06] pt-2 mt-0.5 text-[9px]">
+                        <!-- Manager Name -->
+                        <span *ngIf="selectedBandToQuote().managerName" class="text-emerald-400/90 font-medium flex items-center gap-1 truncate">
+                            <span class="material-symbols-outlined text-xs text-emerald-400">support_agent</span>
+                            <span>Rep: {{ selectedBandToQuote().managerName }}</span>
+                        </span>
+
+                        <!-- Availability Tag -->
+                        <span class="text-primary/90 font-bold uppercase tracking-wider bg-primary/5 border border-primary/15 px-2 py-0.5 rounded-md ml-auto shrink-0">
+                            {{ selectedBandToQuote().availability }}
+                        </span>
+                    </div>
                 </div>
+
                 <div>
                     <!-- Step Progress Indicator -->
                     <div *ngIf="quoteStep() < 4" class="flex items-center justify-between mb-4">
                         <div class="flex flex-col gap-0.5 min-w-0 pr-4">
-                            <span class="text-[9px] uppercase tracking-widest font-black text-primary">Asistente Digital</span>
+                            <span class="text-[9px] uppercase tracking-widest font-black text-primary">Asistente
+                                Digital</span>
                             <h3 class="text-xs text-white/50 truncate font-light">Solicitud Paso a Paso</h3>
                         </div>
                         <span class="text-[11px] text-white/40 font-medium shrink-0">Paso {{ quoteStep() }} de 3</span>
                     </div>
-                    
+
                     <div *ngIf="quoteStep() < 4" class="w-full bg-white/5 h-[3px] rounded-full mb-5 overflow-hidden">
-                        <div class="bg-primary h-full transition-all duration-500" [style.width.%]="(quoteStep() - 1) * 50 + 10"></div>
+                        <div class="bg-primary h-full transition-all duration-500"
+                            [style.width.%]="(quoteStep() - 1) * 50 + 10"></div>
                     </div>
 
                     <!-- Form Steps Content -->
@@ -204,106 +395,114 @@
                         <!-- STEP 1: Interactive Event Type Card Selectors & Maps Search Autocomplete Picker -->
                         <div *ngIf="quoteStep() === 1" class="flex flex-col gap-4 animate-scale-in">
                             <div class="flex flex-col gap-2">
-                                <label class="text-[9px] font-bold text-white/45 uppercase tracking-wider">Tipo de Evento</label>
-                                
+                                <label class="text-[9px] font-bold text-white/45 uppercase tracking-wider">Tipo de
+                                    Evento</label>
+
                                 <!-- Premium Centered Interactive Cards -->
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     <button (click)="eventType.set('Boda')"
-                                            [ngClass]="eventType() === 'Boda' ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
-                                            class="flex flex-col items-center justify-center gap-1 py-2.5 border rounded-xl transition-all duration-300 active:scale-95 text-center">
-                                        <span class="material-symbols-outlined text-base leading-none" [style.font-variation-settings]="eventType() === 'Boda' ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">favorite</span>
-                                        <span class="text-[9px] font-bold uppercase tracking-wider font-['Epilogue'] mt-0.5 leading-none">Boda</span>
+                                        [ngClass]="eventType() === 'Boda' ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
+                                        class="flex flex-col items-center justify-center gap-1 py-2.5 border rounded-xl transition-all duration-300 active:scale-95 text-center">
+                                        <span class="material-symbols-outlined text-base leading-none"
+                                            [style.font-variation-settings]="eventType() === 'Boda' ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">favorite</span>
+                                        <span
+                                            class="text-[9px] font-bold uppercase tracking-wider font-['Epilogue'] mt-0.5 leading-none">Boda</span>
                                     </button>
                                     <button (click)="eventType.set('XV Años')"
-                                            [ngClass]="eventType() === 'XV Años' ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
-                                            class="flex flex-col items-center justify-center gap-1 py-2.5 border rounded-xl transition-all duration-300 active:scale-95 text-center">
-                                        <span class="material-symbols-outlined text-base leading-none" [style.font-variation-settings]="eventType() === 'XV Años' ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">cake</span>
-                                        <span class="text-[9px] font-bold uppercase tracking-wider font-['Epilogue'] mt-0.5 leading-none">XV Años</span>
+                                        [ngClass]="eventType() === 'XV Años' ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
+                                        class="flex flex-col items-center justify-center gap-1 py-2.5 border rounded-xl transition-all duration-300 active:scale-95 text-center">
+                                        <span class="material-symbols-outlined text-base leading-none"
+                                            [style.font-variation-settings]="eventType() === 'XV Años' ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">cake</span>
+                                        <span
+                                            class="text-[9px] font-bold uppercase tracking-wider font-['Epilogue'] mt-0.5 leading-none">XV
+                                            Años</span>
                                     </button>
                                     <button (click)="eventType.set('Concierto')"
-                                            [ngClass]="eventType() === 'Concierto' ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
-                                            class="flex flex-col items-center justify-center gap-1 py-2.5 border rounded-xl transition-all duration-300 active:scale-95 text-center">
-                                        <span class="material-symbols-outlined text-base leading-none" [style.font-variation-settings]="eventType() === 'Concierto' ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">festival</span>
-                                        <span class="text-[9px] font-bold uppercase tracking-wider font-['Epilogue'] mt-0.5 leading-none">Concierto</span>
+                                        [ngClass]="eventType() === 'Concierto' ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
+                                        class="flex flex-col items-center justify-center gap-1 py-2.5 border rounded-xl transition-all duration-300 active:scale-95 text-center">
+                                        <span class="material-symbols-outlined text-base leading-none"
+                                            [style.font-variation-settings]="eventType() === 'Concierto' ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">festival</span>
+                                        <span
+                                            class="text-[9px] font-bold uppercase tracking-wider font-['Epilogue'] mt-0.5 leading-none">Concierto</span>
                                     </button>
                                     <button (click)="eventType.set('Fiesta Privada')"
-                                            [ngClass]="eventType() === 'Fiesta Privada' ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
-                                            class="flex flex-col items-center justify-center gap-1 py-2.5 border rounded-xl transition-all duration-300 active:scale-95 text-center">
-                                        <span class="material-symbols-outlined text-base leading-none" [style.font-variation-settings]="eventType() === 'Fiesta Privada' ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">celebration</span>
-                                        <span class="text-[9px] font-bold uppercase tracking-wider font-['Epilogue'] mt-0.5 leading-none">Fiesta</span>
+                                        [ngClass]="eventType() === 'Fiesta Privada' ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
+                                        class="flex flex-col items-center justify-center gap-1 py-2.5 border rounded-xl transition-all duration-300 active:scale-95 text-center">
+                                        <span class="material-symbols-outlined text-base leading-none"
+                                            [style.font-variation-settings]="eventType() === 'Fiesta Privada' ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">celebration</span>
+                                        <span
+                                            class="text-[9px] font-bold uppercase tracking-wider font-['Epilogue'] mt-0.5 leading-none">Fiesta</span>
                                     </button>
                                     <button (click)="eventType.set('Otro')"
-                                            [ngClass]="eventType() === 'Otro' ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
-                                            class="flex flex-col items-center justify-center gap-1 py-2.5 border rounded-xl transition-all duration-300 active:scale-95 col-span-2 sm:col-span-1 text-center">
-                                        <span class="material-symbols-outlined text-base leading-none" [style.font-variation-settings]="eventType() === 'Otro' ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">pending</span>
-                                        <span class="text-[9px] font-bold uppercase tracking-wider font-['Epilogue'] mt-0.5 leading-none">Otro</span>
+                                        [ngClass]="eventType() === 'Otro' ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
+                                        class="flex flex-col items-center justify-center gap-1 py-2.5 border rounded-xl transition-all duration-300 active:scale-95 col-span-2 sm:col-span-1 text-center">
+                                        <span class="material-symbols-outlined text-base leading-none"
+                                            [style.font-variation-settings]="eventType() === 'Otro' ? '&quot;FILL&quot; 1' : '&quot;FILL&quot; 0'">pending</span>
+                                        <span
+                                            class="text-[9px] font-bold uppercase tracking-wider font-['Epilogue'] mt-0.5 leading-none">Otro</span>
                                     </button>
                                 </div>
                             </div>
 
                             <!-- Date Selection -->
                             <div class="flex flex-col gap-1.5">
-                                <label class="text-[9px] font-bold text-white/45 uppercase tracking-wider">Fecha del Evento</label>
-                                <input type="date" 
-                                       [ngModel]="eventDate()" 
-                                       (ngModelChange)="eventDate.set($event)" 
-                                       name="eventDate"
-                                       class="bg-[#181818] text-white border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs focus:border-primary/50 focus:outline-none w-full font-light shadow-inner" />
+                                <label class="text-[9px] font-bold text-white/45 uppercase tracking-wider">Fecha del
+                                    Evento</label>
+                                <input type="date" [ngModel]="eventDate()" (ngModelChange)="eventDate.set($event)"
+                                    name="eventDate"
+                                    class="bg-[#181818] text-white border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs focus:border-primary/50 focus:outline-none w-full font-light shadow-inner" />
                             </div>
 
                             <!-- Location Search Autocomplete (Google Maps Place Picker Mock) -->
                             <div class="flex flex-col gap-1.5 relative">
-                                <div class="flex justify-between items-center">
-                                    <label class="text-[9px] font-bold text-white/45 uppercase tracking-wider flex items-center gap-1.5">
+                                <div class="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center items-center justify-center text-center gap-1.5">
+                                    <label
+                                        class="text-[9px] font-bold text-white/45 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5">
                                         <span class="material-symbols-outlined text-[12px] text-primary">pin_drop</span>
                                         Dirección del Evento (Buscador Google Maps)
                                     </label>
-                                    
+
                                     <!-- GPS Location Picker Link -->
-                                    <button (click)="openMapPicker()" 
-                                            class="flex items-center gap-1 text-[8.5px] text-primary hover:text-primary-fixed underline transition-all select-none">
+                                    <button (click)="openMapPicker()"
+                                        class="flex items-center gap-1 text-[8.5px] text-primary hover:text-primary-fixed underline transition-all select-none self-center sm:self-auto">
                                         <span class="material-symbols-outlined text-[11px]">map</span>
                                         Seleccionar en el mapa
                                     </button>
                                 </div>
-                                
+
                                 <div class="relative flex gap-2">
-                                    <input type="text" 
-                                           [ngModel]="eventLocationQuery()" 
-                                           (ngModelChange)="onLocationQueryChange($event)" 
-                                           name="eventLocationQuery"
-                                           placeholder="Escribe cualquier dirección del evento..." 
-                                           class="bg-[#181818] text-white placeholder-white/20 border border-white/[0.08] rounded-xl pl-4 pr-10 py-2.5 text-xs focus:border-primary/50 focus:outline-none flex-1 font-light shadow-inner" />
-                                    
+                                    <input type="text" [ngModel]="eventLocationQuery()"
+                                        (ngModelChange)="onLocationQueryChange($event)" name="eventLocationQuery"
+                                        placeholder="Escribe cualquier dirección del evento..."
+                                        class="bg-[#181818] text-white placeholder-white/20 border border-white/[0.08] rounded-xl pl-4 pr-10 py-2.5 text-xs focus:border-primary/50 focus:outline-none flex-1 font-light shadow-inner" />
+
                                     <!-- Current Location Button -->
-                                    <button (click)="useCurrentLocation()" 
-                                            title="Usar Ubicación Actual"
-                                            class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary flex items-center justify-center transition-all shrink-0">
-                                        <span class="material-symbols-outlined text-base animate-pulse">my_location</span>
+                                    <button (click)="useCurrentLocation()" title="Usar Ubicación Actual"
+                                        class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary flex items-center justify-center transition-all shrink-0">
+                                        <span
+                                            class="material-symbols-outlined text-base animate-pulse">my_location</span>
                                     </button>
                                 </div>
 
                                 <!-- Autocomplete predictively generated recommendations dropdown -->
-                                <div *ngIf="showLocationSuggestions() && realSuggestions().length > 0" 
-                                     class="absolute left-0 right-12 top-[55px] bg-[#1a1a1a]/95 border border-white/[0.08] rounded-xl shadow-2xl z-30 p-1 font-['Be_Vietnam_Pro'] max-h-48 overflow-y-auto">
-                                    <button *ngFor="let loc of realSuggestions()" 
-                                            (click)="selectLocationSuggestion(loc)"
-                                            class="w-full text-left px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-all flex items-center gap-2">
-                                        <span class="material-symbols-outlined text-xs text-primary/75">location_on</span>
+                                <div *ngIf="showLocationSuggestions() && realSuggestions().length > 0"
+                                    class="absolute left-0 right-12 top-[55px] bg-[#1a1a1a]/95 border border-white/[0.08] rounded-xl shadow-2xl z-30 p-1 font-['Be_Vietnam_Pro'] max-h-48 overflow-y-auto">
+                                    <button *ngFor="let loc of realSuggestions()"
+                                        (click)="selectLocationSuggestion(loc)"
+                                        class="w-full text-left px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-all flex items-center gap-2">
+                                        <span
+                                            class="material-symbols-outlined text-xs text-primary/75">location_on</span>
                                         <span class="truncate">{{ loc.title }}</span>
                                     </button>
                                 </div>
                             </div>
 
                             <!-- Google Maps Interactive IFrame Preview -->
-                            <div *ngIf="selectedLocationMapUrl()" 
-                                 class="relative w-full h-32 rounded-2xl overflow-hidden border border-white/[0.08] bg-black/20 mt-1 transition-all duration-500 shadow-md">
-                                <iframe [src]="selectedLocationMapUrl()" 
-                                        width="100%" 
-                                        height="100%" 
-                                        style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(110%);" 
-                                        allowfullscreen="" 
-                                        loading="lazy">
+                            <div *ngIf="selectedLocationMapUrl()"
+                                class="relative w-full h-32 rounded-2xl overflow-hidden border border-white/[0.08] bg-black/20 mt-1 transition-all duration-500 shadow-md">
+                                <iframe [src]="selectedLocationMapUrl()" width="100%" height="100%"
+                                    style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(110%);"
+                                    allowfullscreen="" loading="lazy">
                                 </iframe>
                             </div>
                         </div>
@@ -311,129 +510,140 @@
                         <!-- STEP 2: Specs, Duration Counter with Progress & Special Notes -->
                         <div *ngIf="quoteStep() === 2" class="flex flex-col gap-4 animate-scale-in">
                             <div class="flex flex-col gap-2">
-                                <label class="text-[9px] font-bold text-white/45 uppercase tracking-wider">Duración de la Presentación</label>
-                                
+                                <label class="text-[9px] font-bold text-white/45 uppercase tracking-wider">Duración de
+                                    la Presentación</label>
+
                                 <!-- Premium Hour Counter Control -->
-                                <div class="flex flex-col items-center bg-[#181818] border border-white/[0.08] rounded-2xl py-4 px-5 mt-1 shadow-inner gap-3">
+                                <div
+                                    class="flex flex-col items-center bg-[#181818] border border-white/[0.08] rounded-2xl py-4 px-5 mt-1 shadow-inner gap-3">
                                     <div class="flex items-center justify-center gap-6 w-full">
-                                        <button (click)="adjustHours(-1)" 
-                                                class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all select-none active:scale-90 border border-white/5">
+                                        <button (click)="adjustHours(-1)"
+                                            class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all select-none active:scale-90 border border-white/5">
                                             <span class="material-symbols-outlined text-lg leading-none">remove</span>
                                         </button>
-                                        
+
                                         <div class="flex flex-col items-center select-none w-24">
-                                            <span class="text-3xl font-black font-['Epilogue'] text-primary">{{ durationHours() }}</span>
-                                            <span class="text-[8px] uppercase tracking-widest text-white/35 font-bold mt-0.5">Horas contratadas</span>
+                                            <span class="text-3xl font-black font-['Epilogue'] text-primary">{{
+                                                durationHours() }}</span>
+                                            <span
+                                                class="text-[8px] uppercase tracking-widest text-white/35 font-bold mt-0.5">Horas
+                                                contratadas</span>
                                         </div>
-                                        
-                                        <button (click)="adjustHours(1)" 
-                                                class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all select-none active:scale-90 border border-white/5">
+
+                                        <button (click)="adjustHours(1)"
+                                            class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all select-none active:scale-90 border border-white/5">
                                             <span class="material-symbols-outlined text-lg leading-none">add</span>
                                         </button>
                                     </div>
-                                    
+
                                     <!-- Visual progress bar showing hours ratio -->
-                                    <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden relative shadow-inner">
-                                        <div class="bg-gradient-to-r from-primary/60 to-primary h-full transition-all duration-500 rounded-full" 
-                                             [style.width.%]="(durationHours() / 12) * 100"></div>
+                                    <div
+                                        class="w-full bg-white/5 h-2 rounded-full overflow-hidden relative shadow-inner">
+                                        <div class="bg-gradient-to-r from-primary/60 to-primary h-full transition-all duration-500 rounded-full"
+                                            [style.width.%]="(durationHours() / 12) * 100"></div>
                                     </div>
-                                    <p class="text-[9.5px] text-center text-primary/90 font-medium tracking-wide animate-slide-up">{{ durationCategoryLabel }}</p>
+                                    <p
+                                        class="text-[9.5px] text-center text-primary/90 font-medium tracking-wide animate-slide-up">
+                                        {{ durationCategoryLabel }}</p>
                                 </div>
                             </div>
 
                             <div class="flex flex-col gap-1.5">
-                                <label class="text-[9px] font-bold text-white/45 uppercase tracking-wider">Notas Especiales / Repertorio Solicitado</label>
-                                <textarea rows="3" 
-                                          [ngModel]="notes()" 
-                                          (ngModelChange)="notes.set($event)" 
-                                          name="notes"
-                                          placeholder="Ej. Requerimos que toquen el Son de la Negra al entrar y canciones bailables al final..." 
-                                          class="bg-[#181818] text-white placeholder-white/20 border border-white/[0.08] rounded-xl px-4 py-3 text-xs focus:border-primary/50 focus:outline-none w-full font-light resize-none shadow-inner"></textarea>
+                                <label class="text-[9px] font-bold text-white/45 uppercase tracking-wider">Notas
+                                    Especiales / Repertorio Solicitado</label>
+                                <textarea rows="3" [ngModel]="notes()" (ngModelChange)="notes.set($event)" name="notes"
+                                    placeholder="Ej. Requerimos que toquen el Son de la Negra al entrar y canciones bailables al final..."
+                                    class="bg-[#181818] text-white placeholder-white/20 border border-white/[0.08] rounded-xl px-4 py-3 text-xs focus:border-primary/50 focus:outline-none w-full font-light resize-none shadow-inner"></textarea>
                             </div>
                         </div>
 
                         <!-- STEP 3: Client Contact Info (Redesigned ultra-beautiful inputs) -->
                         <div *ngIf="quoteStep() === 3" class="flex flex-col gap-3 animate-scale-in">
                             <!-- Client Name -->
-                            <div class="flex flex-col gap-1 bg-[#171717]/85 border border-white/[0.05] p-3.5 rounded-2xl shadow-inner transition-all hover:border-white/10">
-                                <span class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2 select-none">
+                            <div
+                                class="flex flex-col gap-1 bg-[#171717]/85 border border-white/[0.05] p-3.5 rounded-2xl shadow-inner transition-all hover:border-white/10">
+                                <span
+                                    class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2 select-none">
                                     <span class="material-symbols-outlined text-xs text-primary/80">person</span>
                                     Nombre Completo
                                 </span>
-                                <input type="text" 
-                                       [ngModel]="clientName()" 
-                                       (ngModelChange)="clientName.set($event)" 
-                                       name="clientName"
-                                       placeholder="Ej. Carlos Sánchez" 
-                                       class="bg-transparent border-0 border-b border-white/10 focus:border-primary/50 text-white focus:outline-none focus:ring-0 text-xs py-1 px-0 w-full placeholder-white/20 transition-all font-light" />
+                                <input type="text" [ngModel]="clientName()" (ngModelChange)="clientName.set($event)"
+                                    name="clientName" placeholder="Ej. Carlos Sánchez"
+                                    class="bg-transparent border-0 border-b border-white/10 focus:border-primary/50 text-white focus:outline-none focus:ring-0 text-xs py-1 px-0 w-full placeholder-white/20 transition-all font-light" />
                             </div>
 
                             <!-- Email -->
-                            <div class="flex flex-col gap-1 bg-[#171717]/85 border border-white/[0.05] p-3.5 rounded-2xl shadow-inner transition-all hover:border-white/10">
-                                <span class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2 select-none">
+                            <div
+                                class="flex flex-col gap-1 bg-[#171717]/85 border border-white/[0.05] p-3.5 rounded-2xl shadow-inner transition-all hover:border-white/10">
+                                <span
+                                    class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2 select-none">
                                     <span class="material-symbols-outlined text-xs text-primary/80">mail</span>
                                     Correo Electrónico
                                 </span>
-                                <input type="email" 
-                                       [ngModel]="clientEmail()" 
-                                       (ngModelChange)="clientEmail.set($event)" 
-                                       name="clientEmail"
-                                       placeholder="carlos@ejemplo.com" 
-                                       class="bg-transparent border-0 border-b border-white/10 focus:border-primary/50 text-white focus:outline-none focus:ring-0 text-xs py-1 px-0 w-full placeholder-white/20 transition-all font-light" />
+                                <input type="email" [ngModel]="clientEmail()" (ngModelChange)="clientEmail.set($event)"
+                                    name="clientEmail" placeholder="carlos@ejemplo.com"
+                                    class="bg-transparent border-0 border-b border-white/10 focus:border-primary/50 text-white focus:outline-none focus:ring-0 text-xs py-1 px-0 w-full placeholder-white/20 transition-all font-light" />
                             </div>
 
                             <!-- WhatsApp -->
-                            <div class="flex flex-col gap-1 bg-[#171717]/85 border border-white/[0.05] p-3.5 rounded-2xl shadow-inner transition-all hover:border-white/10">
-                                <span class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2 select-none">
+                            <div
+                                class="flex flex-col gap-1 bg-[#171717]/85 border border-white/[0.05] p-3.5 rounded-2xl shadow-inner transition-all hover:border-white/10">
+                                <span
+                                    class="text-[8.5px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-2 select-none">
                                     <span class="material-symbols-outlined text-xs text-primary/80">call</span>
                                     WhatsApp / Celular
                                 </span>
-                                <input type="tel" 
-                                       [ngModel]="clientPhone()" 
-                                       (ngModelChange)="clientPhone.set($event)" 
-                                       name="clientPhone"
-                                       placeholder="Ej. 3312345678" 
-                                       class="bg-transparent border-0 border-b border-white/10 focus:border-primary/50 text-white focus:outline-none focus:ring-0 text-xs py-1 px-0 w-full placeholder-white/20 transition-all font-light" />
+                                <input type="tel" [ngModel]="clientPhone()" (ngModelChange)="clientPhone.set($event)"
+                                    name="clientPhone" placeholder="Ej. 3312345678"
+                                    class="bg-transparent border-0 border-b border-white/10 focus:border-primary/50 text-white focus:outline-none focus:ring-0 text-xs py-1 px-0 w-full placeholder-white/20 transition-all font-light" />
                             </div>
                         </div>
 
                         <!-- STEP 4: Success Screen -->
-                        <div *ngIf="quoteStep() === 4" class="flex flex-col items-center text-center gap-4 py-5 animate-scale-in col-span-12">
+                        <div *ngIf="quoteStep() === 4"
+                            class="flex flex-col items-center text-center gap-4 py-5 animate-scale-in col-span-12">
                             <!-- Animated Check Icon -->
-                            <div class="w-14 h-14 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center text-primary mb-1 shadow-[0_0_20px_rgba(242,202,80,0.1)] shrink-0">
-                                <span class="material-symbols-outlined text-2xl leading-none animate-bounce">check_circle</span>
+                            <div
+                                class="w-14 h-14 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center text-primary mb-1 shadow-[0_0_20px_rgba(242,202,80,0.1)] shrink-0">
+                                <span
+                                    class="material-symbols-outlined text-2xl leading-none animate-bounce">check_circle</span>
                             </div>
-                            
-                            <h3 class="font-['Epilogue'] font-black uppercase text-white text-sm tracking-widest leading-none">¡Solicitud Enviada!</h3>
-                            
-                            <p class="text-xs text-white/50 font-light leading-relaxed max-w-sm font-['Be_Vietnam_Pro']">
-                                Tus especificaciones han sido recibidas con éxito para la agrupación <span class="text-white font-normal">{{ selectedBandToQuote().name }}</span>. Un asesor de Acordex se pondrá en contacto contigo en breve.
+
+                            <h3
+                                class="font-['Epilogue'] font-black uppercase text-white text-sm tracking-widest leading-none">
+                                ¡Solicitud Enviada!</h3>
+
+                            <p
+                                class="text-xs text-white/50 font-light leading-relaxed max-w-sm font-['Be_Vietnam_Pro']">
+                                Tus especificaciones han sido recibidas con éxito para la agrupación <span
+                                    class="text-white font-normal">{{ selectedBandToQuote().name }}</span>. Un asesor de
+                                Acordex se pondrá en contacto contigo en breve.
                             </p>
-                            
+
                             <!-- Folio Badge -->
-                            <div class="bg-white/[0.02] border border-white/10 rounded-2xl px-5 py-2.5 mt-1 flex flex-col gap-0.5 shadow-inner">
-                                <span class="text-[7.5px] uppercase tracking-widest text-white/40 font-bold">Folio de Cotización</span>
-                                <span class="text-xs font-bold font-['Epilogue'] text-primary tracking-widest">{{ quoteFolio() }}</span>
+                            <div
+                                class="bg-white/[0.02] border border-white/10 rounded-2xl px-5 py-2.5 mt-1 flex flex-col gap-0.5 shadow-inner">
+                                <span class="text-[7.5px] uppercase tracking-widest text-white/40 font-bold">Folio de
+                                    Cotización</span>
+                                <span class="text-xs font-bold font-['Epilogue'] text-primary tracking-widest">{{
+                                    quoteFolio() }}</span>
                             </div>
-                            
+
                             <div class="flex flex-col gap-2.5 mt-4 w-full max-w-sm justify-center">
                                 <div class="grid grid-cols-2 gap-2.5">
-                                    <a [href]="whatsappSupportUrl" 
-                                       target="_blank" 
-                                       class="flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-3.5 py-3 rounded-xl text-[10px] font-bold transition-all shadow-md active:scale-95 text-center">
+                                    <a [href]="whatsappSupportUrl" target="_blank"
+                                        class="flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-3.5 py-3 rounded-xl text-[10px] font-bold transition-all shadow-md active:scale-95 text-center">
                                         <span class="material-symbols-outlined text-sm leading-none">chat</span>
                                         Soporte WhatsApp
                                     </a>
-                                    <button type="button"
-                                            (click)="openContract()" 
-                                            class="flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-fixed text-black px-3.5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-md active:scale-95">
+                                    <button type="button" (click)="openContract()"
+                                        class="flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-fixed text-black px-3.5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-md active:scale-95">
                                         <span class="material-symbols-outlined text-sm leading-none">description</span>
                                         Ver Contrato
                                     </button>
                                 </div>
-                                <button type="button"
-                                        (click)="closeQuoteModal()" 
-                                        class="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-white py-3 rounded-xl text-[10px] font-bold transition-all active:scale-95 uppercase tracking-widest">
+                                <button type="button" (click)="closeQuoteModal()"
+                                    class="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-white py-3 rounded-xl text-[10px] font-bold transition-all active:scale-95 uppercase tracking-widest">
                                     Cerrar Ventana
                                 </button>
                             </div>
@@ -442,45 +652,57 @@
                 </div>
 
                 <!-- Navigation Buttons -->
-                <div *ngIf="quoteStep() < 4" class="flex items-center justify-between border-t border-white/[0.05] pt-4 mt-5">
-                    <button *ngIf="quoteStep() > 1" 
-                            (click)="prevStep()" 
-                            class="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] font-bold px-4 py-2 rounded-xl transition-all">
+                <div *ngIf="quoteStep() < 4"
+                    class="flex items-center justify-between border-t border-white/[0.05] pt-4 mt-5">
+                    <button *ngIf="quoteStep() > 1" (click)="prevStep()"
+                        class="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] font-bold px-4 py-2 rounded-xl transition-all">
                         Atrás
                     </button>
                     <div *ngIf="quoteStep() === 1"></div>
-                    
-                    <button *ngIf="quoteStep() < 3" 
-                            (click)="nextStep()" 
-                            class="bg-primary hover:bg-primary-fixed text-black text-[10px] font-bold px-5 py-2 rounded-xl transition-all shadow-[0_4px_15px_rgba(242,202,80,0.15)]">
+
+                    <button *ngIf="quoteStep() < 3" (click)="nextStep()"
+                        class="bg-primary hover:bg-primary-fixed text-black text-[10px] font-bold px-5 py-2 rounded-xl transition-all shadow-[0_4px_15px_rgba(242,202,80,0.15)]">
                         Siguiente
                     </button>
-                    
-                    <button *ngIf="quoteStep() === 3" 
-                            (click)="submitQuote()" 
-                            class="bg-primary hover:bg-primary-fixed text-black text-[10px] font-bold px-5 py-2 rounded-xl transition-all shadow-[0_4px_15px_rgba(242,202,80,0.15)]">
+
+                    <button *ngIf="quoteStep() === 3" (click)="submitQuote()"
+                        class="bg-primary hover:bg-primary-fixed text-black text-[10px] font-bold px-5 py-2 rounded-xl transition-all shadow-[0_4px_15px_rgba(242,202,80,0.15)]">
                         Enviar Solicitud
                     </button>
                 </div>
             </div>
-            
+
             <!-- Right Column: Premium Contract/Band Summary Card (Desktop Only) -->
-            <div class="md:col-span-5 bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between shadow-inner select-none font-['Be_Vietnam_Pro'] overflow-hidden">
-                <div class="flex flex-col gap-3">
-                    <span class="text-[7.5px] font-bold text-white/35 uppercase tracking-widest">Resumen de Contratación</span>
-                    
+            <div
+                class="hidden md:flex md:col-span-5 bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 flex-col justify-between shadow-inner select-none font-['Be_Vietnam_Pro'] overflow-hidden">
+                <div class="flex flex-col gap-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[8px] font-bold text-white/40 uppercase tracking-widest">Resumen de
+                            Contratación</span>
+                    </div>
+
                     <!-- Band Small Card Image -->
-                    <div class="relative w-full h-28 rounded-xl overflow-hidden border border-white/[0.08] shadow-md">
-                        <img [src]="selectedBandToQuote().imageUrl" [alt]="selectedBandToQuote().name" class="w-full h-full object-cover" />
+                    <div (click)="goToBandProfile()" title="Haz clic para ver la información completa de este grupo"
+                        class="relative w-full h-48 rounded-xl overflow-hidden border border-primary/30 shadow-md cursor-pointer group hover:border-primary transition-all duration-300">
+                        <img [src]="selectedBandToQuote().imageUrl" [alt]="selectedBandToQuote().name"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent"></div>
-                        <span class="absolute bottom-2.5 left-3 text-xs font-bold font-['Epilogue'] text-white uppercase tracking-wider truncate max-w-[85%]">{{ selectedBandToQuote().name }}</span>
+                        <span
+                            class="absolute bottom-2.5 left-3 text-xs font-bold font-['Epilogue'] text-white uppercase tracking-wider truncate max-w-[85%] group-hover:text-primary transition-colors">{{
+                            selectedBandToQuote().name }}</span>
+                        <span
+                            class="absolute top-2 right-2 bg-black/70 border border-primary/40 text-primary px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-md">
+                            <span class="material-symbols-outlined text-[10px]">open_in_new</span>
+                            <span>Ver Perfil</span>
+                        </span>
                     </div>
 
                     <!-- Category & Rating Details -->
                     <div class="grid grid-cols-2 gap-2 mt-1">
                         <div class="bg-white/5 border border-white/[0.04] p-2 rounded-xl flex flex-col gap-0.5">
                             <span class="text-[7px] text-white/40 uppercase font-medium">Género</span>
-                            <span class="text-[9.5px] text-white font-bold truncate">{{ selectedBandToQuote().tag }}</span>
+                            <span class="text-[9.5px] text-white font-bold truncate">{{ selectedBandToQuote().tag
+                                }}</span>
                         </div>
                         <div class="bg-white/5 border border-white/[0.04] p-2 rounded-xl flex flex-col gap-0.5">
                             <span class="text-[7px] text-white/40 uppercase font-medium">Valoración</span>
@@ -493,8 +715,9 @@
 
                     <!-- Selected Specs list (Dynamic feedback) -->
                     <div class="border-t border-white/[0.05] pt-3 flex flex-col gap-2">
-                        <span class="text-[7.5px] font-bold text-white/35 uppercase tracking-widest">Detalles del Evento</span>
-                        
+                        <span class="text-[7.5px] font-bold text-white/35 uppercase tracking-widest">Detalles del
+                            Evento</span>
+
                         <div class="flex flex-col gap-1.5 text-[9.5px] text-white/70">
                             <!-- Event Type -->
                             <div class="flex justify-between border-b border-white/[0.03] pb-1">
@@ -514,7 +737,8 @@
                             <!-- Location -->
                             <div class="flex flex-col gap-0.5">
                                 <span class="font-light text-white/50">Dirección asignada:</span>
-                                <span class="font-bold text-white line-clamp-2 leading-tight">{{ eventLocation() || 'Escribe tu dirección' }}</span>
+                                <span class="font-bold text-white line-clamp-2 leading-tight">{{ eventLocation() ||
+                                    'Escribe tu dirección' }}</span>
                             </div>
                         </div>
                     </div>
@@ -522,18 +746,23 @@
 
                 <!-- Call Manager Directly Option (Direct alternative) -->
                 <div class="mt-4 pt-4 border-t border-white/[0.06] flex flex-col gap-2.5">
-                    <div class="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-3 flex flex-col gap-1.5 text-center">
-                        <h4 class="text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider flex items-center justify-center gap-1.5 leading-none">
+                    <div
+                        class="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-3 flex flex-col gap-1.5 text-center">
+                        <h4
+                            class="text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider flex items-center justify-center gap-1.5 leading-none">
                             <span class="material-symbols-outlined text-xs">support_agent</span>
                             Representante: {{ selectedBandToQuote().managerName }}
                         </h4>
-                        <p class="text-[8.5px] text-white/40 leading-relaxed font-light">¿Prefieres cotizar por chat? Envía un mensaje directo a su WhatsApp para acordar detalles.</p>
-                        
+                        <p class="text-[8.5px] text-white/40 leading-relaxed font-light">¿Prefieres cotizar por chat?
+                            Envía un mensaje directo a su WhatsApp para acordar detalles.</p>
+
                         <a [href]="'https://api.whatsapp.com/send?phone=' + selectedBandToQuote().managerPhone + '&text=Hola%20' + selectedBandToQuote().managerName + ',%20me%20gustar%C3%ADa%20cotizar%20la%20agrupaci%C3%B3n%20' + selectedBandToQuote().name + '%20para%20un%20evento.'"
-                           target="_blank"
-                           class="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-black text-[9.5px] font-bold rounded-lg transition-all duration-300 shadow-md active:scale-95 flex items-center justify-center gap-1.5 uppercase mt-0.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-3.5 h-3.5 fill-current shrink-0">
-                                <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+                            target="_blank"
+                            class="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-black text-[9.5px] font-bold rounded-lg transition-all duration-300 shadow-md active:scale-95 flex items-center justify-center gap-1.5 uppercase mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
+                                class="w-3.5 h-3.5 fill-current shrink-0">
+                                <path
+                                    d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z" />
                             </svg>
                             Contactar por WhatsApp
                         </a>
@@ -541,55 +770,52 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
 <!-- Interactive GPS Map Picker Pin Overlay Modal (Free search of any location in the map) -->
-<div *ngIf="isMapPickerOpen()" 
-     (click)="closeMapPicker()"
-     class="fixed inset-0 z-[115] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4 md:p-6 animate-lightbox-fade-in font-['Be_Vietnam_Pro'] select-none">
-    
+<div *ngIf="isMapPickerOpen()" (click)="closeMapPicker()"
+    class="fixed inset-0 z-[115] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4 md:p-6 animate-lightbox-fade-in font-['Be_Vietnam_Pro'] select-none">
+
     <div class="relative w-full max-w-lg bg-[#141414] border border-white/[0.08] rounded-3xl p-6 shadow-2xl flex flex-col gap-4 animate-lightbox-zoom-in"
-         (click)="$event.stopPropagation()">
-        
+        (click)="$event.stopPropagation()">
+
         <div class="flex items-center justify-between border-b border-white/[0.04] pb-3">
-            <h3 class="text-sm font-['Epilogue'] font-black uppercase tracking-wider text-white flex items-center gap-2">
+            <h3
+                class="text-sm font-['Epilogue'] font-black uppercase tracking-wider text-white flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary text-base">pin_drop</span>
                 Buscar en el Mapa
             </h3>
-            <button (click)="closeMapPicker()" class="text-white/40 hover:text-white"><span class="material-symbols-outlined text-lg">close</span></button>
+            <button (click)="closeMapPicker()" class="text-white/40 hover:text-white"><span
+                    class="material-symbols-outlined text-lg">close</span></button>
         </div>
-        
-        <p class="text-[10px] text-white/50 font-light leading-relaxed font-['Be_Vietnam_Pro']">Escribe cualquier dirección, salón, código postal o ciudad del mundo en el buscador a continuación para posicionar el marcador interactivo en el mapa real.</p>
-        
+
+        <p class="text-[10px] text-white/50 font-light leading-relaxed font-['Be_Vietnam_Pro']">Escribe cualquier
+            dirección, salón, código postal o ciudad del mundo en el buscador a continuación para posicionar el marcador
+            interactivo en el mapa real.</p>
+
         <!-- Search bar inside the Map Picker Modal -->
         <div class="flex gap-2 relative">
-            <input type="text" 
-                   [ngModel]="mapPickerSearchQuery()" 
-                   (ngModelChange)="mapPickerSearchQuery.set($event)" 
-                   (keyup.enter)="searchInMapPicker()"
-                   placeholder="Escribe la dirección exacta para ubicar..." 
-                   class="bg-[#1b1b1b] text-white placeholder-white/20 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs focus:border-primary/50 focus:outline-none flex-1 font-light" />
-            <button (click)="searchInMapPicker()" 
-                    class="px-4 bg-primary hover:bg-primary-fixed text-black rounded-xl text-xs font-bold transition-all">
+            <input type="text" [ngModel]="mapPickerSearchQuery()" (ngModelChange)="mapPickerSearchQuery.set($event)"
+                (keyup.enter)="searchInMapPicker()" placeholder="Escribe la dirección exacta para ubicar..."
+                class="bg-[#1b1b1b] text-white placeholder-white/20 border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs focus:border-primary/50 focus:outline-none flex-1 font-light" />
+            <button (click)="searchInMapPicker()"
+                class="px-4 bg-primary hover:bg-primary-fixed text-black rounded-xl text-xs font-bold transition-all">
                 Buscar
             </button>
         </div>
 
         <!-- Interactive Google Map Frame with Centered Pin -->
         <div class="relative w-full h-48 rounded-2xl overflow-hidden border border-white/10 bg-black/20 shadow-inner">
-            <iframe [src]="mockMapPickerUrl()" 
-                    width="100%" 
-                    height="100%" 
-                    style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(110%);" 
-                    allowfullscreen="" 
-                    loading="lazy">
+            <iframe [src]="mockMapPickerUrl()" width="100%" height="100%"
+                style="border:0; filter: invert(90%) hue-rotate(180deg) contrast(110%);" allowfullscreen=""
+                loading="lazy">
             </iframe>
-            
+
             <!-- Absolute visual pin overlay positioned at the exact center of map iframe -->
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none pb-6 select-none">
-                <span class="material-symbols-outlined text-4xl text-primary animate-bounce fill-current">location_on</span>
+                <span
+                    class="material-symbols-outlined text-4xl text-primary animate-bounce fill-current">location_on</span>
             </div>
         </div>
 
@@ -599,12 +825,12 @@
         </div>
 
         <div class="flex justify-end gap-3 pt-2">
-            <button (click)="closeMapPicker()" 
-                    class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-xs font-bold transition-all">
+            <button (click)="closeMapPicker()"
+                class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-xs font-bold transition-all">
                 Cancelar
             </button>
-            <button (click)="confirmMapPickerLocation()" 
-                    class="px-5 py-2 bg-primary hover:bg-primary-fixed text-black rounded-xl text-xs font-bold transition-all shadow-md">
+            <button (click)="confirmMapPickerLocation()"
+                class="px-5 py-2 bg-primary hover:bg-primary-fixed text-black rounded-xl text-xs font-bold transition-all shadow-md">
                 Confirmar Ubicación
             </button>
         </div>
@@ -612,45 +838,55 @@
 </div>
 
 <!-- Contract Modal Section for Quote Creation Success -->
-<div *ngIf="isContractModalOpen() && selectedBandToQuote() as band" 
-     (click)="closeContract()"
-     class="fixed inset-0 z-[120] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 overflow-y-auto animate-lightbox-fade-in animate-scale-in">
-    
+<div *ngIf="isContractModalOpen() && selectedBandToQuote() as band" (click)="closeContract()"
+    class="fixed inset-0 z-[120] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 overflow-y-auto animate-lightbox-fade-in animate-scale-in">
+
     <!-- Close Button -->
-    <button (click)="closeContract()" 
-            class="absolute top-4 right-4 z-[130] w-11 h-11 rounded-full bg-black/45 border border-white/10 hover:bg-black/60 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-xl">
+    <button (click)="closeContract()"
+        class="absolute top-4 right-4 z-[130] w-11 h-11 rounded-full bg-black/45 border border-white/10 hover:bg-black/60 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-xl">
         <span class="material-symbols-outlined text-lg">close</span>
     </button>
 
     <!-- Contract Layout Container (Floats like paper) -->
     <div class="relative w-full max-w-2xl flex flex-col gap-6" (click)="$event.stopPropagation()">
-        
+
         <!-- Paper Sheet -->
-        <div class="bg-[#FCFBFA] border border-[#d6cfc7] rounded-2xl p-8 md:p-12 shadow-2xl text-[#1e1e1e] font-serif text-xs md:text-sm leading-relaxed max-h-[72vh] overflow-y-auto relative select-text select-all">
-            
+        <div
+            class="bg-[#FCFBFA] border border-[#d6cfc7] rounded-2xl p-8 md:p-12 shadow-2xl text-[#1e1e1e] font-serif text-xs md:text-sm leading-relaxed max-h-[72vh] overflow-y-auto relative select-text select-all">
+
             <!-- Official Seals & Watermarks -->
-            <div class="absolute right-10 top-10 w-24 h-24 border-4 border-double border-[#b59f7c]/35 rounded-full flex flex-col items-center justify-center text-[#b59f7c]/40 text-[7px] font-black uppercase text-center select-none rotate-12">
+            <div
+                class="absolute right-10 top-10 w-24 h-24 border-4 border-double border-[#b59f7c]/35 rounded-full flex flex-col items-center justify-center text-[#b59f7c]/40 text-[7px] font-black uppercase text-center select-none rotate-12">
                 <span class="font-sans">ACORDEX</span>
                 <span class="font-sans">SOPORTE LEGAL</span>
                 <span class="font-sans">CERTIFICADO</span>
             </div>
 
             <div class="text-center mb-8 border-b-2 border-[#1e1e1e]/15 pb-6">
-                <span class="text-[9px] uppercase font-sans font-black tracking-widest text-[#b59f7c] block mb-2">CONTRATO PRESTACIÓN DE SERVICIOS</span>
-                <h3 class="text-base md:text-xl font-bold uppercase tracking-wider text-[#1e1e1e]">CONTRATO DE CONTRATACIÓN MUSICAL</h3>
-                <span class="text-[9.5px] font-sans text-black/50 block mt-1">Folio de Referencia: {{ quoteFolio() }}</span>
+                <span
+                    class="text-[9px] uppercase font-sans font-black tracking-widest text-[#b59f7c] block mb-2">CONTRATO
+                    PRESTACIÓN DE SERVICIOS</span>
+                <h3 class="text-base md:text-xl font-bold uppercase tracking-wider text-[#1e1e1e]">CONTRATO DE
+                    CONTRATACIÓN MUSICAL</h3>
+                <span class="text-[9.5px] font-sans text-black/50 block mt-1">Folio de Referencia: {{ quoteFolio()
+                    }}</span>
             </div>
 
             <!-- Contract Clauses -->
             <div class="flex flex-col gap-5 text-justify font-light text-black/85">
                 <p>
-                    Conste por el presente documento el **Contrato de Prestación de Servicios Musicales** que celebran, por una parte, **ACORDEX S.A. DE C.V.** en representación de la agrupación **{{ band.name }}** (en lo sucesivo denominado como "EL ARTISTA"), y por la otra parte, el C. **{{ clientName() }}** (en lo sucesivo denominado como "EL CONTRATANTE"), al tenor de las siguientes cláusulas:
+                    Conste por el presente documento el **Contrato de Prestación de Servicios Musicales** que celebran,
+                    por una parte, **ACORDEX S.A. DE C.V.** en representación de la agrupación **{{ band.name }}** (en
+                    lo sucesivo denominado como "EL ARTISTA"), y por la otra parte, el C. **{{ clientName() }}** (en lo
+                    sucesivo denominado como "EL CONTRATANTE"), al tenor de las siguientes cláusulas:
                 </p>
 
                 <div>
                     <strong class="font-bold text-[#1e1e1e]">CLÁUSULA PRIMERA: OBJETO DEL CONTRATO</strong>
                     <p class="mt-1">
-                        EL ARTISTA se compromete a realizar una presentación musical en vivo del género **{{ eventType() }}** con su staff y equipo completo de integrantes, de acuerdo con los requerimientos logísticos y técnicos acordados para el evento.
+                        EL ARTISTA se compromete a realizar una presentación musical en vivo del género **{{ eventType()
+                        }}** con su staff y equipo completo de integrantes, de acuerdo con los requerimientos logísticos
+                        y técnicos acordados para el evento.
                     </p>
                 </div>
 
@@ -659,7 +895,8 @@
                     <p class="mt-1">
                         El evento se llevará a cabo bajo las siguientes condiciones acordadas de ubicación y fecha:
                     </p>
-                    <ul class="list-disc list-inside mt-1.5 flex flex-col gap-1 font-sans text-[11px] bg-black/5 p-3 rounded-lg border border-black/5 text-black/90">
+                    <ul
+                        class="list-disc list-inside mt-1.5 flex flex-col gap-1 font-sans text-[11px] bg-black/5 p-3 rounded-lg border border-black/5 text-black/90">
                         <li><strong>Agrupación:</strong> {{ band.name }}</li>
                         <li><strong>Fecha del Evento:</strong> {{ eventDate() }}</li>
                         <li><strong>Sede / Recinto:</strong> {{ eventLocation() }}</li>
@@ -670,25 +907,31 @@
                 <div>
                     <strong class="font-bold text-[#1e1e1e]">CLÁUSULA TERCERA: REQUISITOS TÉCNICOS</strong>
                     <p class="mt-1">
-                        EL CONTRATANTE se compromete a proveer los requerimientos mínimos de audio, iluminación, escenario adecuado y acometida eléctrica requeridos para la presentación de **{{ band.name }}**, garantizando la logística acordada.
+                        EL CONTRATANTE se compromete a proveer los requerimientos mínimos de audio, iluminación,
+                        escenario adecuado y acometida eléctrica requeridos para la presentación de **{{ band.name }}**,
+                        garantizando la logística acordada.
                     </p>
                 </div>
 
                 <div>
                     <strong class="font-bold text-[#1e1e1e]">CLÁUSULA CUARTA: HONORARIOS Y CONDICIONES DE PAGO</strong>
                     <p class="mt-1">
-                        El costo estimado para esta prestación asciende a la cantidad cotizada formalmente en el sistema. Para reservar de forma definitiva la fecha en la agenda de EL ARTISTA, se requiere la liquidación del 50% de anticipo al firmar este acuerdo, liquidándose el 50% restante 15 días antes del evento.
+                        El costo estimado para esta prestación asciende a la cantidad cotizada formalmente en el
+                        sistema. Para reservar de forma definitiva la fecha en la agenda de EL ARTISTA, se requiere la
+                        liquidación del 50% de anticipo al firmar este acuerdo, liquidándose el 50% restante 15 días
+                        antes del evento.
                     </p>
                 </div>
             </div>
 
             <!-- Signatures section -->
             <div class="grid grid-cols-2 gap-8 mt-12 pt-8 border-t border-black/10 text-center font-sans text-[10px]">
-                
+
                 <!-- Artist / Representative signature -->
                 <div class="flex flex-col items-center">
                     <div class="h-14 flex items-center justify-center relative select-none">
-                        <span class="font-['Charm'] text-lg font-bold text-blue-800 rotate-[-4deg] opacity-75">{{ band.managerName || 'Representante Autorizado' }}</span>
+                        <span class="font-['Charm'] text-lg font-bold text-blue-800 rotate-[-4deg] opacity-75">{{
+                            band.managerName || 'Representante Autorizado' }}</span>
                     </div>
                     <div class="w-full border-t border-black/40 mt-1"></div>
                     <span class="font-bold text-black/75 mt-1">REPRESENTANTE DEL ARTISTA</span>
@@ -699,17 +942,20 @@
                 <div class="flex flex-col items-center">
                     <div class="h-14 flex items-center justify-center relative w-full">
                         <!-- NOT SIGNED STATE -->
-                        <button *ngIf="!isContractSigned()" 
-                                (click)="signContract()"
-                                class="px-3.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-300 active:scale-95 shadow-md">
+                        <button *ngIf="!isContractSigned()" (click)="signContract()"
+                            class="px-3.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-300 active:scale-95 shadow-md">
                             Firmar Contrato
                         </button>
-                        
+
                         <!-- SIGNED STAMP STATE -->
-                        <div *ngIf="isContractSigned()" class="flex flex-col items-center justify-center animate-scale-in text-emerald-800 text-center select-none leading-tight font-sans font-bold border border-dashed border-emerald-600/35 p-1 rounded bg-emerald-50/50">
-                            <span class="text-[7.5px] uppercase tracking-wider text-emerald-700">FIRMADO DIGITALMENTE</span>
-                            <span class="font-['Charm'] text-xs font-bold text-emerald-800 italic mt-0.5">{{ clientName() }}</span>
-                            <span class="text-[6.5px] text-emerald-600/70 font-mono mt-0.5 font-bold">HASH: 9a8f2bc7de</span>
+                        <div *ngIf="isContractSigned()"
+                            class="flex flex-col items-center justify-center animate-scale-in text-emerald-800 text-center select-none leading-tight font-sans font-bold border border-dashed border-emerald-600/35 p-1 rounded bg-emerald-50/50">
+                            <span class="text-[7.5px] uppercase tracking-wider text-emerald-700">FIRMADO
+                                DIGITALMENTE</span>
+                            <span class="font-['Charm'] text-xs font-bold text-emerald-800 italic mt-0.5">{{
+                                clientName() }}</span>
+                            <span class="text-[6.5px] text-emerald-600/70 font-mono mt-0.5 font-bold">HASH:
+                                9a8f2bc7de</span>
                         </div>
                     </div>
                     <div class="w-full border-t border-black/40 mt-1"></div>
@@ -722,12 +968,12 @@
 
         <!-- Print Option Buttons -->
         <div class="flex gap-3 justify-end">
-            <button (click)="closeContract()" 
-                    class="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold rounded-xl transition-all duration-300 active:scale-95 uppercase tracking-wider">
+            <button (click)="closeContract()"
+                class="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold rounded-xl transition-all duration-300 active:scale-95 uppercase tracking-wider">
                 Cerrar Contrato
             </button>
             <button onclick="window.print()"
-                    class="px-6 py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 uppercase tracking-wider">
+                class="px-6 py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 uppercase tracking-wider">
                 <span class="material-symbols-outlined text-sm leading-none">print</span>
                 Imprimir Contrato
             </button>

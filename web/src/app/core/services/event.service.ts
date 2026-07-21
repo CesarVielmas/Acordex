@@ -112,6 +112,10 @@ export class EventService {
     this.submittedQuotes.update(list => [...list.filter(q => q.folio !== quote.folio), quote]);
   }
 
+  addSubmittedQuote(quote: QuoteItem) {
+    this.addQuote(quote);
+  }
+
   saveAccreditation(accred: PressAccreditation) {
     this.pressAccreditations.update(map => ({
       ...map,

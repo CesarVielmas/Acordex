@@ -15,7 +15,7 @@ import { ReviewCard } from '../../shared/review-card/review-card';
 })
 export class Home implements OnInit {
   @ViewChild('storyScroll') storyScroll!: ElementRef<HTMLElement>;
-  private readonly layoutService = inject(LayoutService);
+  layoutService = inject(LayoutService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly sanitizer = inject(DomSanitizer);
 

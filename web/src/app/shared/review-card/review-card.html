@@ -26,7 +26,8 @@
         <!-- Review Content -->
         <div class="flex-1 flex flex-col justify-center">
             <div class="mb-2.5 flex flex-wrap gap-1.5">
-                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/5 text-[9.5px] font-['Be_Vietnam_Pro'] font-light text-white/70 border border-white/[0.06] select-none">
+                <span (click)="onBandClick($event)" 
+                      class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/5 hover:bg-primary/20 hover:text-primary text-[9.5px] font-['Be_Vietnam_Pro'] font-light text-white/70 border border-white/[0.06] hover:border-primary/30 transition-all select-none cursor-pointer">
                     <span class="material-symbols-outlined text-[12px] text-primary/70">mic</span>
                     {{ bandName }}
                 </span>

@@ -1,0 +1,1338 @@
+<ng-container *ngIf="band()">
+
+  <!-- ================= MAIN PAGE CONTENT WRAPPER ================= -->
+  <div class="min-h-screen bg-background text-on-surface font-['Be_Vietnam_Pro'] pb-24 animate-fade-in">
+
+    <!-- ================= HERO COVER & PROFILE HEADER (Unified Seamless Background) ================= -->
+    <header class="relative w-full overflow-hidden bg-[#131313] pb-6 sm:pb-8 pt-20 sm:pt-32">
+      <!-- Full Background Cover Image spanning the entire header -->
+      <div class="absolute inset-0 z-0">
+        <img [src]="band()!.heroCoverUrl || band()!.imageUrl" [alt]="band()!.name"
+             class="w-full h-full object-cover opacity-50 filter blur-[0.5px] scale-100 transition-transform duration-1000" />
+        <div class="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-background/90 via-transparent to-background/90"></div>
+      </div>
+
+      <!-- Top Nav Actions (Absolute positioned relative to header) -->
+      <div class="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
+        <button (click)="goBack()" 
+                class="flex items-center gap-1.5 bg-black/60 hover:bg-primary hover:text-black text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-white/15 backdrop-blur-md transition-all duration-300 shadow-lg group font-['Epilogue'] text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+          <span class="material-symbols-outlined text-xs sm:text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span>
+          <span>Volver</span>
+        </button>
+      </div>
+
+      <div class="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
+        <button (click)="copyShareLink()"
+                class="flex items-center gap-1.5 bg-black/60 hover:bg-white/20 text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-white/15 backdrop-blur-md transition-all duration-300 shadow-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+          <span class="material-symbols-outlined text-xs sm:text-sm">share</span>
+          <span class="hidden sm:inline">Compartir</span>
+        </button>
+      </div>
+
+      <!-- Band Main Header Profile (Directly integrated over cover photo backdrop, no card container box) -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-6 sm:pt-10">
+        <div class="relative flex flex-col md:flex-row items-center md:items-end gap-4 sm:gap-6 pb-6">
+
+          <!-- Band Avatar / Photo -->
+          <div class="relative w-28 h-28 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border-2 border-primary/40 shadow-2xl shrink-0 group bg-black">
+            <img [src]="band()!.imageUrl" [alt]="band()!.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <span *ngIf="band()!.verified" 
+                  class="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 bg-primary text-black rounded-full p-1 sm:p-1.5 shadow-lg flex items-center justify-center" title="Artista Verificado por Acordex">
+              <span class="material-symbols-outlined text-xs sm:text-base fill-current">verified</span>
+            </span>
+          </div>
+
+          <!-- Band Info Summary -->
+          <div class="flex-1 text-center md:text-left min-w-0 w-full">
+            <!-- Badges placed cleanly above the group name with separation -->
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2.5 mb-3 sm:mb-4">
+              <!-- Genre Badge -->
+              <span class="px-2.5 py-0.5 sm:px-3.5 sm:py-1 rounded-full border text-[9.5px] sm:text-[11px] font-bold uppercase tracking-widest backdrop-blur-md shadow-sm" [ngClass]="genreBadgeClass">
+                {{ band()!.tag }}
+              </span>
+              <!-- Availability Badge -->
+              <span class="px-2.5 py-0.5 sm:px-3.5 sm:py-1 rounded-full border border-primary/20 bg-primary/10 text-primary text-[9.5px] sm:text-[11px] font-bold uppercase tracking-wider">
+                {{ band()!.availability }}
+              </span>
+              <!-- Verified Pill -->
+              <span class="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] sm:text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Perfil Verificado
+              </span>
+            </div>
+
+            <!-- Title -->
+            <h1 class="font-['Epilogue'] font-black text-xl sm:text-4xl lg:text-5xl text-white uppercase tracking-tight leading-tight mb-2.5">
+              {{ band()!.name }}
+            </h1>
+
+            <!-- Meta Data Grid -->
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-y-2 gap-x-4 sm:gap-x-5 text-white/65 text-xs sm:text-sm font-light">
+              <span class="flex items-center gap-1 text-primary">
+                <span class="material-symbols-outlined text-sm sm:text-base fill-current">star</span>
+                <strong class="text-white font-bold text-xs sm:text-sm">{{ band()!.rating }}</strong>
+                <span class="text-[11px] sm:text-xs">({{ band()!.reviewCount }} opiniones)</span>
+              </span>
+
+              <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm sm:text-base text-primary/80">pin_drop</span>
+                <span class="text-[11px] sm:text-xs">{{ band()!.location }}</span>
+              </span>
+
+              <span class="flex items-center gap-1.5" *ngIf="band()!.managerName">
+                <span class="material-symbols-outlined text-sm sm:text-base text-emerald-400">support_agent</span>
+                <span class="text-[11px] sm:text-xs">Rep: {{ band()!.managerName }}</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Primary Action Call-To-Action Buttons -->
+          <div class="flex flex-col sm:flex-row md:flex-col gap-2.5 sm:gap-3 w-full md:w-auto shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-white/10">
+            <button (click)="openQuoteModal()"
+                    class="w-full bg-primary hover:bg-primary-fixed text-black font-['Epilogue'] font-black text-xs uppercase tracking-widest px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl transition-all duration-300 shadow-[0_4px_25px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-base">request_quote</span>
+              <span>Cotizar este Grupo</span>
+            </button>
+
+            <a *ngIf="band()!.managerPhone"
+               [href]="'https://api.whatsapp.com/send?phone=' + band()!.managerPhone + '&text=Hola%20' + band()!.managerName + ',%20vi%20el%20perfil%20de%20' + band()!.name + '%20en%20Acordex%20y%20me%20gustar%C3%ADa%20mas%20informaci%C3%B3n.'"
+               target="_blank"
+               class="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-['Epilogue'] font-bold text-xs uppercase tracking-wider px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-95">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0">
+                <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+              </svg>
+              <span>WhatsApp Manager</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ================= INTERACTIVE TAB NAVIGATION BAR ================= -->
+    <nav class="sticky top-0 z-30 bg-[#131313]/95 backdrop-blur-xl border-b border-white/10 shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-2.5 sm:py-3 text-xs sm:text-sm font-['Epilogue'] font-bold uppercase tracking-wider">
+          <button (click)="setTab('general')"
+                  class="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all duration-300 shrink-0 flex items-center gap-1.5 sm:gap-2"
+                  [ngClass]="activeTab() === 'general' ? 'bg-primary text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'">
+            <span class="material-symbols-outlined text-sm sm:text-base">info</span>
+            <span>Información General</span>
+          </button>
+
+          <button (click)="setTab('trayectoria')"
+                  class="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all duration-300 shrink-0 flex items-center gap-1.5 sm:gap-2"
+                  [ngClass]="activeTab() === 'trayectoria' ? 'bg-primary text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'">
+            <span class="material-symbols-outlined text-sm sm:text-base">history_edu</span>
+            <span>Trayectoria</span>
+          </button>
+
+          <button (click)="setTab('musica')"
+                  class="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all duration-300 shrink-0 flex items-center gap-1.5 sm:gap-2"
+                  [ngClass]="activeTab() === 'musica' ? 'bg-primary text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'">
+            <span class="material-symbols-outlined text-sm sm:text-base">music_note</span>
+            <span>Música & Repertorio</span>
+          </button>
+
+          <button (click)="setTab('publicaciones')"
+                  class="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all duration-300 shrink-0 flex items-center gap-1.5 sm:gap-2"
+                  [ngClass]="activeTab() === 'publicaciones' ? 'bg-primary text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'">
+            <span class="material-symbols-outlined text-sm sm:text-base">dynamic_feed</span>
+            <span>Publicaciones</span>
+          </button>
+
+          <button (click)="setTab('galeria')"
+                  class="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all duration-300 shrink-0 flex items-center gap-1.5 sm:gap-2"
+                  [ngClass]="activeTab() === 'galeria' ? 'bg-primary text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'">
+            <span class="material-symbols-outlined text-sm sm:text-base">photo_library</span>
+            <span>Galería & Shows</span>
+          </button>
+
+          <button (click)="setTab('resenas')"
+                  class="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all duration-300 shrink-0 flex items-center gap-1.5 sm:gap-2"
+                  [ngClass]="activeTab() === 'resenas' ? 'bg-primary text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'">
+            <span class="material-symbols-outlined text-sm sm:text-base">reviews</span>
+            <span>Reseñas ({{ band()!.reviewCount }})</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ================= MAIN TAB CONTENT CANVAS ================= -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+
+      <!-- ---------------- TAB 1: INFORMACIÓN GENERAL ---------------- -->
+      <section *ngIf="activeTab() === 'general'" class="space-y-6 sm:space-y-8 animate-fade-in">
+        
+        <!-- Key Statistics Dashboard Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
+          <div class="bg-[#1a1a1a] border border-white/10 rounded-2xl p-3.5 sm:p-5 backdrop-blur-xl hover:border-primary/40 transition-all hover:-translate-y-1 shadow-lg">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+              <div class="p-2.5 sm:p-3 bg-primary/10 rounded-xl text-primary shrink-0">
+                <span class="material-symbols-outlined text-xl sm:text-2xl">event_available</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-white/40 text-[9.5px] sm:text-xs font-medium uppercase tracking-wider truncate">Eventos</p>
+                <h3 class="font-['Epilogue'] font-black text-base sm:text-2xl text-white mt-0.5 leading-none">{{ band()!.stats.eventsCompleted }}+</h3>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-[#1a1a1a] border border-white/10 rounded-2xl p-3.5 sm:p-5 backdrop-blur-xl hover:border-primary/40 transition-all hover:-translate-y-1 shadow-lg">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+              <div class="p-2.5 sm:p-3 bg-emerald-500/10 rounded-xl text-emerald-400 shrink-0">
+                <span class="material-symbols-outlined text-xl sm:text-2xl">schedule</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-white/40 text-[9.5px] sm:text-xs font-medium uppercase tracking-wider truncate">Horas</p>
+                <h3 class="font-['Epilogue'] font-black text-base sm:text-2xl text-white mt-0.5 leading-none">{{ band()!.stats.totalHoursLogged }} hrs</h3>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-[#1a1a1a] border border-white/10 rounded-2xl p-3.5 sm:p-5 backdrop-blur-xl hover:border-primary/40 transition-all hover:-translate-y-1 shadow-lg">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+              <div class="p-2.5 sm:p-3 bg-amber-500/10 rounded-xl text-amber-400 shrink-0">
+                <span class="material-symbols-outlined text-xl sm:text-2xl">sentiment_very_satisfied</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-white/40 text-[9.5px] sm:text-xs font-medium uppercase tracking-wider truncate">Satisfacción</p>
+                <h3 class="font-['Epilogue'] font-black text-base sm:text-2xl text-white mt-0.5 leading-none">{{ band()!.stats.clientSatisfactionPercentage }}%</h3>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-[#1a1a1a] border border-white/10 rounded-2xl p-3.5 sm:p-5 backdrop-blur-xl hover:border-primary/40 transition-all hover:-translate-y-1 shadow-lg">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+              <div class="p-2.5 sm:p-3 bg-purple-500/10 rounded-xl text-purple-400 shrink-0">
+                <span class="material-symbols-outlined text-xl sm:text-2xl">group</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-white/40 text-[9.5px] sm:text-xs font-medium uppercase tracking-wider truncate">Integrantes</p>
+                <h3 class="font-['Epilogue'] font-black text-base sm:text-2xl text-white mt-0.5 leading-none">{{ band()!.membersCount }} Músicos</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bio & Technical Overview Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- Main Description & Video Mix -->
+          <div class="lg:col-span-2 space-y-8">
+            
+            <!-- About Section -->
+            <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-8 backdrop-blur-xl space-y-3 sm:space-y-4 shadow-xl">
+              <h2 class="font-['Epilogue'] font-black text-lg sm:text-xl text-white uppercase tracking-wide flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">description</span>
+                <span>Acerca de {{ band()!.name }}</span>
+              </h2>
+              <p class="text-white/80 text-xs sm:text-base leading-relaxed font-light">
+                {{ band()!.bio }}
+              </p>
+              <p class="text-white/70 text-xs sm:text-sm leading-relaxed font-light">
+                {{ band()!.biographyFull }}
+              </p>
+            </div>
+
+            <!-- Video Mix Player -->
+            <div *ngIf="band()!.mixVideoUrl" class="bg-[#1a1a1a] border border-primary/30 rounded-3xl p-5 sm:p-8 backdrop-blur-xl space-y-4 shadow-[0_10px_40px_rgba(242,202,80,0.08)]">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
+                <div>
+                  <span class="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+                    Mix de Canciones en Reproducción
+                  </span>
+                  <h3 class="font-['Epilogue'] font-black text-base sm:text-xl text-white uppercase tracking-wide mt-0.5">
+                    {{ band()!.mixVideoTitle || 'Mix de Canciones de la Agrupación' }}
+                  </h3>
+                </div>
+              </div>
+
+              <!-- Video Player -->
+              <div class="relative rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl">
+                <video [src]="band()!.mixVideoUrl" 
+                       controls 
+                       preload="metadata"
+                       class="w-full h-48 sm:h-80 md:h-96 object-cover"></video>
+              </div>
+            </div>
+
+            <!-- UPCOMING EVENTS SECTION (LINKED EXCLUSIVELY TO INTERNAL ACORDEX EVENTS) -->
+            <div *ngIf="band()!.upcomingEvents && band()!.upcomingEvents!.length > 0" 
+                 class="bg-[#141414] border border-white/10 rounded-3xl p-4 sm:p-7 backdrop-blur-2xl space-y-4 sm:space-y-6 shadow-2xl">
+              
+              <!-- Section Header -->
+              <div class="border-b border-white/10 pb-3 sm:pb-4">
+                <span class="text-[9.5px] sm:text-[10px] font-black text-primary uppercase tracking-widest flex items-center gap-2 mb-1">
+                  <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Cartelera & Gira Acordex
+                </span>
+                <h2 class="font-['Epilogue'] font-black text-base sm:text-lg md:text-xl text-white uppercase tracking-wide flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary text-base sm:text-xl">calendar_month</span>
+                  <span>Próximos Eventos</span>
+                </h2>
+              </div>
+
+              <!-- Premium Horizontal Event Cards -->
+              <div class="space-y-3.5 sm:space-y-4">
+
+                <div *ngFor="let evt of band()!.upcomingEvents" 
+                     (click)="navigateToEvent(evt.internalRoute)"
+                     [ngClass]="[getEventTheme(evt.type).cardBorder, getEventTheme(evt.type).hoverGlow]"
+                     class="group relative rounded-2xl overflow-hidden border bg-[#161616] transition-all duration-500 cursor-pointer">
+                  
+                  <!-- Animated Top Accent Line -->
+                  <div [ngClass]="getEventTheme(evt.type).accentLine"
+                       class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20"></div>
+
+                  <div class="flex flex-col md:flex-row">
+
+                    <!-- Left: Image Panel -->
+                    <div class="relative w-full md:w-60 lg:w-72 xl:w-80 h-36 sm:h-48 md:h-auto md:min-h-[180px] shrink-0 overflow-hidden">
+                      <img *ngIf="evt.imageUrl" [src]="evt.imageUrl" [alt]="evt.title" 
+                           class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <div [ngClass]="getEventTheme(evt.type).imageOverlay" 
+                           class="absolute inset-0 bg-gradient-to-r to-[#161616] hidden md:block"></div>
+                      <div class="absolute inset-0 bg-gradient-to-t from-[#161616] via-[#161616]/20 to-transparent md:hidden"></div>
+                      
+                      <!-- Type Badge -->
+                      <span [ngClass]="getEventTheme(evt.type).badgeBg" 
+                            class="absolute top-3 left-3 px-2.5 sm:px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-['Epilogue'] font-black tracking-widest uppercase border backdrop-blur-xl shadow-xl">
+                        {{ evt.type }}
+                      </span>
+                    </div>
+
+                    <!-- Right: Content Panel -->
+                    <div class="flex-1 min-w-0 p-3.5 pt-2 sm:p-5 md:py-5 md:pr-7 md:pl-5 flex flex-col justify-center gap-2 sm:gap-3">
+                      
+                      <!-- Pills Row: Date + Time -->
+                      <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+                        <span [ngClass]="getEventTheme(evt.type).dateBg" 
+                              class="inline-flex items-center gap-1.5 border text-[9.5px] sm:text-[11px] font-['Epilogue'] font-black uppercase tracking-wider px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-lg">
+                          <span class="material-symbols-outlined text-xs sm:text-sm">calendar_month</span>
+                          {{ evt.date }}
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 bg-white/[0.04] border border-white/10 text-white/70 text-[9.5px] sm:text-[11px] font-semibold px-2 sm:px-3.5 py-1 sm:py-1.5 rounded-lg">
+                          <span class="material-symbols-outlined text-xs sm:text-sm" [ngClass]="getEventTheme(evt.type).iconColor">schedule</span>
+                          {{ evt.time }}
+                        </span>
+                      </div>
+
+                      <!-- Event Title -->
+                      <h4 class="font-['Epilogue'] font-black text-sm sm:text-lg lg:text-xl text-white leading-snug group-hover:text-primary transition-colors duration-300 uppercase tracking-wide">
+                        {{ evt.title }}
+                      </h4>
+
+                      <!-- Venue -->
+                      <div class="flex items-center gap-1.5 text-[11px] sm:text-xs text-white/60 flex-wrap">
+                        <span class="material-symbols-outlined text-sm sm:text-base shrink-0" [ngClass]="getEventTheme(evt.type).iconColor">location_on</span>
+                        <span class="font-semibold text-white/90 truncate">{{ evt.venue }}</span>
+                        <span class="text-white/20">·</span>
+                        <span>{{ evt.city }}</span>
+                      </div>
+
+                      <!-- Button -->
+                      <button (click)="navigateToEvent(evt.internalRoute); $event.stopPropagation()" 
+                              [ngClass]="getEventTheme(evt.type).buttonBg" 
+                              class="self-start font-['Epilogue'] font-black text-[9.5px] sm:text-[11px] uppercase tracking-wider px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 mt-0.5">
+                        <span class="material-symbols-outlined text-xs sm:text-sm">{{ getEventButtonIcon(evt.type) }}</span>
+                        <span>Ver Evento</span>
+                        <span class="material-symbols-outlined text-xs sm:text-sm">arrow_forward</span>
+                      </button>
+
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- MEMBER CARDS GRID -->
+            <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-8 backdrop-blur-xl space-y-4 sm:space-y-6 shadow-xl">
+              <div class="border-b border-white/10 pb-3 sm:pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h2 class="font-['Epilogue'] font-black text-lg sm:text-xl text-white uppercase tracking-wide flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">groups</span>
+                    <span>Integrantes del Grupo</span>
+                  </h2>
+                </div>
+              </div>
+
+              <!-- Extra Large Member Cards Grid -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div *ngFor="let member of band()!.membersList" 
+                     (click)="openMemberModal(member)"
+                     class="bg-gradient-to-b from-[#1c1c1c] via-[#141414] to-black border border-white/15 hover:border-primary/60 p-5 sm:p-7 rounded-3xl flex flex-col items-center text-center cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_45px_rgba(242,202,80,0.2)] group relative overflow-hidden">
+                  
+                  <!-- Glowing Corner Badge: Instrument Icon (TOP RIGHT CORNER) -->
+                  <div class="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 bg-primary/20 border border-primary/40 text-primary p-1.5 sm:p-2.5 rounded-2xl shadow-lg backdrop-blur-md group-hover:bg-primary group-hover:text-black transition-all duration-300 group-hover:scale-110">
+                    <span class="material-symbols-outlined text-base sm:text-xl block leading-none font-bold">
+                      {{ getInstrumentIcon(member.instrument) }}
+                    </span>
+                  </div>
+
+                  <!-- Top Left Badge: Years of Experience -->
+                  <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 bg-black/60 border border-white/15 text-white/80 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-xl text-[9px] sm:text-[10px] font-['Epilogue'] font-bold uppercase tracking-wider backdrop-blur-md">
+                    {{ member.experienceYears }} Años Exp.
+                  </div>
+
+                  <!-- Highlight Glow Background -->
+                  <div class="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                  <!-- Extra Large Circular Photo with Double Golden Ring -->
+                  <div class="relative w-28 h-28 sm:w-40 sm:h-40 rounded-full overflow-hidden border-2 border-primary/40 p-1 sm:p-1.5 shadow-2xl mb-4 sm:mb-5 group-hover:border-primary transition-all duration-500 group-hover:scale-105 shrink-0 bg-black">
+                    <img [src]="member.photoUrl" [alt]="member.name" 
+                         class="w-full h-full rounded-full object-cover filter brightness-95 group-hover:brightness-105 transition-all" />
+                    <span class="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 bg-primary text-black p-1 sm:p-1.5 rounded-full shadow-xl flex items-center justify-center text-xs">
+                      <span class="material-symbols-outlined text-xs sm:text-sm font-black">star</span>
+                    </span>
+                  </div>
+
+                  <!-- Member Info Centered Below Photo -->
+                  <div class="space-y-2 relative z-10 w-full">
+                    <div class="flex items-center justify-center gap-2">
+                      <span class="inline-flex items-center gap-1 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full bg-primary/10 border border-primary/30 text-primary font-['Epilogue'] font-bold text-[10px] sm:text-xs uppercase tracking-wider">
+                        <span class="material-symbols-outlined text-xs sm:text-sm">{{ getInstrumentIcon(member.instrument) }}</span>
+                        <span>{{ member.instrument }}</span>
+                      </span>
+                    </div>
+                    
+                    <h3 class="font-['Epilogue'] font-black text-base sm:text-xl text-white uppercase tracking-wide group-hover:text-primary transition-colors">
+                      {{ member.name }}
+                    </h3>
+                    
+                    <p class="text-white/50 text-[11px] sm:text-xs font-light">
+                      {{ member.role }}
+                    </p>
+
+                    <!-- Quote Snippet -->
+                    <p class="text-white/70 text-[11px] sm:text-xs font-light line-clamp-2 px-2 italic bg-black/40 py-1.5 sm:py-2 rounded-xl border border-white/5">
+                      "{{ member.quote }}"
+                    </p>
+
+                    <button class="mt-3 sm:mt-4 w-full bg-white/5 hover:bg-primary hover:text-black border border-white/15 text-white font-['Epilogue'] font-bold text-[10px] sm:text-xs uppercase tracking-widest py-2.5 sm:py-3 rounded-2xl transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg group-hover:shadow-[0_5px_20px_rgba(242,202,80,0.3)]">
+                      <span>Ver Perfil del Músico</span>
+                      <span class="material-symbols-outlined text-xs sm:text-sm group-hover:translate-x-1 transition-transform">open_in_new</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Side Specs & Contacts -->
+          <div class="space-y-6">
+            
+            <!-- General Specs Card -->
+            <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-6 backdrop-blur-xl space-y-4 shadow-xl">
+              <h3 class="font-['Epilogue'] font-black text-base sm:text-lg text-white uppercase tracking-wide border-b border-white/10 pb-3">
+                Ficha Técnica
+              </h3>
+              <ul class="space-y-2.5 sm:space-y-3 text-xs sm:text-sm">
+                <li class="flex justify-between items-center text-white/70">
+                  <span>Ciudad de Origen:</span>
+                  <strong class="text-white font-semibold">{{ band()!.originCity }}</strong>
+                </li>
+                <li class="flex justify-between items-center text-white/70">
+                  <span>Año de Fundación:</span>
+                  <strong class="text-white font-semibold">{{ band()!.foundedYear }}</strong>
+                </li>
+                <li class="flex justify-between items-center text-white/70">
+                  <span>Género Musical:</span>
+                  <strong class="text-primary font-semibold">{{ band()!.tag }}</strong>
+                </li>
+                <li class="flex justify-between items-center text-white/70">
+                  <span>Total Integrantes:</span>
+                  <strong class="text-white font-semibold">{{ band()!.membersCount }} Músicos</strong>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Technical Rider Card -->
+            <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-6 backdrop-blur-xl space-y-4 shadow-xl">
+              <h3 class="font-['Epilogue'] font-black text-base sm:text-lg text-white uppercase tracking-wide border-b border-white/10 pb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base">tune</span>
+                <span>Rider Técnico de Audio</span>
+              </h3>
+              <ul class="space-y-2.5">
+                <li *ngFor="let item of band()!.technicalRider" class="flex items-start gap-2.5 text-xs text-white/70">
+                  <span class="material-symbols-outlined text-primary text-sm shrink-0 mt-0.5">check_circle</span>
+                  <span>{{ item }}</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Official Social Links with Official SVGs -->
+            <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-xl space-y-3">
+              <h3 class="font-['Epilogue'] font-black text-[10px] sm:text-xs text-white/40 uppercase tracking-widest">
+                Redes Sociales Oficiales del Grupo
+              </h3>
+              
+              <div class="grid grid-cols-2 gap-2 sm:gap-2.5 pt-1">
+                <!-- Spotify Official -->
+                <a *ngIf="band()!.socials.spotify" [href]="band()!.socials.spotify" target="_blank" 
+                   class="flex items-center gap-2 bg-[#1DB954]/10 hover:bg-[#1DB954]/20 border border-[#1DB954]/30 text-[#1DB954] px-3 sm:px-3.5 py-2.5 rounded-xl transition-all text-xs font-bold font-['Epilogue']">
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm5.521 17.341c-.217.357-.682.467-1.039.25-2.848-1.74-6.433-2.134-10.657-1.168-.403.093-.815-.164-.908-.567-.093-.403.164-.815.567-.908 4.63-1.061 8.583-.611 11.77 1.334.356.217.467.682.25 1.039zm1.474-3.277c-.273.444-.858.587-1.302.314-3.26-2.003-8.23-2.585-12.086-1.415-.5.152-1.028-.13-1.18-.63-.152-.5.13-1.028.63-1.18 4.406-1.338 9.894-.693 13.624 1.609.444.273.587.858.314 1.302zm.126-3.41c-3.913-2.324-10.363-2.54-14.103-1.404-.6.182-1.238-.166-1.42-.767-.182-.6.166-1.238.767-1.42 4.298-1.304 11.415-1.045 15.903 1.62.54.32.716 1.02.396 1.56-.32.54-1.02.716-1.56.396z"/>
+                  </svg>
+                  <span>Spotify</span>
+                </a>
+
+                <!-- Instagram Official -->
+                <a *ngIf="band()!.socials.instagram" [href]="band()!.socials.instagram" target="_blank" 
+                   class="flex items-center gap-2 bg-[#E1306C]/10 hover:bg-[#E1306C]/20 border border-[#E1306C]/30 text-[#E1306C] px-3 sm:px-3.5 py-2.5 rounded-xl transition-all text-xs font-bold font-['Epilogue']">
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  </svg>
+                  <span>Instagram</span>
+                </a>
+
+                <!-- Facebook Official -->
+                <a *ngIf="band()!.socials.facebook" [href]="band()!.socials.facebook" target="_blank" 
+                   class="flex items-center gap-2 bg-[#1877F2]/10 hover:bg-[#1877F2]/20 border border-[#1877F2]/30 text-[#1877F2] px-3 sm:px-3.5 py-2.5 rounded-xl transition-all text-xs font-bold font-['Epilogue']">
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                  <span>Facebook</span>
+                </a>
+
+                <!-- YouTube Official -->
+                <a *ngIf="band()!.socials.youtube" [href]="band()!.socials.youtube" target="_blank" 
+                   class="flex items-center gap-2 bg-[#FF0000]/10 hover:bg-[#FF0000]/20 border border-[#FF0000]/30 text-[#FF0000] px-3 sm:px-3.5 py-2.5 rounded-xl transition-all text-xs font-bold font-['Epilogue']">
+                  <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                  <span>YouTube</span>
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- TAB 2: TRAYECTORIA Y BIOGRAFÍA ---------------- -->
+      <section *ngIf="activeTab() === 'trayectoria'" class="space-y-8 animate-fade-in">
+        
+        <!-- Detailed History Header -->
+        <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-8 backdrop-blur-xl space-y-4 shadow-xl">
+          <h2 class="font-['Epilogue'] font-black text-base sm:text-2xl text-white uppercase tracking-wide leading-snug flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-base sm:text-2xl">history</span>
+            <span>Historia y Trayectoria de {{ band()!.name }}</span>
+          </h2>
+          <p class="text-white/80 text-xs sm:text-base leading-relaxed font-light">
+            {{ band()!.biographyFull }}
+          </p>
+        </div>
+
+        <!-- Timeline Milestones with Smooth Glowing Dots -->
+        <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-8 backdrop-blur-xl shadow-xl">
+          <h3 class="font-['Epilogue'] font-black text-sm sm:text-xl text-white uppercase tracking-wide mb-6 sm:mb-8 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-base sm:text-xl">timeline</span>
+            <span>Hitos y Momentos Clave</span>
+          </h3>
+
+          <div class="relative border-l-2 border-primary/40 ml-3 sm:ml-4 pl-4 sm:pl-6 space-y-8 sm:space-y-10">
+            <div *ngFor="let m of band()!.milestones" class="relative group">
+              <!-- Glowing Timeline Dot -->
+              <span class="absolute -left-[23px] sm:-left-[31px] top-1.5 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-primary border-4 border-[#1a1a1a] shadow-[0_0_12px_rgba(242,202,80,0.8)] group-hover:scale-125 transition-transform duration-300"></span>
+              
+              <span class="text-primary font-['Epilogue'] font-black text-[9.5px] sm:text-xs uppercase tracking-widest bg-primary/10 border border-primary/20 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-md shadow-sm">
+                {{ m.year }}
+              </span>
+              <h4 class="font-['Epilogue'] font-bold text-sm sm:text-lg text-white mt-1.5 mb-1 group-hover:text-primary transition-colors leading-snug">
+                {{ m.title }}
+              </h4>
+              <p class="text-white/70 text-xs sm:text-sm font-light leading-relaxed">
+                {{ m.description }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Awards and Recognition Badges -->
+        <div *ngIf="band()!.awards && band()!.awards.length > 0" 
+             class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-8 backdrop-blur-xl shadow-xl">
+          <h3 class="font-['Epilogue'] font-black text-sm sm:text-xl text-white uppercase tracking-wide mb-4 sm:mb-6 flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-400 text-base sm:text-xl">workspace_premium</span>
+            <span>Premios y Reconocimientos Destacados</span>
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            <div *ngFor="let award of band()!.awards"
+                 class="bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/30 p-3.5 sm:p-4 rounded-2xl flex items-center gap-2.5 sm:gap-3 hover:scale-[1.02] transition-transform">
+              <span class="material-symbols-outlined text-amber-400 text-xl sm:text-2xl shrink-0">trophy</span>
+              <span class="text-white/90 text-xs sm:text-sm font-semibold leading-snug">{{ award }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- TAB 3: MÚSICA Y REPERTORIO ---------------- -->
+      <section *ngIf="activeTab() === 'musica'" class="space-y-6 sm:space-y-8 animate-fade-in">
+        
+        <!-- Top Songs Section with Interactive Player -->
+        <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-8 backdrop-blur-xl space-y-4 sm:space-y-6 shadow-xl">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div>
+              <h2 class="font-['Epilogue'] font-black text-base sm:text-2xl text-white uppercase tracking-wide leading-snug flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base sm:text-2xl">equalizer</span>
+                <span>Canciones Más Populares</span>
+              </h2>
+            </div>
+          </div>
+
+          <!-- Tracklist Table / Card Grid -->
+          <div class="space-y-3">
+            <div *ngFor="let track of band()!.topTracks" 
+                 class="flex items-center justify-between gap-4 p-4 rounded-2xl bg-black/40 border transition-all duration-300 hover:scale-[1.01]"
+                 [ngClass]="playingTrackId() === track.id ? 'border-primary bg-primary/10 shadow-[0_0_20px_rgba(242,202,80,0.15)]' : 'border-white/5 hover:border-white/20'">
+              
+              <div class="flex items-center gap-4 min-w-0">
+                <!-- Track Play/Pause Button -->
+                <button (click)="toggleTrack(track.id)" 
+                        class="w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0"
+                        [ngClass]="playingTrackId() === track.id ? 'bg-primary text-black scale-105 shadow-[0_0_15px_rgba(242,202,80,0.4)]' : 'bg-white/10 text-white hover:bg-primary hover:text-black'">
+                  <span class="material-symbols-outlined text-xl">
+                    {{ playingTrackId() === track.id ? 'pause' : 'play_arrow' }}
+                  </span>
+                </button>
+
+                <!-- Track Details -->
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <h4 class="font-['Epilogue'] font-bold text-sm sm:text-base text-white truncate">
+                      {{ track.title }}
+                    </h4>
+                    <span *ngIf="track.isPopular" 
+                          class="text-[9px] bg-primary/20 text-primary border border-primary/30 font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0">
+                      Top Hits
+                    </span>
+                  </div>
+                  <p class="text-white/50 text-xs mt-0.5 flex items-center gap-3">
+                    <span>{{ track.genre }}</span>
+                    <span>•</span>
+                    <span>{{ track.releaseYear }}</span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Stats & Player Controls -->
+              <div class="flex items-center gap-4 shrink-0">
+                <span class="hidden sm:flex items-center gap-1 text-white/40 text-xs font-mono">
+                  <span class="material-symbols-outlined text-sm">headset</span>
+                  <span>{{ track.plays }}</span>
+                </span>
+
+                <span class="text-white/60 text-xs font-mono">{{ track.duration }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Repertoire Catalog by Genre -->
+        <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-8 backdrop-blur-xl space-y-4 sm:space-y-6 shadow-xl">
+          <h3 class="font-['Epilogue'] font-black text-sm sm:text-xl text-white uppercase tracking-wide flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-base sm:text-xl">queue_music</span>
+            <span>Catálogo de Repertorio para Eventos</span>
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div *ngFor="let rep of band()!.repertoireByGenre" 
+                 class="bg-black/40 border border-white/10 rounded-2xl p-5 space-y-4">
+              <h4 class="font-['Epilogue'] font-bold text-base text-primary uppercase tracking-wider border-b border-white/10 pb-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">music_video</span>
+                <span>{{ rep.genre }}</span>
+              </h4>
+              
+              <ul class="space-y-2.5">
+                <li *ngFor="let song of rep.songs" 
+                    class="flex items-center justify-between p-2.5 rounded-xl border transition-all duration-300"
+                    [ngClass]="playingRepertoireSong() === song ? 'bg-primary/10 border-primary/40 text-primary' : 'bg-white/5 border-white/5 hover:border-white/20 text-white/90'">
+                  
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <!-- Interactive Audio Play Button -->
+                    <button (click)="toggleRepertoireSong(song)" 
+                            class="w-7 h-7 rounded-lg flex items-center justify-center transition-all shrink-0"
+                            [ngClass]="playingRepertoireSong() === song ? 'bg-primary text-black' : 'bg-white/10 hover:bg-primary hover:text-black text-white'">
+                      <span class="material-symbols-outlined text-sm">
+                        {{ playingRepertoireSong() === song ? 'pause' : 'play_arrow' }}
+                      </span>
+                    </button>
+                    <span class="text-xs font-medium truncate">{{ song }}</span>
+                  </div>
+
+                  <span *ngIf="playingRepertoireSong() === song" class="text-[9px] font-bold uppercase tracking-wider text-primary animate-pulse shrink-0">
+                    Reproduciendo Demo
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- TAB 4: GALERÍA Y SHOWS ---------------- -->
+      <section *ngIf="activeTab() === 'galeria'" class="space-y-6 sm:space-y-8 animate-fade-in">
+        
+        <!-- Image Gallery Grid -->
+        <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-8 backdrop-blur-xl space-y-4 sm:space-y-6 shadow-xl">
+          <h2 class="font-['Epilogue'] font-black text-base sm:text-2xl text-white uppercase tracking-wide leading-snug flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-base sm:text-2xl">photo_camera</span>
+            <span>Galería Fotográfica en Vivo</span>
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div *ngFor="let img of band()!.galleryImages"
+                 (click)="selectedGalleryImage.set(img)"
+                 class="group relative h-44 sm:h-56 rounded-2xl overflow-hidden cursor-pointer border border-white/10 bg-black/60 shadow-md">
+              <img [src]="img.url" [alt]="img.caption" 
+                   class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-end">
+                <span class="material-symbols-outlined text-primary text-xl mb-1">zoom_in</span>
+                <p class="text-white text-xs font-medium line-clamp-2">{{ img.caption }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Video Highlights Grid -->
+        <div *ngIf="band()!.highlightVideos && band()!.highlightVideos.length > 0"
+             class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-8 backdrop-blur-xl space-y-4 sm:space-y-6 shadow-xl">
+          <h3 class="font-['Epilogue'] font-black text-sm sm:text-xl text-white uppercase tracking-wide flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-base sm:text-xl">videocam</span>
+            <span>Videos de Presentaciones</span>
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div *ngFor="let video of band()!.highlightVideos" 
+                 class="bg-black/60 border border-white/10 rounded-2xl overflow-hidden space-y-3 p-3.5 sm:p-4 shadow-lg">
+              <div class="relative h-44 sm:h-56 rounded-xl overflow-hidden bg-black border border-white/5">
+                <video [src]="video.videoUrl" controls class="w-full h-full object-cover"></video>
+              </div>
+              <div class="flex justify-between items-start">
+                <h4 class="font-['Epilogue'] font-bold text-xs sm:text-sm text-white leading-snug">{{ video.title }}</h4>
+                <span class="text-xs text-white/50 font-mono">{{ video.duration }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- TAB 5: RESEÑAS DE CLIENTES ---------------- -->
+      <section *ngIf="activeTab() === 'resenas'" class="space-y-6 sm:space-y-8 animate-fade-in">
+        <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-8 backdrop-blur-xl space-y-4 sm:space-y-6 shadow-xl">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-white/10 pb-4 sm:pb-6">
+            <div>
+              <h2 class="font-['Epilogue'] font-black text-base sm:text-2xl text-white uppercase tracking-wide leading-snug flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base sm:text-2xl">rate_review</span>
+                <span>Opiniones y Testimonios Verificados</span>
+              </h2>
+              <p class="text-white/60 text-xs sm:text-sm font-light mt-1">
+                Comentarios reales de clientes que han contratado a {{ band()!.name }} a través de Acordex.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2.5 sm:gap-3 bg-black/50 border border-white/10 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl shrink-0">
+              <span class="material-symbols-outlined text-xl sm:text-2xl text-primary fill-current">star</span>
+              <div>
+                <span class="font-['Epilogue'] font-black text-lg sm:text-2xl text-white leading-none block">{{ band()!.rating }} / 5.0</span>
+                <span class="text-[9px] sm:text-[10px] text-white/40 uppercase tracking-wider block">Calificación General</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Review Cards Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div *ngFor="let rev of band()!.reviews" 
+                 class="bg-black/40 border border-white/10 rounded-2xl p-6 space-y-4 hover:border-primary/30 transition-all shadow-md">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <img [src]="rev.avatarUrl" [alt]="rev.clientName" class="w-12 h-12 rounded-full object-cover border border-primary/30" />
+                  <div>
+                    <h4 class="font-['Epilogue'] font-bold text-sm text-white">{{ rev.clientName }}</h4>
+                    <p class="text-white/40 text-xs">{{ rev.eventType }} • {{ rev.location }}</p>
+                  </div>
+                </div>
+
+                <!-- Rating Stars -->
+                <div class="flex items-center gap-0.5 text-primary">
+                  <span *ngFor="let star of [1,2,3,4,5]" class="material-symbols-outlined text-sm fill-current">star</span>
+                </div>
+              </div>
+
+              <p class="text-white/80 text-xs sm:text-sm font-light leading-relaxed italic">
+                "{{ rev.comment }}"
+              </p>
+
+              <span class="text-[10px] text-white/40 block text-right font-mono">{{ rev.date }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- TAB 6: PUBLICACIONES DE LA BANDA ---------------- -->
+      <section *ngIf="activeTab() === 'publicaciones'" class="animate-fade-in max-w-3xl mx-auto space-y-6 sm:space-y-8">
+
+        <!-- Posts List Loop using app-post-card -->
+        <app-post-card *ngFor="let post of bandPosts()"
+            [authorName]="post.authorName"
+            [authorAvatar]="post.authorAvatar"
+            [timeAgo]="post.timeAgo"
+            [content]="post.content"
+            [mediaUrl]="post.mediaUrl"
+            [likes]="post.likes"
+            [comments]="post.comments"
+            [tags]="post.tags"
+            [isLikedInput]="post.isLiked"
+            [commentsListInput]="post.commentsList"
+            (imageClick)="selectedPostImage.set(post.mediaUrl || null)">
+        </app-post-card>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================= ALL MODALS AT ROOT LEVEL (OUTSIDE OF TRANSFORMED CONTAINER) ================= -->
+
+  <!-- MEMBER PROFILE MODAL WINDOW -->
+  <div *ngIf="selectedMember()" (click)="closeMemberModal()"
+       class="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-2xl flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden animate-fade-in font-['Be_Vietnam_Pro'] select-none">
+    
+    <!-- Modal Window Fixed Box Container -->
+    <div (click)="$event.stopPropagation()"
+         class="relative w-full max-w-3xl max-h-[94vh] sm:max-h-[90vh] bg-[#161616] border-t border-x sm:border border-white/15 rounded-t-[32px] sm:rounded-3xl p-4 sm:p-7 shadow-[0_25px_60px_rgba(0,0,0,0.95)] flex flex-col justify-between overflow-hidden mt-auto sm:mt-0">
+      
+      <!-- Mobile Handle Pill -->
+      <div (click)="closeMemberModal()" class="w-12 h-1.5 bg-white/20 hover:bg-white/35 rounded-full mx-auto mb-2.5 shrink-0 sm:hidden cursor-pointer active:scale-90 transition-all"></div>
+
+      <!-- Close Modal Cross Top Right -->
+      <button (click)="closeMemberModal()" 
+              class="absolute top-4 right-4 sm:top-5 sm:right-5 z-40 text-white/70 hover:text-white bg-black/80 border border-white/20 p-2 sm:p-2.5 rounded-full transition-all hover:scale-110 active:scale-95 shadow-2xl">
+        <span class="material-symbols-outlined text-lg sm:text-xl">close</span>
+      </button>
+
+      <!-- Member Header: FULL-SIZE SPECTACULAR PORTRAIT COVER IMAGE -->
+      <div class="relative w-full h-56 sm:h-[420px] md:h-[460px] rounded-2xl sm:rounded-3xl overflow-hidden border-2 border-primary/50 shadow-[0_20px_50px_rgba(0,0,0,0.9)] bg-black shrink-0 group">
+        <img [src]="selectedMember()!.coverPhotoUrl || selectedMember()!.photoUrl" [alt]="selectedMember()!.name" 
+             class="w-full h-full object-cover filter brightness-95 group-hover:scale-105 transition-transform duration-700" />
+        
+        <!-- Cinematic Dark Gradient Overlay -->
+        <div class="absolute inset-0 bg-gradient-to-t from-[#161616] via-[#161616]/20 to-transparent"></div>
+        
+        <!-- Top Left Badges (Flexbox auto-fit within image width without scroll or clipping) -->
+        <div class="absolute top-2.5 left-2.5 right-12 z-20 flex items-center justify-start gap-1">
+          <!-- Role Pill -->
+          <span class="px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-black/80 border border-white/20 text-white font-['Epilogue'] font-bold text-[7.5px] sm:text-xs uppercase tracking-tight backdrop-blur-md shadow-md truncate">
+            {{ selectedMember()!.role }}
+          </span>
+
+          <!-- Instrument Pill -->
+          <span class="px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-primary text-black font-['Epilogue'] font-black text-[7.5px] sm:text-xs uppercase tracking-tight shadow-xl flex items-center gap-0.5 shrink-0">
+            <span class="material-symbols-outlined text-[9px] sm:text-xs font-black">{{ getInstrumentIcon(selectedMember()!.instrument) }}</span>
+            <span class="truncate">{{ selectedMember()!.instrument }}</span>
+          </span>
+
+          <!-- Músico Verificado Pill -->
+          <span class="px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-[7.5px] sm:text-xs uppercase tracking-tight flex items-center gap-0.5 backdrop-blur-md shadow-md shrink-0">
+            <span class="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Verificado</span>
+          </span>
+        </div>
+
+        <!-- Artist Title Overlay at bottom of portrait -->
+        <div class="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 sm:right-6 z-20 space-y-0.5 sm:space-y-1">
+          <h2 class="font-['Epilogue'] font-black text-xl sm:text-4xl md:text-5xl text-white uppercase tracking-tight leading-none drop-shadow-xl">
+            {{ selectedMember()!.name }}
+          </h2>
+
+          <p class="text-white/80 text-[10px] sm:text-sm font-light truncate">
+            {{ band()!.name }} • {{ selectedMember()!.experienceYears }} años de trayectoria profesional
+          </p>
+        </div>
+      </div>
+
+      <!-- Clean 3-Tab Bar -->
+      <nav class="bg-black/60 p-1 sm:p-1.5 rounded-2xl border border-white/10 backdrop-blur-md mt-2.5 sm:mt-3 shrink-0">
+        <div class="grid grid-cols-3 gap-1 text-center font-['Epilogue'] font-bold text-[10px] sm:text-xs uppercase tracking-wider">
+          <button (click)="setMemberModalTab('general')"
+                  class="py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl transition-all flex items-center justify-center gap-1 sm:gap-2"
+                  [ngClass]="memberModalTab() === 'general' ? 'bg-primary text-black shadow-lg' : 'text-white/60 hover:text-white hover:bg-white/5'">
+            <span class="material-symbols-outlined text-xs sm:text-base">person</span>
+            <span>General</span>
+          </button>
+
+          <button (click)="setMemberModalTab('media')"
+                  class="py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl transition-all flex items-center justify-center gap-1 sm:gap-2"
+                  [ngClass]="memberModalTab() === 'media' ? 'bg-primary text-black shadow-lg' : 'text-white/60 hover:text-white hover:bg-white/5'">
+            <span class="material-symbols-outlined text-xs sm:text-base">perm_media</span>
+            <span class="truncate">Fotos & Videos</span>
+          </button>
+
+          <button (click)="setMemberModalTab('socials')"
+                  class="py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl transition-all flex items-center justify-center gap-1 sm:gap-2"
+                  [ngClass]="memberModalTab() === 'socials' ? 'bg-primary text-black shadow-lg' : 'text-white/60 hover:text-white hover:bg-white/5'">
+            <span class="material-symbols-outlined text-xs sm:text-base">share</span>
+            <span class="truncate">Redes</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Inner Tab Content Scroll Area -->
+      <div id="memberTabContentArea" class="flex-1 overflow-y-auto pr-1 space-y-3 sm:space-y-4 scrollbar-none mt-2.5 sm:mt-3">
+
+        <!-- APARTADO 1: GENERAL -->
+        <div *ngIf="memberModalTab() === 'general'" class="space-y-3 sm:space-y-4 animate-fade-in">
+          
+          <!-- Personal Metrics Grid -->
+          <div class="grid grid-cols-3 gap-1.5 sm:gap-3">
+            <div class="bg-black/50 border border-white/10 rounded-2xl p-2.5 sm:p-3.5 text-center">
+              <span class="text-[8px] sm:text-[9px] text-white/40 uppercase font-bold tracking-widest block truncate">Edad</span>
+              <strong class="font-['Epilogue'] font-black text-xs sm:text-lg text-white mt-0.5 block">{{ selectedMember()!.age }} Años</strong>
+            </div>
+
+            <div class="bg-black/50 border border-white/10 rounded-2xl p-2.5 sm:p-3.5 text-center">
+              <span class="text-[8px] sm:text-[9px] text-white/40 uppercase font-bold tracking-widest block truncate">Origen</span>
+              <strong class="font-['Epilogue'] font-black text-[10.5px] sm:text-xs text-white mt-0.5 truncate block">{{ selectedMember()!.hometown }}</strong>
+            </div>
+
+            <div class="bg-black/50 border border-white/10 rounded-2xl p-2.5 sm:p-3.5 text-center">
+              <span class="text-[8px] sm:text-[9px] text-white/40 uppercase font-bold tracking-widest block truncate">Trayectoria</span>
+              <strong class="font-['Epilogue'] font-black text-xs sm:text-lg text-white mt-0.5 block">{{ selectedMember()!.experienceYears }} Años</strong>
+            </div>
+          </div>
+
+          <!-- Lema de Vida Card -->
+          <div class="bg-gradient-to-r from-primary/15 via-primary/5 to-transparent border border-primary/30 p-3 sm:p-4 rounded-2xl">
+            <span class="text-[9px] sm:text-[10px] text-primary uppercase font-bold tracking-widest block mb-1 flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs sm:text-sm">format_quote</span>
+              Lema de Vida
+            </span>
+            <p class="text-white text-xs sm:text-base font-medium italic leading-snug">
+              {{ selectedMember()!.quote }}
+            </p>
+          </div>
+
+          <!-- PROMINENT DOMINANT FEATURE: Biografía Personal y Trayectoria Musical -->
+          <div class="bg-gradient-to-b from-[#201f1f] via-[#1a1919] to-black/80 border border-primary/40 rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-3 sm:space-y-5 shadow-[0_10px_35px_rgba(242,202,80,0.12)] relative overflow-hidden">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/15 pb-3 sm:pb-4">
+              <div class="flex items-center gap-2.5 sm:gap-3">
+                <div class="p-2 sm:p-3 bg-primary text-black rounded-xl sm:rounded-2xl shadow-lg shrink-0">
+                  <span class="material-symbols-outlined text-lg sm:text-2xl font-black">auto_stories</span>
+                </div>
+                <div>
+                  <span class="text-[9px] sm:text-[10px] font-bold text-primary uppercase tracking-widest block">Sección Principal</span>
+                  <h3 class="font-['Epilogue'] font-black text-xs sm:text-2xl text-white uppercase tracking-wide leading-snug">
+                    Biografía Personal y Trayectoria Musical
+                  </h3>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rich Narrative Multi-Paragraph Text -->
+            <div class="text-white/90 text-xs sm:text-base leading-relaxed font-light space-y-3 pt-1">
+              <p *ngFor="let paragraph of (selectedMember()!.fullBio || selectedMember()!.bio).split('\n\n')" class="bg-black/40 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-white/5">
+                {{ paragraph }}
+              </p>
+            </div>
+            
+            <div class="pt-3 border-t border-white/10 text-white/80 text-[11px] sm:text-sm leading-relaxed font-light flex items-start gap-2 bg-primary/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-primary/20">
+              <span class="material-symbols-outlined text-primary text-sm sm:text-base shrink-0 mt-0.5">stars</span>
+              <div>
+                <strong class="text-primary font-bold uppercase tracking-wider block mb-0.5">Contribución Artística en Vivo:</strong>
+                Como {{ selectedMember()!.role }}, coordina la dinámica interpretativa de <strong>{{ band()!.name }}</strong>, participando en la estructura de arreglos musicales y garantizando un show inolvidable en cada contratación.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- APARTADO 2: FOTOS Y VIDEOS -->
+        <div *ngIf="memberModalTab() === 'media'" class="space-y-4 sm:space-y-5 animate-fade-in">
+          
+          <!-- Personal Photos Grid -->
+          <div class="bg-black/40 border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3">
+            <div class="border-b border-white/10 pb-2">
+              <h4 class="font-['Epilogue'] font-black text-xs sm:text-base text-white uppercase tracking-wide flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base">photo_camera</span>
+                <span>Galería Fotográfica Personal</span>
+              </h4>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+              <div *ngFor="let photo of selectedMember()!.galleryPhotos" 
+                   (click)="openMemberMedia('image', photo, selectedMember()!.name)"
+                   class="group relative h-28 sm:h-44 rounded-2xl overflow-hidden border border-white/10 bg-black shadow-md cursor-pointer">
+                <img [src]="photo" [alt]="selectedMember()!.name" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span class="material-symbols-outlined text-primary text-xl sm:text-2xl">zoom_in</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Personal Videos Grid -->
+          <div *ngIf="selectedMember()!.videos && selectedMember()!.videos!.length > 0" 
+               class="bg-black/40 border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3">
+            <div class="border-b border-white/10 pb-2">
+              <h4 class="font-['Epilogue'] font-black text-xs sm:text-base text-white uppercase tracking-wide flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base">videocam</span>
+                <span>Videos de Presentaciones & Solos</span>
+              </h4>
+            </div>
+
+            <div class="space-y-3">
+              <div *ngFor="let vid of selectedMember()!.videos" 
+                   (click)="openMemberMedia('video', vid.videoUrl, vid.title)"
+                   class="bg-black border border-white/10 p-2.5 sm:p-3 rounded-2xl space-y-2 cursor-pointer hover:border-primary/40 transition-all group">
+                <div class="relative h-36 sm:h-52 rounded-xl overflow-hidden bg-black">
+                  <video [src]="vid.videoUrl" class="w-full h-full object-cover"></video>
+                  <div class="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                    <span class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary text-black flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                      <span class="material-symbols-outlined text-xl sm:text-2xl">play_arrow</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="flex justify-between items-center px-1">
+                  <span class="text-white text-xs font-bold font-['Epilogue'] group-hover:text-primary transition-colors leading-snug">{{ vid.title }}</span>
+                  <span class="text-white/50 text-[10px] font-mono shrink-0">{{ vid.duration }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- APARTADO 3: REDES SOCIALES CON LOGOS OFICIALES -->
+        <div *ngIf="memberModalTab() === 'socials'" class="space-y-4 sm:space-y-5 animate-fade-in">
+          
+          <div class="bg-black/40 border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3 sm:space-y-4">
+            <div class="border-b border-white/10 pb-2.5">
+              <h4 class="font-['Epilogue'] font-black text-xs sm:text-base text-white uppercase tracking-wide flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base">share</span>
+                <span>Redes Sociales Oficiales de {{ selectedMember()!.name }}</span>
+              </h4>
+            </div>
+
+            <!-- Official Social Media Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-1">
+              
+              <!-- Spotify Card -->
+              <a *ngIf="selectedMember()!.socials.spotify as sp" 
+                 [href]="sp.url" target="_blank"
+                 class="bg-[#1DB954]/10 hover:bg-[#1DB954]/20 border border-[#1DB954]/40 p-3 sm:p-4 rounded-2xl flex items-center gap-3 sm:gap-4 transition-all duration-300 hover:scale-[1.02] shadow-lg group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#1DB954] text-black flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 transition-transform">
+                  <svg class="w-5 h-5 sm:w-7 sm:h-7 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm5.521 17.341c-.217.357-.682.467-1.039.25-2.848-1.74-6.433-2.134-10.657-1.168-.403.093-.815-.164-.908-.567-.093-.403.164-.815.567-.908 4.63-1.061 8.583-.611 11.77 1.334.356.217.467.682.25 1.039zm1.474-3.277c-.273.444-.858.587-1.302.314-3.26-2.003-8.23-2.585-12.086-1.415-.5.152-1.028-.13-1.18-.63-.152-.5.13-1.028.63-1.18 4.406-1.338 9.894-.693 13.624 1.609.444.273.587.858.314 1.302zm.126-3.41c-3.913-2.324-10.363-2.54-14.103-1.404-.6.182-1.238-.166-1.42-.767-.182-.6.166-1.238.767-1.42 4.298-1.304 11.415-1.045 15.903 1.62.54.32.716 1.02.396 1.56-.32.54-1.02.716-1.56.396z"/>
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-[8.5px] sm:text-[9px] font-bold text-[#1DB954] uppercase tracking-wider block">Perfil en Spotify</span>
+                  <h5 class="font-['Epilogue'] font-bold text-xs sm:text-sm text-white truncate">Spotify Oficial</h5>
+                  <p class="text-white/50 text-[11px] sm:text-xs truncate">{{ sp.followers || 'Escuchar Música' }}</p>
+                </div>
+              </a>
+
+              <!-- Instagram Card -->
+              <a *ngIf="selectedMember()!.socials.instagram as ig" 
+                 [href]="ig.url" target="_blank"
+                 class="bg-[#E1306C]/10 hover:bg-[#E1306C]/20 border border-[#E1306C]/40 p-3 sm:p-4 rounded-2xl flex items-center gap-3 sm:gap-4 transition-all duration-300 hover:scale-[1.02] shadow-lg group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 transition-transform">
+                  <svg class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-[8.5px] sm:text-[9px] font-bold text-[#E1306C] uppercase tracking-wider block">Instagram Personal</span>
+                  <h5 class="font-['Epilogue'] font-bold text-xs sm:text-sm text-white truncate">{{ ig.handle || 'Instagram' }}</h5>
+                  <p class="text-white/50 text-[11px] sm:text-xs truncate">Ver Historias & Fotos</p>
+                </div>
+              </a>
+
+              <!-- Facebook Card -->
+              <a *ngIf="selectedMember()!.socials.facebook as fb" 
+                 [href]="fb.url" target="_blank"
+                 class="bg-[#1877F2]/10 hover:bg-[#1877F2]/20 border border-[#1877F2]/40 p-3 sm:p-4 rounded-2xl flex items-center gap-3 sm:gap-4 transition-all duration-300 hover:scale-[1.02] shadow-lg group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#1877F2] text-white flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 transition-transform">
+                  <svg class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-[8.5px] sm:text-[9px] font-bold text-[#1877F2] uppercase tracking-wider block">Página de Facebook</span>
+                  <h5 class="font-['Epilogue'] font-bold text-xs sm:text-sm text-white truncate">{{ fb.pageName || 'Facebook' }}</h5>
+                  <p class="text-white/50 text-[11px] sm:text-xs truncate">Seguir Transmisiones</p>
+                </div>
+              </a>
+
+              <!-- YouTube Card -->
+              <a *ngIf="selectedMember()!.socials.youtube as yt" 
+                 [href]="yt.url" target="_blank"
+                 class="bg-[#FF0000]/10 hover:bg-[#FF0000]/20 border border-[#FF0000]/40 p-3 sm:p-4 rounded-2xl flex items-center gap-3 sm:gap-4 transition-all duration-300 hover:scale-[1.02] shadow-lg group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#FF0000] text-white flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 transition-transform">
+                  <svg class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-[8.5px] sm:text-[9px] font-bold text-[#FF0000] uppercase tracking-wider block">Canal Oficial de YouTube</span>
+                  <h5 class="font-['Epilogue'] font-bold text-xs sm:text-sm text-white truncate">{{ yt.channelName || 'YouTube Channel' }}</h5>
+                  <p class="text-white/50 text-[11px] sm:text-xs truncate">Ver Videos & Ensayos</p>
+                </div>
+              </a>
+
+              <!-- TikTok Card -->
+              <a *ngIf="selectedMember()!.socials.tiktok as tk" 
+                 [href]="tk.url" target="_blank"
+                 class="bg-white/10 hover:bg-white/20 border border-white/30 p-3 sm:p-4 rounded-2xl flex items-center gap-3 sm:gap-4 transition-all duration-300 hover:scale-[1.02] shadow-lg group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-black text-white flex items-center justify-center shrink-0 border border-white/20 shadow-md group-hover:scale-110 transition-transform">
+                  <svg class="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.98-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.28-3.04 1.18-6.11 3.73-7.63 1.16-.7 2.52-1.07 3.89-1.07.15 0 .31 0 .46.01v4.11c-.77-.07-1.55.08-2.22.46-.94.52-1.57 1.5-1.67 2.57-.16 1.46.68 2.91 2.06 3.44 1.34.53 2.93.18 3.88-.86.62-.67.97-1.57.97-2.49.02-5.26.01-10.52.01-15.78z"/>
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <span class="text-[8.5px] sm:text-[9px] font-bold text-white uppercase tracking-wider block">Cuenta de TikTok</span>
+                  <h5 class="font-['Epilogue'] font-bold text-xs sm:text-sm text-white truncate">{{ tk.handle || 'TikTok' }}</h5>
+                  <p class="text-white/50 text-[11px] sm:text-xs truncate">Ver Clips Virales</p>
+                </div>
+              </a>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MEMBER MEDIA LIGHTBOX (FOTO / VIDEO EN PANTALLA COMPLETA AT ROOT LEVEL) -->
+  <div *ngIf="selectedMemberMedia()" 
+       class="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-4 overflow-hidden animate-fade-in">
+    
+    <button (click)="closeMemberMedia()" 
+            class="absolute top-6 right-6 z-30 text-white/70 hover:text-white bg-white/10 p-3 rounded-full hover:scale-110 transition-all">
+      <span class="material-symbols-outlined text-2xl">close</span>
+    </button>
+    
+    <div class="max-w-4xl w-full max-h-[88vh] space-y-3 text-center my-auto">
+      <div *ngIf="selectedMemberMedia()!.type === 'image'" class="relative inline-block">
+        <img [src]="selectedMemberMedia()!.url" [alt]="selectedMemberMedia()!.title || 'Foto de integrante'" 
+             class="max-w-full max-h-[78vh] object-contain rounded-3xl border border-white/15 shadow-2xl mx-auto" />
+      </div>
+
+      <div *ngIf="selectedMemberMedia()!.type === 'video'" class="relative rounded-3xl overflow-hidden border border-white/15 bg-black shadow-2xl">
+        <video [src]="selectedMemberMedia()!.url" controls autoplay class="w-full max-h-[78vh] object-contain"></video>
+      </div>
+
+      <p *ngIf="selectedMemberMedia()!.title" class="text-white font-['Epilogue'] font-bold text-sm tracking-wide">
+        {{ selectedMemberMedia()!.title }}
+      </p>
+    </div>
+  </div>
+
+  <!-- MAIN GALLERY LIGHTBOX IMAGE MODAL AT ROOT LEVEL -->
+  <div *ngIf="selectedGalleryImage()" 
+       class="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 overflow-hidden animate-fade-in">
+    <button (click)="selectedGalleryImage.set(null)" 
+            class="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 p-3 rounded-full">
+      <span class="material-symbols-outlined text-2xl">close</span>
+    </button>
+    
+    <div class="max-w-4xl max-h-[85vh] space-y-3 text-center">
+      <img [src]="selectedGalleryImage()!.url" [alt]="selectedGalleryImage()!.caption" class="max-w-full max-h-[75vh] object-contain rounded-2xl border border-white/10 shadow-2xl mx-auto" />
+      <p class="text-white text-sm font-medium">{{ selectedGalleryImage()!.caption }}</p>
+    </div>
+  </div>
+
+  <!-- INTEGRATED QUOTE MODAL AT ROOT LEVEL -->
+  <div *ngIf="isQuoteModalOpen()" 
+       class="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+    
+    <div class="bg-[#181818] border border-white/15 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative space-y-6 my-8">
+      
+      <!-- Close Modal Cross -->
+      <button (click)="closeQuoteModal()" 
+              class="absolute top-6 right-6 text-white/50 hover:text-white bg-white/5 p-2 rounded-full transition-all">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex items-center gap-4 border-b border-white/10 pb-4">
+        <img [src]="band()!.imageUrl" [alt]="band()!.name" class="w-14 h-14 rounded-2xl object-cover border border-primary/40" />
+        <div>
+          <span class="text-[10px] font-bold text-primary uppercase tracking-widest block">Cotización Directa</span>
+          <h3 class="font-['Epilogue'] font-black text-xl text-white uppercase tracking-wide">{{ band()!.name }}</h3>
+        </div>
+      </div>
+
+      <!-- Step Indicator -->
+      <div class="flex items-center justify-between gap-2 text-xs font-['Epilogue'] font-bold uppercase tracking-wider">
+        <span [ngClass]="quoteStep() >= 1 ? 'text-primary' : 'text-white/30'">1. Detalles del Evento</span>
+        <span class="text-white/20">• • •</span>
+        <span [ngClass]="quoteStep() >= 2 ? 'text-primary' : 'text-white/30'">2. Tus Datos</span>
+        <span class="text-white/20">• • •</span>
+        <span [ngClass]="quoteStep() >= 3 ? 'text-primary' : 'text-white/30'">3. Confirmación</span>
+      </div>
+
+      <!-- STEP 1: EVENT DETAILS -->
+      <div *ngIf="quoteStep() === 1" class="space-y-4 text-xs sm:text-sm">
+        <div>
+          <label class="block text-white/70 font-semibold mb-1.5">Tipo de Evento</label>
+          <select [(ngModel)]="eventType" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none">
+            <option value="Boda">Boda / Matrimonio</option>
+            <option value="XV Años">XV Años / Quinceañera</option>
+            <option value="Cumpleaños">Cumpleaños / Fiesta Privada</option>
+            <option value="Aniversario">Aniversario Corporativo</option>
+            <option value="Festival">Festival / Concierto Masivo</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-white/70 font-semibold mb-1.5">Fecha del Evento</label>
+            <input type="date" [(ngModel)]="eventDate" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-white/70 font-semibold mb-1.5">Duración (Horas)</label>
+            <input type="number" min="1" max="12" [(ngModel)]="durationHours" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" />
+          </div>
+        </div>
+
+        <div class="relative">
+          <label class="block text-white/70 font-semibold mb-1.5">Ubicación del Evento (Salón o Ciudad)</label>
+          <input type="text" 
+                 [ngModel]="eventLocationQuery()" 
+                 (ngModelChange)="onLocationInput($event)"
+                 placeholder="Ej. Hacienda San Javier, Zapopan, Jalisco" 
+                 class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" />
+
+          <!-- Location Suggestions Dropdown -->
+          <div *ngIf="showLocationSuggestions()" class="absolute z-20 left-0 right-0 top-full mt-1 bg-[#222] border border-white/15 rounded-xl overflow-hidden shadow-2xl">
+            <div *ngFor="let sug of locationSuggestions" 
+                 (click)="selectLocation(sug)"
+                 class="px-4 py-2.5 hover:bg-primary/20 hover:text-primary text-white/90 text-xs cursor-pointer border-b border-white/5">
+              {{ sug.title }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Embedded Map Preview -->
+        <div *ngIf="selectedLocationMapUrl()" class="h-44 rounded-2xl overflow-hidden border border-white/10 mt-3">
+          <iframe [src]="selectedLocationMapUrl()" class="w-full h-full border-0"></iframe>
+        </div>
+
+        <button (click)="nextQuoteStep()" 
+                class="w-full bg-primary hover:bg-primary-fixed text-black font-['Epilogue'] font-black text-xs uppercase tracking-widest py-3.5 rounded-xl transition-all shadow-md mt-4">
+          Continuar a Datos del Cliente →
+        </button>
+      </div>
+
+      <!-- STEP 2: CLIENT DATA -->
+      <div *ngIf="quoteStep() === 2" class="space-y-4 text-xs sm:text-sm">
+        <div>
+          <label class="block text-white/70 font-semibold mb-1.5">Tu Nombre Completo</label>
+          <input type="text" [(ngModel)]="clientName" placeholder="Ej. Carlos Fuentes" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-white/70 font-semibold mb-1.5">Correo Electrónico</label>
+            <input type="email" [(ngModel)]="clientEmail" placeholder="carlos@gmail.com" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-white/70 font-semibold mb-1.5">Teléfono WhatsApp</label>
+            <input type="tel" [(ngModel)]="clientPhone" placeholder="811-234-5678" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-white/70 font-semibold mb-1.5">Notas adicionales o repertorio especial</label>
+          <textarea [(ngModel)]="notes" rows="3" placeholder="Detalla horarios o canciones requeridas..." class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none resize-none"></textarea>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button (click)="quoteStep.set(1)" class="w-1/3 bg-white/10 hover:bg-white/20 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider">
+            ← Atrás
+          </button>
+          <button (click)="nextQuoteStep()" class="w-2/3 bg-primary hover:bg-primary-fixed text-black font-['Epilogue'] font-black text-xs uppercase tracking-widest py-3.5 rounded-xl shadow-md">
+            Generar Cotización y Folio →
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: CONFIRMATION & CONTRACT SIGNATURE -->
+      <div *ngIf="quoteStep() === 3" class="space-y-6 text-center py-2">
+        <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto">
+          <span class="material-symbols-outlined text-3xl">verified</span>
+        </div>
+
+        <div>
+          <span class="text-xs text-white/50 uppercase tracking-widest">Folio de Cotización Generado</span>
+          <h4 class="font-['Epilogue'] font-black text-3xl text-primary tracking-wider mt-1">{{ quoteFolio() }}</h4>
+        </div>
+
+        <div class="bg-black/50 border border-white/10 rounded-2xl p-4 text-left text-xs space-y-2 text-white/80">
+          <div class="flex justify-between">
+            <span>Agrupación:</span>
+            <strong class="text-white">{{ band()!.name }}</strong>
+          </div>
+          <div class="flex justify-between">
+            <span>Evento & Fecha:</span>
+            <strong class="text-white">{{ eventType() }} ({{ eventDate() }})</strong>
+          </div>
+          <div class="flex justify-between">
+            <span>Ubicación:</span>
+            <strong class="text-white truncate max-w-[200px]">{{ eventLocation() }}</strong>
+          </div>
+          <div class="flex justify-between border-t border-white/10 pt-2 text-emerald-400 font-bold">
+            <span>Estado de Cotización:</span>
+            <span>{{ isContractSigned() ? 'CONTRATO FIRMADO' : 'COTIZACIÓN REGISTRADA' }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="!isContractSigned()" class="space-y-3">
+          <button (click)="signContract()" 
+                  class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-['Epilogue'] font-black text-xs uppercase tracking-widest py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-base">draw</span>
+            <span>Firmar Pre-Contrato Digital Ahora</span>
+          </button>
+          
+          <p class="text-[11px] text-white/40">
+            Al firmar, tu cotización queda reservada en tu Historial de la aplicación Acordex.
+          </p>
+        </div>
+
+        <button (click)="closeQuoteModal()" 
+                class="w-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl">
+          Cerrar Ventana
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Feedback -->
+  <div *ngIf="showToast()" 
+       class="fixed bottom-6 right-6 z-50 bg-primary text-black font-['Epilogue'] font-bold text-xs px-5 py-3 rounded-2xl shadow-2xl border border-black/20 flex items-center gap-2 animate-slide-up">
+    <span class="material-symbols-outlined text-base">check_circle</span>
+    <span>{{ toastMessage() }}</span>
+  </div>
+
+  <!-- POST IMAGE LIGHTBOX MODAL -->
+  <div *ngIf="selectedPostImage()" 
+       (click)="selectedPostImage.set(null)"
+       class="fixed inset-0 z-[99999] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 animate-fade-in cursor-pointer">
+    <button (click)="selectedPostImage.set(null)" 
+            class="absolute top-4 right-4 z-[100000] w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
+      <span class="material-symbols-outlined text-lg">close</span>
+    </button>
+    <img [src]="selectedPostImage()" class="max-w-full max-h-[90vh] object-contain rounded-2xl border border-white/10 shadow-2xl" />
+  </div>
+
+</ng-container>

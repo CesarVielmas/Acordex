@@ -1,37 +1,51 @@
-<nav class="bg-[#1A1A1A]/90 backdrop-blur-xl border-t border-primary/20 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex justify-around items-center pt-3 pb-6 px-4">
-    <!-- Inicio -->
-    <a routerLink="/inicio" routerLinkActive="text-primary scale-110" 
-       class="flex flex-col items-center justify-center text-outline opacity-70 hover:bg-white/5 active:scale-90 transition-all p-2 rounded-lg w-full [&.active]:opacity-100 group">
-        <span class="material-symbols-outlined mb-1 text-2xl group-hover:scale-110 transition-transform">home</span>
-        <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">Inicio</span>
-    </a>
+<div class="fixed bottom-0 left-0 right-0 w-full flex flex-col items-center transition-transform duration-300 z-50 pointer-events-none"
+     [class.translate-y-[calc(100%-10px)]]="layoutService.isBottomNavCollapsed()">
+     
+     <!-- Toggle Button (centered) -->
+     <button (click)="layoutService.isBottomNavCollapsed.set(!layoutService.isBottomNavCollapsed())"
+             class="w-10 h-6.5 rounded-t-xl bg-[#1A1A1A] border-t border-x border-primary/20 flex items-center justify-center text-primary shadow-[0_-4px_10px_rgba(0,0,0,0.3)] transition-all active:scale-90 absolute bottom-full left-1/2 -translate-x-1/2 pointer-events-auto">
+         <span class="material-symbols-outlined text-base leading-none transition-transform duration-300"
+               [class.rotate-180]="layoutService.isBottomNavCollapsed()">
+             keyboard_arrow_down
+         </span>
+     </button>
 
-    <!-- Cotizaciones -->
-    <a routerLink="/cotizaciones" routerLinkActive="text-primary scale-110" 
-       [routerLinkActiveOptions]="{exact: false}"
-       class="flex flex-col items-center justify-center text-outline opacity-70 hover:bg-white/5 active:scale-90 transition-all p-2 rounded-lg w-full [&.active]:opacity-100">
-        <span class="material-symbols-outlined mb-1 text-2xl">request_quote</span>
-        <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">Booking</span>
-    </a>
-    
-    <!-- Events -->
-    <a routerLink="/events" routerLinkActive="text-primary scale-110" 
-       class="flex flex-col items-center justify-center text-outline opacity-70 hover:bg-white/5 active:scale-90 transition-all p-2 rounded-lg w-full [&.active]:opacity-100">
-        <span class="material-symbols-outlined mb-1 text-2xl">confirmation_number</span>
-        <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">Events</span>
-    </a>
-    
-    <!-- History -->
-    <a routerLink="/history" routerLinkActive="text-primary scale-110" 
-       class="flex flex-col items-center justify-center text-outline opacity-70 hover:bg-white/5 active:scale-90 transition-all p-2 rounded-lg w-full [&.active]:opacity-100">
-        <span class="material-symbols-outlined mb-1 text-2xl">history</span>
-        <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">History</span>
-    </a>
-    
-    <!-- Profile -->
-    <a routerLink="/profile" routerLinkActive="text-primary scale-110" 
-       class="flex flex-col items-center justify-center text-outline opacity-70 hover:bg-white/5 active:scale-90 transition-all p-2 rounded-lg w-full [&.active]:opacity-100">
-        <span class="material-symbols-outlined mb-1 text-2xl">person</span>
-        <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">Profile</span>
-    </a>
-</nav>
+     <!-- Bottom Nav Bar -->
+     <nav class="w-full bg-[#1A1A1A]/90 backdrop-blur-xl border-t border-primary/20 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex justify-around items-center pt-3 pb-6 px-4 pointer-events-auto">
+         <!-- Inicio -->
+         <a routerLink="/inicio" routerLinkActive="text-primary scale-110" 
+            class="flex flex-col items-center justify-center text-outline opacity-70 hover:bg-white/5 active:scale-90 transition-all p-2 rounded-lg w-full [&.active]:opacity-100 group">
+             <span class="material-symbols-outlined mb-1 text-2xl group-hover:scale-110 transition-transform">home</span>
+             <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">Inicio</span>
+         </a>
+
+         <!-- Cotizaciones -->
+         <a routerLink="/cotizaciones" routerLinkActive="text-primary scale-110" 
+            [routerLinkActiveOptions]="{exact: false}"
+            class="flex flex-col items-center justify-center text-outline opacity-70 hover:bg-white/5 active:scale-90 transition-all p-2 rounded-lg w-full [&.active]:opacity-100">
+             <span class="material-symbols-outlined mb-1 text-2xl">request_quote</span>
+             <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">Booking</span>
+         </a>
+         
+         <!-- Events -->
+         <a routerLink="/events" routerLinkActive="text-primary scale-110" 
+            class="flex flex-col items-center justify-center text-outline opacity-70 hover:bg-white/5 active:scale-90 transition-all p-2 rounded-lg w-full [&.active]:opacity-100">
+             <span class="material-symbols-outlined mb-1 text-2xl">confirmation_number</span>
+             <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">Events</span>
+         </a>
+         
+         <!-- History -->
+         <a routerLink="/history" routerLinkActive="text-primary scale-110" 
+            class="flex flex-col items-center justify-center text-outline opacity-70 hover:bg-white/5 active:scale-90 transition-all p-2 rounded-lg w-full [&.active]:opacity-100">
+             <span class="material-symbols-outlined mb-1 text-2xl">history</span>
+             <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">History</span>
+         </a>
+         
+         <!-- Profile -->
+         <a routerLink="/profile" routerLinkActive="text-primary scale-110" 
+            class="flex flex-col items-center justify-center text-outline opacity-70 hover:bg-white/5 active:scale-90 transition-all p-2 rounded-lg w-full [&.active]:opacity-100">
+             <span class="material-symbols-outlined mb-1 text-2xl">person</span>
+             <span class="font-['Epilogue'] text-[10px] font-bold uppercase tracking-widest">Profile</span>
+         </a>
+     </nav>
+</div>

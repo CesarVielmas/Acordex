@@ -32,7 +32,7 @@ interface Coupon {
 
 @Component({
   selector: 'app-history',
-  imports: [CommonModule, FormsModule, EventCard],
+  imports: [CommonModule, FormsModule],
   templateUrl: './history.html',
   styleUrl: './history.scss'
 })
@@ -42,6 +42,16 @@ export class History implements OnInit {
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly elementRef = inject(ElementRef);
+
+  goToBandProfile(bandName: string) {
+    const slug = bandName.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    this.router.navigate(['/grupo', slug]);
+  }
 
   // Active filter tab pill
   activeTab = signal<string>('todos');

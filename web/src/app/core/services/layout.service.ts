@@ -10,6 +10,8 @@ export class LayoutService {
   readonly isSidebarCollapsed = computed(() => this._isSidebarCollapsed());
   readonly pageTitle = computed(() => this._pageTitle());
 
+  readonly isBottomNavCollapsed = signal(false);
+
   toggleSidebar() {
     this._isSidebarCollapsed.update(val => !val);
   }

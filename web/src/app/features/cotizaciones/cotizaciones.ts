@@ -1,15 +1,15 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { BandCard } from '../../shared/band-card/band-card';
-import { FilterPills } from '../../shared/filter-pills/filter-pills';
 import { LayoutService } from '../../core/services/layout.service';
 import { EventService } from '../../core/services/event.service';
+import { BandCard } from '../../shared/band-card/band-card';
 
 @Component({
   selector: 'app-cotizaciones',
-  imports: [CommonModule, FormsModule, BandCard, FilterPills],
+  imports: [CommonModule, FormsModule, RouterModule, BandCard],
   templateUrl: './cotizaciones.html',
   styleUrl: './cotizaciones.scss'
 })
@@ -17,19 +17,51 @@ export class Cotizaciones implements OnInit {
   private readonly layoutService = inject(LayoutService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly eventService = inject(EventService);
+  private readonly router = inject(Router);
+
+  goToBandProfile(bandId?: string) {
+    const b = this.selectedBandToQuote();
+    const id = bandId || (b?.id || (b?.name ? b.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'banda-los-reyes'));
+    this.closeQuoteModal();
+    this.router.navigate(['/grupo', id]);
+  }
 
   ngOnInit() {
     this.layoutService.setPageTitle('CENTRO DE COTIZACIONES');
   }
 
   filters = ['Todos', 'Banda Sinaloense', 'Norteño', 'Sierreño', 'Mariachi'];
-  activeFilter = 'Todos';
+  activeFilter = signal<string>('Todos');
   searchQuery = signal<string>('');
 
-  // Advanced Filters State
+  // Advanced Filters & Interactive Selection State
   showAdvancedFilters = signal<boolean>(false);
-  filterDateStart = signal<string>('');
-  filterDateEnd = signal<string>('');
+  selectedFilterTab = signal<'ubicacion' | 'genero' | 'criterios'>('genero');
+  sortBy = signal<'rating' | 'availability' | 'none'>('none');
+  minRating = signal<number>(0);
+  availabilityFilter = signal<string>('Todas');
+  isQuoteModalClosing = signal<boolean>(false);
+
+  // Computed indicator for active filters
+  hasActiveFilters = computed(() => {
+    return this.activeFilter() !== 'Todos' ||
+           this.selectedCountry() !== 'Todos' ||
+           this.sortBy() !== 'none' ||
+           this.minRating() > 0 ||
+           this.availabilityFilter() !== 'Todas' ||
+           this.searchQuery().trim() !== '';
+  });
+
+  resetFilters() {
+    this.activeFilter.set('Todos');
+    this.selectedCountry.set('Todos');
+    this.selectedState.set('Todos');
+    this.selectedMunicipality.set('Todos');
+    this.sortBy.set('none');
+    this.minRating.set(0);
+    this.availabilityFilter.set('Todas');
+    this.searchQuery.set('');
+  }
 
   // Hierarchical Location Dropdown Setup
   selectedCountry = signal<string>('Todos');
@@ -37,7 +69,7 @@ export class Cotizaciones implements OnInit {
   selectedMunicipality = signal<string>('Todos');
 
   countries = ['Todos', 'México', 'USA'];
-  
+
   statesMap: { [key: string]: string[] } = {
     'México': ['Jalisco', 'Sinaloa', 'Nuevo León', 'CDMX', 'Querétaro', 'Quintana Roo'],
     'USA': ['Texas', 'California', 'Florida', 'New York', 'Nevada', 'Washington']
@@ -84,6 +116,7 @@ export class Cotizaciones implements OnInit {
   // Available Bands List
   availableBands = [
     {
+      id: 'banda-los-reyes',
       imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=600&auto=format&fit=crop',
       imageAlt: 'Banda Los Reyes',
       tag: 'Banda Sinaloense',
@@ -99,6 +132,7 @@ export class Cotizaciones implements OnInit {
       managerName: 'Don Pedro Reyes'
     },
     {
+      id: 'norteno-del-sur',
       imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=600&auto=format&fit=crop',
       imageAlt: 'Norteño del Sur',
       tag: 'Norteño',
@@ -114,6 +148,7 @@ export class Cotizaciones implements OnInit {
       managerName: 'Ing. Luis Donaldo'
     },
     {
+      id: 'los-alegres-sierrenos',
       imageUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop',
       imageAlt: 'Los Alegres Sierreños',
       tag: 'Sierreño',
@@ -129,6 +164,7 @@ export class Cotizaciones implements OnInit {
       managerName: 'Jaime Solís'
     },
     {
+      id: 'mariachi-oro-y-plata',
       imageUrl: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=600&auto=format&fit=crop',
       imageAlt: 'Mariachi Oro y Plata',
       tag: 'Mariachi',
@@ -186,37 +222,61 @@ export class Cotizaciones implements OnInit {
     { title: 'Salón Las Flores, Guadalajara, Jalisco', query: 'Salón+Las+Flores,+Guadalajara,+Jalisco' }
   ];
 
-  // Reactive Getter for Searching and Filtering
+  // Reactive Getter for Searching, Filtering, and Sorting
   filteredBands = computed(() => {
-    const filter = this.activeFilter;
+    const filter = this.activeFilter();
     const query = this.searchQuery().toLowerCase().trim();
-    
-    // Geographical filters
+
+    // Geographical & Interactive filters
     const c = this.selectedCountry();
     const s = this.selectedState();
     const m = this.selectedMunicipality();
+    const minStars = this.minRating();
+    const avail = this.availabilityFilter();
 
-    return this.availableBands.filter(band => {
+    let bandsList = this.availableBands.filter(band => {
       // 1. Genre filter match
       const matchesFilter = filter === 'Todos' || band.tag === filter;
-      
+
       // 2. Main query search match (name, genre, location)
-      const matchesQuery = !query || 
-                           band.name.toLowerCase().includes(query) || 
-                           band.tag.toLowerCase().includes(query) || 
-                           band.location.toLowerCase().includes(query);
+      const matchesQuery = !query ||
+        band.name.toLowerCase().includes(query) ||
+        band.tag.toLowerCase().includes(query) ||
+        band.location.toLowerCase().includes(query);
 
       // 3. Hierarchical geography filters
       const matchesCountry = c === 'Todos' || band.country === c;
       const matchesState = s === 'Todos' || band.state === s;
       const matchesMunicipality = m === 'Todos' || band.municipality === m;
 
-      return matchesFilter && matchesQuery && matchesCountry && matchesState && matchesMunicipality;
+      // 4. Rating threshold filter
+      const matchesRating = minStars === 0 || band.rating >= minStars;
+
+      // 5. Availability status filter
+      const matchesAvailability = avail === 'Todas' || band.availability.toLowerCase().includes(avail.toLowerCase());
+
+      return matchesFilter && matchesQuery && matchesCountry && matchesState && matchesMunicipality && matchesRating && matchesAvailability;
     });
+
+    // Sort order logic
+    const sort = this.sortBy();
+    if (sort === 'rating') {
+      bandsList.sort((a, b) => b.rating - a.rating);
+    } else if (sort === 'availability') {
+      const getAvailabilityWeight = (status: string) => {
+        const lower = status.toLowerCase();
+        if (lower.includes('alta')) return 3;
+        if (lower.includes('media')) return 2;
+        return 1; // Fechas limitadas or low
+      };
+      bandsList.sort((a, b) => getAvailabilityWeight(b.availability) - getAvailabilityWeight(a.availability));
+    }
+
+    return bandsList;
   });
 
   onFilterSelected(filter: string) {
-    this.activeFilter = filter;
+    this.activeFilter.set(filter);
   }
 
   // Interactive Modal Handlers
@@ -224,7 +284,7 @@ export class Cotizaciones implements OnInit {
     this.selectedBandToQuote.set(band);
     this.quoteStep.set(1);
     this.quoteFolio.set('');
-    
+
     // Reset Form Fields
     this.eventType.set('Boda');
     this.eventDate.set('');
@@ -244,8 +304,12 @@ export class Cotizaciones implements OnInit {
   }
 
   closeQuoteModal() {
-    this.selectedBandToQuote.set(null);
-    this.isMapPickerOpen.set(false);
+    this.isQuoteModalClosing.set(true);
+    setTimeout(() => {
+      this.selectedBandToQuote.set(null);
+      this.isMapPickerOpen.set(false);
+      this.isQuoteModalClosing.set(false);
+    }, 280);
   }
 
   adjustHours(amount: number) {
@@ -280,9 +344,9 @@ export class Cotizaciones implements OnInit {
         if (results && results.length > 0) {
           const data = results[0];
           const fullAddress = this.formatAddressDetails(data.address, data.display_name);
-          
+
           this.mockPickedAddress.set(fullAddress);
-          
+
           const rawPickerUrl = `https://maps.google.com/maps?q=${encodeURIComponent(fullAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
           this.mockMapPickerUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(rawPickerUrl));
         } else {
@@ -303,7 +367,7 @@ export class Cotizaciones implements OnInit {
     this.eventLocationQuery.set(address);
     this.eventLocation.set(address);
     this.showLocationSuggestions.set(false);
-    
+
     const rawUrl = `https://maps.google.com/maps?q=${encodeURIComponent(address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
     this.selectedLocationMapUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl));
     this.isMapPickerOpen.set(false);
@@ -313,7 +377,7 @@ export class Cotizaciones implements OnInit {
     this.eventLocationQuery.set(loc.title);
     this.eventLocation.set(loc.title);
     this.showLocationSuggestions.set(false);
-    
+
     const rawUrl = `https://maps.google.com/maps?q=${loc.query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
     this.selectedLocationMapUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl));
   }
@@ -321,7 +385,7 @@ export class Cotizaciones implements OnInit {
   onLocationQueryChange(value: string) {
     this.eventLocationQuery.set(value);
     this.eventLocation.set(value);
-    
+
     const q = value.trim();
     if (q.length < 2) {
       this.showLocationSuggestions.set(false);
@@ -371,7 +435,7 @@ export class Cotizaciones implements OnInit {
         (position) => {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
-          
+
           this.resolveAddressFromCoords(lat, lon);
         },
         () => {
@@ -380,7 +444,7 @@ export class Cotizaciones implements OnInit {
           this.eventLocationQuery.set(fallbackAddress);
           this.eventLocation.set(fallbackAddress);
           this.showLocationSuggestions.set(false);
-          
+
           const rawUrl = `https://maps.google.com/maps?q=Guadalajara,+Jalisco&t=&z=15&ie=UTF8&iwloc=&output=embed`;
           this.selectedLocationMapUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl));
         }
@@ -402,7 +466,7 @@ export class Cotizaciones implements OnInit {
           const fullAddress = this.formatAddressDetails(data.address, data.display_name);
           this.eventLocationQuery.set(fullAddress);
           this.eventLocation.set(fullAddress);
-          
+
           const rawUrl = `https://maps.google.com/maps?q=${lat},${lon}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
           this.selectedLocationMapUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl));
         } else {
@@ -421,7 +485,7 @@ export class Cotizaciones implements OnInit {
   // Common address formatting helper
   private formatAddressDetails(addr: any, displayName: string): string {
     if (!addr) return displayName;
-    
+
     // Check all potential OSM venue / building name fields
     const venueName = addr.amenity || addr.building || addr.hotel || addr.tourism || addr.historic || addr.office || addr.leisure || addr.shop || addr.club || addr.restaurant || addr.bar || addr.cafe || addr.place_of_worship || '';
     const road = addr.road || addr.pedestrian || addr.cycleway || addr.path || '';

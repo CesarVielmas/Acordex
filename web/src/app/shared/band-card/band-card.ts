@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-band-card',
@@ -8,6 +9,9 @@ import { CommonModule } from '@angular/common';
   styleUrl: './band-card.scss'
 })
 export class BandCard {
+  private readonly router = inject(Router);
+
+  @Input() bandId: string = '';
   @Input() imageUrl: string = '';
   @Input() imageAlt: string = '';
   @Input() tag: string = '';
@@ -18,8 +22,28 @@ export class BandCard {
   @Input() isFeatured: boolean = false;
   @Input() managerPhone: string = '';
   @Input() managerName: string = '';
+  @Input() navigateOnCardClick: boolean = false;
 
   @Output() quote = new EventEmitter<void>();
+
+  get computedBandId(): string {
+    if (this.bandId) return this.bandId;
+    return this.name.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  onCardClick(event: MouseEvent) {
+    event.stopPropagation();
+    if (this.navigateOnCardClick) {
+      this.router.navigate(['/grupo', this.computedBandId]);
+    } else {
+      this.quote.emit();
+    }
+  }
 
   onQuoteClick(event: MouseEvent) {
     event.stopPropagation();

@@ -891,7 +891,8 @@
 </div>
 
 <!-- Floating Recommendations Widget Trigger -->
-<div class="fixed bottom-24 left-1/2 -translate-x-1/2 md:bottom-6 md:right-6 md:left-auto md:translate-x-0 z-40">
+<div [ngClass]="layoutService.isBottomNavCollapsed() ? 'bottom-6' : 'bottom-24'"
+     class="fixed right-4 md:right-6 z-40 transition-all duration-300">
     <button (click)="showRecommendations.set(!showRecommendations())"
             [ngClass]="showRecommendations() ? 'bg-primary text-black scale-105 rotate-45 shadow-[0_0_20px_rgba(242,202,80,0.5)]' : 'bg-[#1a1a1a] text-primary border border-primary/30 shadow-lg hover:border-primary hover:text-white'"
             class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95">
@@ -903,7 +904,8 @@
 <div *ngIf="showRecommendations()" 
      (touchstart)="onTouchStartRec($event)"
      (touchend)="onTouchEndRec($event)"
-     class="fixed bottom-[160px] left-1/2 -translate-x-1/2 md:bottom-24 md:right-6 md:left-auto md:translate-x-0 w-[calc(100vw-2rem)] sm:w-[420px] bg-[#161616]/95 border border-white/[0.08] backdrop-blur-xl rounded-3xl shadow-2xl z-45 p-5 animate-lightbox-zoom-in font-['Be_Vietnam_Pro'] select-none"
+     [ngClass]="layoutService.isBottomNavCollapsed() ? 'bottom-[84px]' : 'bottom-[160px]'"
+     class="fixed right-4 left-4 sm:left-auto sm:right-6 sm:w-[420px] bg-[#161616]/95 border border-white/[0.08] backdrop-blur-xl rounded-3xl shadow-2xl z-45 p-5 animate-lightbox-zoom-in font-['Be_Vietnam_Pro'] select-none transition-all duration-300"
      (click)="$event.stopPropagation()">
     
     <!-- Popup Header -->

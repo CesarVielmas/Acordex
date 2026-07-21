@@ -1,95 +1,95 @@
-<div class="max-w-7xl mx-auto px-4 md:px-8 py-6 text-white font-['Be_Vietnam_Pro'] select-none">
+<div class="max-w-7xl mx-auto px-4 md:px-8 py-4 sm:py-6 text-white font-['Be_Vietnam_Pro'] select-none">
     
     <!-- Title & Description -->
-    <div class="mb-8 animate-fade-in flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div class="mb-6 sm:mb-8 animate-fade-in flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
-            <h2 class="font-['Epilogue'] font-black text-3xl uppercase tracking-wider text-white">Mi Historial</h2>
+            <h2 class="font-['Epilogue'] font-black text-2xl sm:text-3xl uppercase tracking-wider text-white">Mi Historial</h2>
             <p class="text-xs text-white/50 font-light mt-1">
                 Administra tus boletos, consulta tus cotizaciones activas, acreditaciones de prensa y califica eventos asistidos.
             </p>
         </div>
         
         <!-- Active Reward coupon count indicator -->
-        <div class="flex items-center gap-2 bg-[#F2CA50]/10 border border-[#F2CA50]/20 rounded-2xl px-4 py-2 text-[#F2CA50] text-xs font-bold animate-pulse">
-            <span class="material-symbols-outlined text-sm">confirmation_number</span>
+        <div class="flex items-center gap-2 bg-[#F2CA50]/10 border border-[#F2CA50]/20 rounded-2xl px-3.5 py-1.5 sm:px-4 sm:py-2 text-[#F2CA50] text-[11px] sm:text-xs font-bold animate-pulse shrink-0">
+            <span class="material-symbols-outlined text-xs sm:text-sm">confirmation_number</span>
             <span>{{ stats().activeCoupons }} Cupones de Recompensa</span>
         </div>
     </div>
 
     <!-- Stats Dashboard Grid -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-slide-up" style="animation-delay: 0.1s;">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-6 sm:mb-8 animate-slide-up" style="animation-delay: 0.1s;">
         <!-- Card 1 -->
-        <div class="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-4 shadow-xl">
-            <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-lg">celebration</span>
+        <div class="p-3.5 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-2.5 sm:gap-4 shadow-xl">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                <span class="material-symbols-outlined text-base sm:text-lg">celebration</span>
             </div>
-            <div class="flex flex-col">
-                <span class="text-[9px] uppercase font-bold text-white/40 tracking-wider">Eventos Asistidos</span>
-                <span class="text-lg font-black font-['Epilogue'] text-white">{{ stats().totalAttended }}</span>
+            <div class="flex flex-col min-w-0">
+                <span class="text-[8px] sm:text-[9px] uppercase font-bold text-white/40 tracking-wider truncate">Asistidos</span>
+                <span class="text-base sm:text-lg font-black font-['Epilogue'] text-white">{{ stats().totalAttended }}</span>
             </div>
         </div>
         <!-- Card 2 -->
-        <div class="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-4 shadow-xl">
-            <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                <span class="material-symbols-outlined text-lg">chair</span>
+        <div class="p-3.5 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-2.5 sm:gap-4 shadow-xl">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                <span class="material-symbols-outlined text-base sm:text-lg">chair</span>
             </div>
-            <div class="flex flex-col">
-                <span class="text-[9px] uppercase font-bold text-white/40 tracking-wider">Boletos Adquiridos</span>
-                <span class="text-lg font-black font-['Epilogue'] text-white">{{ stats().totalTickets }}</span>
+            <div class="flex flex-col min-w-0">
+                <span class="text-[8px] sm:text-[9px] uppercase font-bold text-white/40 tracking-wider truncate">Boletos</span>
+                <span class="text-base sm:text-lg font-black font-['Epilogue'] text-white">{{ stats().totalTickets }}</span>
             </div>
         </div>
         <!-- Card 3 -->
-        <div class="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-4 shadow-xl">
-            <div class="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
-                <span class="material-symbols-outlined text-lg">receipt_long</span>
+        <div class="p-3.5 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-2.5 sm:gap-4 shadow-xl">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0">
+                <span class="material-symbols-outlined text-base sm:text-lg">receipt_long</span>
             </div>
-            <div class="flex flex-col">
-                <span class="text-[9px] uppercase font-bold text-white/40 tracking-wider">Cotizaciones</span>
-                <span class="text-lg font-black font-['Epilogue'] text-white">{{ stats().totalQuotes }}</span>
+            <div class="flex flex-col min-w-0">
+                <span class="text-[8px] sm:text-[9px] uppercase font-bold text-white/40 tracking-wider truncate">Cotizaciones</span>
+                <span class="text-base sm:text-lg font-black font-['Epilogue'] text-white">{{ stats().totalQuotes }}</span>
             </div>
         </div>
         <!-- Card 4 -->
-        <div class="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-4 shadow-xl">
-            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                <span class="material-symbols-outlined text-lg">confirmation_number</span>
+        <div class="p-3.5 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center gap-2.5 sm:gap-4 shadow-xl">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <span class="material-symbols-outlined text-base sm:text-lg">confirmation_number</span>
             </div>
-            <div class="flex flex-col">
-                <span class="text-[9px] uppercase font-bold text-white/40 tracking-wider">Cupones Activos</span>
-                <span class="text-lg font-black font-['Epilogue'] text-white">{{ stats().activeCoupons }}</span>
+            <div class="flex flex-col min-w-0">
+                <span class="text-[8px] sm:text-[9px] uppercase font-bold text-white/40 tracking-wider truncate">Cupones</span>
+                <span class="text-base sm:text-lg font-black font-['Epilogue'] text-white">{{ stats().activeCoupons }}</span>
             </div>
         </div>
     </div>
 
     <!-- Rating success Toast notification -->
     <div *ngIf="ratingMessage()" 
-         class="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs flex items-center gap-3 animate-scale-in">
-        <span class="material-symbols-outlined text-lg shrink-0">star</span>
+         class="mb-6 p-3.5 sm:p-4 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs flex items-center gap-3 animate-scale-in">
+        <span class="material-symbols-outlined text-base sm:text-lg shrink-0">star</span>
         <span>{{ ratingMessage() }}</span>
     </div>
 
     <!-- Date picker filter bar and navigation tab pills -->
-    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-white/5 pb-4 mb-8 shrink-0">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 sm:gap-4 border-b border-white/5 pb-4 mb-6 sm:mb-8 shrink-0">
         
         <!-- Tab pills -->
-        <div class="flex gap-2 overflow-x-auto no-scrollbar">
+        <div class="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar w-full lg:w-auto">
             <button (click)="setActiveTab('todos')"
                     [ngClass]="activeTab() === 'todos' ? 'bg-primary text-[#121212] font-black' : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'"
-                    class="px-4 py-2.5 rounded-xl text-[10px] uppercase tracking-wider transition-all active:scale-95 whitespace-nowrap">
+                    class="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-[9.5px] sm:text-[10px] uppercase tracking-wider transition-all active:scale-95 whitespace-nowrap">
                 Todos
             </button>
             <button (click)="setActiveTab('boletos')"
                     [ngClass]="activeTab() === 'boletos' ? 'bg-primary text-[#121212] font-black' : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'"
-                    class="px-4 py-2.5 rounded-xl text-[10px] uppercase tracking-wider transition-all active:scale-95 whitespace-nowrap">
+                    class="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-[9.5px] sm:text-[10px] uppercase tracking-wider transition-all active:scale-95 whitespace-nowrap">
                 Boletos ({{ filteredPurchasedTickets().length }})
             </button>
             <button (click)="setActiveTab('cotizaciones')"
                     [ngClass]="activeTab() === 'cotizaciones' ? 'bg-primary text-[#121212] font-black' : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'"
-                    class="px-4 py-2.5 rounded-xl text-[10px] uppercase tracking-wider transition-all active:scale-95 whitespace-nowrap">
+                    class="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-[9.5px] sm:text-[10px] uppercase tracking-wider transition-all active:scale-95 whitespace-nowrap">
                 Cotizaciones ({{ filteredSubmittedQuotes().length }})
             </button>
             <button (click)="setActiveTab('prensa')"
                     [ngClass]="activeTab() === 'prensa' ? 'bg-primary text-[#121212] font-black' : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'"
-                    class="px-4 py-2.5 rounded-xl text-[10px] uppercase tracking-wider transition-all active:scale-95 whitespace-nowrap">
+                    class="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-[9.5px] sm:text-[10px] uppercase tracking-wider transition-all active:scale-95 whitespace-nowrap">
                 Prensa ({{ filteredPressAccreditations().length }})
             </button>
         </div>
@@ -97,7 +97,7 @@
         <!-- Luxurious Date Range Popover Filter -->
         <div class="relative w-full lg:w-auto font-['Be_Vietnam_Pro'] select-none">
             <button (click)="toggleDatePopover($event)" 
-                    class="w-full lg:w-auto flex items-center justify-between lg:justify-start gap-2.5 px-4.5 py-3 bg-white/[0.03] border border-white/10 hover:border-primary/50 text-white rounded-xl text-[10.5px] font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-md">
+                    class="w-full lg:w-auto flex items-center justify-between lg:justify-start gap-2.5 px-4 py-2.5 sm:px-4.5 sm:py-3 bg-white/[0.03] border border-white/10 hover:border-primary/50 text-white rounded-xl text-[10px] sm:text-[10.5px] font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 shadow-md">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary text-sm leading-none">calendar_month</span>
                     <span>Filtrar por Período</span>
@@ -111,7 +111,7 @@
             <!-- Luxurious Floating Popover -->
             <div *ngIf="showDateFilterPopover()" 
                  (click)="$event.stopPropagation()"
-                 class="absolute right-0 top-full mt-2 w-80 bg-[#141414]/95 border border-white/[0.08] backdrop-blur-2xl rounded-2xl p-5 shadow-2xl z-50 flex flex-col gap-4 animate-scale-in">
+                 class="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-[#141414]/95 border border-white/[0.08] backdrop-blur-2xl rounded-2xl p-4 sm:p-5 shadow-2xl z-50 flex flex-col gap-4 animate-scale-in">
                 
                 <span class="text-[9px] uppercase font-bold text-white/40 tracking-wider">Períodos Preestablecidos</span>
                 <div class="grid grid-cols-2 gap-2 text-[10px]">
@@ -170,51 +170,51 @@
     </div>
 
     <!-- Main Grid list of activities (Filtered list loops) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-up">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 animate-slide-up">
         
         <!-- SECTION A: TICKETS & PASSES LIST (Boletos) -->
         <ng-container *ngIf="activeTab() === 'todos' || activeTab() === 'boletos'">
             <div *ngFor="let purchase of filteredPurchasedTickets()" 
                  (click)="openTicketDetail(purchase)"
-                 class="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-primary/20 transition-all duration-300 relative overflow-hidden group shadow-xl cursor-pointer flex flex-col justify-between min-h-[220px]">
+                 class="p-4 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-primary/20 transition-all duration-300 relative overflow-hidden group shadow-xl cursor-pointer flex flex-col justify-between min-h-[190px] sm:min-h-[220px]">
                 <div class="absolute -right-12 -bottom-12 w-28 h-28 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/10 transition-colors"></div>
 
                 <div>
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="bg-primary/10 border border-primary/20 text-primary px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase">
+                    <div class="flex justify-between items-start mb-3 sm:mb-4 gap-2">
+                        <span class="bg-primary/10 border border-primary/20 text-primary px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[8.5px] sm:text-[9px] font-black tracking-widest uppercase shrink-0">
                             boleto / asistido
                         </span>
-                        <span class="text-[10px] font-bold text-white/40 flex items-center gap-1">
+                        <span class="text-[9.5px] sm:text-[10px] font-bold text-white/40 flex items-center gap-1 shrink-0">
                             <span class="material-symbols-outlined text-xs">calendar_today</span>
                             {{ purchase.purchaseDate | date:'dd MMM yyyy' }}
                         </span>
                     </div>
 
-                    <h3 class="font-['Epilogue'] font-black text-sm uppercase text-white truncate group-hover:text-primary transition-colors mb-1.5">
+                    <h3 class="font-['Epilogue'] font-black text-xs sm:text-sm uppercase text-white truncate group-hover:text-primary transition-colors mb-1.5">
                         {{ purchase.eventInfo.title }}
                     </h3>
                     
-                    <div class="flex flex-col gap-1 text-[11px] text-white/50 font-light pb-4 border-b border-white/5 mb-4">
+                    <div class="flex flex-col gap-1 text-[10.5px] sm:text-[11px] text-white/50 font-light pb-3 sm:pb-4 border-b border-white/5 mb-3 sm:mb-4">
                         <span class="flex items-center gap-1 truncate">
-                            <span class="material-symbols-outlined text-[13px] text-primary">pin_drop</span>
-                            {{ purchase.eventInfo.location }}
+                            <span class="material-symbols-outlined text-[13px] text-primary shrink-0">pin_drop</span>
+                            <span class="truncate">{{ purchase.eventInfo.location }}</span>
                         </span>
                         <span class="flex items-center gap-1 mt-0.5 text-xs text-white/70">
-                            <span class="material-symbols-outlined text-[13px] text-primary">chair</span>
+                            <span class="material-symbols-outlined text-[13px] text-primary shrink-0">chair</span>
                             <strong>Asientos:</strong>
                             <span class="truncate ml-1">{{ purchase.seats.map(s => s.id).join(', ') }}</span>
                         </span>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between mt-auto" (click)="$event.stopPropagation()">
-                    <div class="flex flex-col">
-                        <span class="text-[8px] text-white/35 uppercase font-bold tracking-wider">Costo Total</span>
-                        <span class="text-xs font-black font-['Epilogue'] text-primary">${{ purchase.totalPrice | number }} MXN</span>
+                <div class="flex items-center justify-between mt-auto gap-2" (click)="$event.stopPropagation()">
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-[7.5px] sm:text-[8px] text-white/35 uppercase font-bold tracking-wider">Costo Total</span>
+                        <span class="text-xs font-black font-['Epilogue'] text-primary truncate">${{ purchase.totalPrice | number }} MXN</span>
                     </div>
                     <button (click)="openTicketDetail(purchase)" 
-                            class="bg-white/5 hover:bg-white/10 text-white/70 text-[10px] font-bold px-4 py-2.5 rounded-xl border border-white/10 transition-all active:scale-95">
-                        Ver Detalles e Historial
+                            class="bg-white/5 hover:bg-white/10 text-white/70 text-[9.5px] sm:text-[10px] font-bold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-white/10 transition-all active:scale-95 shrink-0">
+                        Ver Detalles <span class="hidden sm:inline">e Historial</span>
                     </button>
                 </div>
             </div>
@@ -224,47 +224,50 @@
         <ng-container *ngIf="activeTab() === 'todos' || activeTab() === 'cotizaciones'">
             <div *ngFor="let quote of filteredSubmittedQuotes()" 
                  (click)="openQuoteDetail(quote)"
-                 class="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-amber-400/20 transition-all duration-300 relative overflow-hidden group shadow-xl cursor-pointer flex flex-col justify-between min-h-[220px]">
+                 class="p-4 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-amber-400/20 transition-all duration-300 relative overflow-hidden group shadow-xl cursor-pointer flex flex-col justify-between min-h-[190px] sm:min-h-[220px]">
                 <div class="absolute -right-12 -bottom-12 w-28 h-28 bg-amber-400/5 rounded-full blur-xl group-hover:bg-amber-400/10 transition-colors"></div>
 
                 <div>
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="bg-amber-400/10 border border-amber-400/20 text-amber-400 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase">
+                    <div class="flex justify-between items-start mb-3 sm:mb-4 gap-2">
+                        <span class="bg-amber-400/10 border border-amber-400/20 text-amber-400 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[8.5px] sm:text-[9px] font-black tracking-widest uppercase shrink-0">
                             cotización pasiva
                         </span>
-                        <span class="text-[9.5px] font-bold text-amber-400/80 bg-amber-400/10 px-2 py-0.5 rounded">
+                        <span class="text-[9px] sm:text-[9.5px] font-bold text-amber-400/80 bg-amber-400/10 px-2 py-0.5 rounded shrink-0">
                             {{ quote.status === 'signed' ? 'Firmado' : 'Pendiente' }}
                         </span>
                     </div>
 
-                    <h3 class="font-['Epilogue'] font-black text-sm uppercase text-white truncate group-hover:text-primary transition-colors mb-1.5">
-                        {{ quote.bandName }}
+                    <h3 (click)="goToBandProfile(quote.bandName); $event.stopPropagation()" 
+                        title="Ver perfil completo del grupo"
+                        class="font-['Epilogue'] font-black text-xs sm:text-sm uppercase text-white truncate hover:text-primary transition-colors mb-1.5 cursor-pointer flex items-center gap-1.5">
+                        <span class="truncate">{{ quote.bandName }}</span>
+                        <span class="material-symbols-outlined text-xs text-primary shrink-0">open_in_new</span>
                     </h3>
                     
-                    <div class="flex flex-col gap-1 text-[11px] text-white/50 font-light pb-4 border-b border-white/5 mb-4">
+                    <div class="flex flex-col gap-1 text-[10.5px] sm:text-[11px] text-white/50 font-light pb-3 sm:pb-4 border-b border-white/5 mb-3 sm:mb-4">
                         <span class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[13px] text-primary">receipt_long</span>
-                            Folio: {{ quote.folio }}
+                            <span class="material-symbols-outlined text-[13px] text-primary shrink-0">receipt_long</span>
+                            <span class="truncate">Folio: {{ quote.folio }}</span>
                         </span>
                         <span class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[13px] text-primary">calendar_today</span>
-                            Fecha: {{ quote.eventDate }}
+                            <span class="material-symbols-outlined text-[13px] text-primary shrink-0">calendar_today</span>
+                            <span class="truncate">Fecha: {{ quote.eventDate }}</span>
                         </span>
                         <span class="flex items-center gap-1 truncate mt-0.5">
-                            <span class="material-symbols-outlined text-[13px] text-primary">pin_drop</span>
-                            Lugar: {{ quote.eventLocation }}
+                            <span class="material-symbols-outlined text-[13px] text-primary shrink-0">pin_drop</span>
+                            <span class="truncate">Lugar: {{ quote.eventLocation }}</span>
                         </span>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between mt-auto" (click)="$event.stopPropagation()">
-                    <div class="flex flex-col">
-                        <span class="text-[8px] text-white/35 uppercase font-bold tracking-wider">Duración</span>
-                        <span class="text-xs font-bold text-white/70">{{ quote.durationHours }} horas contratadas</span>
+                <div class="flex items-center justify-between mt-auto gap-2" (click)="$event.stopPropagation()">
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-[7.5px] sm:text-[8px] text-white/35 uppercase font-bold tracking-wider">Duración</span>
+                        <span class="text-xs font-bold text-white/70 truncate">{{ quote.durationHours }} hrs</span>
                     </div>
                     <button (click)="openQuoteDetail(quote)" 
-                            class="bg-white/5 hover:bg-white/10 text-white/70 text-[10px] font-bold px-4 py-2.5 rounded-xl border border-white/10 transition-all active:scale-95">
-                        Ver Detalles e Historial
+                            class="bg-white/5 hover:bg-white/10 text-white/70 text-[9.5px] sm:text-[10px] font-bold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-white/10 transition-all active:scale-95 shrink-0">
+                        Ver Detalles <span class="hidden sm:inline">e Historial</span>
                     </button>
                 </div>
             </div>
@@ -274,50 +277,50 @@
         <ng-container *ngIf="activeTab() === 'todos' || activeTab() === 'prensa'">
             <div *ngFor="let accred of filteredPressAccreditations()" 
                  (click)="openAccredDetail(accred)"
-                 class="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-blue-500/20 transition-all duration-300 relative overflow-hidden group shadow-xl cursor-pointer flex flex-col justify-between min-h-[220px]">
+                 class="p-4 sm:p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-blue-500/20 transition-all duration-300 relative overflow-hidden group shadow-xl cursor-pointer flex flex-col justify-between min-h-[190px] sm:min-h-[220px]">
                 <div class="absolute -right-12 -bottom-12 w-28 h-28 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-colors"></div>
 
                 <div>
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase">
+                    <div class="flex justify-between items-start mb-3 sm:mb-4 gap-2">
+                        <span class="bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[8.5px] sm:text-[9px] font-black tracking-widest uppercase shrink-0">
                             acreditación prensa
                         </span>
                         
-                        <span *ngIf="accred.status === 'pending'" class="text-[9.5px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
+                        <span *ngIf="accred.status === 'pending'" class="text-[9px] sm:text-[9.5px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded shrink-0">
                             En Revisión
                         </span>
-                        <span *ngIf="accred.status === 'approved'" class="text-[9.5px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                        <span *ngIf="accred.status === 'approved'" class="text-[9px] sm:text-[9.5px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded shrink-0">
                             Aprobado
                         </span>
-                        <span *ngIf="accred.status === 'rejected'" class="text-[9.5px] font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded">
+                        <span *ngIf="accred.status === 'rejected'" class="text-[9px] sm:text-[9.5px] font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded shrink-0">
                             Rechazado
                         </span>
                     </div>
 
-                    <h3 class="font-['Epilogue'] font-black text-sm uppercase text-white truncate group-hover:text-primary transition-colors mb-1.5">
+                    <h3 class="font-['Epilogue'] font-black text-xs sm:text-sm uppercase text-white truncate group-hover:text-primary transition-colors mb-1.5">
                         {{ accred.eventInfo.title }}
                     </h3>
                     
-                    <div class="flex flex-col gap-1 text-[11px] text-white/50 font-light pb-4 border-b border-white/5 mb-4">
-                        <span class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[13px] text-primary">badge</span>
-                            Medio: {{ accred.mediumName }}
+                    <div class="flex flex-col gap-1 text-[10.5px] sm:text-[11px] text-white/50 font-light pb-3 sm:pb-4 border-b border-white/5 mb-3 sm:mb-4">
+                        <span class="flex items-center gap-1 truncate">
+                            <span class="material-symbols-outlined text-[13px] text-primary shrink-0">badge</span>
+                            <span class="truncate">Medio: {{ accred.mediumName }}</span>
                         </span>
                         <span class="flex items-center gap-1 truncate">
-                            <span class="material-symbols-outlined text-[13px] text-primary">feed</span>
-                            Periodista: {{ accred.journalistName }}
+                            <span class="material-symbols-outlined text-[13px] text-primary shrink-0">feed</span>
+                            <span class="truncate">Periodista: {{ accred.journalistName }}</span>
                         </span>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between mt-auto" (click)="$event.stopPropagation()">
-                    <div class="flex flex-col">
-                        <span class="text-[8px] text-white/35 uppercase font-bold tracking-wider">Credencial ID</span>
-                        <span class="text-xs font-bold text-white/70">{{ accred.cardId }}</span>
+                <div class="flex items-center justify-between mt-auto gap-2" (click)="$event.stopPropagation()">
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-[7.5px] sm:text-[8px] text-white/35 uppercase font-bold tracking-wider">Credencial ID</span>
+                        <span class="text-xs font-bold text-white/70 truncate">{{ accred.cardId }}</span>
                     </div>
                     <button (click)="openAccredDetail(accred)" 
-                            class="bg-white/5 hover:bg-white/10 text-white/70 text-[10px] font-bold px-4 py-2.5 rounded-xl border border-white/10 transition-all active:scale-95">
-                        Ver Detalles e Historial
+                            class="bg-white/5 hover:bg-white/10 text-white/70 text-[9.5px] sm:text-[10px] font-bold px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-white/10 transition-all active:scale-95 shrink-0">
+                        Ver Detalles <span class="hidden sm:inline">e Historial</span>
                     </button>
                 </div>
             </div>
@@ -326,27 +329,27 @@
     </div>
 
     <!-- REWARDS & DISCOUNT COUPONS LISTING -->
-    <div class="mt-12 pt-8 border-t border-white/5 animate-fade-in">
-        <h3 class="font-['Epilogue'] font-black text-base uppercase text-white mb-6 tracking-wide flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary text-xl">confirmation_number</span>
+    <div class="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-white/5 animate-fade-in">
+        <h3 class="font-['Epilogue'] font-black text-sm sm:text-base uppercase text-white mb-4 sm:mb-6 tracking-wide flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-lg sm:text-xl">confirmation_number</span>
             Mis Cupones y Recompensas Desbloqueadas
         </h3>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <div *ngFor="let coupon of coupons()" 
-                 class="p-5 rounded-2xl bg-gradient-to-br from-white/[0.01] to-white/[0.03] border-2 border-dashed border-[#F2CA50]/30 hover:border-[#F2CA50]/55 transition-all relative overflow-hidden flex flex-col justify-between group shadow-lg">
-                <div class="absolute top-0 right-0 bg-[#F2CA50] text-[#121212] font-black text-[8px] uppercase tracking-widest px-3 py-1 rounded-bl-xl">
+                 class="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-white/[0.01] to-white/[0.03] border-2 border-dashed border-[#F2CA50]/30 hover:border-[#F2CA50]/55 transition-all relative overflow-hidden flex flex-col justify-between group shadow-lg">
+                <div class="absolute top-0 right-0 bg-[#F2CA50] text-[#121212] font-black text-[7.5px] sm:text-[8px] uppercase tracking-widest px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-bl-xl">
                     {{ coupon.discount }}
                 </div>
                 
                 <div>
-                    <span class="text-[15px] font-black font-mono text-[#F2CA50] select-all block tracking-widest mb-1.5">{{ coupon.code }}</span>
-                    <p class="text-[10.5px] text-white/60 font-light leading-relaxed mb-4">
+                    <span class="text-xs sm:text-[15px] font-black font-mono text-[#F2CA50] select-all block tracking-widest mb-1.5">{{ coupon.code }}</span>
+                    <p class="text-[10px] sm:text-[10.5px] text-white/60 font-light leading-relaxed mb-3 sm:mb-4">
                         {{ coupon.description }}
                     </p>
                 </div>
 
-                <div class="flex justify-between items-center text-[9px] text-white/40 border-t border-white/5 pt-3">
+                <div class="flex justify-between items-center text-[8.5px] sm:text-[9px] text-white/40 border-t border-white/5 pt-2.5 sm:pt-3">
                     <span>Vence: {{ coupon.expiryDate }}</span>
                     <span class="text-emerald-400 font-bold uppercase tracking-wider">Válido</span>
                 </div>
@@ -356,11 +359,11 @@
 
     <!-- EMPTY STATE VIEW -->
     <div *ngIf="activeTab() === 'todos' && !hasAnyActivities()" 
-         class="w-full max-w-md mx-auto text-center py-16 flex flex-col items-center gap-4 bg-white/[0.02] border border-white/[0.06] rounded-3xl p-8 shadow-inner mt-8 animate-scale-in">
-        <div class="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30">
-            <span class="material-symbols-outlined text-2xl">history</span>
+         class="w-full max-w-md mx-auto text-center py-12 sm:py-16 flex flex-col items-center gap-3.5 sm:gap-4 bg-white/[0.02] border border-white/[0.06] rounded-3xl p-6 sm:p-8 shadow-inner mt-6 sm:mt-8 animate-scale-in">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/30">
+            <span class="material-symbols-outlined text-xl sm:text-2xl">history</span>
         </div>
-        <h3 class="font-['Epilogue'] font-black uppercase text-white text-sm tracking-wider">Historial Vacío</h3>
+        <h3 class="font-['Epilogue'] font-black uppercase text-white text-xs sm:text-sm tracking-wider">Historial Vacío</h3>
         <p class="text-xs text-white/40 leading-relaxed font-light font-['Be_Vietnam_Pro']">
             Aún no has realizado ninguna compra de boletos, trámite de prensa o solicitudes de cotizaciones de bandas musicales.
         </p>
@@ -373,48 +376,51 @@
     <!-- IMMERSIVE FULL-SCREEN MODAL: TICKET PURCHASE DETAIL (TWO-COLUMN PREMIUM GRID OVERLAY) -->
     <div *ngIf="isTicketDetailModalOpen() && selectedTicketDetail() as ticket" 
          (click)="closeTicketDetail()"
-         class="fixed inset-0 z-[120] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-4 md:p-10 overflow-y-auto animate-lightbox-fade-in animate-scale-in">
+         class="fixed inset-0 z-[120] bg-black/90 backdrop-blur-2xl flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden animate-lightbox-fade-in font-['Be_Vietnam_Pro'] select-none">
         
-        <!-- Large Full-Screen Overlay Container -->
-        <div class="relative w-full max-w-5xl bg-[#121212]/95 border border-white/[0.08] backdrop-blur-2xl rounded-3xl p-6 md:p-10 flex flex-col shadow-2xl animate-lightbox-zoom-in my-auto h-[90vh] md:h-[82vh]"
+        <!-- Large Full-Screen Overlay Container (Bottom sheet on mobile, centered modal on desktop) -->
+        <div class="relative w-full max-w-5xl max-h-[94vh] sm:max-h-[85vh] bg-[#121212] border-t border-x sm:border border-white/[0.12] rounded-t-[32px] sm:rounded-3xl p-4 sm:p-8 flex flex-col shadow-2xl overflow-y-auto scrollbar-none mt-auto sm:mt-0"
              (click)="$event.stopPropagation()">
             
+            <!-- Mobile Handle Pill -->
+            <div (click)="closeTicketDetail()" class="w-12 h-1.5 bg-white/20 hover:bg-white/35 rounded-full mx-auto mb-3 shrink-0 sm:hidden cursor-pointer active:scale-90 transition-all"></div>
+
             <!-- Header section inside overlay -->
-            <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/5 shrink-0">
-                <div class="flex flex-col">
-                    <span class="text-[8px] uppercase tracking-widest font-black text-primary">Consulta de Evento Pasado y Compra de Boletos</span>
-                    <h3 class="font-['Epilogue'] font-black text-base md:text-xl text-white uppercase truncate">
+            <div class="flex justify-between items-center mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-white/5 shrink-0">
+                <div class="flex flex-col min-w-0 pr-2">
+                    <span class="text-[7.5px] sm:text-[8px] uppercase tracking-widest font-black text-primary truncate">Consulta de Evento Pasado y Compra de Boletos</span>
+                    <h3 class="font-['Epilogue'] font-black text-sm sm:text-xl text-white uppercase truncate">
                         {{ ticket.eventInfo.title }}
                     </h3>
                 </div>
-                <button (click)="closeTicketDetail()" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all">
-                    <span class="material-symbols-outlined text-lg">close</span>
+                <button (click)="closeTicketDetail()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all shrink-0">
+                    <span class="material-symbols-outlined text-base sm:text-lg">close</span>
                 </button>
             </div>
 
             <!-- Two-Column Grid Content (Scrollable) -->
-            <div class="flex-1 overflow-y-auto pr-2 grid grid-cols-1 md:grid-cols-2 gap-8 font-['Be_Vietnam_Pro'] text-left">
+            <div class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 font-['Be_Vietnam_Pro'] text-left scrollbar-none">
                 
                 <!-- LEFT COLUMN: Ticket Specs, pricing breakdown & QR Badge -->
-                <div class="flex flex-col gap-6">
+                <div class="flex flex-col gap-4 sm:gap-6">
                     
                     <!-- Core Specs -->
-                    <div class="bg-white/[0.02] border border-white/[0.04] p-5 rounded-2xl flex flex-col gap-3 text-xs shadow-inner">
-                        <span class="text-[9px] uppercase font-bold text-primary tracking-widest mb-1">Especificaciones de Compra</span>
+                    <div class="bg-white/[0.02] border border-white/[0.04] p-4 sm:p-5 rounded-2xl flex flex-col gap-2.5 sm:gap-3 text-xs shadow-inner">
+                        <span class="text-[8.5px] sm:text-[9px] uppercase font-bold text-primary tracking-widest mb-1">Especificaciones de Compra</span>
                         
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">ID Transacción:</span>
-                            <span class="font-mono text-white font-bold">{{ ticket.transactionId }}</span>
+                            <span class="font-mono text-white font-bold truncate ml-2">{{ ticket.transactionId }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Fecha Compra:</span>
                             <span class="font-bold text-white">{{ ticket.purchaseDate | date:'dd/MM/yyyy HH:mm' }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Recinto / Sede:</span>
-                            <span class="font-bold text-white text-right max-w-[200px] truncate">{{ ticket.eventInfo.location }}</span>
+                            <span class="font-bold text-white text-right max-w-[180px] sm:max-w-[200px] truncate">{{ ticket.eventInfo.location }}</span>
                         </div>
-                        <div class="flex justify-between border-t border-white/5 pt-2.5 mt-1">
+                        <div class="flex justify-between items-center border-t border-white/5 pt-2.5 mt-1 text-[11px] sm:text-xs">
                             <span class="text-white/40">Método de Pago:</span>
                             <span class="font-bold text-white">Tarjeta de Crédito</span>
                         </div>
@@ -422,51 +428,51 @@
                         <!-- Seats detailed breakdown list -->
                         <div class="border-t border-white/5 pt-2.5 flex flex-col gap-1.5">
                             <span class="text-[8px] uppercase text-white/30 font-bold tracking-wider">Asientos Adquiridos:</span>
-                            <div *for="let seat of ticket.seats" class="flex justify-between text-[11px]">
+                            <div *ngFor="let seat of ticket.seats" class="flex justify-between text-[10.5px] sm:text-[11px]">
                                 <span class="text-white/70">Asiento {{ seat.id }} ({{ seat.categoryName }})</span>
                                 <span class="font-bold text-primary">${{ seat.price | number }} MXN</span>
                             </div>
                         </div>
 
-                        <div class="flex justify-between border-t border-white/5 pt-2.5 mt-1 text-sm">
+                        <div class="flex justify-between items-center border-t border-white/5 pt-2.5 mt-1 text-xs sm:text-sm">
                             <span class="text-white/45">Total Pagado:</span>
                             <strong class="font-black text-primary font-['Epilogue']">${{ ticket.totalPrice | number }} MXN</strong>
                         </div>
                     </div>
 
                     <!-- Digital QR Access Pass with Validated overlay stamp -->
-                    <div class="flex flex-col items-center gap-3 bg-white/[0.01] border border-white/[0.04] p-5 rounded-2xl shadow-inner">
-                        <span class="text-[8.5px] uppercase font-bold text-white/40 tracking-wider">Código de Asistencia QR de Acceso</span>
+                    <div class="flex flex-col items-center gap-2.5 sm:gap-3 bg-white/[0.01] border border-white/[0.04] p-4 sm:p-5 rounded-2xl shadow-inner">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-white/40 tracking-wider">Código de Asistencia QR de Acceso</span>
                         
-                        <div class="bg-white p-3 rounded-xl border border-white/10 relative overflow-hidden group shadow-lg">
+                        <div class="bg-white p-2.5 sm:p-3 rounded-xl border border-white/10 relative overflow-hidden group shadow-lg">
                             <div class="absolute inset-0 bg-black/85 backdrop-blur-[1px] flex flex-col items-center justify-center text-center p-2 select-none">
-                                <span class="material-symbols-outlined text-3xl text-emerald-500 animate-bounce">verified</span>
-                                <span class="text-[8px] font-black text-emerald-400 uppercase tracking-widest mt-1">INGRESO VALIDADO</span>
+                                <span class="material-symbols-outlined text-2xl sm:text-3xl text-emerald-500 animate-bounce">verified</span>
+                                <span class="text-[7.5px] sm:text-[8px] font-black text-emerald-400 uppercase tracking-widest mt-1">INGRESO VALIDADO</span>
                                 <span class="text-[6px] text-white/40 font-mono mt-0.5">LECTOR: ACCORDEX-GATE-B</span>
                             </div>
-                            <img [src]="ticket.qrUrl" alt="Access QR Code" class="w-28 h-28 opacity-25" />
+                            <img [src]="ticket.qrUrl" alt="Access QR Code" class="w-24 h-24 sm:w-28 sm:h-28 opacity-25" />
                         </div>
-                        <span class="text-[9px] text-white/30 italic text-center">Lector escaneado el día del evento en la puerta principal.</span>
+                        <span class="text-[8.5px] sm:text-[9px] text-white/30 italic text-center">Lector escaneado el día del evento en la puerta principal.</span>
                     </div>
 
                     <!-- Claimable Attendance Reward -->
-                    <div class="p-5 rounded-2xl bg-gradient-to-br from-[#F2CA50]/5 to-transparent border border-[#F2CA50]/15 flex flex-col gap-2.5 shadow-inner">
-                        <span class="text-[8.5px] uppercase font-bold text-[#F2CA50] tracking-wider flex items-center gap-1">
+                    <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#F2CA50]/5 to-transparent border border-[#F2CA50]/15 flex flex-col gap-2 sm:gap-2.5 shadow-inner">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-[#F2CA50] tracking-wider flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">celebration</span>
                             Recompensa Oficial por Asistencia
                         </span>
-                        <p class="text-[10px] text-white/60 leading-normal font-light">
+                        <p class="text-[9.5px] sm:text-[10px] text-white/60 leading-normal font-light">
                             Al haber asistido formalmente y validado tu boleto QR en puerta, tienes derecho a reclamar un cupón exclusivo de lealtad del **20% de descuento** para cualquier compra futura.
                         </p>
                         
                         <button *ngIf="!claimedRewards()[ticket.eventId]"
                                 (click)="claimAttendanceReward(ticket.eventId, ticket.eventInfo.title)"
-                                class="w-full py-3 bg-primary hover:bg-primary-fixed text-black text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95">
+                                class="w-full py-2.5 sm:py-3 bg-primary hover:bg-primary-fixed text-black text-[9.5px] sm:text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95">
                             Reclamar Recompensa (20% Desc)
                         </button>
                         
                         <div *ngIf="claimedRewards()[ticket.eventId]" 
-                             class="w-full py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-center text-[10px] font-bold uppercase tracking-wider">
+                             class="w-full py-2 sm:py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-center text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider">
                             ✓ ¡Recompensa Reclamada con Éxito!
                         </div>
                     </div>
@@ -474,14 +480,14 @@
                 </div>
 
                 <!-- RIGHT COLUMN: Rating, photo gallery, recap aftermovie & suggestions box -->
-                <div class="flex flex-col gap-6">
+                <div class="flex flex-col gap-4 sm:gap-6">
                     
                     <!-- Rating and review system inside full-screen -->
-                    <div class="bg-white/[0.02] border border-white/[0.06] p-5 rounded-2xl flex flex-col gap-3 shadow-inner">
-                        <span class="text-[8.5px] uppercase font-bold text-primary tracking-wider">Calificación y Opinión del Asistente</span>
+                    <div class="bg-white/[0.02] border border-white/[0.06] p-4 sm:p-5 rounded-2xl flex flex-col gap-2.5 sm:gap-3 shadow-inner">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-primary tracking-wider">Calificación y Opinión del Asistente</span>
                         
                         <div class="flex items-center gap-2">
-                            <span class="text-[10.5px] text-white/50">Tu Calificación:</span>
+                            <span class="text-[10px] sm:text-[10.5px] text-white/50">Tu Calificación:</span>
                             <div class="flex gap-0.5">
                                 <button *ngFor="let star of [1,2,3,4,5]" 
                                         (click)="tempRating.set(star)"
@@ -499,13 +505,13 @@
                                   rows="2"
                                   class="w-full bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 focus:border-primary/50 transition-all outline-none resize-none font-light"></textarea>
 
-                        <div class="flex gap-2">
+                        <div class="flex flex-col sm:flex-row gap-2">
                             <button (click)="submitTicketReview(ticket.eventId)"
-                                    class="flex-1 py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-[10px] font-black rounded-xl uppercase tracking-wider transition-all active:scale-95 shadow-md">
-                                Guardar Reseña y Recibir Cupón
+                                    class="w-full sm:flex-1 py-2.5 sm:py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-[9.5px] sm:text-[10px] font-black rounded-xl uppercase tracking-wider transition-all active:scale-95 shadow-md">
+                                Guardar Reseña y Cupón
                             </button>
                             <button (click)="adminTickets(ticket.eventId)"
-                                    class="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-bold rounded-xl uppercase tracking-wider transition-all active:scale-95">
+                                    class="w-full sm:flex-1 py-2.5 sm:py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[9.5px] sm:text-[10px] font-bold rounded-xl uppercase tracking-wider transition-all active:scale-95">
                                 Administrar Boletos
                             </button>
                         </div>
@@ -513,7 +519,7 @@
 
                     <!-- Photo gallery from recap -->
                     <div *ngIf="ticket.photos && ticket.photos.length > 0" class="flex flex-col gap-2">
-                        <span class="text-[8.5px] uppercase font-bold text-white/40 tracking-wider flex items-center gap-1">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-white/40 tracking-wider flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">photo_library</span>
                             Recuerdo del Evento (Galería de Fotos)
                         </span>
@@ -526,7 +532,7 @@
 
                     <!-- Aftermovie recap video -->
                     <div class="flex flex-col gap-2">
-                        <span class="text-[8.5px] uppercase font-bold text-white/40 tracking-wider flex items-center gap-1">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-white/40 tracking-wider flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">video_library</span>
                             Aftermovie Oficial / Resumen de la Presentación
                         </span>
@@ -541,20 +547,20 @@
                     </div>
 
                     <!-- Community Posts & Reviews (Social Proof / Incentive) -->
-                    <div class="bg-white/[0.01] border border-white/[0.04] p-5 rounded-2xl flex flex-col gap-3 shadow-inner">
-                        <span class="text-[8.5px] uppercase font-bold text-primary tracking-wider flex items-center gap-1.5">
+                    <div class="bg-white/[0.01] border border-white/[0.04] p-4 sm:p-5 rounded-2xl flex flex-col gap-2.5 sm:gap-3 shadow-inner">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-primary tracking-wider flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-xs">forum</span>
                             Opiniones y Publicaciones de la Comunidad
                         </span>
                         
-                        <div class="flex flex-col gap-3">
-                            <div *ngFor="let rev of communityReviews()" class="p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl flex gap-3 text-[10.5px]">
-                                <img [src]="rev.avatar" class="w-8 h-8 rounded-full object-cover shrink-0 border border-white/10" alt="Avatar">
+                        <div class="flex flex-col gap-2.5 sm:gap-3">
+                            <div *ngFor="let rev of communityReviews()" class="p-2.5 sm:p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl flex gap-2.5 sm:gap-3 text-[10px] sm:text-[10.5px]">
+                                <img [src]="rev.avatar" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shrink-0 border border-white/10" alt="Avatar">
                                 <div class="flex-1 min-w-0">
                                     <div class="flex justify-between items-center mb-0.5">
-                                        <span class="font-bold text-white/95 truncate">{{ rev.userName }}</span>
-                                        <div class="flex gap-0.5 text-[#F2CA50]">
-                                            <span class="material-symbols-outlined text-[10px] fill-current" *ngFor="let s of [1,2,3,4,5]">
+                                        <span class="font-bold text-white/95 truncate text-[10px] sm:text-xs">{{ rev.userName }}</span>
+                                        <div class="flex gap-0.5 text-[#F2CA50] shrink-0">
+                                            <span class="material-symbols-outlined text-[9px] sm:text-[10px] fill-current" *ngFor="let s of [1,2,3,4,5]">
                                                 star
                                             </span>
                                         </div>
@@ -568,12 +574,12 @@
                     </div>
 
                     <!-- Complaints Suggestions Box -->
-                    <div class="bg-white/[0.02] border border-white/[0.06] p-5 rounded-2xl flex flex-col gap-3 shadow-inner">
-                        <span class="text-[8.5px] uppercase font-bold text-red-400 tracking-wider flex items-center gap-1">
+                    <div class="bg-white/[0.02] border border-white/[0.06] p-4 sm:p-5 rounded-2xl flex flex-col gap-2.5 sm:gap-3 shadow-inner">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-red-400 tracking-wider flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">forum</span>
                             Buzón de Quejas y Sugerencias de este Concierto
                         </span>
-                        <p class="text-[10px] text-white/50 leading-relaxed font-light">
+                        <p class="text-[9.5px] sm:text-[10px] text-white/50 leading-relaxed font-light">
                             ¿Hubo algún problema técnico, de acceso o seguridad en el recinto? Cuéntanos en detalle para tomar cartas en el asunto legalmente.
                         </p>
                         
@@ -583,7 +589,7 @@
                                   class="w-full bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 focus:border-red-400/50 transition-all outline-none resize-none font-light"></textarea>
                         
                         <button (click)="submitComplaint('Boleto / Concierto', ticket.transactionId)"
-                                class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all active:scale-95">
+                                class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all active:scale-95">
                             Enviar Sugerencia / Queja Formal
                         </button>
                     </div>
@@ -598,89 +604,92 @@
     <!-- IMMERSIVE FULL-SCREEN MODAL: QUOTATION DETAIL (TWO-COLUMN PREMIUM GRID OVERLAY) -->
     <div *ngIf="isQuoteDetailModalOpen() && selectedQuoteDetail() as quote" 
          (click)="closeQuoteDetail()"
-         class="fixed inset-0 z-[120] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-4 md:p-10 overflow-y-auto animate-lightbox-fade-in animate-scale-in">
+         class="fixed inset-0 z-[120] bg-black/90 backdrop-blur-2xl flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden animate-lightbox-fade-in font-['Be_Vietnam_Pro'] select-none">
         
         <!-- Large Full-Screen Overlay Container -->
-        <div class="relative w-full max-w-5xl bg-[#121212]/95 border border-white/[0.08] backdrop-blur-2xl rounded-3xl p-6 md:p-10 flex flex-col shadow-2xl animate-lightbox-zoom-in my-auto h-[90vh] md:h-[82vh]"
+        <div class="relative w-full max-w-5xl max-h-[94vh] sm:max-h-[85vh] bg-[#121212] border-t border-x sm:border border-white/[0.12] rounded-t-[32px] sm:rounded-3xl p-4 sm:p-8 flex flex-col shadow-2xl overflow-y-auto scrollbar-none mt-auto sm:mt-0"
              (click)="$event.stopPropagation()">
             
+            <!-- Mobile Handle Pill -->
+            <div (click)="closeQuoteDetail()" class="w-12 h-1.5 bg-white/20 hover:bg-white/35 rounded-full mx-auto mb-3 shrink-0 sm:hidden cursor-pointer active:scale-90 transition-all"></div>
+
             <!-- Header section inside overlay -->
-            <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/5 shrink-0">
-                <div class="flex flex-col">
-                    <span class="text-[8px] uppercase tracking-widest font-black text-amber-400">Consulta de Cotización y Negociación Histórica</span>
-                    <h3 class="font-['Epilogue'] font-black text-base md:text-xl text-white uppercase truncate">
+            <div class="flex justify-between items-center mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-white/5 shrink-0">
+                <div class="flex flex-col min-w-0 pr-2">
+                    <span class="text-[7.5px] sm:text-[8px] uppercase tracking-widest font-black text-amber-400 truncate">Consulta de Cotización y Negociación Histórica</span>
+                    <h3 class="font-['Epilogue'] font-black text-sm sm:text-xl text-white uppercase truncate">
                         {{ quote.bandName }}
                     </h3>
                 </div>
-                <button (click)="closeQuoteDetail()" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all">
-                    <span class="material-symbols-outlined text-lg">close</span>
+                <button (click)="closeQuoteDetail()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all shrink-0">
+                    <span class="material-symbols-outlined text-base sm:text-lg">close</span>
                 </button>
             </div>
 
             <!-- Two-Column Grid Content (Scrollable) -->
-            <div class="flex-1 overflow-y-auto pr-2 grid grid-cols-1 md:grid-cols-2 gap-8 font-['Be_Vietnam_Pro'] text-left">
+            <div class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 font-['Be_Vietnam_Pro'] text-left scrollbar-none">
                 
                 <!-- LEFT COLUMN: Quote Specs & Pricing breakdown -->
-                <div class="flex flex-col gap-6">
+                <div class="flex flex-col gap-4 sm:gap-6">
                     
                     <!-- Core Specs -->
-                    <div class="bg-white/[0.02] border border-white/[0.04] p-5 rounded-2xl flex flex-col gap-3 text-xs shadow-inner">
-                        <span class="text-[9px] uppercase font-bold text-amber-400 tracking-widest mb-1">Especificaciones Técnicas</span>
+                    <div class="bg-white/[0.02] border border-white/[0.04] p-4 sm:p-5 rounded-2xl flex flex-col gap-2.5 sm:gap-3 text-xs shadow-inner">
+                        <span class="text-[8.5px] sm:text-[9px] uppercase font-bold text-amber-400 tracking-widest mb-1">Especificaciones Técnicas</span>
                         
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Folio Cotización:</span>
-                            <span class="font-mono text-white font-bold">{{ quote.folio }}</span>
+                            <span class="font-mono text-white font-bold truncate ml-2">{{ quote.folio }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Cliente Contratante:</span>
-                            <span class="font-bold text-white">{{ quote.clientName }}</span>
+                            <span class="font-bold text-white truncate ml-2">{{ quote.clientName }}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-white/40">Contacto registrado:</span>
-                            <span class="font-bold text-white/70">{{ quote.clientPhone }} • {{ quote.clientEmail }}</span>
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
+                            <span class="text-white/40">Contacto:</span>
+                            <span class="font-bold text-white/70 truncate ml-2">{{ quote.clientPhone }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Fecha Evento:</span>
                             <span class="font-bold text-white">{{ quote.eventDate }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Lugar/Dirección:</span>
-                            <span class="font-bold text-white text-right max-w-[220px] truncate">{{ quote.eventLocation }}</span>
+                            <span class="font-bold text-white text-right max-w-[180px] sm:max-w-[220px] truncate ml-2">{{ quote.eventLocation }}</span>
                         </div>
-                        <div class="flex justify-between border-t border-white/5 pt-2.5 mt-1.5">
+                        <div class="flex justify-between items-center border-t border-white/5 pt-2.5 mt-1 text-[11px] sm:text-xs">
                             <span class="text-white/40">Tipo Evento:</span>
                             <span class="font-bold text-white">{{ quote.eventType }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Duración:</span>
                             <span class="font-bold text-white">{{ quote.durationHours }} horas contratadas</span>
                         </div>
-                        <div class="flex justify-between border-t border-white/5 pt-2.5 mt-1.5">
+                        <div class="flex justify-between items-center border-t border-white/5 pt-2.5 mt-1 text-[11px] sm:text-xs">
                             <span class="text-white/40">Estado Contrato:</span>
-                            <span [ngClass]="quote.status === 'signed' ? 'text-emerald-400' : 'text-amber-400'" class="font-bold uppercase">
+                            <span [ngClass]="quote.status === 'signed' ? 'text-emerald-400' : 'text-amber-400'" class="font-bold uppercase text-[10px] sm:text-xs">
                                 {{ quote.status === 'signed' ? 'Firmado Electrónicamente' : 'Pendiente de Firma' }}
                             </span>
                         </div>
                     </div>
 
                     <!-- Pricing breakdown -->
-                    <div class="bg-white/[0.02] border border-white/[0.04] p-5 rounded-2xl flex flex-col gap-3 text-xs shadow-inner">
-                        <span class="text-[8.5px] uppercase font-bold text-amber-400 tracking-wider">Desglose Técnico de Presupuesto</span>
+                    <div class="bg-white/[0.02] border border-white/[0.04] p-4 sm:p-5 rounded-2xl flex flex-col gap-2.5 sm:gap-3 text-xs shadow-inner">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-amber-400 tracking-wider">Desglose Técnico de Presupuesto</span>
                         
-                        <div class="flex justify-between">
-                            <span class="text-white/40">Costo Base Banda (Contrato):</span>
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
+                            <span class="text-white/40">Costo Base Banda:</span>
                             <span class="font-bold text-white">$25,000 MXN</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-white/40">Logística, Staff y Viáticos:</span>
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
+                            <span class="text-white/40">Logística y Viáticos:</span>
                             <span class="font-bold text-white">$5,000 MXN</span>
                         </div>
-                        <div class="flex justify-between border-t border-white/5 pt-2.5 mt-1">
+                        <div class="flex justify-between items-center border-t border-white/5 pt-2.5 mt-1 text-[11px] sm:text-xs">
                             <span class="text-white/40">IVA Retención (16%):</span>
                             <span class="font-bold text-white">$4,800 MXN</span>
                         </div>
                         
-                        <div class="flex justify-between border-t border-white/5 pt-2.5 mt-1 text-sm">
+                        <div class="flex justify-between items-center border-t border-white/5 pt-2.5 mt-1 text-xs sm:text-sm">
                             <span class="text-white/45">Presupuesto Estimado:</span>
                             <strong class="font-black text-amber-400 font-['Epilogue']">$34,800 MXN</strong>
                         </div>
@@ -689,14 +698,14 @@
                 </div>
 
                 <!-- RIGHT COLUMN: Review Service, contract options & complaints box -->
-                <div class="flex flex-col gap-6">
+                <div class="flex flex-col gap-4 sm:gap-6">
                     
                     <!-- Service Rating and comments -->
-                    <div class="bg-white/[0.02] border border-white/[0.06] p-5 rounded-2xl flex flex-col gap-3 shadow-inner">
-                        <span class="text-[8.5px] uppercase font-bold text-amber-400 tracking-wider">Calificación del Servicio de Cotización</span>
+                    <div class="bg-white/[0.02] border border-white/[0.06] p-4 sm:p-5 rounded-2xl flex flex-col gap-2.5 sm:gap-3 shadow-inner">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-amber-400 tracking-wider">Calificación del Servicio de Cotización</span>
                         
                         <div class="flex items-center gap-2">
-                            <span class="text-[10px] text-white/50">Tu Calificación:</span>
+                            <span class="text-[10px] sm:text-[10.5px] text-white/50">Tu Calificación:</span>
                             <div class="flex gap-0.5">
                                 <button *ngFor="let star of [1,2,3,4,5]" 
                                         (click)="tempRating.set(star)"
@@ -714,25 +723,25 @@
                                   rows="2"
                                   class="w-full bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 focus:border-amber-400/50 transition-all outline-none resize-none font-light"></textarea>
 
-                        <div class="flex gap-2">
+                        <div class="flex flex-col sm:flex-row gap-2">
                             <button (click)="submitQuoteReview(quote.folio)"
-                                    class="flex-1 py-3 bg-[#F2CA50] hover:bg-[#F2CA50]/80 text-[#1e1e1e] text-[10px] font-black rounded-xl uppercase tracking-wider transition-all active:scale-95 shadow-md">
+                                    class="w-full sm:flex-1 py-2.5 sm:py-3 bg-[#F2CA50] hover:bg-[#F2CA50]/80 text-[#1e1e1e] text-[9.5px] sm:text-[10px] font-black rounded-xl uppercase tracking-wider transition-all active:scale-95 shadow-md">
                                 Guardar Reseña y Cupón
                             </button>
                             <button (click)="openContract(quote); closeQuoteDetail()"
-                                    class="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-bold rounded-xl uppercase tracking-wider transition-all active:scale-95">
+                                    class="w-full sm:flex-1 py-2.5 sm:py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[9.5px] sm:text-[10px] font-bold rounded-xl uppercase tracking-wider transition-all active:scale-95">
                                 Ver Contrato
                             </button>
                         </div>
                     </div>
 
                     <!-- Complaints suggestions box -->
-                    <div class="bg-white/[0.02] border border-white/[0.06] p-5 rounded-2xl flex flex-col gap-3 shadow-inner">
-                        <span class="text-[8.5px] uppercase font-bold text-red-400 tracking-wider flex items-center gap-1">
+                    <div class="bg-white/[0.02] border border-white/[0.06] p-4 sm:p-5 rounded-2xl flex flex-col gap-2.5 sm:gap-3 shadow-inner">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-red-400 tracking-wider flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">forum</span>
                             Buzón de Quejas y Sugerencias de Negociación
                         </span>
-                        <p class="text-[10px] text-white/50 leading-relaxed font-light">
+                        <p class="text-[9.5px] sm:text-[10px] text-white/50 leading-relaxed font-light">
                             ¿Hubo algún inconveniente con el representante de la agrupación musical o el soporte de contratación? Haznos saber formalmente.
                         </p>
                         
@@ -742,7 +751,7 @@
                                   class="w-full bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 focus:border-red-400/50 transition-all outline-none resize-none font-light"></textarea>
                         
                         <button (click)="submitComplaint('Cotización / Negociación', quote.folio)"
-                                class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all active:scale-95">
+                                class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all active:scale-95">
                             Enviar Reporte a Acordex
                         </button>
                     </div>
@@ -757,81 +766,84 @@
     <!-- IMMERSIVE FULL-SCREEN MODAL: ACCREDITATION DETAIL (TWO-COLUMN PREMIUM GRID OVERLAY) -->
     <div *ngIf="isAccredDetailModalOpen() && selectedAccredDetail() as accred" 
          (click)="closeAccredDetail()"
-         class="fixed inset-0 z-[120] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-4 md:p-10 overflow-y-auto animate-lightbox-fade-in animate-scale-in">
+         class="fixed inset-0 z-[120] bg-black/90 backdrop-blur-2xl flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden animate-lightbox-fade-in font-['Be_Vietnam_Pro'] select-none">
         
         <!-- Large Full-Screen Overlay Container -->
-        <div class="relative w-full max-w-5xl bg-[#121212]/95 border border-white/[0.08] backdrop-blur-2xl rounded-3xl p-6 md:p-10 flex flex-col shadow-2xl animate-lightbox-zoom-in my-auto h-[90vh] md:h-[82vh]"
+        <div class="relative w-full max-w-5xl max-h-[94vh] sm:max-h-[85vh] bg-[#121212] border-t border-x sm:border border-white/[0.12] rounded-t-[32px] sm:rounded-3xl p-4 sm:p-8 flex flex-col shadow-2xl overflow-y-auto scrollbar-none mt-auto sm:mt-0"
              (click)="$event.stopPropagation()">
             
+            <!-- Mobile Handle Pill -->
+            <div (click)="closeAccredDetail()" class="w-12 h-1.5 bg-white/20 hover:bg-white/35 rounded-full mx-auto mb-3 shrink-0 sm:hidden cursor-pointer active:scale-90 transition-all"></div>
+
             <!-- Header section inside overlay -->
-            <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/5 shrink-0">
-                <div class="flex flex-col">
-                    <span class="text-[8px] uppercase tracking-widest font-black text-blue-400">Consulta de Acreditación de Prensa y Medios</span>
-                    <h3 class="font-['Epilogue'] font-black text-base md:text-xl text-white uppercase truncate">
+            <div class="flex justify-between items-center mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-white/5 shrink-0">
+                <div class="flex flex-col min-w-0 pr-2">
+                    <span class="text-[7.5px] sm:text-[8px] uppercase tracking-widest font-black text-blue-400 truncate">Consulta de Acreditación de Prensa y Medios</span>
+                    <h3 class="font-['Epilogue'] font-black text-sm sm:text-xl text-white uppercase truncate">
                         {{ accred.eventInfo.title }}
                     </h3>
                 </div>
-                <button (click)="closeAccredDetail()" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all">
-                    <span class="material-symbols-outlined text-lg">close</span>
+                <button (click)="closeAccredDetail()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all shrink-0">
+                    <span class="material-symbols-outlined text-base sm:text-lg">close</span>
                 </button>
             </div>
 
             <!-- Two-Column Grid Content (Scrollable) -->
-            <div class="flex-1 overflow-y-auto pr-2 grid grid-cols-1 md:grid-cols-2 gap-8 font-['Be_Vietnam_Pro'] text-left">
+            <div class="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 font-['Be_Vietnam_Pro'] text-left scrollbar-none">
                 
                 <!-- LEFT COLUMN: Specs and Timeline -->
-                <div class="flex flex-col gap-6">
+                <div class="flex flex-col gap-4 sm:gap-6">
                     
                     <!-- Core Specs -->
-                    <div class="bg-white/5 border border-white/[0.04] p-5 rounded-2xl flex flex-col gap-3 text-xs shadow-inner">
-                        <span class="text-[9px] uppercase font-bold text-blue-400 tracking-widest mb-1">Datos Generales del Trámite</span>
+                    <div class="bg-white/5 border border-white/[0.04] p-4 sm:p-5 rounded-2xl flex flex-col gap-2.5 sm:gap-3 text-xs shadow-inner">
+                        <span class="text-[8.5px] sm:text-[9px] uppercase font-bold text-blue-400 tracking-widest mb-1">Datos Generales del Trámite</span>
                         
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Solicitante:</span>
-                            <span class="font-bold text-white">{{ accred.journalistName }}</span>
+                            <span class="font-bold text-white truncate ml-2">{{ accred.journalistName }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Medio / Plataforma:</span>
-                            <span class="font-bold text-blue-400">{{ accred.mediumName }}</span>
+                            <span class="font-bold text-blue-400 truncate ml-2">{{ accred.mediumName }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Gafete ID:</span>
-                            <span class="font-mono text-white font-bold">{{ accred.cardId }}</span>
+                            <span class="font-mono text-white font-bold truncate ml-2">{{ accred.cardId }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Tipo Solicitante:</span>
-                            <span class="font-bold text-white">{{ accred.applicantType === 'media' ? 'Medio de Prensa Oficial' : 'Creador / Independiente' }}</span>
+                            <span class="font-bold text-white truncate ml-2">{{ accred.applicantType === 'media' ? 'Medio de Prensa Oficial' : 'Creador / Independiente' }}</span>
                         </div>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center text-[11px] sm:text-xs">
                             <span class="text-white/40">Cobertura:</span>
-                            <span class="font-bold text-white">{{ accred.accredType }}</span>
+                            <span class="font-bold text-white truncate ml-2">{{ accred.accredType }}</span>
                         </div>
-                        <div class="flex justify-between border-t border-white/5 pt-2.5 mt-1.5">
+                        <div class="flex justify-between items-center border-t border-white/5 pt-2.5 mt-1 text-[11px] sm:text-xs">
                             <span class="text-white/40">Estado del Trámite:</span>
-                            <span [ngClass]="accred.status === 'approved' ? 'text-emerald-400' : accred.status === 'rejected' ? 'text-red-400' : 'text-amber-400'" class="font-bold uppercase">
-                                {{ accred.status === 'approved' ? 'Aprobado' : accred.status === 'rejected' ? 'Rechazado' : 'En Proceso de Revisión' }}
+                            <span [ngClass]="accred.status === 'approved' ? 'text-emerald-400' : accred.status === 'rejected' ? 'text-red-400' : 'text-amber-400'" class="font-bold uppercase text-[10px] sm:text-xs">
+                                {{ accred.status === 'approved' ? 'Aprobado' : accred.status === 'rejected' ? 'Rechazado' : 'En Proceso' }}
                             </span>
                         </div>
                     </div>
 
                     <!-- Timeline representation -->
-                    <div class="p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] flex flex-col gap-3 text-xs shadow-inner">
-                        <span class="text-[8.5px] uppercase font-bold text-white/40 tracking-wider">Historial del Proceso</span>
-                        <div class="flex flex-col gap-3.5 relative pl-4 border-l border-white/10 ml-2">
+                    <div class="p-4 sm:p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] flex flex-col gap-2.5 sm:gap-3 text-xs shadow-inner">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-white/40 tracking-wider">Historial del Proceso</span>
+                        <div class="flex flex-col gap-3 relative pl-4 border-l border-white/10 ml-2">
                             <div class="relative">
                                 <div class="absolute -left-[20px] top-1 w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
-                                <strong class="text-white">Solicitud Recibida</strong>
-                                <p class="text-[10px] text-white/50">Trámite ingresado formalmente en el sistema.</p>
+                                <strong class="text-white text-xs">Solicitud Recibida</strong>
+                                <p class="text-[9.5px] text-white/50">Trámite ingresado formalmente en el sistema.</p>
                             </div>
                             <div class="relative">
                                 <div class="absolute -left-[20px] top-1 w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
-                                <strong class="text-white">Validación de Medios</strong>
-                                <p class="text-[10px] text-white/50">Verificación de credenciales y coberturas pasadas.</p>
+                                <strong class="text-white text-xs">Validación de Medios</strong>
+                                <p class="text-[9.5px] text-white/50">Verificación de credenciales y coberturas pasadas.</p>
                             </div>
                             <div class="relative">
                                 <div class="absolute -left-[20px] top-1 w-2.5 h-2.5 rounded-full" [ngClass]="accred.status === 'approved' ? 'bg-emerald-500' : accred.status === 'rejected' ? 'bg-red-500' : 'bg-amber-400 animate-pulse'"></div>
-                                <strong class="text-white">Resolución Final</strong>
-                                <p class="text-[10px] text-white/50">Pase aprobado/rechazado según los lineamientos de prensa.</p>
+                                <strong class="text-white text-xs">Resolución Final</strong>
+                                <p class="text-[9.5px] text-white/50">Pase aprobado/rechazado según los lineamientos.</p>
                             </div>
                         </div>
                     </div>
@@ -839,53 +851,53 @@
                 </div>
 
                 <!-- RIGHT COLUMN: Printable Press badge pass, complaints box -->
-                <div class="flex flex-col gap-6">
+                <div class="flex flex-col gap-4 sm:gap-6">
                     
                     <!-- Printable Press Pass badge -->
-                    <div *ngIf="accred.status === 'approved'" class="p-6 rounded-2xl border-2 border-double border-blue-500/35 bg-gradient-to-b from-blue-950/20 to-black flex flex-col items-center gap-4 relative overflow-hidden text-center shadow-inner">
+                    <div *ngIf="accred.status === 'approved'" class="p-4 sm:p-6 rounded-2xl border-2 border-double border-blue-500/35 bg-gradient-to-b from-blue-950/20 to-black flex flex-col items-center gap-3 sm:gap-4 relative overflow-hidden text-center shadow-inner">
                         <div class="absolute -top-12 -left-12 w-28 h-28 bg-blue-500/10 rounded-full blur-xl"></div>
                         <div class="absolute -bottom-12 -right-12 w-28 h-28 bg-blue-500/10 rounded-full blur-xl"></div>
 
                         <div class="flex flex-col items-center">
-                            <span class="text-[11px] font-black uppercase tracking-widest text-blue-400">ACORDEX PRESS PASS</span>
-                            <span class="text-[7px] text-white/40 uppercase tracking-widest mt-0.5">Pase de Prensa Autorizado</span>
+                            <span class="text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-blue-400">ACORDEX PRESS PASS</span>
+                            <span class="text-[6.5px] sm:text-[7px] text-white/40 uppercase tracking-widest mt-0.5">Pase de Prensa Autorizado</span>
                         </div>
 
-                        <div class="flex gap-4 items-center justify-center py-2.5">
-                            <div class="w-16 h-16 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-white/30 shrink-0">
-                                <span class="material-symbols-outlined text-3xl">photo_camera</span>
+                        <div class="flex gap-3 sm:gap-4 items-center justify-center py-2">
+                            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-white/30 shrink-0">
+                                <span class="material-symbols-outlined text-2xl sm:text-3xl">photo_camera</span>
                             </div>
-                            <div class="w-16 h-16 rounded-xl bg-white p-1 flex items-center justify-center shrink-0">
+                            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white p-1 flex items-center justify-center shrink-0">
                                 <img [src]="accred.qrUrl" alt="Press QR Pass" class="w-full h-full" />
                             </div>
                         </div>
 
-                        <div class="flex flex-col gap-0.5">
-                            <span class="text-xs font-bold text-white uppercase">{{ accred.journalistName }}</span>
-                            <span class="text-[9px] text-blue-400 font-bold uppercase">{{ accred.mediumName }}</span>
-                            <span class="text-[7.5px] text-white/50 uppercase mt-0.5">{{ accred.accredType }}</span>
+                        <div class="flex flex-col gap-0.5 min-w-0 px-2">
+                            <span class="text-xs font-bold text-white uppercase truncate">{{ accred.journalistName }}</span>
+                            <span class="text-[9px] text-blue-400 font-bold uppercase truncate">{{ accred.mediumName }}</span>
+                            <span class="text-[7.5px] text-white/50 uppercase mt-0.5 truncate">{{ accred.accredType }}</span>
                         </div>
 
-                        <div class="w-full py-1 bg-emerald-500/10 border border-emerald-500/25 rounded text-emerald-400 text-[8px] font-bold uppercase tracking-widest mt-1">
+                        <div class="w-full py-1 bg-emerald-500/10 border border-emerald-500/25 rounded text-emerald-400 text-[7.5px] sm:text-[8px] font-bold uppercase tracking-widest mt-1">
                             ✓ ACCESO PRENSA Y BACKSTAGE APROBADO
                         </div>
                     </div>
 
                     <div class="flex flex-col gap-2">
                         <button (click)="adminAccreditation(accred.eventId); closeAccredDetail()"
-                                class="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(59,130,246,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider">
-                            <span class="material-symbols-outlined text-base">badge</span>
+                                class="w-full py-3.5 sm:py-4 bg-blue-500 hover:bg-blue-600 text-white text-[11px] sm:text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(59,130,246,0.25)] active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider">
+                            <span class="material-symbols-outlined text-sm sm:text-base">badge</span>
                             <span>{{ accred.status === 'approved' ? 'Ver & Imprimir Gafete' : 'Ver Estado del Trámite' }}</span>
                         </button>
                     </div>
 
                     <!-- Complaints box -->
-                    <div class="bg-white/[0.02] border border-white/[0.06] p-5 rounded-2xl flex flex-col gap-3 shadow-inner">
-                        <span class="text-[8.5px] uppercase font-bold text-red-400 tracking-wider flex items-center gap-1">
+                    <div class="bg-white/[0.02] border border-white/[0.06] p-4 sm:p-5 rounded-2xl flex flex-col gap-2.5 sm:gap-3 shadow-inner">
+                        <span class="text-[8px] sm:text-[8.5px] uppercase font-bold text-red-400 tracking-wider flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">forum</span>
                             Buzón de Quejas y Soporte de Acreditación
                         </span>
-                        <p class="text-[10px] text-white/50 leading-relaxed font-light">
+                        <p class="text-[9.5px] sm:text-[10px] text-white/50 leading-relaxed font-light">
                             ¿Hubo algún problema de acceso a prensa en puerta con los guardias, o requieres soporte logístico adicional? Escríbenos formalmente.
                         </p>
                         
@@ -895,7 +907,7 @@
                                   class="w-full bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 focus:border-red-400/50 transition-all outline-none resize-none font-light"></textarea>
                         
                         <button (click)="submitComplaint('Prensa / Acreditación', accred.cardId)"
-                                class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all active:scale-95">
+                                class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all active:scale-95">
                             Enviar Queja a Soporte Acordex
                         </button>
                     </div>
@@ -910,35 +922,41 @@
     <!-- SHARED CONTRACT PREVIEW MODAL WINDOW inside History -->
     <div *ngIf="isContractModalOpen() && selectedContractQuote() as quote" 
          (click)="closeContract()"
-         class="fixed inset-0 z-[120] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 overflow-y-auto animate-lightbox-fade-in animate-scale-in">
+         class="fixed inset-0 z-[120] bg-black/90 backdrop-blur-2xl flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden animate-lightbox-fade-in font-['Be_Vietnam_Pro'] select-none">
         
-        <!-- Close Button -->
-        <button (click)="closeContract()" 
-                class="absolute top-4 right-4 z-[130] w-11 h-11 rounded-full bg-black/45 border border-white/10 hover:bg-black/60 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-xl">
-            <span class="material-symbols-outlined text-lg">close</span>
-        </button>
-
         <!-- Contract Layout Container (Floats like paper) -->
-        <div class="relative w-full max-w-2xl flex flex-col gap-6" (click)="$event.stopPropagation()">
+        <div class="relative w-full max-w-2xl max-h-[94vh] sm:max-h-[88vh] bg-[#FCFBFA] sm:rounded-2xl rounded-t-[32px] p-4 sm:p-8 md:p-10 shadow-2xl text-[#1e1e1e] flex flex-col overflow-y-auto scrollbar-none mt-auto sm:mt-0" 
+             (click)="$event.stopPropagation()">
             
-            <!-- Paper Sheet -->
-            <div class="bg-[#FCFBFA] border border-[#d6cfc7] rounded-2xl p-8 md:p-12 shadow-2xl text-[#1e1e1e] font-serif text-xs md:text-sm leading-relaxed max-h-[72vh] overflow-y-auto relative select-text select-all">
+            <!-- Mobile Handle Pill -->
+            <div (click)="closeContract()" class="w-12 h-1.5 bg-black/20 hover:bg-black/35 rounded-full mx-auto mb-3 shrink-0 sm:hidden cursor-pointer active:scale-90 transition-all"></div>
+
+            <!-- Header bar inside contract paper -->
+            <div class="flex justify-between items-center pb-3 mb-4 border-b border-black/10 shrink-0">
+                <span class="text-[8px] sm:text-[9px] uppercase font-sans font-black tracking-widest text-[#b59f7c]">Documento Oficial Acordex</span>
+                <button (click)="closeContract()" class="w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center text-black/50 hover:text-black transition-all shrink-0">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
+            </div>
+
+            <!-- Paper Sheet Content -->
+            <div class="font-serif text-xs md:text-sm leading-relaxed relative select-text select-all flex-1">
                 
                 <!-- Official Seals & Watermarks -->
-                <div class="absolute right-10 top-10 w-24 h-24 border-4 border-double border-[#b59f7c]/35 rounded-full flex flex-col items-center justify-center text-[#b59f7c]/40 text-[7px] font-black uppercase text-center select-none rotate-12">
+                <div class="absolute right-2 top-0 sm:right-6 sm:top-2 w-16 h-16 sm:w-24 sm:h-24 border-4 border-double border-[#b59f7c]/35 rounded-full flex flex-col items-center justify-center text-[#b59f7c]/40 text-[6px] sm:text-[7px] font-black uppercase text-center select-none rotate-12 pointer-events-none">
                     <span class="font-sans">ACORDEX</span>
                     <span class="font-sans">SOPORTE LEGAL</span>
                     <span class="font-sans">CERTIFICADO</span>
                 </div>
 
-                <div class="text-center mb-8 border-b-2 border-[#1e1e1e]/15 pb-6">
-                    <span class="text-[9px] uppercase font-sans font-black tracking-widest text-[#b59f7c] block mb-2">CONTRATO PRESTACIÓN DE SERVICIOS</span>
-                    <h3 class="text-base md:text-xl font-bold uppercase tracking-wider text-[#1e1e1e]">CONTRATO DE CONTRATACIÓN MUSICAL</h3>
-                    <span class="text-[9.5px] font-sans text-black/50 block mt-1">Folio de Referencia: {{ quote.folio }}</span>
+                <div class="text-center mb-6 sm:mb-8 border-b-2 border-[#1e1e1e]/15 pb-4 sm:pb-6">
+                    <span class="text-[8px] sm:text-[9px] uppercase font-sans font-black tracking-widest text-[#b59f7c] block mb-1">CONTRATO PRESTACIÓN DE SERVICIOS</span>
+                    <h3 class="text-sm sm:text-base md:text-xl font-bold uppercase tracking-wider text-[#1e1e1e]">CONTRATO DE CONTRATACIÓN MUSICAL</h3>
+                    <span class="text-[9px] sm:text-[9.5px] font-sans text-black/50 block mt-1">Folio de Referencia: {{ quote.folio }}</span>
                 </div>
 
                 <!-- Contract Clauses -->
-                <div class="flex flex-col gap-5 text-justify font-light text-black/85">
+                <div class="flex flex-col gap-4 sm:gap-5 text-justify font-light text-black/85 text-[11px] sm:text-xs">
                     <p>
                         Conste por el presente documento el **Contrato de Prestación de Servicios Musicales** que celebran, por una parte, **ACORDEX S.A. DE C.V.** en representación de la agrupación **{{ quote.bandName }}** (en lo sucesivo denominado como "EL ARTISTA"), y por la otra parte, el C. **{{ quote.clientName }}** (en lo sucesivo denominado como "EL CONTRATANTE"), al tenor de las siguientes cláusulas:
                     </p>
@@ -955,7 +973,7 @@
                         <p class="mt-1">
                             El evento se llevará a cabo bajo las siguientes condiciones acordadas de ubicación y fecha:
                         </p>
-                        <ul class="list-disc list-inside mt-1.5 flex flex-col gap-1 font-sans text-[11px] bg-black/5 p-3 rounded-lg border border-black/5 text-black/90">
+                        <ul class="list-disc list-inside mt-1.5 flex flex-col gap-1 font-sans text-[10px] sm:text-[11px] bg-black/5 p-2.5 sm:p-3 rounded-lg border border-black/5 text-black/90">
                             <li><strong>Agrupación:</strong> {{ quote.bandName }}</li>
                             <li><strong>Fecha del Evento:</strong> {{ quote.eventDate }}</li>
                             <li><strong>Sede / Recinto:</strong> {{ quote.eventLocation }}</li>
@@ -979,12 +997,12 @@
                 </div>
 
                 <!-- Signatures section -->
-                <div class="grid grid-cols-2 gap-8 mt-12 pt-8 border-t border-black/10 text-center font-sans text-[10px]">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-black/10 text-center font-sans text-[10px]">
                     
                     <!-- Artist / Representative signature -->
                     <div class="flex flex-col items-center">
-                        <div class="h-14 flex items-center justify-center relative select-none">
-                            <span class="font-['Charm'] text-lg font-bold text-blue-800 rotate-[-4deg] opacity-75">Representante Autorizado</span>
+                        <div class="h-12 sm:h-14 flex items-center justify-center relative select-none">
+                            <span class="font-['Charm'] text-base sm:text-lg font-bold text-blue-800 rotate-[-4deg] opacity-75">Representante Autorizado</span>
                         </div>
                         <div class="w-full border-t border-black/40 mt-1"></div>
                         <span class="font-bold text-black/75 mt-1">REPRESENTANTE DEL ARTISTA</span>
@@ -993,7 +1011,7 @@
 
                     <!-- Client signature -->
                     <div class="flex flex-col items-center">
-                        <div class="h-14 flex items-center justify-center relative w-full">
+                        <div class="h-12 sm:h-14 flex items-center justify-center relative w-full">
                             <!-- NOT SIGNED STATE -->
                             <button *ngIf="!isContractSigned()" 
                                     (click)="signContract()"
@@ -1017,13 +1035,13 @@
             </div>
 
             <!-- Print Option Buttons -->
-            <div class="flex gap-3 justify-end">
+            <div class="flex flex-col sm:flex-row gap-2.5 sm:gap-3 justify-end pt-4 border-t border-black/10 shrink-0">
                 <button (click)="closeContract()" 
-                        class="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold rounded-xl transition-all duration-300 active:scale-95 uppercase tracking-wider">
+                        class="w-full sm:w-auto px-5 py-2.5 sm:py-3 bg-black/5 hover:bg-black/10 border border-black/10 text-black text-[11px] sm:text-xs font-bold rounded-xl transition-all duration-300 active:scale-95 uppercase tracking-wider">
                     Cerrar Contrato
                 </button>
                 <button onclick="window.print()"
-                        class="px-6 py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-xs font-black rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 uppercase tracking-wider">
+                        class="w-full sm:w-auto px-6 py-2.5 sm:py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-[11px] sm:text-xs font-black rounded-xl transition-all duration-300 shadow-md active:scale-95 flex items-center justify-center gap-1.5 uppercase tracking-wider">
                     <span class="material-symbols-outlined text-sm leading-none">print</span>
                     Imprimir Contrato
                 </button>
