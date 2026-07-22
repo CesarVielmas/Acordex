@@ -6,11 +6,13 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BandService, BandDetail, BandMember, Track, ReviewItem } from '../../core/services/band.service';
 import { LayoutService } from '../../core/services/layout.service';
 import { EventService } from '../../core/services/event.service';
+import { UserService } from '../../core/services/user.service';
 import { PostCard } from '../../shared/post-card/post-card';
+import { ReviewCard } from '../../shared/review-card/review-card';
 
 @Component({
   selector: 'app-grupo-detalle',
-  imports: [CommonModule, FormsModule, RouterModule, PostCard],
+  imports: [CommonModule, FormsModule, RouterModule, PostCard, ReviewCard],
   templateUrl: './grupo-detalle.html',
   styleUrl: './grupo-detalle.scss'
 })
@@ -21,7 +23,58 @@ export class GrupoDetalle implements OnInit, OnDestroy {
   private readonly bandService = inject(BandService);
   private readonly layoutService = inject(LayoutService);
   private readonly eventService = inject(EventService);
+  private readonly userService = inject(UserService);
   private readonly sanitizer = inject(DomSanitizer);
+
+  followersCount = signal<number>(18450);
+  isFollowing = signal<boolean>(false);
+  formattedFollowers = computed(() => {
+    const count = this.followersCount();
+    if (count >= 1000) {
+      return (count / 1000).toFixed(1).replace('.0', '') + 'K';
+    }
+    return count.toString();
+  });
+
+  toggleFollowBand(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    const currentBand = this.band();
+    if (!currentBand) return;
+
+    const nowFollowing = this.userService.toggleFollowBand({
+      id: currentBand.id,
+      name: currentBand.name,
+      avatar: currentBand.imageUrl,
+      genre: currentBand.tag,
+      rating: currentBand.rating
+    });
+
+    this.isFollowing.set(nowFollowing);
+    this.followersCount.update(c => nowFollowing ? c + 1 : Math.max(0, c - 1));
+  }
+
+  onUserClick(userName: string, userAvatar: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.layoutService.openUserProfile({
+      userName,
+      userAvatar
+    });
+  }
+
+  goToEventInfo(evt: any, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!evt) return;
+    const isFirma = evt.type === 'firma' || evt.type === 'prensa' || (evt.genre && evt.genre.toLowerCase().includes('firma'));
+    const targetRoute = isFirma ? '/events/firma-prensa' : '/events/comprar-boletos';
+    const isPast = evt.isPast || evt.status === 'past' || (evt.date && new Date(evt.date) < new Date());
+    this.router.navigate([targetRoute], { queryParams: { id: evt.id || 101, past: isPast ? 'true' : 'false' } });
+  }
 
   band = signal<BandDetail | null>(null);
   activeTab = signal<'general' | 'trayectoria' | 'musica' | 'galeria' | 'resenas' | 'publicaciones'>('general');
@@ -30,6 +83,8 @@ export class GrupoDetalle implements OnInit, OnDestroy {
   bandPosts = signal<any[]>([]);
   newPostContent = '';
   selectedPostImage = signal<string | null>(null);
+  activeLightboxPost = signal<any | null>(null);
+  lightboxCommentText = signal<string>('');
 
   // Selected Member Modal State & Inner Tabs
   selectedMember = signal<BandMember | null>(null);
@@ -94,32 +149,37 @@ export class GrupoDetalle implements OnInit, OnDestroy {
         this.band.set(bandData);
         this.layoutService.setPageTitle(bandData.name.toUpperCase());
 
-        // Seed realistic band posts
+        const isFollowed = this.userService.isBandFollowed(bandData.name);
+        this.isFollowing.set(isFollowed);
+        this.followersCount.set(bandData.followersCount || 18450);
+
+        // Seed realistic band posts matching Home feed format 1:1
         const mockPosts = [
           {
             authorName: bandData.name,
             authorAvatar: bandData.imageUrl,
             timeAgo: 'Hace 2 horas',
-            content: `¡Familia de Acordex! Estamos totalmente listos y afinando detalles para nuestras próximas fechas. 🎺🔥 ¿Qué canción no puede faltar en nuestro repertorio de esta noche? Dejen sus comentarios 👇`,
-            mediaUrl: bandData.heroCoverUrl,
-            likes: 1420,
-            comments: 42,
-            tags: ['GiraOficial', 'EnVivo', 'AcordexLive'],
+            content: `¡Increíble noche en la presentación con ${bandData.name}! Gracias a todos los que nos acompañaron, la energía estuvo a otro nivel. 🎺✨`,
+            mediaUrl: bandData.heroCoverUrl || bandData.imageUrl,
+            likes: 1240,
+            comments: 85,
+            tags: ['#ArenaMonterrey', '#EnVivo', '#MusicaNacional'],
             isLiked: false,
             commentsList: [
-              { userName: 'Carlos Mendoza', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&auto=format&fit=crop', text: '¡Tienen que tocar sus éxitos más sonados! Saludos desde Guadalajara 🔥', time: '1 h' },
-              { userName: 'Sofía Morales', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop', text: 'Ya tengo mis boletos listos, nos vemos en primera fila. ❤️', time: '30 min' }
+              { userName: 'Andrés López', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&auto=format&fit=crop', text: '¡Excelente música! Un abrazo fuerte plebada 🤘🤠', time: '1 h' },
+              { userName: 'Gabriela Ruiz', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop', text: 'Estuve ahí, fue una noche inolvidable. ¡Los mejores! 🔥❤️', time: '45 min' },
+              { userName: 'Marcos R.', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop', text: 'Ya esperando con ansias el nuevo álbum. ¡Puro talento mexicano! 🎺🇲🇽', time: '10 min' }
             ]
           },
           {
             authorName: bandData.name,
             authorAvatar: bandData.imageUrl,
-            timeAgo: 'Ayer a las 21:15',
-            content: `Agradecidos enormemente con todo el público por hacer de nuestra última presentación una noche totalmente inolvidable. ¡Son el mejor público del mundo! ❤️🇲🇽`,
+            timeAgo: 'Hace 4 horas',
+            content: `¡Listos para cantar con el alma en Guadalajara! Ya se siente la vibra tapatía. ¿Qué canción quieren escuchar hoy? 🎙️🤠`,
             mediaUrl: bandData.imageUrl,
-            likes: 2890,
-            comments: 115,
-            tags: ['SoldOut', 'Concierto', 'Tour2026'],
+            likes: 850,
+            comments: 42,
+            tags: ['#Tour2026', '#Guadalajara', '#Jalisco'],
             isLiked: true,
             commentsList: [
               { userName: 'Jorge Ramírez', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop', text: '¡Qué ambientazo armaron ayer! Valieron totalmente la pena las 3 horas de show. 🎉', time: '5 h' }
@@ -128,12 +188,12 @@ export class GrupoDetalle implements OnInit, OnDestroy {
           {
             authorName: bandData.name,
             authorAvatar: bandData.imageUrl,
-            timeAgo: 'Hace 3 días',
+            timeAgo: 'Hace 6 horas',
             content: `¡En el estudio de grabación afinando los últimos detalles de lo nuevo que se viene! 🎶✨ ¿Listos para el nuevo lanzamiento?`,
             mediaUrl: bandData.membersList && bandData.membersList[0] ? bandData.membersList[0].photoUrl : bandData.imageUrl,
-            likes: 1950,
+            likes: 2100,
             comments: 68,
-            tags: ['Estudio', 'NuevoLanzamiento', 'MúsicaMexicana'],
+            tags: ['#Estudio', '#NuevoLanzamiento', '#MúsicaMexicana'],
             isLiked: false,
             commentsList: []
           }
@@ -249,7 +309,158 @@ export class GrupoDetalle implements OnInit, OnDestroy {
 
     this.bandPosts.update(posts => [newPost, ...posts]);
     this.newPostContent = '';
-    this.triggerToast('¡Publicación realizada con éxito!');
+  }
+
+  onPostLikeToggle(post: any, isLiked: boolean) {
+    post.isLiked = isLiked;
+    post.likes = isLiked ? post.likes + 1 : Math.max(0, post.likes - 1);
+  }
+
+  onPostCommentAdded(post: any, newComment: any) {
+    if (!post.commentsList) post.commentsList = [];
+    post.commentsList.push(newComment);
+    post.comments = post.commentsList.length;
+  }
+
+  openGlobalLightbox(post: any) {
+    this.activeLightboxPost.set(post);
+  }
+
+  closeGlobalLightbox(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.activeLightboxPost.set(null);
+  }
+
+  toggleLightboxLike() {
+    const post = this.activeLightboxPost();
+    if (!post) return;
+    post.isLiked = !post.isLiked;
+    post.likes = post.isLiked ? post.likes + 1 : Math.max(0, post.likes - 1);
+  }
+
+  submitLightboxComment(event: Event) {
+    event.preventDefault();
+    const text = this.lightboxCommentText().trim();
+    const post = this.activeLightboxPost();
+    if (!text || !post) return;
+
+    const newComment = {
+      userName: 'Tú',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop',
+      text: text,
+      time: 'Ahora mismo'
+    };
+
+    if (!post.commentsList) post.commentsList = [];
+    post.commentsList.push(newComment);
+    post.comments = post.commentsList.length;
+
+    this.lightboxCommentText.set('');
+  }
+
+  // Computed grouped reviews by Event for Reseñas tab
+  groupedReviewsByEvent = computed(() => {
+    const b = this.band();
+    if (!b || !b.reviews) return [];
+
+    const groupsMap: { [key: string]: {
+      eventId: string;
+      eventName: string;
+      bandName: string;
+      eventType: string;
+      location: string;
+      date: string;
+      verifiedFolio: string;
+      avgRating: number;
+      reviews: any[];
+    } } = {};
+
+    b.reviews.forEach((rev: any, index: number) => {
+      const eventKey = rev.eventType || rev.eventName || 'Evento de Gala';
+      if (!groupsMap[eventKey]) {
+        groupsMap[eventKey] = {
+          eventId: rev.eventId || `evt-${b.id || 'band'}-${index + 1}`,
+          eventName: rev.eventName || rev.eventType || 'Evento Privado Verificado',
+          bandName: rev.bandName || b.name,
+          eventType: rev.eventTypeTag || (eventKey.toLowerCase().includes('boda') ? 'Boda' : eventKey.toLowerCase().includes('xv') ? 'XV Años' : 'Concierto'),
+          location: rev.location || b.location,
+          date: rev.date,
+          verifiedFolio: rev.verifiedFolio || ('ACX-' + (8400 + index * 137)),
+          avgRating: rev.rating || 5,
+          reviews: []
+        };
+      }
+      groupsMap[eventKey].reviews.push(rev);
+    });
+
+    Object.values(groupsMap).forEach(g => {
+      const sum = g.reviews.reduce((acc, r) => acc + (r.rating || 5), 0);
+      g.avgRating = parseFloat((sum / g.reviews.length).toFixed(1));
+    });
+
+    return Object.values(groupsMap);
+  });
+
+  selectedEvent = signal<any | null>(null);
+
+  openEventDetails(eventId: string) {
+    const evtGroup = this.groupedReviewsByEvent().find(g => g.eventId === eventId);
+    if (evtGroup) {
+      this.selectedEvent.set({
+        id: evtGroup.eventId,
+        name: evtGroup.eventName,
+        bandName: this.band()?.name || evtGroup.bandName,
+        date: evtGroup.date,
+        locationName: evtGroup.location,
+        googleMapsUrl: `https://maps.google.com/?q=${encodeURIComponent(evtGroup.location || 'Guadalajara')}`,
+        details: `Presentación exclusiva en vivo con asistencia de clientes e invitados verificados mediante contrato digital Acordex. Excelente ambientación, puntualidad e interpretación musical impecable.`,
+        genre: evtGroup.eventType || 'Evento de Gala',
+        capacity: '~300 Asistentes Verificados',
+        ratingAvg: evtGroup.avgRating.toString(),
+        reviews: evtGroup.reviews,
+        upcomingEvents: [
+          {
+            name: `Próxima Fecha de ${this.band()?.name || 'Agrupación'}`,
+            bands: this.band()?.name || 'Agrupación',
+            date: '15 de Agosto, 2026',
+            price: 'Boletos Disponibles en Acordex'
+          }
+        ]
+      });
+    } else {
+      const b = this.band();
+      this.selectedEvent.set({
+        id: eventId,
+        name: 'Presentación de Gala Verificada',
+        bandName: b?.name || 'Agrupación',
+        date: 'Reciente',
+        locationName: b?.location || 'México',
+        googleMapsUrl: `https://maps.google.com/?q=${encodeURIComponent(b?.location || 'Mexico')}`,
+        details: `Concierto y presentación en vivo verificada con contrato digital Acordex.`,
+        genre: 'Evento de Gala',
+        capacity: '~300 Asistentes',
+        ratingAvg: b?.rating ? b.rating.toString() : '5.0',
+        reviews: b?.reviews || [],
+        upcomingEvents: []
+      });
+    }
+  }
+
+  closeEventDetails() {
+    this.selectedEvent.set(null);
+  }
+
+  onReviewLikeToggle(review: any, isLiked: boolean) {
+    review.isLiked = isLiked;
+    review.likes = isLiked ? (review.likes || 0) + 1 : Math.max(0, (review.likes || 0) - 1);
+  }
+
+  getSafeMapUrl(url: string): SafeResourceUrl {
+    const query = (url || '').split('?q=')[1] || 'Guadalajara';
+    const embedUrl = `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
   }
 
   getInstrumentIcon(instrument: string): string {

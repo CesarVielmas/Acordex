@@ -1,0 +1,204 @@
+<div *ngIf="computedProfile()" class="fixed inset-0 z-[150] bg-black/85 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn">
+    
+    <!-- Modal Card Container -->
+    <div (click)="$event.stopPropagation()" 
+         class="w-full sm:max-w-xl bg-[#141414] border border-white/[0.08] sm:rounded-3xl rounded-t-[2.25rem] max-h-[95vh] sm:max-h-[85vh] flex flex-col shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] overflow-hidden relative">
+        
+        <!-- Top Drag Handle (Mobile) & Close Button Header -->
+        <div class="sticky top-0 z-20 bg-[#141414]/95 backdrop-blur-md px-4 sm:px-6 pt-3.5 sm:pt-4 pb-3 flex items-center justify-between border-b border-white/[0.06] shrink-0">
+            <!-- Mobile Touch Drag Indicator -->
+            <div class="sm:hidden w-10 h-1 bg-white/20 rounded-full mx-auto absolute top-2 left-1/2 -translate-x-1/2"></div>
+            
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base sm:text-lg">person</span>
+                <span class="text-[10.5px] sm:text-[11px] font-['Epilogue'] font-black uppercase tracking-widest text-white/80">Perfil de Usuario</span>
+            </div>
+
+            <button (click)="onClose($event)" 
+                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white flex items-center justify-center transition-all">
+                <span class="material-symbols-outlined text-xs sm:text-sm">close</span>
+            </button>
+        </div>
+
+        <!-- Fixed User Info & Stats Container -->
+        <div class="p-4 sm:p-6 flex flex-col gap-3.5 sm:gap-4 shrink-0">
+            
+            <!-- User Hero Profile Section (Fixed) -->
+            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-3.5 sm:gap-5 bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.06] rounded-2xl p-3.5 sm:p-5 relative overflow-hidden shrink-0">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
+
+                <!-- Avatar with Subtle Ring -->
+                <div class="shrink-0">
+                    <div class="p-[2px] rounded-full bg-gradient-to-tr from-primary/50 via-amber-400/40 to-transparent shadow-md">
+                        <img [src]="computedProfile()?.userAvatar" 
+                             [alt]="computedProfile()?.userName" 
+                             class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-[#141414]" />
+                    </div>
+                </div>
+
+                <!-- User Info Header -->
+                <div class="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left gap-1 min-w-0">
+                    <h2 class="font-['Epilogue'] font-black text-base sm:text-lg text-white tracking-wide">
+                        {{ computedProfile()?.userName }}
+                    </h2>
+
+                    <span class="text-[10.5px] sm:text-xs text-primary/80 font-mono">{{ computedProfile()?.handle }}</span>
+
+                    <!-- Bio -->
+                    <p class="text-[11px] sm:text-xs text-white/70 font-light leading-relaxed mt-0.5">
+                        "{{ computedProfile()?.bio }}"
+                    </p>
+
+                    <!-- Location & Joined date -->
+                    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 mt-1.5 text-[9.5px] sm:text-[10px] text-white/40 font-light">
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px] text-primary/70">location_on</span>
+                            {{ computedProfile()?.location }}
+                        </span>
+                        <span>•</span>
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px] text-primary/70">calendar_month</span>
+                            Miembro desde {{ computedProfile()?.memberSince }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Bar (3 Columns - Fixed) -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-3 shrink-0">
+                <div class="bg-white/[0.02] border border-white/[0.06] rounded-xl p-2 sm:p-3 flex flex-col items-center justify-center text-center">
+                    <span class="text-base sm:text-xl font-black font-['Epilogue'] text-primary">
+                        {{ computedProfile()?.stats?.eventsAttended }}
+                    </span>
+                    <span class="text-[8px] sm:text-[9px] uppercase tracking-wider text-white/50 font-bold mt-0.5 leading-tight">Eventos Asistidos</span>
+                </div>
+
+                <div class="bg-white/[0.02] border border-white/[0.06] rounded-xl p-2 sm:p-3 flex flex-col items-center justify-center text-center">
+                    <span class="text-base sm:text-xl font-black font-['Epilogue'] text-white">
+                        {{ computedProfile()?.stats?.reviewsCount }}
+                    </span>
+                    <span class="text-[8px] sm:text-[9px] uppercase tracking-wider text-white/50 font-bold mt-0.5 leading-tight">Reseñas Publicadas</span>
+                </div>
+
+                <div class="bg-white/[0.02] border border-white/[0.06] rounded-xl p-2 sm:p-3 flex flex-col items-center justify-center text-center">
+                    <span class="text-base sm:text-xl font-black font-['Epilogue'] text-amber-400">
+                        {{ computedProfile()?.stats?.followingCount }}
+                    </span>
+                    <span class="text-[8px] sm:text-[9px] uppercase tracking-wider text-white/50 font-bold mt-0.5 leading-tight">Artistas Seguidos</span>
+                </div>
+            </div>
+
+            <!-- Tab Navigation Bar (Fixed) -->
+            <div class="flex overflow-x-auto border-b border-white/[0.08] gap-3 sm:gap-6 pb-0.5 no-scrollbar shrink-0">
+                <button (click)="activeTab.set('artistas')"
+                        [ngClass]="activeTab() === 'artistas' ? 'text-primary border-primary font-bold' : 'text-white/40 border-transparent hover:text-white'"
+                        class="pb-2 text-[10.5px] sm:text-xs uppercase tracking-wider border-b-2 transition-all flex items-center gap-1 shrink-0 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-xs sm:text-sm">groups</span>
+                    <span>Artistas Seguidos</span>
+                </button>
+
+                <button (click)="activeTab.set('eventos')"
+                        [ngClass]="activeTab() === 'eventos' ? 'text-primary border-primary font-bold' : 'text-white/40 border-transparent hover:text-white'"
+                        class="pb-2 text-[10.5px] sm:text-xs uppercase tracking-wider border-b-2 transition-all flex items-center gap-1 shrink-0 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-xs sm:text-sm">event_available</span>
+                    <span>Últimos Eventos</span>
+                </button>
+
+                <button (click)="activeTab.set('resenas')"
+                        [ngClass]="activeTab() === 'resenas' ? 'text-primary border-primary font-bold' : 'text-white/40 border-transparent hover:text-white'"
+                        class="pb-2 text-[10.5px] sm:text-xs uppercase tracking-wider border-b-2 transition-all flex items-center gap-1 shrink-0 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-xs sm:text-sm">reviews</span>
+                    <span>Reseñas ({{ computedProfile()?.publishedReviews?.length }})</span>
+                </button>
+            </div>
+
+            <!-- TAB CONTENT CONTAINER WITH INVISIBLE SCROLLBAR AND CONTROLLED MAX HEIGHT -->
+            <div class="flex-1 min-h-0">
+                
+                <!-- TAB 1: ARTISTAS SEGUIDOS -->
+                <div *ngIf="activeTab() === 'artistas'" class="flex flex-col gap-2.5 max-h-[190px] sm:max-h-[230px] overflow-y-auto no-scrollbar pr-0.5">
+                    <div *ngFor="let band of computedProfile()?.followingBands" 
+                         class="bg-white/[0.02] border border-white/[0.06] hover:border-primary/30 rounded-xl p-3 flex items-center justify-between transition-all group shrink-0">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <img [src]="band.avatar" [alt]="band.name" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover border border-white/10 shrink-0" />
+                            <div class="min-w-0 flex flex-col">
+                                <h4 (click)="onBandClick(band.name, $event)" 
+                                    class="font-['Epilogue'] font-bold text-xs sm:text-sm text-white hover:text-primary transition-colors truncate cursor-pointer">
+                                    {{ band.name }}
+                                </h4>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-[9px] sm:text-[9.5px] text-white/50 font-light truncate">{{ band.genre }}</span>
+                                    <span class="text-[8.5px] sm:text-[9px] text-amber-400 font-bold flex items-center gap-0.5">
+                                        ★ {{ band.rating }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button (click)="onBandClick(band.name, $event)" 
+                                class="px-3 py-1.5 bg-primary/10 hover:bg-primary border border-primary/20 hover:border-primary text-primary hover:text-[#121212] text-[9.5px] sm:text-[10px] font-black rounded-lg uppercase tracking-wider transition-all duration-300 shrink-0">
+                            Ver Perfil
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 2: ÚLTIMOS EVENTOS ASISTIDOS -->
+                <div *ngIf="activeTab() === 'eventos'" class="flex flex-col gap-2.5 max-h-[190px] sm:max-h-[230px] overflow-y-auto no-scrollbar pr-0.5">
+                    <div *ngFor="let ev of computedProfile()?.attendedEvents" 
+                         class="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 flex items-center gap-3 shrink-0">
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                            <span class="material-symbols-outlined text-lg">confirmation_number</span>
+                        </div>
+                        <div class="min-w-0 flex flex-col flex-1">
+                            <h4 class="font-['Epilogue'] font-bold text-xs sm:text-sm text-white truncate">
+                                {{ ev.name }}
+                            </h4>
+                            <span class="text-[9.5px] sm:text-[10px] text-white/50 font-light mt-0.5 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[10px] text-primary/70">event</span>
+                                {{ ev.date }} • {{ ev.location }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: RESEÑAS PUBLICADAS -->
+                <div *ngIf="activeTab() === 'resenas'" class="flex flex-col gap-2.5 max-h-[190px] sm:max-h-[230px] overflow-y-auto no-scrollbar pr-0.5">
+                    <div *ngFor="let review of computedProfile()?.publishedReviews" 
+                         class="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3.5 flex flex-col gap-2 shrink-0">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span (click)="onBandClick(review.bandName, $event)" 
+                                      class="text-xs font-bold text-primary hover:underline cursor-pointer truncate">
+                                    {{ review.bandName }}
+                                </span>
+                                <span class="text-[9px] text-white/30 truncate">• {{ review.eventName }}</span>
+                            </div>
+                            <div class="flex items-center text-amber-400 text-xs shrink-0">
+                                <span class="material-symbols-outlined text-[11px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                                <span class="font-bold ml-1 text-[10.5px]">{{ review.rating }}.0</span>
+                            </div>
+                        </div>
+
+                        <p class="text-[11px] sm:text-xs text-white/80 font-light italic leading-relaxed">
+                            "{{ review.content }}"
+                        </p>
+
+                        <div class="flex items-center justify-between text-[9px] text-white/40 pt-1.5 border-t border-white/[0.04] mt-1">
+                            <span>{{ review.timeAgo }}</span>
+                            <button (click)="onReviewLikeToggle(review, $event)"
+                                    [ngClass]="review.isLiked ? 'bg-primary/15 border-primary/30 text-primary shadow-sm' : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'"
+                                    class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[9.5px] font-['Epilogue'] tracking-wider border transition-all duration-300 select-none cursor-pointer">
+                                <span class="material-symbols-outlined text-[11px] leading-none" [ngClass]="review.isLiked ? 'animate-music-beat fill-current' : ''">
+                                    music_note
+                                </span>
+                                <span>{{ review.likes || 0 }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>

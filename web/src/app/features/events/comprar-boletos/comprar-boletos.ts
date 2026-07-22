@@ -39,12 +39,28 @@ export class ComprarBoletos implements OnInit {
   flyerUrl = signal<string>('');
   isFlyerZoomed = signal<boolean>(false);
   videos = signal<InvitationVideo[]>([]);
+  isPastEvent = signal<boolean>(false);
 
   purchases = computed(() => {
     const ev = this.event();
     if (!ev) return [];
     return this.eventService.getPurchasesForEvent(ev.id);
   });
+
+  onBandClick(bandName: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!bandName) return;
+    const namePart = bandName.split('-')[0].trim();
+    const slug = namePart.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    this.router.navigate(['/grupo', slug]);
+  }
 
   onRefund() {
     const ev = this.event();
@@ -62,16 +78,24 @@ export class ComprarBoletos implements OnInit {
   ];
 
   ngOnInit() {
-    this.layoutService.setPageTitle('COMPRAR BOLETOS');
+    this.layoutService.setPageTitle('DETALLE DE EVENTO');
     
     this.route.queryParams.subscribe(params => {
       const idParam = params['id'];
+      const pastParam = params['past'];
+      if (pastParam === 'true') {
+        this.isPastEvent.set(true);
+      }
+
       if (idParam) {
         const id = parseInt(idParam, 10);
         const resolvedEvent = this.eventService.getEventById(id);
         
         if (resolvedEvent) {
           this.event.set(resolvedEvent);
+          if (resolvedEvent.date && new Date(resolvedEvent.date) < new Date()) {
+            this.isPastEvent.set(true);
+          }
           this.loadLineup(resolvedEvent.title);
           this.setPriceRange(resolvedEvent.type);
           this.setFlyerUrl(resolvedEvent.type);

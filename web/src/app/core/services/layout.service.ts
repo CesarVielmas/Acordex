@@ -11,6 +11,7 @@ export class LayoutService {
   readonly pageTitle = computed(() => this._pageTitle());
 
   readonly isBottomNavCollapsed = signal(false);
+  readonly activeUserProfileModal = signal<any | null>(null);
 
   toggleSidebar() {
     this._isSidebarCollapsed.update(val => !val);
@@ -18,5 +19,14 @@ export class LayoutService {
 
   setPageTitle(title: string) {
     this._pageTitle.set(title);
+  }
+
+  openUserProfile(userData: any) {
+    if (!userData) return;
+    this.activeUserProfileModal.set(userData);
+  }
+
+  closeUserProfile() {
+    this.activeUserProfileModal.set(null);
   }
 }

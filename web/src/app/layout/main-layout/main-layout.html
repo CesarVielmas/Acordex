@@ -13,4 +13,10 @@
     <!-- Mobile Bottom Navigation -->
     <app-bottom-nav class="md:hidden"></app-bottom-nav>
   </div>
+
+  <!-- Global User Profile Modal -->
+  <app-user-profile-modal *ngIf="layoutService.activeUserProfileModal()" 
+                          [user]="layoutService.activeUserProfileModal()" 
+                          (close)="layoutService.closeUserProfile()">
+  </app-user-profile-modal>
 </div>

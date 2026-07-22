@@ -116,8 +116,11 @@
             <div class="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 shadow-inner flex flex-col gap-4">
                 <span class="text-[8px] uppercase tracking-widest font-black text-white/35">Resumen de Selección</span>
                 
-                <h3 class="font-['Epilogue'] font-black text-lg text-white uppercase truncate">
-                    {{ ev.title }}
+                <h3 (click)="onBandClick(ev.title, $event)" 
+                    title="Ver perfil completo del grupo"
+                    class="font-['Epilogue'] font-black text-lg text-white uppercase truncate hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5 group/title">
+                    <span>{{ ev.title }}</span>
+                    <span class="material-symbols-outlined text-sm text-primary opacity-80 group-hover/title:opacity-100 transition-opacity">open_in_new</span>
                 </h3>
                 
                 <div class="flex flex-col gap-1 text-xs text-white/50 font-light pb-3 border-b border-white/5">

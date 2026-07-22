@@ -1,363 +1,463 @@
-<div class="max-w-6xl mx-auto px-4 md:px-8 py-6 text-white font-['Be_Vietnam_Pro'] select-none">
+<div class="min-h-screen bg-[#121212] text-white p-3.5 sm:p-6 lg:p-8 flex flex-col gap-5 sm:gap-6 max-w-6xl mx-auto">
     
-    <!-- Title & Description -->
-    <div class="mb-8 animate-fade-in flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-            <h2 class="font-['Epilogue'] font-black text-3xl uppercase tracking-wider text-white">Mi Perfil</h2>
-            <p class="text-xs text-white/50 font-light mt-1">
-                Administra tus credenciales, edita tu información de facturación, vincula tarjetas de crédito y gestiona tu suscripción.
-            </p>
+    <!-- Success Toast Notification -->
+    <div *ngIf="successMsg()" class="fixed top-16 sm:top-20 right-4 sm:right-6 z-50 bg-emerald-500/95 text-white px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-2.5 border border-emerald-400/40 animate-bounce">
+        <span class="material-symbols-outlined text-lg sm:text-xl">check_circle</span>
+        <span class="text-[11px] sm:text-xs font-bold font-['Epilogue']">{{ successMsg() }}</span>
+    </div>
+
+    <!-- Header Hero Profile Card (Mobile Optimized) -->
+    <div class="bg-gradient-to-br from-[#181818] via-[#1a1a1a] to-[#141414] border border-white/[0.08] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6 relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Left: User Avatar & Info -->
+        <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 text-center sm:text-left z-10 min-w-0 w-full md:w-auto">
+            <div class="relative shrink-0">
+                <div class="p-[2px] rounded-full bg-gradient-to-tr from-primary via-amber-400 to-yellow-600 shadow-[0_0_25px_rgba(242,202,80,0.3)]">
+                    <img [src]="userService.currentUser().profileUrl" 
+                         [alt]="userService.currentUser().name" 
+                         class="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-[#141414]" />
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1 min-w-0 w-full sm:w-auto">
+                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <h1 class="font-['Epilogue'] font-black text-lg sm:text-2xl text-white tracking-wide">
+                        {{ userService.currentUser().name }}
+                    </h1>
+                </div>
+                
+                <span class="text-[11px] sm:text-xs text-primary/80 font-mono">{{ userService.currentUser().handle }}</span>
+                <span class="text-[11px] sm:text-xs text-white/50 font-light truncate">{{ userService.currentUser().email }}</span>
+                
+                <p class="text-[11px] sm:text-xs text-white/70 font-light leading-relaxed mt-0.5 italic max-w-xl">
+                    "{{ userService.currentUser().bio }}"
+                </p>
+
+                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 mt-1 text-[9.5px] sm:text-[10.5px] text-white/40 font-light">
+                    <span class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-xs text-primary/70">location_on</span>
+                        {{ userService.currentUser().city }}
+                    </span>
+                    <span>•</span>
+                    <span class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-xs text-primary/70">calendar_month</span>
+                        Miembro desde {{ userService.currentUser().joinDate }}
+                    </span>
+                </div>
+            </div>
         </div>
-        
-        <!-- Subscription badge indicator -->
-        <div class="flex items-center gap-2 bg-[#F2CA50]/10 border border-[#F2CA50]/20 rounded-2xl px-4 py-2 text-[#F2CA50] text-xs font-bold shadow-lg">
-            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
-            <span>Miembro {{ user().membership }}</span>
+
+        <!-- Right: Public Profile Preview Button CTA -->
+        <div class="flex flex-col gap-2 w-full md:w-auto shrink-0 z-10">
+            <button (click)="previewPublicProfile()"
+                    class="w-full md:w-auto px-4 sm:px-5 py-3 bg-gradient-to-r from-primary via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-primary text-[#121212] font-['Epilogue'] text-[11px] sm:text-xs font-black rounded-xl sm:rounded-2xl transition-all duration-300 shadow-[0_4px_20px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider">
+                <span class="material-symbols-outlined text-base">visibility</span>
+                <span>Ver Mi Perfil Público (Vista Previa)</span>
+            </button>
+            <span class="text-[9px] sm:text-[9.5px] text-white/40 text-center font-light">Mira cómo te ven otros usuarios en Acordex</span>
         </div>
     </div>
 
-    <!-- Success Toast message -->
-    <div *ngIf="successMsg()" 
-         class="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs flex items-center gap-3 animate-scale-in">
-        <span class="material-symbols-outlined text-lg shrink-0">check_circle</span>
-        <span>{{ successMsg() }}</span>
+    <!-- Section Navigation Tabs (Invisible Horizontal Scroll on Mobile) -->
+    <div class="flex overflow-x-auto border-b border-white/[0.08] gap-2 sm:gap-6 pb-1 no-scrollbar shrink-0">
+        <button (click)="setSection('general')"
+                [ngClass]="activeSection() === 'general' ? 'text-primary border-primary font-bold' : 'text-white/40 border-transparent hover:text-white'"
+                class="pb-2.5 sm:pb-3 text-[11px] sm:text-sm uppercase tracking-wider border-b-2 transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+            <span class="material-symbols-outlined text-sm sm:text-base">person</span>
+            <span>General & Biografía</span>
+        </button>
+
+        <button (click)="setSection('suscripcion')"
+                [ngClass]="activeSection() === 'suscripcion' ? 'text-primary border-primary font-bold' : 'text-white/40 border-transparent hover:text-white'"
+                class="pb-2.5 sm:pb-3 text-[11px] sm:text-sm uppercase tracking-wider border-b-2 transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+            <span class="material-symbols-outlined text-sm sm:text-base">workspace_premium</span>
+            <span>Mi Suscripción</span>
+        </button>
+
+        <button (click)="setSection('privacidad')"
+                [ngClass]="activeSection() === 'privacidad' ? 'text-primary border-primary font-bold' : 'text-white/40 border-transparent hover:text-white'"
+                class="pb-2.5 sm:pb-3 text-[11px] sm:text-sm uppercase tracking-wider border-b-2 transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+            <span class="material-symbols-outlined text-sm sm:text-base">visibility</span>
+            <span>Privacidad</span>
+        </button>
+
+        <button (click)="setSection('pagos')"
+                [ngClass]="activeSection() === 'pagos' ? 'text-primary border-primary font-bold' : 'text-white/40 border-transparent hover:text-white'"
+                class="pb-2.5 sm:pb-3 text-[11px] sm:text-sm uppercase tracking-wider border-b-2 transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+            <span class="material-symbols-outlined text-sm sm:text-base">credit_card</span>
+            <span>Métodos de Pago</span>
+        </button>
+
+        <button (click)="setSection('seguridad')"
+                [ngClass]="activeSection() === 'seguridad' ? 'text-primary border-primary font-bold' : 'text-white/40 border-transparent hover:text-white'"
+                class="pb-2.5 sm:pb-3 text-[11px] sm:text-sm uppercase tracking-wider border-b-2 transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+            <span class="material-symbols-outlined text-sm sm:text-base">shield_lock</span>
+            <span>Seguridad</span>
+        </button>
     </div>
 
-    <!-- Main Profile Layout Grid (Responsive 2 Columns on Desktop) -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start animate-slide-up">
-        
-        <!-- LEFT COLUMN: Profile Summary & Section selectors -->
-        <div class="lg:col-span-1 flex flex-col gap-6 w-full">
-            
-            <!-- User summary card -->
-            <div class="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex flex-col items-center text-center relative overflow-hidden shadow-xl">
-                <div class="absolute -right-12 -top-12 w-24 h-24 bg-primary/5 rounded-full blur-xl"></div>
-                
-                <div class="relative w-24 h-24 mb-4 rounded-full p-[2px] bg-gradient-to-tr from-primary to-white/10 shadow-[0_0_25px_rgba(242,202,80,0.15)] shrink-0">
-                    <img [src]="user().profileUrl" 
-                         [alt]="user().name"
-                         class="w-full h-full rounded-full object-cover border-[3px] border-[#121212]" />
+    <!-- SECTION 1: GENERAL & BIOGRAFÍA -->
+    <div *ngIf="activeSection() === 'general'" class="bg-[#151515] border border-white/[0.06] rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col gap-5 sm:gap-6 shadow-xl">
+        <div class="border-b border-white/5 pb-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                    <span class="material-symbols-outlined text-lg sm:text-xl">edit_note</span>
                 </div>
-
-                <h3 class="font-['Epilogue'] font-black text-sm uppercase text-white truncate max-w-full">
-                    {{ user().name }}
-                </h3>
-                <span class="text-[10px] text-white/40 truncate max-w-full mt-0.5">{{ user().email }}</span>
-                <span class="text-[9px] uppercase font-bold text-primary bg-primary/10 border border-primary/20 rounded px-2.5 py-0.5 mt-3 tracking-wider">
-                    {{ user().membership }}
-                </span>
+                <div>
+                    <h3 class="font-['Epilogue'] font-black text-sm sm:text-base text-white uppercase tracking-wider">Información Personal & Biografía</h3>
+                    <p class="text-[10.5px] sm:text-xs text-white/40 font-light mt-0.5">Edita cómo te ven los demás usuarios cuando visitan tu perfil público.</p>
+                </div>
             </div>
-
-            <!-- Vertical navigation selectors on desktop, horizontal pills on mobile -->
-            <div class="flex flex-row lg:flex-col gap-2 overflow-x-auto no-scrollbar pb-2 lg:pb-0 shrink-0">
-                <button (click)="setSection('general')"
-                        [class]="activeSection() === 'general' ? 'bg-primary text-black font-black' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'"
-                        class="px-4 py-3 rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 text-left flex items-center gap-2.5 whitespace-nowrap">
-                    <span class="material-symbols-outlined text-sm leading-none">person</span>
-                    <span>Información Personal</span>
-                </button>
-                <button (click)="setSection('payments')"
-                        [class]="activeSection() === 'payments' ? 'bg-primary text-black font-black' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'"
-                        class="px-4 py-3 rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 text-left flex items-center gap-2.5 whitespace-nowrap">
-                    <span class="material-symbols-outlined text-sm leading-none">payment</span>
-                    <span>Métodos de Pago</span>
-                </button>
-                <button (click)="setSection('security')"
-                        [class]="activeSection() === 'security' ? 'bg-primary text-black font-black' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'"
-                        class="px-4 py-3 rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 text-left flex items-center gap-2.5 whitespace-nowrap">
-                    <span class="material-symbols-outlined text-sm leading-none">security</span>
-                    <span>Seguridad</span>
-                </button>
-                <button (click)="setSection('membership')"
-                        [class]="activeSection() === 'membership' ? 'bg-primary text-black font-black' : 'bg-white/5 text-white/70 hover:text-white hover:bg-white/10'"
-                        class="px-4 py-3 rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 text-left flex items-center gap-2.5 whitespace-nowrap">
-                    <span class="material-symbols-outlined text-sm leading-none">workspace_premium</span>
-                    <span>Suscripción</span>
-                </button>
-                
-                <div class="border-t border-white/5 pt-2 mt-2 hidden lg:block"></div>
-                
-                <button (click)="logout()"
-                        class="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl text-[10.5px] uppercase tracking-wider transition-all duration-200 text-left flex items-center gap-2.5 whitespace-nowrap">
-                    <span class="material-symbols-outlined text-sm leading-none">logout</span>
-                    <span>Cerrar Sesión</span>
-                </button>
-            </div>
-
         </div>
 
-        <!-- RIGHT COLUMN: Active section panel -->
-        <div class="lg:col-span-3 w-full bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-xl">
+        <form (submit)="saveProfile(); $event.preventDefault()" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
             
-            <!-- SECTION 1: GENERAL INFO / EDIT PROFILE -->
-            <div *ngIf="activeSection() === 'general'" class="flex flex-col gap-6 animate-scale-in">
-                <div class="border-b border-white/5 pb-4">
-                    <h3 class="font-['Epilogue'] font-black text-base uppercase text-white tracking-wide">Información Personal</h3>
-                    <p class="text-[10px] text-white/40 mt-0.5">Modifica tus datos básicos de contacto e imagen de perfil.</p>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">Nombre Completo</label>
-                        <input type="text" 
-                               [(ngModel)]="editForm.name"
-                               placeholder="Nombre del usuario..."
-                               class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 focus:shadow-[0_0_15px_rgba(242,202,80,0.08)] outline-none transition-all">
-                    </div>
-                    
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">Teléfono de Contacto</label>
-                        <input type="text" 
-                               [(ngModel)]="editForm.phone"
-                               placeholder="Teléfono móvil..."
-                               class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 focus:shadow-[0_0_15px_rgba(242,202,80,0.08)] outline-none transition-all">
-                    </div>
-
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">Ubicación / Ciudad</label>
-                        <input type="text" 
-                               [(ngModel)]="editForm.city"
-                               placeholder="Ciudad, Estado..."
-                               class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 focus:shadow-[0_0_15px_rgba(242,202,80,0.08)] outline-none transition-all">
-                    </div>
-
-                    <div class="flex flex-col gap-1.5">
-                        <label class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">URL de Avatar de Perfil</label>
-                        <input type="text" 
-                               [(ngModel)]="editForm.profileUrl"
-                               placeholder="https://images.unsplash.com/..."
-                               class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 focus:shadow-[0_0_15px_rgba(242,202,80,0.08)] outline-none transition-all">
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-3 border-t border-white/5 pt-5 mt-4">
-                    <button (click)="resetEditForm()"
-                            class="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10.5px] font-bold rounded-xl uppercase tracking-wider transition-all active:scale-95">
-                        Restaurar
-                    </button>
-                    <button (click)="saveProfile()"
-                            class="px-6 py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-[10.5px] font-black rounded-xl uppercase tracking-wider transition-all shadow-[0_4px_18px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98]">
-                        Guardar Cambios
-                    </button>
-                </div>
+            <!-- Nombre Completo -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs text-primary">badge</span>
+                    Nombre Completo
+                </label>
+                <input type="text" 
+                       [(ngModel)]="editForm.name" 
+                       name="name" 
+                       required 
+                       class="w-full bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white placeholder-white/30 focus:border-primary/50 transition-all outline-none" />
             </div>
 
-            <!-- SECTION 2: PAYMENT METHODS -->
-            <div *ngIf="activeSection() === 'payments'" class="flex flex-col gap-6 animate-scale-in">
-                <div class="border-b border-white/5 pb-4">
-                    <h3 class="font-['Epilogue'] font-black text-base uppercase text-white tracking-wide">Métodos de Pago Vinculados</h3>
-                    <p class="text-[10px] text-white/40 mt-0.5">Agrega o remueve de forma segura tus tarjetas de crédito y débito de facturación.</p>
+            <!-- Ciudad / Ubicación -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs text-primary">location_on</span>
+                    Ciudad / Ubicación
+                </label>
+                <input type="text" 
+                       [(ngModel)]="editForm.city" 
+                       name="city" 
+                       class="w-full bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white placeholder-white/30 focus:border-primary/50 transition-all outline-none" />
+            </div>
+
+            <!-- Teléfono -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs text-primary">call</span>
+                    Teléfono de Contacto
+                </label>
+                <input type="text" 
+                       [(ngModel)]="editForm.phone" 
+                       name="phone" 
+                       class="w-full bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white placeholder-white/30 focus:border-primary/50 transition-all outline-none" />
+            </div>
+
+            <!-- Foto de Perfil (URL) -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs text-primary">image</span>
+                    URL de Foto de Perfil
+                </label>
+                <input type="text" 
+                       [(ngModel)]="editForm.profileUrl" 
+                       name="profileUrl" 
+                       class="w-full bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white placeholder-white/30 focus:border-primary/50 transition-all outline-none" />
+            </div>
+
+            <!-- Biografía del Usuario -->
+            <div class="md:col-span-2 flex flex-col gap-1.5">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs text-primary">description</span>
+                    Biografía Pública
+                </label>
+                <textarea rows="3" 
+                          [(ngModel)]="editForm.bio" 
+                          name="bio" 
+                          placeholder="Cuéntanos sobre ti, tus géneros musicales favoritos o tu experiencia asistiendo a eventos..."
+                          class="w-full bg-[#1b1b1b] border border-white/[0.08] rounded-xl p-3.5 text-xs text-white placeholder-white/30 focus:border-primary/50 transition-all outline-none resize-none font-light leading-relaxed"></textarea>
+                <span class="text-[9.5px] sm:text-[10px] text-white/40 font-light">Esta biografía se mostrará en tu perfil público cuando otros usuarios den clic a tus reseñas.</span>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="md:col-span-2 flex justify-end pt-2">
+                <button type="submit" 
+                        class="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary-fixed text-[#121212] font-['Epilogue'] text-xs font-black rounded-xl transition-all duration-300 shadow-lg active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-base">save</span>
+                    <span>Guardar Cambios</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- SECTION 2: MI SUSCRIPCIÓN & VENTAJAS VIP (PRIVADO) -->
+    <div *ngIf="activeSection() === 'suscripcion'" class="flex flex-col gap-5 sm:gap-6">
+        
+        <!-- Active Subscription Hero Card -->
+        <div class="bg-gradient-to-br from-amber-500/15 via-[#181818] to-[#141414] border border-amber-400/30 rounded-2xl sm:rounded-3xl p-5 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+            <div class="absolute -top-12 -right-12 w-44 h-44 bg-amber-400/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 text-center sm:text-left z-10">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-primary to-amber-400 flex items-center justify-center text-[#121212] shadow-lg shrink-0">
+                    <span class="material-symbols-outlined text-2xl sm:text-3xl">workspace_premium</span>
                 </div>
-
-                <!-- Cards Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    <!-- Loop Cards -->
-                    <div *ngFor="let card of cards()" 
-                         class="aspect-[1.586] rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.08] border border-white/15 p-5 flex flex-col justify-between relative overflow-hidden shadow-2xl group select-text select-all">
-                        <div class="absolute -right-10 -bottom-10 w-24 h-24 bg-primary/5 rounded-full blur-xl"></div>
-                        
-                        <!-- Top details -->
-                        <div class="flex justify-between items-start">
-                            <div class="flex flex-col">
-                                <span class="text-[8px] uppercase tracking-wider text-white/35 font-bold">Tarjeta de Pago</span>
-                                <span class="text-xs font-bold text-white uppercase tracking-widest mt-1">{{ card.type }} Card</span>
-                            </div>
-                            <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings: 'FILL' 1;">
-                                {{ card.type === 'visa' ? 'credit_card' : 'account_balance_wallet' }}
-                            </span>
-                        </div>
-
-                        <!-- Card Number -->
-                        <span class="text-[15px] font-mono tracking-widest font-bold text-white/90 my-4 block select-all">
-                            {{ card.number }}
+                <div class="flex flex-col gap-1">
+                    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <h2 class="font-['Epilogue'] font-black text-base sm:text-xl text-white tracking-wide">
+                            {{ subscription().planName }}
+                        </h2>
+                        <span class="bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[9.5px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            {{ subscription().status }}
                         </span>
-
-                        <!-- Bottom row -->
-                        <div class="flex justify-between items-end border-t border-white/5 pt-3">
-                            <div class="flex flex-col text-left">
-                                <span class="text-[7.5px] uppercase tracking-wider text-white/30 font-bold">Tarjetahabiente</span>
-                                <span class="text-[9.5px] font-bold text-white/80 truncate max-w-[130px]">{{ card.holder }}</span>
-                            </div>
-                            <div class="flex flex-col text-right">
-                                <span class="text-[7.5px] uppercase tracking-wider text-white/30 font-bold">Vence</span>
-                                <span class="text-[9.5px] font-bold text-white/80">{{ card.expiry }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Remove Overlay Button -->
-                        <button (click)="removeCard(card.id)"
-                                class="absolute top-3 right-3 w-7 h-7 rounded-full bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-md">
-                            <span class="material-symbols-outlined text-xs">delete</span>
-                        </button>
                     </div>
-
-                    <!-- Add new Card form -->
-                    <div class="p-5 rounded-2xl border-2 border-dashed border-white/10 flex flex-col justify-between text-left gap-4 bg-white/[0.01]">
-                        <span class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">Agregar Nueva Tarjeta</span>
-                        
-                        <div class="flex flex-col gap-2.5 text-xs">
-                            <input type="text" 
-                                   [(ngModel)]="newCard.number"
-                                   placeholder="Número de Tarjeta (16 dígitos)..."
-                                   class="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-primary/50 transition-all font-mono tracking-widest text-[11px]">
-                            
-                            <input type="text" 
-                                   [(ngModel)]="newCard.holder"
-                                   placeholder="Nombre del Titular..."
-                                   class="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-primary/50 transition-all">
-
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="text" 
-                                       [(ngModel)]="newCard.expiry"
-                                       placeholder="MM/AA"
-                                       class="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-primary/50 transition-all text-center">
-                                <input type="password" 
-                                       [(ngModel)]="newCard.cvv"
-                                       placeholder="CVV"
-                                       class="bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-primary/50 transition-all text-center">
-                            </div>
-                        </div>
-
-                        <button (click)="addCard()"
-                                class="w-full py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-[10px] font-black rounded-xl uppercase tracking-wider transition-all active:scale-95 mt-2 shadow-md">
-                            Vincular Tarjeta
-                        </button>
-                    </div>
-
+                    <span class="text-xs sm:text-sm font-bold text-amber-400 font-mono">{{ subscription().price }}</span>
+                    <span class="text-[10px] sm:text-xs text-white/50 font-light mt-0.5">
+                        Próxima renovación: <strong class="text-white/80 font-medium">{{ subscription().nextBillingDate }}</strong> (vía {{ subscription().paymentMethod }})
+                    </span>
                 </div>
             </div>
 
-            <!-- SECTION 3: SECURITY SETTINGS -->
-            <div *ngIf="activeSection() === 'security'" class="flex flex-col gap-6 animate-scale-in">
-                <div class="border-b border-white/5 pb-4">
-                    <h3 class="font-['Epilogue'] font-black text-base uppercase text-white tracking-wide">Seguridad de la Cuenta</h3>
-                    <p class="text-[10px] text-white/40 mt-0.5">Modifica tus contraseñas y configura factores de autenticación adicionales.</p>
-                </div>
+            <div class="flex flex-col gap-2 w-full md:w-auto shrink-0 z-10">
+                <button (click)="setSection('pagos')" 
+                        class="w-full md:w-auto px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/15 text-white font-['Epilogue'] text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 uppercase tracking-wider">
+                    <span class="material-symbols-outlined text-base">credit_card</span>
+                    <span>Gestionar Método de Pago</span>
+                </button>
+            </div>
+        </div>
 
-                <!-- 2FA Setup -->
-                <div class="p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] flex items-center justify-between shadow-inner">
-                    <div class="flex flex-col gap-1 text-left">
-                        <strong class="text-xs font-bold text-white">Autenticación de Dos Factores (2FA)</strong>
-                        <p class="text-[10.5px] text-white/50 leading-relaxed font-light">
-                            Requiere un código temporal desde tu app autenticadora (Google Authenticator) al iniciar sesión.
+        <!-- Benefits & Perks Grid -->
+        <div class="bg-[#151515] border border-white/[0.06] rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col gap-5 shadow-xl">
+            <div class="border-b border-white/5 pb-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                        <span class="material-symbols-outlined text-lg sm:text-xl">stars</span>
+                    </div>
+                    <div>
+                        <h3 class="font-['Epilogue'] font-black text-sm sm:text-base text-white uppercase tracking-wider">Tus Ventajas Exclusivas Acordex VIP</h3>
+                        <p class="text-[10.5px] sm:text-xs text-white/40 font-light mt-0.5">Beneficios activos incluidos en tu suscripción actual.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                <div *ngFor="let perk of subscription().perks" 
+                     class="bg-white/[0.02] border border-white/[0.06] hover:border-primary/30 rounded-xl sm:rounded-2xl p-4 flex gap-3.5 items-start transition-all">
+                    <div class="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-xl">{{ perk.icon }}</span>
+                    </div>
+                    <div class="flex flex-col gap-0.5">
+                        <h4 class="font-['Epilogue'] font-bold text-xs sm:text-sm text-white">{{ perk.title }}</h4>
+                        <p class="text-[11px] sm:text-xs text-white/60 font-light leading-relaxed">{{ perk.desc }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Privacy Notice Banner -->
+            <div class="bg-white/[0.02] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 mt-1">
+                <span class="material-symbols-outlined text-amber-400 text-base shrink-0">lock</span>
+                <p class="text-[10px] sm:text-[11px] text-white/40 font-light leading-relaxed">
+                    <strong class="text-white/70 font-medium">Privacidad garantizada:</strong> Los detalles de tu suscripción son totalmente privados y sólo visibles para ti. No se muestran en tu perfil de usuario para mantener la neutralidad de la comunidad.
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SECTION 3: PRIVACIDAD DE RESEÑAS & ARTISTAS SEGUIDOS -->
+    <div *ngIf="activeSection() === 'privacidad'" class="flex flex-col gap-5 sm:gap-6">
+        
+        <!-- PRIVACIDAD DE RESEÑAS -->
+        <div class="bg-[#151515] border border-white/[0.06] rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col gap-4 sm:gap-5 shadow-xl">
+            <div class="border-b border-white/5 pb-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                        <span class="material-symbols-outlined text-lg sm:text-xl">reviews</span>
+                    </div>
+                    <div>
+                        <h3 class="font-['Epilogue'] font-black text-sm sm:text-base text-white uppercase tracking-wider">Visibilidad de mis Reseñas</h3>
+                        <p class="text-[10.5px] sm:text-xs text-white/40 font-light mt-0.5">Elige cuáles reseñas deseas mostrar u ocultar en tu perfil público.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                <div *ngFor="let rev of userService.currentUser().publishedReviews" 
+                     class="bg-white/[0.02] border border-white/[0.06] rounded-xl sm:rounded-2xl p-4 flex flex-col gap-3 justify-between">
+                    
+                    <div class="flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                            <span class="text-xs font-bold text-primary">{{ rev.bandName }}</span>
+                            <div class="flex items-center text-amber-400 text-xs">
+                                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+                                <span class="font-bold ml-1 text-[10px]">{{ rev.rating }}.0</span>
+                            </div>
+                        </div>
+                        <span class="text-[9.5px] text-white/40 uppercase tracking-wider font-bold">{{ rev.eventName }}</span>
+                        <p class="text-xs text-white/80 font-light italic leading-relaxed">
+                            "{{ rev.content }}"
                         </p>
                     </div>
-                    
-                    <!-- Toggle switch -->
-                    <button (click)="toggle2FA()" 
-                            [class]="twoFactor() ? 'bg-primary border-primary justify-end' : 'bg-white/5 border-white/10 justify-start'"
-                            class="w-12 h-6.5 rounded-full border p-0.5 flex items-center transition-all duration-300">
-                        <div class="w-5.5 h-5.5 rounded-full bg-[#121212] shadow shadow-black"></div>
-                    </button>
-                </div>
 
-                <!-- Change password form -->
-                <div class="flex flex-col gap-4 text-left">
-                    <span class="text-[9.5px] uppercase font-bold text-white/40 tracking-wider">Cambiar Contraseña</span>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="flex flex-col gap-1.5">
-                            <label class="text-[9px] uppercase font-bold text-white/30 tracking-wider">Contraseña Actual</label>
-                            <input type="password" 
-                                   [(ngModel)]="securityForm.currentPassword"
-                                   placeholder="••••••••"
-                                   class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 outline-none transition-all">
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label class="text-[9px] uppercase font-bold text-white/30 tracking-wider">Nueva Contraseña</label>
-                            <input type="password" 
-                                   [(ngModel)]="securityForm.newPassword"
-                                   placeholder="Min 8 caracteres..."
-                                   class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 outline-none transition-all">
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label class="text-[9px] uppercase font-bold text-white/30 tracking-wider">Confirmar Contraseña</label>
-                            <input type="password" 
-                                   [(ngModel)]="securityForm.confirmPassword"
-                                   placeholder="Repite la contraseña..."
-                                   class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:border-primary/50 outline-none transition-all">
-                        </div>
+                    <!-- Visibility Toggle Controls -->
+                    <div class="flex items-center justify-between border-t border-white/[0.05] pt-2.5 mt-1">
+                        <span class="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider" [ngClass]="rev.isPublic ? 'text-emerald-400' : 'text-amber-400'">
+                            {{ rev.isPublic ? '🌐 Pública en Perfil' : '🔒 Oculta (Privada)' }}
+                        </span>
+
+                        <button (click)="toggleReviewPrivacy(rev.id)" 
+                                [ngClass]="rev.isPublic ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'"
+                                class="px-3 py-1.5 rounded-xl text-[9.5px] sm:text-[10px] font-black uppercase tracking-wider border transition-all duration-300 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-xs">{{ rev.isPublic ? 'visibility' : 'visibility_off' }}</span>
+                            <span>{{ rev.isPublic ? 'Ocultar' : 'Hacer Pública' }}</span>
+                        </button>
                     </div>
-                </div>
-
-                <div class="flex justify-end border-t border-white/5 pt-5 mt-4">
-                    <button (click)="changePassword()"
-                            class="px-6 py-3 bg-primary hover:bg-primary-fixed text-[#121212] text-[10.5px] font-black rounded-xl uppercase tracking-wider transition-all active:scale-95 shadow-[0_4px_18px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98]">
-                        Actualizar Contraseña
-                    </button>
                 </div>
             </div>
-
-            <!-- SECTION 4: MEMBERSHIP DETAIL -->
-            <div *ngIf="activeSection() === 'membership'" class="flex flex-col gap-6 animate-scale-in text-left">
-                <div class="border-b border-white/5 pb-4">
-                    <h3 class="font-['Epilogue'] font-black text-base uppercase text-white tracking-wide">Membresía Activa</h3>
-                    <p class="text-[10px] text-white/40 mt-0.5">Consulta los privilegios especiales de tu membresía Acordex.</p>
-                </div>
-
-                <!-- Premium card graphics -->
-                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-600/10 via-amber-600/5 to-transparent border border-[#F2CA50]/20 p-6 md:p-8 flex flex-col md:flex-row md:justify-between md:items-center gap-6 shadow-2xl select-text">
-                    <div class="absolute -top-12 -right-12 w-48 h-48 bg-[#F2CA50]/15 rounded-full blur-3xl pointer-events-none"></div>
-                    
-                    <div>
-                        <span class="text-[8.5px] uppercase font-bold text-[#F2CA50] tracking-wider block mb-1">Membresía de Cuenta</span>
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-[#F2CA50] text-3xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
-                            <span class="font-['Epilogue'] font-black text-xl md:text-2xl text-white tracking-wide uppercase">PREMIUM VIP</span>
-                        </div>
-                        <span class="text-[10px] text-white/40 block mt-2">Miembro activo desde el: {{ user().joinDate }}</span>
-                    </div>
-
-                    <button class="bg-[#F2CA50] hover:bg-[#F2CA50]/80 text-[#121212] font-black text-[10.5px] uppercase tracking-wider px-6 py-3 rounded-xl transition-all duration-300 shadow-[0_4px_18px_rgba(242,202,80,0.25)] hover:scale-[1.02] active:scale-[0.98]">
-                        Administrar Suscripción
-                    </button>
-                </div>
-
-                <!-- Privilege grid list -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <div class="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] flex gap-3 text-xs">
-                        <span class="material-symbols-outlined text-[#F2CA50]">confirmation_number</span>
-                        <div>
-                            <strong class="text-white block font-bold">Preventas y Asientos Exclusivos</strong>
-                            <span class="text-white/50 text-[10px] font-light leading-normal block mt-0.5">
-                                Accede 24 horas antes al croquis y selecciona los mejores lugares frente al escenario.
-                            </span>
-                        </div>
-                    </div>
-                    <div class="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] flex gap-3 text-xs">
-                        <span class="material-symbols-outlined text-[#F2CA50]">percent</span>
-                        <div>
-                            <strong class="text-white block font-bold">Recompensas del 20%</strong>
-                            <span class="text-white/50 text-[10px] font-light leading-normal block mt-0.5">
-                                Recibe un descuento de lealtad en tu historial cada vez que asistas a una presentación.
-                            </span>
-                        </div>
-                    </div>
-                    <div class="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] flex gap-3 text-xs">
-                        <span class="material-symbols-outlined text-[#F2CA50]">badge</span>
-                        <div>
-                            <strong class="text-white block font-bold">Acceso a Prensa Acreditada</strong>
-                            <span class="text-white/50 text-[10px] font-light leading-normal block mt-0.5">
-                                Prioridad para acreditarte como medio o creador independiente con gafete digital.
-                            </span>
-                        </div>
-                    </div>
-                    <div class="p-4 rounded-xl bg-white/[0.01] border border-white/[0.04] flex gap-3 text-xs">
-                        <span class="material-symbols-outlined text-[#F2CA50]">headset_mic</span>
-                        <div>
-                            <strong class="text-white block font-bold">Soporte Legal Concierge 24/7</strong>
-                            <span class="text-white/50 text-[10px] font-light leading-normal block mt-0.5">
-                                Atención concierge prioritaria para contratos, cancelaciones o aclaración de reclamos.
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
         </div>
 
+        <!-- PRIVACIDAD DE ARTISTAS SEGUIDOS -->
+        <div class="bg-[#151515] border border-white/[0.06] rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col gap-4 sm:gap-5 shadow-xl">
+            <div class="border-b border-white/5 pb-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                        <span class="material-symbols-outlined text-lg sm:text-xl">groups</span>
+                    </div>
+                    <div>
+                        <h3 class="font-['Epilogue'] font-black text-sm sm:text-base text-white uppercase tracking-wider">Visibilidad de Artistas Seguidos</h3>
+                        <p class="text-[10.5px] sm:text-xs text-white/40 font-light mt-0.5">Controla si tus agrupaciones favoritas se muestran en tu perfil público.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-4">
+                <div *ngFor="let band of userService.currentUser().followedBands" 
+                     class="bg-white/[0.02] border border-white/[0.06] rounded-xl sm:rounded-2xl p-4 flex flex-col gap-3 justify-between">
+                    
+                    <div class="flex items-center gap-3">
+                        <img [src]="band.avatar" [alt]="band.name" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover border border-white/10 shrink-0" />
+                        <div class="min-w-0 flex flex-col">
+                            <h4 class="font-['Epilogue'] font-bold text-xs text-white truncate">{{ band.name }}</h4>
+                            <span class="text-[9.5px] text-white/50 font-light truncate">{{ band.genre }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Visibility Toggle Controls -->
+                    <div class="flex items-center justify-between border-t border-white/[0.05] pt-2.5">
+                        <span class="text-[9px] sm:text-[9.5px] font-bold uppercase tracking-wider" [ngClass]="band.isPublic ? 'text-emerald-400' : 'text-amber-400'">
+                            {{ band.isPublic ? '👁️ Visible' : '🙈 Oculto' }}
+                        </span>
+
+                        <button (click)="toggleBandPrivacy(band.id)" 
+                                [ngClass]="band.isPublic ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'"
+                                class="px-3 py-1.5 rounded-xl text-[9px] sm:text-[9.5px] font-black uppercase tracking-wider border transition-all duration-300 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">{{ band.isPublic ? 'visibility' : 'visibility_off' }}</span>
+                            <span>{{ band.isPublic ? 'Ocultar' : 'Mostrar' }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SECTION 4: MÉTODOS DE PAGO -->
+    <div *ngIf="activeSection() === 'pagos'" class="bg-[#151515] border border-white/[0.06] rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col gap-5 sm:gap-6 shadow-xl">
+        <div class="border-b border-white/5 pb-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                    <span class="material-symbols-outlined text-lg sm:text-xl">credit_card</span>
+                </div>
+                <div>
+                    <h3 class="font-['Epilogue'] font-black text-sm sm:text-base text-white uppercase tracking-wider">Métodos de Pago Vinculados</h3>
+                    <p class="text-[10.5px] sm:text-xs text-white/40 font-light mt-0.5">Administra tus tarjetas de crédito o débito para compras en Acordex.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards List -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div *ngFor="let card of cards()" class="bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 relative overflow-hidden">
+                <div class="flex justify-between items-center">
+                    <span class="font-['Epilogue'] font-black text-xs uppercase tracking-widest text-primary">{{ card.type }}</span>
+                    <button (click)="removeCard(card.id)" class="text-white/40 hover:text-red-400 text-xs font-bold uppercase transition-colors">Eliminar</button>
+                </div>
+                <div class="font-mono text-base sm:text-lg font-bold tracking-widest text-white">{{ card.number }}</div>
+                <div class="flex justify-between items-center text-[10px] text-white/60 font-light uppercase">
+                    <span>{{ card.holder }}</span>
+                    <span>EXP: {{ card.expiry }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Card Form -->
+        <form (submit)="addCard(); $event.preventDefault()" class="border-t border-white/5 pt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="flex flex-col gap-1.5 md:col-span-2">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider">Titular de la Tarjeta</label>
+                <input type="text" [(ngModel)]="newCard.holder" name="holder" placeholder="NOMBRES Y APELLIDOS" class="bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white outline-none focus:border-primary/50" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider">Número de Tarjeta</label>
+                <input type="text" [(ngModel)]="newCard.number" name="number" placeholder="4000 1234 5678 9010" class="bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white outline-none focus:border-primary/50" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider">Fecha de Exp (MM/AA)</label>
+                <input type="text" [(ngModel)]="newCard.expiry" name="expiry" placeholder="12/28" class="bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white outline-none focus:border-primary/50" />
+            </div>
+            <div class="flex flex-col gap-1.5 md:col-span-2 justify-end">
+                <button type="submit" class="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all">
+                    + Agregar Tarjeta de Crédito / Débito
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- SECTION 5: SEGURIDAD -->
+    <div *ngIf="activeSection() === 'seguridad'" class="bg-[#151515] border border-white/[0.06] rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col gap-5 sm:gap-6 shadow-xl">
+        <div class="border-b border-white/5 pb-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                    <span class="material-symbols-outlined text-lg sm:text-xl">shield_lock</span>
+                </div>
+                <div>
+                    <h3 class="font-['Epilogue'] font-black text-sm sm:text-base text-white uppercase tracking-wider">Seguridad & Autenticación</h3>
+                    <p class="text-[10.5px] sm:text-xs text-white/40 font-light mt-0.5">Cambia tu contraseña y activa mecanismos de protección adicional.</p>
+                </div>
+            </div>
+        </div>
+
+        <form (submit)="changePassword(); $event.preventDefault()" class="flex flex-col gap-3.5 max-w-lg">
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider">Contraseña Actual</label>
+                <input type="password" [(ngModel)]="securityForm.currentPassword" name="currentPassword" class="bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white outline-none focus:border-primary/50" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider">Nueva Contraseña</label>
+                <input type="password" [(ngModel)]="securityForm.newPassword" name="newPassword" class="bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white outline-none focus:border-primary/50" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] sm:text-xs font-bold text-white/70 uppercase tracking-wider">Confirmar Nueva Contraseña</label>
+                <input type="password" [(ngModel)]="securityForm.confirmPassword" name="confirmPassword" class="bg-[#1b1b1b] border border-white/[0.08] rounded-xl px-3.5 py-2.5 sm:py-3 text-xs text-white outline-none focus:border-primary/50" />
+            </div>
+            <button type="submit" class="py-3 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all mt-1">
+                Actualizar Contraseña
+            </button>
+        </form>
+
+        <div class="border-t border-white/5 pt-5 flex items-center justify-between">
+            <div>
+                <h4 class="font-['Epilogue'] font-bold text-xs text-white">Autenticación en Dos Pasos (2FA)</h4>
+                <p class="text-[10px] sm:text-[10.5px] text-white/40 font-light">Solicitar un código de verificación al iniciar sesión desde dispositivos desconocidos.</p>
+            </div>
+            <button (click)="toggle2FA()" [ngClass]="twoFactor() ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-white/5 text-white/50 border-white/10'" class="px-3.5 py-2 border rounded-xl text-xs font-bold uppercase transition-all">
+                {{ twoFactor() ? 'Activado' : 'Desactivado' }}
+            </button>
+        </div>
+
+        <div class="border-t border-white/5 pt-5 flex justify-end">
+            <button (click)="logout()" class="w-full sm:w-auto px-6 py-3 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-sm">logout</span>
+                <span>Cerrar Sesión</span>
+            </button>
+        </div>
     </div>
 
 </div>

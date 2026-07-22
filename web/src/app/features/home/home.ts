@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, ViewChild, ElementRef, ChangeDetectorRef, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { PostCard } from '../../shared/post-card/post-card';
 import { StoryCard } from '../../shared/story-card/story-card';
@@ -16,8 +17,45 @@ import { ReviewCard } from '../../shared/review-card/review-card';
 export class Home implements OnInit {
   @ViewChild('storyScroll') storyScroll!: ElementRef<HTMLElement>;
   layoutService = inject(LayoutService);
+  private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly sanitizer = inject(DomSanitizer);
+
+  onUserClick(userName: string, userAvatar: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.layoutService.openUserProfile({
+      userName,
+      userAvatar
+    });
+  }
+
+  onBandClick(bandName: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!bandName) return;
+    const namePart = bandName.split('-')[0].trim();
+    const slug = namePart.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    this.router.navigate(['/grupo', slug]);
+  }
+
+  goToEventInfo(evt: any, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!evt) return;
+    const isFirma = evt.type === 'firma' || evt.type === 'prensa' || (evt.genre && evt.genre.toLowerCase().includes('firma'));
+    const targetRoute = isFirma ? '/events/firma-prensa' : '/events/comprar-boletos';
+    const isPast = evt.isPast || evt.status === 'past' || (evt.date && new Date(evt.date) < new Date());
+    this.router.navigate([targetRoute], { queryParams: { id: evt.id || 101, past: isPast ? 'true' : 'false' } });
+  }
 
   ngOnInit() {
     this.layoutService.setPageTitle('PANEL DE INICIO');
@@ -918,24 +956,35 @@ export class Home implements OnInit {
       filtered.sort((a, b) => b.rating - a.rating);
     }
 
-    // 5. Group by band
-    const groups: { [key: string]: { bandName: string; avatar: string; reviews: any[] } } = {};
-    const bandAvatars: { [key: string]: string } = {
-      'Mariachi Oro y Plata': 'https://lh3.googleusercontent.com/aida-public/AB6AXuC9uqGh4gewnFEoovP1fuHPQMLAAo7DukmY0EkWYU2Cor_CdspwyW97x1d-MfyItGXH5ushLKk86XZ2gCBGK6C3_ediZiBnWTqXjRLY-CxNTwdjfrooE_c7-ctaFxlTAXXDaqhtpK4VCDC_1G8Z7z0Ylmvsx52D9sppnm0YumVh0DTRu0rQryqzOyOLN25obm16uWwblhXMbeir_hUfv2ShjwtqaG9x-HUnouaQ4CXMWMmBqCAl9NhwAQW9B5PU7JoEguyTttbBVr8',
-      'Los Alegres Sierreños': 'https://lh3.googleusercontent.com/aida-public/AB6AXuC9uqGh4gewnFEoovP1fuHPQMLAAo7DukmY0EkWYU2Cor_CdspwyW97x1d-MfyItGXH5ushLKk86XZ2gCBGK6C3_ediZiBnWTqXjRLY-CxNTwdjfrooE_c7-ctaFxlTAXXDaqhtpK4VCDC_1G8Z7z0Ylmvsx52D9sppnm0YumVh0DTRu0rQryqzOyOLN25obm16uWwblhXMbeir_hUfv2ShjwtqaG9x-HUnouaQ4CXMWMmBqCAl9NhwAQW9B5PU7JoEguyTttbBVr8',
-      'Banda Los Reyes': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQ3KjImT7Com_TZjPm3s_JEtoRMtGwTz2pIVXzBWkiphKKC3Hhvv0hFafpnAUBOx3Xh3Wg1rKU_WYF_9WEL3MkoT5q5euWVCvDP_sVxpr6J8PAtdHW2RTGrcGUjP4TABc_K-UJzABbaegjdl7Lgt-PHqkMImpEd6vo-oq4FkujU-PEBsFxtfLKOfrqSlKhqwZOmT9kHC-TL2z_33iV1zc4PyhckWglDGJQkTFo7F6clZQhFECh8P9WBo8vCUIEYETYVxk5IrGaxfc'
-    };
+    // 5. Group BY EVENT
+    const groups: { [key: string]: {
+      eventId: string;
+      eventName: string;
+      bandName: string;
+      locationName: string;
+      date: string;
+      genre: string;
+      ratingAvg: string;
+      verifiedFolio: string;
+      reviews: any[];
+    } } = {};
 
     filtered.forEach(review => {
-      const band = review.bandName;
-      if (!groups[band]) {
-        groups[band] = {
-          bandName: band,
-          avatar: bandAvatars[band] || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=100&auto=format&fit=crop',
+      const eventKey = review.eventName;
+      if (!groups[eventKey]) {
+        groups[eventKey] = {
+          eventId: review.eventId,
+          eventName: review.eventName,
+          bandName: review.bandName,
+          locationName: review.locationName,
+          date: review.date,
+          genre: review.genre || 'Evento de Gala',
+          ratingAvg: review.ratingAvg || '5.0',
+          verifiedFolio: 'ACX-' + Math.floor(1000 + Math.random() * 9000),
           reviews: []
         };
       }
-      groups[band].reviews.push(review);
+      groups[eventKey].reviews.push(review);
     });
 
     return Object.values(groups);

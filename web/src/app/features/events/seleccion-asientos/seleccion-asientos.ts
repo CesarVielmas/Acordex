@@ -27,6 +27,21 @@ export class SeleccionAsientos implements OnInit {
 
   event = signal<CalendarEvent | null>(null);
   selectedCategory = signal<string>('VIP Oro');
+
+  onBandClick(bandName: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!bandName) return;
+    const namePart = bandName.split('-')[0].trim();
+    const slug = namePart.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    this.router.navigate(['/grupo', slug]);
+  }
   
   // List of all seats in the venue
   seats = signal<Seat[]>([]);

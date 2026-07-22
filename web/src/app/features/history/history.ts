@@ -44,13 +44,31 @@ export class History implements OnInit {
   private readonly elementRef = inject(ElementRef);
 
   goToBandProfile(bandName: string) {
-    const slug = bandName.toLowerCase()
+    if (!bandName) return;
+    const namePart = bandName.split('-')[0].trim();
+    const slug = namePart.toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
     this.router.navigate(['/grupo', slug]);
+  }
+
+  goToEventInfo(id: number, type: string = 'concierto', isPast: boolean = true) {
+    const isFirma = type === 'firma' || type === 'prensa';
+    const targetRoute = isFirma ? '/events/firma-prensa' : '/events/comprar-boletos';
+    this.router.navigate([targetRoute], { queryParams: { id, past: isPast } });
+  }
+
+  onUserClick(userName: string, userAvatar: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.layoutService.openUserProfile({
+      userName,
+      userAvatar
+    });
   }
 
   // Active filter tab pill

@@ -17,6 +17,21 @@ export class Events implements OnInit {
   private readonly router = inject(Router);
   private readonly eventService = inject(EventService);
 
+  onBandClick(bandName: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!bandName) return;
+    const namePart = bandName.split('-')[0].trim();
+    const slug = namePart.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    this.router.navigate(['/grupo', slug]);
+  }
+
   selectedDateStr = signal<string>('');
   selectedDate = signal<Date>(new Date());
   filteredEvents = signal<any[]>([]);

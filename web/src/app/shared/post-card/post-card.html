@@ -1,13 +1,13 @@
 <article class="post-card bg-[#151515]/80 border border-white/[0.08] backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-primary/[0.02]">
     <!-- Header -->
     <div class="px-5 py-4 flex items-center justify-between border-b border-white/[0.03]">
-        <div class="flex items-center gap-3">
-            <div class="avatar-ring p-[2px] rounded-full bg-gradient-to-tr from-primary to-[#ff8f00]">
+        <div (click)="onAuthorClick($event)" class="flex items-center gap-3 cursor-pointer group/author">
+            <div class="avatar-ring p-[2px] rounded-full bg-gradient-to-tr from-primary to-[#ff8f00] group-hover/author:scale-105 transition-transform">
                 <img [src]="authorAvatar" [alt]="authorName" class="w-10 h-10 rounded-full object-cover border-2 border-[#151515]" />
             </div>
             <div class="flex flex-col">
                 <div class="flex items-center gap-1.5">
-                    <h4 class="font-['Epilogue'] font-black text-xs md:text-sm uppercase tracking-widest text-white leading-none">{{ authorName }}</h4>
+                    <h4 class="font-['Epilogue'] font-black text-xs md:text-sm uppercase tracking-widest text-white leading-none group-hover/author:text-primary transition-colors">{{ authorName }}</h4>
                     <span class="material-symbols-outlined text-[13px] text-primary fill-current select-none" title="Artista Verificado">verified</span>
                 </div>
                 <span class="text-[9px] text-white/40 font-['Be_Vietnam_Pro'] font-light tracking-wide mt-1 flex items-center gap-1">

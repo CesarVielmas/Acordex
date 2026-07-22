@@ -4,12 +4,12 @@
 
     <div class="flex flex-col md:flex-row gap-4">
         <!-- Avatar & Rating -->
-        <div class="flex md:flex-col items-center md:items-start gap-3 md:w-44 shrink-0">
-            <div class="p-[1px] rounded-full bg-gradient-to-tr from-primary/45 to-transparent">
+        <div (click)="onUserClick($event)" class="flex md:flex-col items-center md:items-start gap-3 md:w-44 shrink-0 cursor-pointer group/user-info">
+            <div class="p-[1px] rounded-full bg-gradient-to-tr from-primary/45 to-transparent group-hover/user-info:scale-105 transition-transform">
                 <img [src]="userAvatar" [alt]="userName" class="w-11 h-11 rounded-full object-cover border border-[#151515]" />
             </div>
             <div>
-                <h4 class="font-['Epilogue'] font-black text-xs md:text-sm uppercase tracking-wider text-white leading-none">{{ userName }}</h4>
+                <h4 class="font-['Epilogue'] font-black text-xs md:text-sm uppercase tracking-wider text-white group-hover/user-info:text-primary transition-colors leading-none">{{ userName }}</h4>
                 <p class="text-[9px] text-white/40 font-['Be_Vietnam_Pro'] font-light flex items-center gap-1 mt-1.5 mb-1.5">
                     <span class="material-symbols-outlined text-[11px] text-primary/50">schedule</span>
                     {{ timeAgo }}

@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { LayoutService } from '../../core/services/layout.service';
 
 @Component({
   selector: 'app-review-card',
@@ -10,6 +11,7 @@ import { Router } from '@angular/router';
 })
 export class ReviewCard {
   private readonly router = inject(Router);
+  private readonly layoutService = inject(LayoutService);
 
   @Input() userName: string = '';
   @Input() userAvatar: string = '';
@@ -25,6 +27,14 @@ export class ReviewCard {
 
   get starsArray() {
     return Array(5).fill(0).map((_, i) => i < this.rating);
+  }
+
+  onUserClick(event: MouseEvent) {
+    event.stopPropagation();
+    this.layoutService.openUserProfile({
+      userName: this.userName,
+      userAvatar: this.userAvatar
+    });
   }
 
   onLikeClick(event: MouseEvent) {

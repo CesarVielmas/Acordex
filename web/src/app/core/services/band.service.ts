@@ -89,6 +89,7 @@ export interface BandDetail {
   tag: string;
   rating: number;
   reviewCount: number;
+  followersCount?: number;
   verified: boolean;
   imageUrl: string;
   heroCoverUrl: string;

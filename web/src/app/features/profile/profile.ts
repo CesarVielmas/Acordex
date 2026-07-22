@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LayoutService } from '../../core/services/layout.service';
+import { UserService } from '../../core/services/user.service';
 
 interface PaymentCard {
   id: string;
@@ -18,31 +19,22 @@ interface PaymentCard {
   styleUrl: './profile.scss'
 })
 export class Profile implements OnInit {
-  private readonly layoutService = inject(LayoutService);
+  protected readonly layoutService = inject(LayoutService);
+  protected readonly userService = inject(UserService);
 
-  // Active section tab
+  // Active section tab: 'general' | 'privacidad' | 'pagos' | 'seguridad'
   activeSection = signal<string>('general');
 
   // Success message state
   successMsg = signal<string>('');
-
-  // User details state
-  user = signal({
-    name: 'Alejandro Mendoza',
-    email: 'alejandro.mendoza@ejemplo.com',
-    phone: '811-345-6789',
-    city: 'Monterrey, NL, México',
-    profileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAHmOKfsdeDk97RkFYA82JzuIe_TkK0xot_uMkINkxsobVv9lZln3uk5hy5nhpB71kyLOJzytl4SJggaFdNvA2H3mYv12flzxqody7GmSYbuGC1zhEyqOXOAZQmZqJ3ChDntHBQ6UuKwLFux4SfdbaJRTUDuMSU9gZgIlz-vse6ksoS6U2P7vBi_u1Lc1ErwyS3ciIrzGpfJ7V51r8hz6b6IOymxCHPv3BvrOMjbXIq8h6YhAgxoZbn_8gwnBtJvc6IrWfLJA6X3AY',
-    membership: 'Premium VIP',
-    joinDate: '12 de Enero de 2024'
-  });
 
   // Edit form model
   editForm = {
     name: '',
     phone: '',
     city: '',
-    profileUrl: ''
+    profileUrl: '',
+    bio: ''
   };
 
   // Payment cards list
@@ -68,6 +60,21 @@ export class Profile implements OnInit {
   // Two-Factor auth state
   twoFactor = signal<boolean>(true);
 
+  // Subscription state (Private to current user settings only)
+  subscription = signal({
+    planName: 'Membresía Acordex VIP',
+    price: '$199 MXN / mes',
+    status: 'Activa',
+    nextBillingDate: '12 de Agosto, 2026',
+    paymentMethod: 'Visa •••• 4912',
+    perks: [
+      { title: 'Acceso Anticipado a Preventas', desc: 'Asegura tus boletos hasta 48 horas antes que el público general.', icon: 'bolt' },
+      { title: 'Boletos Digitales VIP sin Filas', desc: 'Acceso prioritario con código QR acelerado en recintos.', icon: 'qr_code_2' },
+      { title: 'Descuentos Exclusivos en Consumos', desc: '15% de descuento en bebidas y artículos de mercadería en eventos.', icon: 'local_offer' },
+      { title: 'Atención & Soporte Prioritario 24/7', desc: 'Soporte prioritario e inmediato en cualquier cambio o aclaración.', icon: 'support_agent' }
+    ]
+  });
+
   ngOnInit() {
     this.layoutService.setPageTitle('MI PERFIL ACORDEX');
     this.resetEditForm();
@@ -78,12 +85,13 @@ export class Profile implements OnInit {
   }
 
   resetEditForm() {
-    const current = this.user();
+    const current = this.userService.currentUser();
     this.editForm = {
       name: current.name,
       phone: current.phone,
       city: current.city,
-      profileUrl: current.profileUrl
+      profileUrl: current.profileUrl,
+      bio: current.bio
     };
   }
 
@@ -93,15 +101,37 @@ export class Profile implements OnInit {
       return;
     }
     
-    this.user.update(u => ({
-      ...u,
+    this.userService.updateProfileInfo({
       name: this.editForm.name,
       phone: this.editForm.phone,
       city: this.editForm.city,
-      profileUrl: this.editForm.profileUrl
-    }));
+      profileUrl: this.editForm.profileUrl,
+      bio: this.editForm.bio
+    });
 
-    this.showToast('¡Información de perfil actualizada exitosamente!');
+    this.showToast('¡Perfil y biografía actualizados exitosamente!');
+  }
+
+  toggleBandPrivacy(bandId: string) {
+    this.userService.toggleBandVisibility(bandId);
+    this.showToast('Preferencia de privacidad de artista actualizada.');
+  }
+
+  toggleReviewPrivacy(reviewId: string) {
+    this.userService.toggleReviewVisibility(reviewId);
+    this.showToast('Preferencia de privacidad de reseña actualizada.');
+  }
+
+  toggleBandVisibility(bandId: string) {
+    this.toggleBandPrivacy(bandId);
+  }
+
+  toggleReviewVisibility(reviewId: string) {
+    this.toggleReviewPrivacy(reviewId);
+  }
+
+  previewPublicProfile() {
+    this.layoutService.openUserProfile(this.userService.getPublicProfileData());
   }
 
   addCard() {

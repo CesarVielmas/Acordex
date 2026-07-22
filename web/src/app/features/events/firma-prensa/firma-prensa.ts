@@ -36,6 +36,22 @@ export class FirmaPrensa implements OnInit {
   event = signal<CalendarEvent | null>(null);
   lineup = signal<LineupBand[]>([]);
   videos = signal<InvitationVideo[]>([]);
+  isPastEvent = signal<boolean>(false);
+
+  onBandClick(bandName: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!bandName) return;
+    const namePart = bandName.split('-')[0].trim();
+    const slug = namePart.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    this.router.navigate(['/grupo', slug]);
+  }
 
   // Accreditation states
   currentAccreditation = signal<PressAccreditation | null>(null);
@@ -54,11 +70,21 @@ export class FirmaPrensa implements OnInit {
 
     this.route.queryParams.subscribe(params => {
       const idParam = params['id'];
+      const pastParam = params['past'];
+      if (pastParam === 'true') {
+        this.isPastEvent.set(true);
+      }
+
       if (idParam) {
         const id = parseInt(idParam, 10);
         const resolvedEvent = this.eventService.getEventById(id) || this.getFallbackEventById(id);
         
-        this.event.set(resolvedEvent);
+        if (resolvedEvent) {
+          this.event.set(resolvedEvent);
+          if (resolvedEvent.date && new Date(resolvedEvent.date) < new Date()) {
+            this.isPastEvent.set(true);
+          }
+        }
         this.loadLineup(resolvedEvent.title);
         this.loadVideos(resolvedEvent.title);
         

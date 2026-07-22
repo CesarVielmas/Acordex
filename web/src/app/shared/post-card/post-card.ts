@@ -1,6 +1,7 @@
-import { Component, Input, OnInit, OnChanges, signal, Output, EventEmitter, HostListener } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, Output, EventEmitter, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-post-card',
@@ -9,6 +10,8 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './post-card.scss'
 })
 export class PostCard implements OnInit, OnChanges {
+  private readonly router = inject(Router);
+
   @Input() authorName: string = '';
   @Input() authorAvatar: string = '';
   @Input() timeAgo: string = '';
@@ -150,6 +153,21 @@ export class PostCard implements OnInit, OnChanges {
       alert('Error al copiar enlace.');
     });
     this.showShareMenu.set(false);
+  }
+
+  onAuthorClick(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!this.authorName) return;
+    const namePart = this.authorName.split('-')[0].trim();
+    const slug = namePart.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    this.router.navigate(['/grupo', slug]);
   }
 
   @HostListener('document:click', ['$event'])

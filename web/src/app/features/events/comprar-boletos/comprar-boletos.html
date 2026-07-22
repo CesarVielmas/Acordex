@@ -19,8 +19,14 @@
         <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/40 to-transparent"></div>
 
         <div class="absolute bottom-0 inset-x-0 p-6 md:p-10 flex flex-col justify-end min-h-[50%]">
-            <!-- Event Type Category Badge -->
+            <!-- Event Type Category Badge & Past Status -->
             <div class="flex flex-wrap items-center gap-2.5 mb-3.5">
+                <span *ngIf="isPastEvent()" 
+                      class="bg-amber-500/25 border border-amber-400/40 text-amber-300 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md flex items-center gap-1.5 shadow-lg">
+                    <span class="material-symbols-outlined text-xs">history</span>
+                    EVENTO FINALIZADO
+                </span>
+
                 <span [ngClass]="ev.type === 'festival' ? 'bg-purple-500/25 border-purple-400/40 text-purple-300' : 'bg-emerald-500/25 border-emerald-400/40 text-emerald-300'" 
                       class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md">
                     {{ ev.type }}
@@ -33,8 +39,11 @@
             </div>
 
             <!-- Title -->
-            <h1 class="font-['Epilogue'] font-black text-3xl md:text-5xl uppercase tracking-wide text-white leading-tight mb-4 drop-shadow-md">
-                {{ ev.title }}
+            <h1 (click)="onBandClick(ev.title, $event)" 
+                title="Ver perfil completo del grupo"
+                class="font-['Epilogue'] font-black text-3xl md:text-5xl uppercase tracking-wide text-white hover:text-primary transition-colors cursor-pointer leading-tight mb-4 drop-shadow-md flex items-center gap-3 group/hero-title">
+                <span>{{ ev.title }}</span>
+                <span class="material-symbols-outlined text-2xl md:text-3xl text-primary opacity-80 group-hover/hero-title:opacity-100 transition-opacity">open_in_new</span>
             </h1>
 
             <!-- Basic Subtitle info -->
@@ -118,11 +127,16 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div *ngFor="let band of lineup()" 
-                         class="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-primary/20 hover:bg-white/[0.05] transition-all duration-300 group">
+                         (click)="onBandClick(band.name, $event)"
+                         title="Ver información del grupo {{ band.name }}"
+                         class="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-primary/30 hover:bg-white/[0.06] transition-all duration-300 group cursor-pointer">
                         <img [src]="band.imageUrl" [alt]="band.name" class="w-14 h-14 rounded-xl object-cover border border-white/10 shrink-0 shadow-md group-hover:scale-105 transition-transform" />
                         
                         <div class="min-w-0 flex-1">
-                            <h4 class="text-xs md:text-sm font-bold text-white group-hover:text-primary transition-colors truncate font-['Epilogue']">{{ band.name }}</h4>
+                            <h4 class="text-xs md:text-sm font-bold text-white group-hover:text-primary transition-colors truncate font-['Epilogue'] flex items-center gap-1.5">
+                                <span>{{ band.name }}</span>
+                                <span class="material-symbols-outlined text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+                            </h4>
                             <p class="text-[10px] text-white/40 font-light mt-0.5">{{ band.genre }}</p>
                         </div>
                         
@@ -147,7 +161,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div *ngFor="let video of videos()" class="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.05] shadow-lg">
                         <div class="flex flex-col min-w-0 mb-1">
-                            <span class="text-[8px] text-primary uppercase font-bold tracking-wider">{{ video.bandName }}</span>
+                            <span (click)="onBandClick(video.bandName, $event)" 
+                                  title="Ver información de {{ video.bandName }}"
+                                  class="text-[8px] text-primary uppercase font-bold tracking-wider cursor-pointer hover:underline flex items-center gap-1">
+                                <span>{{ video.bandName }}</span>
+                                <span class="material-symbols-outlined text-[10px]">open_in_new</span>
+                            </span>
                             <h4 class="text-xs font-bold text-white truncate mt-0.5">{{ video.title }}</h4>
                         </div>
 
@@ -199,8 +218,22 @@
             <div class="bg-primary/5 border border-primary/15 rounded-2xl p-6 flex flex-col gap-4 text-center shadow-lg relative overflow-hidden group">
                 <div class="absolute -right-12 -top-12 w-28 h-28 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors"></div>
                 
-                <!-- IF ALREADY PURCHASED -->
-                <div *ngIf="purchases().length > 0" class="flex flex-col gap-3">
+                <!-- IF PAST EVENT -->
+                <div *ngIf="isPastEvent()" class="flex flex-col gap-3 items-center text-center">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-1 shadow-md">
+                        <span class="material-symbols-outlined text-2xl">event_busy</span>
+                    </div>
+                    <span class="text-[9px] uppercase tracking-widest font-black text-amber-400">Evento Concluido</span>
+                    <h3 class="text-sm font-['Epilogue'] font-black text-white uppercase tracking-wide">
+                        Venta de Boletos Cerrada
+                    </h3>
+                    <p class="text-[10.5px] text-white/60 leading-relaxed font-light px-1">
+                        Este evento ya ha finalizado. Puedes consultar el cartel oficial, las fotos del recuerdo, los videos y las opiniones de la comunidad.
+                    </p>
+                </div>
+
+                <!-- IF ALREADY PURCHASED & NOT PAST -->
+                <div *ngIf="!isPastEvent() && purchases().length > 0" class="flex flex-col gap-3">
                     <div class="w-10 h-10 rounded-full bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 mx-auto mb-1">
                         <span class="material-symbols-outlined text-lg">check_circle</span>
                     </div>
@@ -237,8 +270,8 @@
                     </div>
                 </div>
 
-                <!-- IF NOT PURCHASED -->
-                <div *ngIf="purchases().length === 0" class="flex flex-col gap-4">
+                <!-- IF NOT PURCHASED & NOT PAST -->
+                <div *ngIf="!isPastEvent() && purchases().length === 0" class="flex flex-col gap-4">
                     <span class="text-[8px] uppercase tracking-widest font-black text-primary/70">Boletos Disponibles</span>
                     <div class="flex flex-col gap-0.5 items-center justify-center">
                         <span class="text-3xl font-black text-white font-['Epilogue']">{{ priceRange() }}</span>
