@@ -146,7 +146,44 @@ export class MockDataService {
       representativePhone: '+52 81 1234 5678',
       genre: 'Banda Sinaloense',
       rating: 4.9,
-      artistImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80'
+      artistImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80',
+      negotiationRound: 2,
+      negotiationHistory: [
+        {
+          round: 1,
+          clientRejectionMessage: 'El monto original de $620,000 MXN supera el tope presupuestal autorizado del patronato para esta fecha estelar.',
+          adminProposalNote: 'Rebajamos honorarios principales y margen comercial al 18% para ajustar a $580,000 MXN.',
+          totalOffered: 580000,
+          artistFee: 420000,
+          viaticosCost: 80000,
+          soundCost: 80000,
+          marginPercent: 18,
+          timestamp: '2026-07-20 02:15 PM',
+          proposedDate: '2026-09-02',
+          scheduleMode: 'continuo',
+          startTime: '22:00',
+          endTime: '01:00',
+          durationHours: 3,
+          totalShowHours: 3
+        },
+        {
+          round: 2,
+          clientRejectionMessage: 'El patronato pide una última rebaja comercial a $540,000 MXN y que el grupo incluya 30 minutos extras de mariachi al cierre del palenque.',
+          adminProposalNote: 'Analizando la posibilidad de subsidiar viáticos de transporte y ajustar la comisión de la disquera al 15%.',
+          totalOffered: 540000,
+          artistFee: 400000,
+          viaticosCost: 70000,
+          soundCost: 70000,
+          marginPercent: 15,
+          timestamp: '2026-07-23 11:30 AM',
+          proposedDate: '2026-09-02',
+          scheduleMode: 'continuo',
+          startTime: '22:30',
+          endTime: '02:00',
+          durationHours: 3.5,
+          totalShowHours: 3.5
+        }
+      ]
     },
     {
       id: 'COT-8903',
@@ -158,8 +195,11 @@ export class MockDataService {
       proposedDate: '2026-08-28',
       venue: 'Auditorio Telmex',
       city: 'Zapopan, JAL',
-      totalAmount: 240000,
-      marginAmount: 60000,
+      totalAmount: 200000,
+      marginAmount: 26000,
+      artistFee: 140000,
+      viaticosCost: 32000,
+      soundCost: 28000,
       state: 'Propuesta enviada',
       paymentStatus: 'Pendiente',
       terms: 'Evento co-producido con Fonovisa. Reparto de utilidades 60/40.',
@@ -171,7 +211,99 @@ export class MockDataService {
       representativePhone: '+52 81 1234 5678',
       genre: 'Mariachi / Regional',
       rating: 4.6,
-      artistImage: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&auto=format&fit=crop&q=80'
+      artistImage: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&auto=format&fit=crop&q=80',
+      negotiationRound: 5,
+      negotiationHistory: [
+        {
+          round: 1,
+          clientRejectionMessage: 'El presupuesto inicial de $240,000 MXN supera el límite autorizado de $220k para este recinto. Solicitamos reducir costos de honorarios o ajustar el margen comercial de la disquera.',
+          adminProposalNote: 'Se redujo la comisión de la disquera del 20% al 18% y se ofreció un ajuste comercial en viáticos.',
+          totalOffered: 230000,
+          artistFee: 160000,
+          viaticosCost: 38000,
+          soundCost: 32000,
+          marginPercent: 18,
+          timestamp: '2026-07-22 10:15 AM',
+          proposedDate: '2026-08-28',
+          scheduleMode: 'continuo',
+          startTime: '20:00',
+          endTime: '23:00',
+          durationHours: 3,
+          totalShowHours: 3
+        },
+        {
+          round: 2,
+          clientRejectionMessage: 'Sigue estando elevado ($230k). Además requerimos cambiar la fecha al 29 de agosto y dividir el concierto en 2 tandas (Set 1: 21:00 a 22:30 y Set 2: 23:00 a 00:30).',
+          adminProposalNote: 'Se aceptó el cambio de fecha al 29 de agosto y el formato de 2 tandas. Redujimos el margen de disquera al 16%.',
+          totalOffered: 220000,
+          artistFee: 155000,
+          viaticosCost: 36000,
+          soundCost: 29000,
+          marginPercent: 16,
+          timestamp: '2026-07-24 04:30 PM',
+          proposedDate: '2026-08-29',
+          scheduleMode: 'tandas',
+          showBlocks: [
+            { id: 'b1', label: 'Tanda 1: Set Apertura', date: '2026-08-29', startTime: '21:00', endTime: '22:30' },
+            { id: 'b2', label: 'Tanda 2: Set Cierre', date: '2026-08-29', startTime: '23:00', endTime: '00:30' }
+          ],
+          totalShowHours: 3
+        },
+        {
+          round: 3,
+          clientRejectionMessage: 'El patronato aprobó $215,000 MXN pero solicita que la disquera absorba la planta de luz y el transporte local.',
+          adminProposalNote: 'Se absorbió el costo de planta de luz y ajustamos viáticos a $35,000 MXN con un margen de disquera del 15%.',
+          totalOffered: 215000,
+          artistFee: 150000,
+          viaticosCost: 35000,
+          soundCost: 30000,
+          marginPercent: 15,
+          timestamp: '2026-07-25 11:00 AM',
+          proposedDate: '2026-08-29',
+          scheduleMode: 'tandas',
+          showBlocks: [
+            { id: 'b1', label: 'Tanda 1: Set Apertura', date: '2026-08-29', startTime: '21:00', endTime: '22:30' },
+            { id: 'b2', label: 'Tanda 2: Set Cierre', date: '2026-08-29', startTime: '23:00', endTime: '00:30' }
+          ],
+          totalShowHours: 3
+        },
+        {
+          round: 4,
+          clientRejectionMessage: 'El cliente propone $205,000 MXN si se realiza el contrato hoy y se efectúa la transferencia inmediata del 50% de anticipo.',
+          adminProposalNote: 'Ofrecemos $205,000 MXN ajustando el margen comercial al 14% para acelerar el depósito de anticipo.',
+          totalOffered: 205000,
+          artistFee: 145000,
+          viaticosCost: 33000,
+          soundCost: 27000,
+          marginPercent: 14,
+          timestamp: '2026-07-26 03:20 PM',
+          proposedDate: '2026-08-30',
+          scheduleMode: 'tandas',
+          showBlocks: [
+            { id: 'b1', label: 'Tanda 1: Set Noche 1', date: '2026-08-30', startTime: '21:30', endTime: '23:00' },
+            { id: 'b2', label: 'Tanda 2: Set Madrugada', date: '2026-08-31', startTime: '00:00', endTime: '01:30' }
+          ],
+          totalShowHours: 3
+        },
+        {
+          round: 5,
+          clientRejectionMessage: 'Acuerdo comercial final: $200,000 MXN netos con horarios confirmados de 21:30 a 01:30 hrs en 2 tandas.',
+          adminProposalNote: 'Propuesta final negociada enviada por $200,000 MXN con 13% de margen de disquera para firma inmediata.',
+          totalOffered: 200000,
+          artistFee: 140000,
+          viaticosCost: 32000,
+          soundCost: 28000,
+          marginPercent: 13,
+          timestamp: '2026-07-28 09:45 AM',
+          proposedDate: '2026-08-30',
+          scheduleMode: 'tandas',
+          showBlocks: [
+            { id: 'b1', label: 'Tanda 1: Set Noche 1', date: '2026-08-30', startTime: '21:30', endTime: '23:00' },
+            { id: 'b2', label: 'Tanda 2: Set Madrugada', date: '2026-08-31', startTime: '00:00', endTime: '01:30' }
+          ],
+          totalShowHours: 3
+        }
+      ]
     },
     {
       id: 'COT-8904',
@@ -209,19 +341,67 @@ export class MockDataService {
       venue: 'Teatro del Pueblo',
       city: 'Saltillo, COAH',
       totalAmount: 320000,
-      marginAmount: 80000,
+      marginAmount: 48000,
+      artistFee: 220000,
+      viaticosCost: 32000,
+      soundCost: 20000,
       state: 'Aceptada',
       paymentStatus: 'Anticipo 50%',
-      terms: 'Aceptación formal recibida por correo. En espera de firma de contrato.',
+      terms: 'Aceptación formal recibida del cliente. Contrato listo para firma.',
       dateCreated: '2026-07-22',
       eventType: 'Fiesta',
       durationHours: 3,
-      eventAddress: 'Centro de Convenciones, Blvd. Los Fundadores, Saltillo, COAH.',
+      eventAddress: 'Blvd. Nazario Ortiz Garza #2000, Saltillo, COAH.',
       representativeName: 'Ing. Luis Donaldo',
       representativePhone: '+52 81 1234 5678',
       genre: 'Norteño Sax',
       rating: 4.8,
-      artistImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80'
+      artistImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80',
+      contractFileName: 'Borrador_Contrato_COT-8905.pdf',
+      contractFileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      contractStatus: 'Generado',
+      artistNotified: true,
+      artistNotifiedTime: '2026-07-28 10:15 AM',
+      negotiationRound: 2,
+      negotiationHistory: [
+        {
+          round: 1,
+          clientRejectionMessage: 'El presupuesto inicial de $360,000 MXN supera nuestro tope autorizado para la feria regional.',
+          adminProposalNote: 'Rebajamos el margen de disquera del 20% al 17% para ofrecer $340,000 MXN.',
+          totalOffered: 340000,
+          artistFee: 240000,
+          viaticosCost: 35000,
+          soundCost: 22000,
+          soundOption: 'proveedor',
+          marginPercent: 17,
+          timestamp: '2026-07-24 11:00 AM',
+          proposedDate: '2026-08-05',
+          scheduleMode: 'continuo',
+          startTime: '21:00',
+          endTime: '00:00',
+          durationHours: 3,
+          totalShowHours: 3
+        },
+        {
+          round: 2,
+          clientRejectionMessage: 'Aceptamos $320,000 MXN si se divide el show en 2 tandas y la disquera incluye planta de luz.',
+          adminProposalNote: 'Propuesta aceptada por $320,000 MXN con 15% de margen y formato de 2 tandas.',
+          totalOffered: 320000,
+          artistFee: 220000,
+          viaticosCost: 32000,
+          soundCost: 20000,
+          soundOption: 'proveedor',
+          marginPercent: 15,
+          timestamp: '2026-07-26 04:30 PM',
+          proposedDate: '2026-08-05',
+          scheduleMode: 'tandas',
+          showBlocks: [
+            { id: 'b1', label: 'Tanda 1: Set 1', date: '2026-08-05', startTime: '21:00', endTime: '22:30' },
+            { id: 'b2', label: 'Tanda 2: Set 2', date: '2026-08-05', startTime: '23:00', endTime: '00:30' }
+          ],
+          totalShowHours: 3
+        }
+      ]
     },
     {
       id: 'COT-8906',
@@ -597,8 +777,24 @@ export class MockDataService {
   );
 
   readonly quotes = signal<Quote[]>(
-    this.storage.getItem('acordex_quotes', this.INITIAL_QUOTES)
+    this.loadQuotesWithFreshMocks()
   );
+
+  private loadQuotesWithFreshMocks(): Quote[] {
+    const list = this.storage.getItem<Quote[]>('acordex_quotes_v5', this.INITIAL_QUOTES);
+    for (const qId of ['COT-8903', 'COT-8905']) {
+      const fresh = this.INITIAL_QUOTES.find(q => q.id === qId);
+      if (fresh) {
+        const idx = list.findIndex(q => q.id === qId);
+        if (idx !== -1) {
+          list[idx] = fresh;
+        } else {
+          list.push(fresh);
+        }
+      }
+    }
+    return list;
+  }
 
   readonly events = signal<EventItem[]>(
     this.storage.getItem('acordex_events', this.INITIAL_EVENTS)
@@ -681,7 +877,7 @@ export class MockDataService {
 
   // --- MUTATION METHODS (WITH PERSISTENCE & AUDIT LOGGING) ---
 
-  private addAudit(action: string, targetModule: string, details: string): void {
+  addAudit(action: string, targetModule: string, details: string): void {
     const currentRole = this.roleService.activeRole();
     const userName = currentRole === 'encargado' 
       ? 'Lic. Claudia Morales' 
@@ -714,7 +910,7 @@ export class MockDataService {
       return q;
     });
     this.quotes.set(updated);
-    this.storage.setItem('acordex_quotes', updated);
+    this.storage.setItem('acordex_quotes_v4', updated);
     this.addAudit('Transición de Estado', 'Cotizaciones', `Cambió estado de ${quoteId} a "${newState}"`);
   }
 
@@ -726,7 +922,7 @@ export class MockDataService {
       return q;
     });
     this.quotes.set(updated);
-    this.storage.setItem('acordex_quotes', updated);
+    this.storage.setItem('acordex_quotes_v4', updated);
     this.addAudit('Actualización de Pago', 'Cotizaciones', `Cambió estado de pago de ${quoteId} a "${newPaymentStatus}"`);
   }
 
@@ -738,7 +934,7 @@ export class MockDataService {
       return q;
     });
     this.quotes.set(updated);
-    this.storage.setItem('acordex_quotes', updated);
+    this.storage.setItem('acordex_quotes_v4', updated);
     this.addAudit('Actualización de Cotización', 'Cotizaciones', `Se actualizaron los detalles y propuesta comercial de ${quoteId}`);
   }
 
@@ -751,7 +947,7 @@ export class MockDataService {
     };
     const updated = [created, ...this.quotes()];
     this.quotes.set(updated);
-    this.storage.setItem('acordex_quotes', updated);
+    this.storage.setItem('acordex_quotes_v4', updated);
     this.addAudit('Creación de Cotización', 'Cotizaciones', `Creó la cotización ${created.id} para ${created.groupName}`);
   }
 

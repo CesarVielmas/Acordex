@@ -5,7 +5,7 @@ export type QuoteState =
   | 'Propuesta enviada' 
   | 'Negociación' 
   | 'Aceptada' 
-  | 'Borrador de contrato'
+  | 'Contrato en espera de firma'
   | 'Contrato firmado' 
   | 'Pago pendiente' 
   | 'Anticipo 50% recibido'
@@ -73,6 +73,28 @@ export interface EventItem {
   evidenceMedia: EventEvidence[];
 }
 
+// Registro de cada ronda de negociación comercial
+export interface NegotiationEntry {
+  round: number;                     // Número de ronda (1, 2, 3...)
+  clientRejectionMessage: string;    // Motivo de rechazo del cliente para esa ronda
+  adminProposalNote?: string;        // Nota/mensaje de negociación del admin para esa ronda
+  totalOffered: number;              // Monto total ofertado en esa ronda
+  artistFee: number;                 // Honorarios propuestos en esa ronda
+  viaticosCost: number;              // Viáticos propuestos en esa ronda
+  soundCost: number;                 // Equipo de audio propuesto en esa ronda
+  soundOption?: 'cliente' | 'proveedor'; // Si la disquera provee el audio o el cliente lo trae
+  marginPercent: number;             // % Margen disquera en esa ronda
+  timestamp?: string;                // Fecha/hora del re-envío
+  // Horario propuesto en esa ronda
+  proposedDate?: string;             // Fecha del evento propuesta en esa ronda
+  scheduleMode?: 'continuo' | 'tandas'; // Modo de horario en esa ronda
+  startTime?: string;                // Hora de inicio (modo continuo)
+  endTime?: string;                  // Hora de fin calculada (modo continuo)
+  durationHours?: number;            // Duración en horas (modo continuo)
+  showBlocks?: { id: string; label: string; date?: string; startTime: string; endTime: string; }[]; // Tandas
+  totalShowHours?: number;           // Total de horas de show (cualquier modo)
+}
+
 export interface Quote {
   id: string;
   clientName: string;
@@ -106,6 +128,26 @@ export interface Quote {
   viaticosCost?: number;
   artistFee?: number;
   includeIva?: boolean;
+
+  // Negociación multi-ronda
+  negotiationRound?: number;           // 0 = primera propuesta sin negociar, 1+ = en negociación activa
+  negotiationHistory?: NegotiationEntry[]; // Historial de todas las rondas de negociación
+  scheduleMode?: 'continuo' | 'tandas';
+  showBlocks?: { id: string; label: string; date?: string; startTime: string; endTime: string; }[];
+
+  // Fase 3 ("Aceptada") - Contratos, notificaciones al grupo y cupón de compensación opcional
+  contractFileName?: string;
+  contractFileUrl?: string;
+  contractStatus?: 'Pendiente' | 'Generado' | 'Subido' | 'Firmado';
+  artistNotified?: boolean;
+  artistNotifiedTime?: string;
+  compensationCoupon?: {
+    code: string;
+    discountValue: number;
+    type: 'percentage' | 'fixed';
+    note: string;
+    generatedAt: string;
+  };
 }
 
 export interface GroupItem {
