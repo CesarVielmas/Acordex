@@ -6,10 +6,11 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { LayoutService } from '../../core/services/layout.service';
 import { EventService } from '../../core/services/event.service';
 import { BandCard } from '../../shared/band-card/band-card';
+import { QuoteModal } from '../../shared/quote-modal/quote-modal';
 
 @Component({
   selector: 'app-cotizaciones',
-  imports: [CommonModule, FormsModule, RouterModule, BandCard],
+  imports: [CommonModule, FormsModule, RouterModule, BandCard, QuoteModal],
   templateUrl: './cotizaciones.html',
   styleUrl: './cotizaciones.scss'
 })

@@ -9,10 +9,11 @@ import { EventService } from '../../core/services/event.service';
 import { UserService } from '../../core/services/user.service';
 import { PostCard } from '../../shared/post-card/post-card';
 import { ReviewCard } from '../../shared/review-card/review-card';
+import { QuoteModal } from '../../shared/quote-modal/quote-modal';
 
 @Component({
   selector: 'app-grupo-detalle',
-  imports: [CommonModule, FormsModule, RouterModule, PostCard, ReviewCard],
+  imports: [CommonModule, FormsModule, RouterModule, PostCard, ReviewCard, QuoteModal],
   templateUrl: './grupo-detalle.html',
   styleUrl: './grupo-detalle.scss'
 })

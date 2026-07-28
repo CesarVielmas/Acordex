@@ -12,26 +12,37 @@ import { LayoutStateService } from '../../core/services/layout_state.service';
   imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent, BottomNavComponent],
   template: `
     <!-- Root Container: Fixed full viewport height, no global body scroll -->
-    <div class="h-screen w-screen overflow-hidden bg-[#131313] text-on-surface flex flex-col font-body-md relative">
+    <div class="h-screen w-screen bg-[#131313] text-on-surface flex flex-col font-body-md">
       
-      <!-- Top Fixed Sticky Header -->
-      <app-header class="shrink-0 z-40" />
+      <!-- Top Header (hidden when fullscreen modal active) -->
+      @if (!layoutState.fullScreenModalActive()) {
+        <app-header class="shrink-0" />
+      }
 
       <!-- Inner Layout Container -->
-      <div class="flex-1 flex overflow-hidden relative">
+      <div class="flex-1 flex overflow-hidden min-h-0">
         
-        <!-- Desktop Sidebar (Hidden on mobile, Fixed height full container) -->
-        <app-sidebar class="hidden md:block shrink-0 h-full z-30" />
+        <!-- Desktop Sidebar (Hidden on mobile & when modal studio is active) -->
+        @if (!layoutState.fullScreenModalActive()) {
+          <app-sidebar class="hidden md:block shrink-0 h-full" />
+        }
 
         <!-- Main Scrollable Content Area -->
-        <main class="flex-1 h-full overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto custom-scrollbar pb-24 md:pb-8">
+        <main 
+          [class.p-0]="layoutState.fullScreenModalActive()" 
+          [class.pb-0]="layoutState.fullScreenModalActive()"
+          [class.max-w-none]="layoutState.fullScreenModalActive()"
+          class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto custom-scrollbar pb-24 md:pb-8"
+        >
           <router-outlet />
         </main>
 
       </div>
 
       <!-- Mobile Bottom Navigation (md:hidden) -->
-      <app-bottom-nav class="md:hidden" (toggleMenu)="layoutState.toggleMobileMenu()" />
+      @if (!layoutState.fullScreenModalActive()) {
+        <app-bottom-nav class="md:hidden" (toggleMenu)="layoutState.toggleMobileMenu()" />
+      }
 
       <!-- Mobile Drawer for all 12 Panels (md:hidden) -->
       @if (layoutState.mobileMenuOpen()) {

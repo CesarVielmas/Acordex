@@ -1,0 +1,136 @@
+// Quote Modal Styles & Animations
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(242, 202, 80, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(242, 202, 80, 0.35);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.glow-active {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85) sepia(1) saturate(3) hue-rotate(5deg);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  &:hover {
+    opacity: 1;
+  }
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23F2CA50' opacity='0.7'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 18px;
+  padding-right: 34px !important;
+}
+
+select option {
+  background-color: #141414;
+  color: white;
+}
+
+input, select, textarea {
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.transition-all {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'wght' 350, 'opsz' 22;
+}
+
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 202, 80, 0.2) transparent;
+  
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(242, 202, 80, 0.2);
+    border-radius: 9px;
+  }
+}
+
+@keyframes lightboxFadeIn {
+  from { opacity: 0; background-color: rgba(0,0,0,0); backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
+  to { opacity: 1; background-color: rgba(0,0,0,0.95); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+}
+
+@keyframes lightboxFadeOut {
+  from { opacity: 1; background-color: rgba(0,0,0,0.95); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+  to { opacity: 0; background-color: rgba(0,0,0,0); backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
+}
+
+@keyframes slideUpEntry {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slideDownExit {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
+.animate-lightbox-fade-in {
+  animation: lightboxFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-lightbox-fade-out {
+  animation: lightboxFadeOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up-entry {
+  animation: slideUpEntry 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.animate-slide-down-exit {
+  animation: slideDownExit 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (min-width: 768px) {
+  @keyframes desktopZoomIn {
+    from { transform: scale(0.95) translateY(15px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  @keyframes desktopZoomOut {
+    from { transform: scale(1) translateY(0); opacity: 1; }
+    to { transform: scale(0.95) translateY(15px); opacity: 0; }
+  }
+  .animate-slide-up-entry {
+    animation: desktopZoomIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .animate-slide-down-exit {
+    animation: desktopZoomOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

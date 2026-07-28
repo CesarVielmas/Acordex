@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
+import { LayoutStateService } from '../../core/services/layout_state.service';
 import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models';
 
 @Component({
@@ -416,9 +417,10 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
         <!-- DISTINCT STATE-SPECIFIC DETAIL MODAL WINDOW SYSTEM (14 TAILORED MODAL DESIGNS PER STATE) -->
         @if (selectedQuote()) {
           <div 
+            data-modal-portal
             (wheel)="$event.stopPropagation()"
             (touchmove)="$event.stopPropagation()"
-            class="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-2xl overflow-y-auto p-4 md:p-8 flex items-center justify-center custom-scrollbar"
+            class="fixed inset-0 z-[99999999] bg-black/85 backdrop-blur-xl p-2 sm:p-4 md:p-5 flex items-center justify-center font-['Be_Vietnam_Pro']"
           >
             
             <!-- MODAL CARD CONTAINER WITH DYNAMIC STATE ACCENT BORDER & SHADOW -->
@@ -1240,6 +1242,7 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
 export class QuotesComponent {
   roleService = inject(RoleService);
   mockData = inject(MockDataService);
+  layoutState = inject(LayoutStateService);
 
   viewMode = signal<'kanban' | 'table'>('kanban');
   selectedQuote = signal<Quote | null>(null);
@@ -1250,19 +1253,51 @@ export class QuotesComponent {
   stateFilter = signal('Todos');
   paymentFilter = signal('Todos');
 
+  proposalSoundOption = signal<'cliente' | 'proveedor'>('proveedor');
+  proposalSoundCost = signal<number>(15000);
+  proposalViaticosCost = signal<number>(8500);
+  proposalArtistFee = signal<number>(35000);
+  proposalIncludeIva = signal<boolean>(false);
+
+  getProposalSubtotal(): number {
+    const sound = this.proposalSoundOption() === 'proveedor' ? (Number(this.proposalSoundCost()) || 0) : 0;
+    const viaticos = Number(this.proposalViaticosCost()) || 0;
+    const fee = Number(this.proposalArtistFee()) || 0;
+    return fee + sound + viaticos;
+  }
+
+  getProposalIva(): number {
+    return this.proposalIncludeIva() ? this.getProposalSubtotal() * 0.16 : 0;
+  }
+
+  getProposalTotal(): number {
+    return this.getProposalSubtotal() + this.getProposalIva();
+  }
+
+  approveAndSendProposal(): void {
+    const current = this.selectedQuote();
+    if (!current) return;
+    const total = this.getProposalTotal();
+    const updates: Partial<Quote> = {
+      totalAmount: total,
+      state: 'Propuesta enviada',
+      soundOption: this.proposalSoundOption(),
+      soundCost: this.proposalSoundOption() === 'proveedor' ? (Number(this.proposalSoundCost()) || 0) : 0,
+      viaticosCost: Number(this.proposalViaticosCost()) || 0,
+      artistFee: Number(this.proposalArtistFee()) || 0,
+      includeIva: this.proposalIncludeIva()
+    };
+    this.mockData.updateQuoteDetails(current.id, updates);
+    this.selectedQuote.set({ ...current, ...updates });
+  }
+
   constructor() {
-    // Lock parent window and main content scrolling when detail modal is active
+    // When modal opens → hide header/sidebar via fullScreenModalActive (already wired in main-layout)
     effect(() => {
       const active = this.selectedQuote();
+      this.layoutState.fullScreenModalActive.set(!!active);
       if (typeof document !== 'undefined') {
-        const mainEl = document.querySelector('main');
-        if (active) {
-          document.body.style.overflow = 'hidden';
-          if (mainEl) mainEl.style.overflow = 'hidden';
-        } else {
-          document.body.style.overflow = '';
-          if (mainEl) mainEl.style.overflow = '';
-        }
+        document.body.style.overflow = active ? 'hidden' : '';
       }
     });
   }

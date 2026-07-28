@@ -91,7 +91,7 @@ export interface Quote {
   contractPdfUrl?: string;
   dateCreated: string;
 
-  // Fields from Public Booking Wizard (Screenshot matching):
+  // Fields from Public Booking Wizard & Commercial Proposal Builder:
   eventType?: 'Boda' | 'XV Años' | 'Concierto' | 'Fiesta' | 'Otro' | string;
   durationHours?: number;
   eventAddress?: string;
@@ -100,6 +100,12 @@ export interface Quote {
   genre?: string;
   rating?: number;
   artistImage?: string;
+  notes?: string;
+  soundOption?: 'cliente' | 'proveedor';
+  soundCost?: number;
+  viaticosCost?: number;
+  artistFee?: number;
+  includeIva?: boolean;
 }
 
 export interface GroupItem {

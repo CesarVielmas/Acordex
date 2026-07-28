@@ -730,6 +730,18 @@ export class MockDataService {
     this.addAudit('Actualización de Pago', 'Cotizaciones', `Cambió estado de pago de ${quoteId} a "${newPaymentStatus}"`);
   }
 
+  updateQuoteDetails(quoteId: string, updates: Partial<Quote>): void {
+    const updated = this.quotes().map(q => {
+      if (q.id === quoteId) {
+        return { ...q, ...updates };
+      }
+      return q;
+    });
+    this.quotes.set(updated);
+    this.storage.setItem('acordex_quotes', updated);
+    this.addAudit('Actualización de Cotización', 'Cotizaciones', `Se actualizaron los detalles y propuesta comercial de ${quoteId}`);
+  }
+
   addQuote(newQuote: Omit<Quote, 'id' | 'dateCreated' | 'disqueraId'>): void {
     const created: Quote = {
       ...newQuote,

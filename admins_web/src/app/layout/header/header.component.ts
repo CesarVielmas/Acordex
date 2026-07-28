@@ -10,7 +10,7 @@ import { Role } from '../../core/models/admin.models';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <header class="bg-[#121212]/95 backdrop-blur-2xl border-b border-white/10 sticky top-0 z-40 px-4 sm:px-6 h-[72px] flex items-center justify-between shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-300 select-none">
+    <header class="bg-[#121212]/95 backdrop-blur-2xl border-b border-white/10 px-4 sm:px-6 h-[72px] flex items-center justify-between shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-300 select-none">
       
       <!-- Left Section: 2-Line Vertical Brand Identity -->
       <div class="flex items-center gap-3.5">

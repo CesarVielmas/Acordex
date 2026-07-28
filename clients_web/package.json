@@ -6,7 +6,8 @@
     "start": "ng serve --host 0.0.0.0",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "tunnel": "\"C:\\Users\\vielm\\Downloads\\ngrok-v3-stable-windows-amd64\\ngrok.exe\" http 4200 --host-header=rewrite"
   },
   "private": true,
   "packageManager": "bun@1.2.18",
@@ -24,6 +25,7 @@
     "@angular/build": "^21.2.9",
     "@angular/cli": "^21.2.9",
     "@angular/compiler-cli": "^21.2.0",
+    "@ngrok/ngrok": "^1.7.0",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.11",
     "autoprefixer": "^10.5.0",
