@@ -24,7 +24,7 @@ import { LayoutStateService } from '../../core/services/layout_state.service';
         <app-sidebar class="hidden md:block shrink-0 h-full z-30" />
 
         <!-- Main Scrollable Content Area -->
-        <main class="flex-1 h-full overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto custom-scrollbar pb-24 md:pb-8 animate-fade-in">
+        <main class="flex-1 h-full overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto custom-scrollbar pb-24 md:pb-8">
           <router-outlet />
         </main>
 

@@ -13,6 +13,7 @@ export class RoleService {
   );
 
   readonly isEncargado = computed(() => this.activeRole() === 'encargado');
+  readonly isAdmin = computed(() => this.activeRole() === 'administrador');
   readonly isAdminOrEncargado = computed(() => this.activeRole() === 'encargado' || this.activeRole() === 'administrador');
   readonly isUsuarioOnly = computed(() => this.activeRole() === 'usuario');
 

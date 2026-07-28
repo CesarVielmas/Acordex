@@ -113,7 +113,15 @@ export class MockDataService {
       paymentStatus: 'Anticipo 50%',
       terms: '50% de anticipo al firmar, 50% el día de la prueba de sonido. Hospedaje y camerino VIP incluidos.',
       contractPdfUrl: 'contrato_COT-8901_firmado.pdf',
-      dateCreated: '2026-07-10'
+      dateCreated: '2026-07-10',
+      eventType: 'Concierto',
+      durationHours: 3,
+      eventAddress: 'Av. Fundidora #501, Col. Obrera, Monterrey, N.L.',
+      representativeName: 'Ing. Luis Donaldo',
+      representativePhone: '+52 81 1234 5678',
+      genre: 'Norteño Sax',
+      rating: 4.8,
+      artistImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80'
     },
     {
       id: 'COT-8902',
@@ -130,7 +138,15 @@ export class MockDataService {
       state: 'Negociación',
       paymentStatus: 'Pendiente',
       terms: 'Presentación estelar de 2.5 horas. Escenografía completa e iluminación robótica.',
-      dateCreated: '2026-07-18'
+      dateCreated: '2026-07-18',
+      eventType: 'Concierto',
+      durationHours: 4,
+      eventAddress: 'Explanada del Palenque, San Marcos, Aguascalientes, AGS.',
+      representativeName: 'Ing. Luis Donaldo',
+      representativePhone: '+52 81 1234 5678',
+      genre: 'Banda Sinaloense',
+      rating: 4.9,
+      artistImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80'
     },
     {
       id: 'COT-8903',
@@ -147,7 +163,15 @@ export class MockDataService {
       state: 'Propuesta enviada',
       paymentStatus: 'Pendiente',
       terms: 'Evento co-producido con Fonovisa. Reparto de utilidades 60/40.',
-      dateCreated: '2026-07-20'
+      dateCreated: '2026-07-20',
+      eventType: 'Concierto',
+      durationHours: 3,
+      eventAddress: 'Obreros de Cananea #747, Col. Los Belenes, Zapopan, JAL.',
+      representativeName: 'Ing. Luis Donaldo',
+      representativePhone: '+52 81 1234 5678',
+      genre: 'Mariachi / Regional',
+      rating: 4.6,
+      artistImage: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&auto=format&fit=crop&q=80'
     },
     {
       id: 'COT-8904',
@@ -164,7 +188,15 @@ export class MockDataService {
       state: 'Pago confirmado',
       paymentStatus: 'Pago Confirmado 100%',
       terms: 'Boda privada. 3 tandas de 45 minutos. Equipo de sonido propio.',
-      dateCreated: '2026-07-01'
+      dateCreated: '2026-07-01',
+      eventType: 'Boda',
+      durationHours: 3,
+      eventAddress: 'Vázquez de Mella #525, Polanco, Miguel Hidalgo, CDMX.',
+      representativeName: 'Ing. Luis Donaldo',
+      representativePhone: '+52 81 1234 5678',
+      genre: 'Campirano / Acústico',
+      rating: 4.7,
+      artistImage: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80'
     },
     {
       id: 'COT-8905',
@@ -181,7 +213,15 @@ export class MockDataService {
       state: 'Aceptada',
       paymentStatus: 'Anticipo 50%',
       terms: 'Aceptación formal recibida por correo. En espera de firma de contrato.',
-      dateCreated: '2026-07-22'
+      dateCreated: '2026-07-22',
+      eventType: 'Fiesta',
+      durationHours: 3,
+      eventAddress: 'Centro de Convenciones, Blvd. Los Fundadores, Saltillo, COAH.',
+      representativeName: 'Ing. Luis Donaldo',
+      representativePhone: '+52 81 1234 5678',
+      genre: 'Norteño Sax',
+      rating: 4.8,
+      artistImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80'
     },
     {
       id: 'COT-8906',
@@ -198,7 +238,15 @@ export class MockDataService {
       state: 'En revisión',
       paymentStatus: 'Pendiente',
       terms: 'Revisión de rider técnico y logística de transporte de instrumentos masivo.',
-      dateCreated: '2026-07-23'
+      dateCreated: '2026-07-23',
+      eventType: 'Concierto',
+      durationHours: 4,
+      eventAddress: 'Av. Juárez #2500, Centro, Torreón, COAH.',
+      representativeName: 'Ing. Luis Donaldo',
+      representativePhone: '+52 81 1234 5678',
+      genre: 'Banda Sinaloense',
+      rating: 4.9,
+      artistImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80'
     }
   ];
 
@@ -471,6 +519,24 @@ export class MockDataService {
       action: 'Carga de Evidencia',
       targetModule: 'Eventos',
       details: 'Subió 1 fotografía de ensayo en Arena Monterrey'
+    },
+    {
+      id: 'LOG-904',
+      timestamp: '2026-07-22 16:45',
+      userName: 'Mariana Staff López',
+      role: 'usuario',
+      action: 'Checklist de Montaje Completado',
+      targetModule: 'Tareas',
+      details: 'Completó la verificación de cableado de iluminación y accesos VIP'
+    },
+    {
+      id: 'LOG-905',
+      timestamp: '2026-07-21 09:15',
+      userName: 'Carlos Staff Pérez',
+      role: 'usuario',
+      action: 'Acreditación de Medios',
+      targetModule: 'Prensa',
+      details: 'Verificó gafetes y entregó 35 kits de prensa en hotel sede'
     }
   ];
 

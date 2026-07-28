@@ -5,9 +5,13 @@ export type QuoteState =
   | 'Propuesta enviada' 
   | 'Negociación' 
   | 'Aceptada' 
+  | 'Borrador de contrato'
   | 'Contrato firmado' 
   | 'Pago pendiente' 
+  | 'Anticipo 50% recibido'
+  | 'Logística & Soundcheck'
   | 'Pago confirmado' 
+  | 'En presentación'
   | 'Evento realizado' 
   | 'Finalizada' 
   | 'Cancelada';
@@ -86,6 +90,16 @@ export interface Quote {
   terms: string;
   contractPdfUrl?: string;
   dateCreated: string;
+
+  // Fields from Public Booking Wizard (Screenshot matching):
+  eventType?: 'Boda' | 'XV Años' | 'Concierto' | 'Fiesta' | 'Otro' | string;
+  durationHours?: number;
+  eventAddress?: string;
+  representativeName?: string;
+  representativePhone?: string;
+  genre?: string;
+  rating?: number;
+  artistImage?: string;
 }
 
 export interface GroupItem {
