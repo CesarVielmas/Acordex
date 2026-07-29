@@ -73,10 +73,31 @@ export interface EventItem {
   evidenceMedia: EventEvidence[];
 }
 
+// Interfaz para Hitos / Parcialidades de Pago Programadas
+export interface PaymentMilestone {
+  id: string;
+  label: string;                   // Concepto (ej. "Pago intermedio 30 días antes", "Segunda parcialidad 25%")
+  percentageOrAmount: number;     // Valor numérico (ej. 25 o 15000)
+  type: 'percentage' | 'fixed';    // Tipo ('percentage' % o 'fixed' $)
+  dueDateOrTimeframe: string;     // Fecha u horizonte de pago (ej. "2026-08-01" o "30 días antes del evento")
+}
+
+// Interfaz para Tarjeta / Cuenta Receptora simulada
+export interface ReceivingCard {
+  id: string;
+  bankName: string;
+  accountHolder: string;
+  cardNumber: string; // e.g. '**** **** **** 4921'
+  clabe: string;
+  cardType: 'Débito' | 'Crédito' | 'Empresarial';
+  isDefault?: boolean;
+}
+
 // Registro de cada ronda de negociación comercial
 export interface NegotiationEntry {
   round: number;                     // Número de ronda (1, 2, 3...)
   clientRejectionMessage: string;    // Motivo de rechazo del cliente para esa ronda
+  clientRejectedAt?: string;         // Fecha/hora en que el cliente rechazó esta ronda
   adminProposalNote?: string;        // Nota/mensaje de negociación del admin para esa ronda
   totalOffered: number;              // Monto total ofertado en esa ronda
   artistFee: number;                 // Honorarios propuestos en esa ronda
@@ -93,6 +114,13 @@ export interface NegotiationEntry {
   durationHours?: number;            // Duración en horas (modo continuo)
   showBlocks?: { id: string; label: string; date?: string; startTime: string; endTime: string; }[]; // Tandas
   totalShowHours?: number;           // Total de horas de show (cualquier modo)
+
+  // Condiciones de Pago por Ronda
+  advancePaymentType?: 'percentage' | 'fixed'; // 'percentage' (%) o 'fixed' ($)
+  advancePaymentValue?: number;                // Valor de anticipo (ej. 50% o $25,000 MXN)
+  paymentDueDate?: string;                     // Fecha límite de pago para liquidación total
+  receivingCardId?: string;                    // Tarjeta/cuenta receptora seleccionada
+  paymentMilestones?: PaymentMilestone[];      // Hitos de pago programados en esta ronda
 }
 
 export interface Quote {
@@ -107,6 +135,13 @@ export interface Quote {
   city: string;
   totalAmount: number;
   marginAmount: number;
+
+  // Condiciones de Pago y Tarjeta Receptora (Vigentes)
+  advancePaymentType?: 'percentage' | 'fixed'; // 'percentage' (%) o 'fixed' ($)
+  advancePaymentValue?: number;                // Valor de anticipo (ej. 50% o $25,000 MXN)
+  paymentDueDate?: string;                     // Fecha límite de pago para liquidación total
+  receivingCardId?: string;                    // Tarjeta/cuenta receptora seleccionada
+  paymentMilestones?: PaymentMilestone[];      // Hitos de pago programados vigentes
   state: QuoteState;
   paymentStatus: PaymentStatus;
   terms: string;

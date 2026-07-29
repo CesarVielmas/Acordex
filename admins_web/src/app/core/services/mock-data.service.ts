@@ -15,7 +15,8 @@ import {
   FileItem,
   CorporateSettings,
   EventEvidence,
-  Role
+  Role,
+  ReceivingCard
 } from '../models/admin.models';
 
 const ACTIVE_DISQUERA_ID = 'acordex-records';
@@ -28,6 +29,36 @@ export class MockDataService {
   private roleService = inject(RoleService);
 
   // --- SEED DATA DEFINITIONS ---
+
+  public readonly INITIAL_RECEIVING_CARDS: ReceivingCard[] = [
+    {
+      id: 'card-bbva-01',
+      bankName: 'BBVA México',
+      accountHolder: 'Acordex Entertainment S.A. de C.V.',
+      cardNumber: '**** **** **** 4921',
+      clabe: '012180001234567890',
+      cardType: 'Empresarial',
+      isDefault: true
+    },
+    {
+      id: 'card-banamex-02',
+      bankName: 'Citibanamex',
+      accountHolder: 'Acordex Records Corporativo',
+      cardNumber: '**** **** **** 8812',
+      clabe: '002180009876543210',
+      cardType: 'Empresarial',
+      isDefault: false
+    },
+    {
+      id: 'card-banorte-03',
+      bankName: 'Banorte',
+      accountHolder: 'Acordex Representaciones Musicales',
+      cardNumber: '**** **** **** 1042',
+      clabe: '072180004567890123',
+      cardType: 'Débito',
+      isDefault: false
+    }
+  ];
 
   private readonly INITIAL_GROUPS: GroupItem[] = [
     {
@@ -164,7 +195,16 @@ export class MockDataService {
           startTime: '22:00',
           endTime: '01:00',
           durationHours: 3,
-          totalShowHours: 3
+          totalShowHours: 3,
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-08-25',
+          receivingCardId: 'card-bbva-01',
+          paymentMilestones: [
+            { id: 'm1_r1', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
+            { id: 'm2_r1', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' },
+            { id: 'm3_r1', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-25' }
+          ]
         },
         {
           round: 2,
@@ -181,7 +221,16 @@ export class MockDataService {
           startTime: '22:30',
           endTime: '02:00',
           durationHours: 3.5,
-          totalShowHours: 3.5
+          totalShowHours: 3.5,
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-08-25',
+          receivingCardId: 'card-bbva-01',
+          paymentMilestones: [
+            { id: 'm1_r2', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
+            { id: 'm2_r2', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' },
+            { id: 'm3_r2', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-25' }
+          ]
         }
       ]
     },
@@ -200,6 +249,15 @@ export class MockDataService {
       artistFee: 140000,
       viaticosCost: 32000,
       soundCost: 28000,
+      advancePaymentType: 'percentage',
+      advancePaymentValue: 50,
+      paymentDueDate: '2026-08-25',
+      receivingCardId: 'card-bbva-01',
+      paymentMilestones: [
+        { id: 'm1', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
+        { id: 'm2', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' },
+        { id: 'm3', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-25' }
+      ],
       state: 'Propuesta enviada',
       paymentStatus: 'Pendiente',
       terms: 'Evento co-producido con Fonovisa. Reparto de utilidades 60/40.',
@@ -217,6 +275,7 @@ export class MockDataService {
         {
           round: 1,
           clientRejectionMessage: 'El presupuesto inicial de $240,000 MXN supera el límite autorizado de $220k para este recinto. Solicitamos reducir costos de honorarios o ajustar el margen comercial de la disquera.',
+          clientRejectedAt: '2026-07-23 09:30 AM',
           adminProposalNote: 'Se redujo la comisión de la disquera del 20% al 18% y se ofreció un ajuste comercial en viáticos.',
           totalOffered: 230000,
           artistFee: 160000,
@@ -229,11 +288,21 @@ export class MockDataService {
           startTime: '20:00',
           endTime: '23:00',
           durationHours: 3,
-          totalShowHours: 3
+          totalShowHours: 3,
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-08-25',
+          receivingCardId: 'card-bbva-01',
+          paymentMilestones: [
+            { id: 'm1_8903_r1', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
+            { id: 'm2_8903_r1', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' },
+            { id: 'm3_8903_r1', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-25' }
+          ]
         },
         {
           round: 2,
           clientRejectionMessage: 'Sigue estando elevado ($230k). Además requerimos cambiar la fecha al 29 de agosto y dividir el concierto en 2 tandas (Set 1: 21:00 a 22:30 y Set 2: 23:00 a 00:30).',
+          clientRejectedAt: '2026-07-25 10:15 AM',
           adminProposalNote: 'Se aceptó el cambio de fecha al 29 de agosto y el formato de 2 tandas. Redujimos el margen de disquera al 16%.',
           totalOffered: 220000,
           artistFee: 155000,
@@ -247,11 +316,21 @@ export class MockDataService {
             { id: 'b1', label: 'Tanda 1: Set Apertura', date: '2026-08-29', startTime: '21:00', endTime: '22:30' },
             { id: 'b2', label: 'Tanda 2: Set Cierre', date: '2026-08-29', startTime: '23:00', endTime: '00:30' }
           ],
-          totalShowHours: 3
+          totalShowHours: 3,
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-08-25',
+          receivingCardId: 'card-bbva-01',
+          paymentMilestones: [
+            { id: 'm1_8903_r2', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
+            { id: 'm2_8903_r2', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' },
+            { id: 'm3_8903_r2', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-25' }
+          ]
         },
         {
           round: 3,
           clientRejectionMessage: 'El patronato aprobó $215,000 MXN pero solicita que la disquera absorba la planta de luz y el transporte local.',
+          clientRejectedAt: '2026-07-26 01:45 PM',
           adminProposalNote: 'Se absorbió el costo de planta de luz y ajustamos viáticos a $35,000 MXN con un margen de disquera del 15%.',
           totalOffered: 215000,
           artistFee: 150000,
@@ -265,11 +344,21 @@ export class MockDataService {
             { id: 'b1', label: 'Tanda 1: Set Apertura', date: '2026-08-29', startTime: '21:00', endTime: '22:30' },
             { id: 'b2', label: 'Tanda 2: Set Cierre', date: '2026-08-29', startTime: '23:00', endTime: '00:30' }
           ],
-          totalShowHours: 3
+          totalShowHours: 3,
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-08-25',
+          receivingCardId: 'card-bbva-01',
+          paymentMilestones: [
+            { id: 'm1_8903_r3', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
+            { id: 'm2_8903_r3', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' },
+            { id: 'm3_8903_r3', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-25' }
+          ]
         },
         {
           round: 4,
           clientRejectionMessage: 'El cliente propone $205,000 MXN si se realiza el contrato hoy y se efectúa la transferencia inmediata del 50% de anticipo.',
+          clientRejectedAt: '2026-07-27 11:10 AM',
           adminProposalNote: 'Ofrecemos $205,000 MXN ajustando el margen comercial al 14% para acelerar el depósito de anticipo.',
           totalOffered: 205000,
           artistFee: 145000,
@@ -283,7 +372,16 @@ export class MockDataService {
             { id: 'b1', label: 'Tanda 1: Set Noche 1', date: '2026-08-30', startTime: '21:30', endTime: '23:00' },
             { id: 'b2', label: 'Tanda 2: Set Madrugada', date: '2026-08-31', startTime: '00:00', endTime: '01:30' }
           ],
-          totalShowHours: 3
+          totalShowHours: 3,
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-08-25',
+          receivingCardId: 'card-bbva-01',
+          paymentMilestones: [
+            { id: 'm1_8903_r4', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
+            { id: 'm2_8903_r4', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' },
+            { id: 'm3_8903_r4', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-25' }
+          ]
         },
         {
           round: 5,
@@ -301,7 +399,16 @@ export class MockDataService {
             { id: 'b1', label: 'Tanda 1: Set Noche 1', date: '2026-08-30', startTime: '21:30', endTime: '23:00' },
             { id: 'b2', label: 'Tanda 2: Set Madrugada', date: '2026-08-31', startTime: '00:00', endTime: '01:30' }
           ],
-          totalShowHours: 3
+          totalShowHours: 3,
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-08-25',
+          receivingCardId: 'card-bbva-01',
+          paymentMilestones: [
+            { id: 'm1_8903_r5', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
+            { id: 'm2_8903_r5', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' },
+            { id: 'm3_8903_r5', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-25' }
+          ]
         }
       ]
     },
@@ -775,6 +882,20 @@ export class MockDataService {
   readonly groups = signal<GroupItem[]>(
     this.storage.getItem('acordex_groups', this.INITIAL_GROUPS)
   );
+
+  readonly receivingCards = signal<ReceivingCard[]>(
+    this.storage.getItem('acordex_receiving_cards', this.INITIAL_RECEIVING_CARDS)
+  );
+
+  getReceivingCards(): ReceivingCard[] {
+    return this.receivingCards();
+  }
+
+  getReceivingCardById(id?: string): ReceivingCard {
+    const list = this.receivingCards();
+    if (!id) return list.find(c => c.isDefault) || list[0];
+    return list.find(c => c.id === id) || list[0];
+  }
 
   readonly quotes = signal<Quote[]>(
     this.loadQuotesWithFreshMocks()

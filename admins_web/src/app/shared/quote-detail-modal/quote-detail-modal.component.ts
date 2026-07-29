@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
-import { Quote, QuoteState, PaymentStatus, NegotiationEntry } from '../../core/models/admin.models';
+import { Quote, QuoteState, PaymentStatus, NegotiationEntry, PaymentMilestone } from '../../core/models/admin.models';
 
 export interface GroupEventSchedule {
   id: string;
@@ -26,35 +26,47 @@ export interface ShowBlock {
   endTime: string;
 }
 
+import { QuoteLatestProposalBannerComponent } from './components/quote-latest-proposal-banner.component';
+import { QuoteShowDetailsComponent } from './components/quote-show-details.component';
+import { QuoteFinancialReceiptComponent } from './components/quote-financial-receipt.component';
+
 @Component({
   selector: 'app-quote-detail-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    QuoteLatestProposalBannerComponent,
+    QuoteShowDetailsComponent,
+    QuoteFinancialReceiptComponent
+  ],
   template: `
+    <!-- MAIN QUOTE DETAIL MODAL PORTAL CONTAINER -->
     @if (selectedQuote()) {
       <div 
         data-modal-portal
+        [attr.data-modal-state]="selectedQuote()!.state"
         (wheel)="$event.stopPropagation()"
         (touchmove)="$event.stopPropagation()"
-        class="fixed inset-0 w-screen h-screen z-[99999999] bg-black/95 backdrop-blur-3xl p-2 sm:p-4 md:p-6 flex items-center justify-center font-['Be_Vietnam_Pro'] select-none overflow-hidden"
+        class="quote-modal-backdrop fixed inset-0 w-screen h-screen z-[99999999] bg-black/95 backdrop-blur-3xl p-2 sm:p-4 md:p-6 flex items-center justify-center font-['Be_Vietnam_Pro'] overflow-hidden"
       >
         
         <!-- AMBIENT NEON GLOW LIGHT ORBS IN BACKGROUND -->
-        <div class="absolute top-5 left-5 w-64 sm:w-96 h-64 sm:h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
-        <div class="absolute bottom-5 right-5 w-64 sm:w-96 h-64 sm:h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] bg-purple-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="quote-modal-orb quote-modal-orb-cyan absolute top-5 left-5 w-64 sm:w-96 h-64 sm:h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="quote-modal-orb quote-modal-orb-amber absolute bottom-5 right-5 w-64 sm:w-96 h-64 sm:h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="quote-modal-orb quote-modal-orb-purple absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] bg-purple-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <!-- MAIN MODAL CONTAINER (FIXED HEIGHT CONTAINER, PERFECTLY RESPONSIVE TO SCREEN HEIGHT) -->
         <div 
           [class]="getStateModalBorderClass(selectedQuote()!.state)"
-          class="relative w-full max-w-7xl mx-auto bg-surface-container/95 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 md:p-6 shadow-[0_0_70px_rgba(0,0,0,0.95)] border-2 h-[92vh] max-h-[92vh] flex flex-col backdrop-blur-2xl transition-all duration-300 overflow-hidden"
+          class="quote-modal-shell relative w-full max-w-7xl mx-auto bg-surface-container/95 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 md:p-6 shadow-[0_0_70px_rgba(0,0,0,0.95)] border-2 h-[min(92vh,980px)] max-h-[calc(100dvh-1rem)] flex flex-col backdrop-blur-2xl transition-all duration-300 overflow-hidden"
         >
           
           <!-- FIXED TOP HEADER ROW (NEVER SCROLLS) -->
-          <div class="space-y-2.5 sm:space-y-3 border-b border-outline-variant/30 pb-3 shrink-0">
+          <div class="quote-modal-header space-y-2.5 sm:space-y-3 border-b border-outline-variant/30 pb-3 shrink-0">
             
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3">
+              <div class="quote-modal-title-row flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="quote-modal-title-group flex items-center gap-3 min-w-0">
                 <div [class]="getStateBadgeIconBg(selectedQuote()!.state)" class="p-2.5 sm:p-3.5 rounded-2xl border text-white shadow-[0_0_30px_rgba(6,182,212,0.4)] flex items-center justify-center shrink-0">
                   <span class="material-symbols-outlined text-xl sm:text-3xl md:text-4xl">{{ getStateIcon(selectedQuote()!.state) }}</span>
                 </div>
@@ -78,7 +90,7 @@ export interface ShowBlock {
               </div>
 
               <!-- TOP RIGHT ACTION BUTTONS: REJECT BUTTON + MODAL CLOSE BUTTON (ALWAYS FIXED & VISIBLE) -->
-              <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+              <div class="quote-modal-actions flex items-center gap-2 sm:gap-3 shrink-0 self-end sm:self-auto">
                 @if (selectedQuote()?.state !== 'Aceptada') {
                   <button 
                     (click)="openRejectionDialog()"
@@ -102,7 +114,24 @@ export interface ShowBlock {
 
             <!-- STATE SPECIFIC STEP NAVIGATION TABS FOR 'Propuesta enviada' (CLEAN 2 TAB BAR + EN NEGOCIACIÓN BADGE) -->
             @if (selectedQuote()?.state === 'Propuesta enviada') {
-              <div class="p-1 sm:p-1.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-between gap-2 text-xs shadow-inner">
+              <div class="quote-modal-phase2-status flex items-center justify-end gap-2 pr-1">
+                <!-- TAG 'EN NEGOCIACIÓN' cuando hay rondas activas -->
+                @if (isInNegotiationRound()) {
+                  <span class="px-2.5 py-1 rounded-xl bg-amber-500/25 border border-amber-400/60 text-amber-300 font-black text-[9px] sm:text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-[0_0_15px_rgba(251,191,36,0.3)] animate-pulse">
+                    <span class="material-symbols-outlined text-xs text-amber-400">handshake</span>
+                    EN NEGOCIACIÓN
+                  </span>
+                  <span class="px-2 py-1 rounded-xl bg-surface-container border border-amber-500/30 text-amber-400 font-black text-[9px] font-mono">
+                    {{ negotiationRoundLabel() }}
+                  </span>
+                } @else {
+                  <span class="text-xs font-mono font-extrabold text-cyan-300 hidden md:inline">
+                    TOTAL: <strong class="text-amber-300 font-black text-sm">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</strong>
+                  </span>
+                }
+              </div>
+
+              <div class="quote-modal-tabs quote-modal-phase2-tabs p-1 sm:p-1.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-between gap-2 text-xs shadow-inner">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <button 
                     (click)="phase2Tab.set('cotizacion_enviada')"
@@ -127,28 +156,12 @@ export interface ShowBlock {
                   </button>
                 </div>
 
-                <div class="flex items-center gap-2 pr-1">
-                  <!-- TAG 'EN NEGOCIACIÓN' cuando hay rondas activas -->
-                  @if (isInNegotiationRound()) {
-                    <span class="px-2.5 py-1 rounded-xl bg-amber-500/25 border border-amber-400/60 text-amber-300 font-black text-[9px] sm:text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-[0_0_15px_rgba(251,191,36,0.3)] animate-pulse">
-                      <span class="material-symbols-outlined text-xs text-amber-400">handshake</span>
-                      EN NEGOCIACIÓN
-                    </span>
-                    <span class="px-2 py-1 rounded-xl bg-surface-container border border-amber-500/30 text-amber-400 font-black text-[9px] font-mono">
-                      {{ negotiationRoundLabel() }}
-                    </span>
-                  } @else {
-                    <span class="text-xs font-mono font-extrabold text-cyan-300 hidden md:inline">
-                      TOTAL: <strong class="text-amber-300 font-black text-sm">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</strong>
-                    </span>
-                  }
-                </div>
               </div>
             }
 
             <!-- STATE SPECIFIC STEP NAVIGATION TABS (FOR OTHER STATES OTHER THAN 'En revisión', 'Propuesta enviada', 'Negociación' AND 'Aceptada') -->
             @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada') {
-              <div class="p-1 sm:p-1.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-between gap-2 text-xs shadow-inner">
+              <div class="quote-modal-tabs p-1 sm:p-1.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-between gap-2 text-xs shadow-inner">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <button 
                     (click)="modalTab.set('estado_actual')"
@@ -188,7 +201,7 @@ export interface ShowBlock {
           </div>
 
           <!-- MAIN WORKFLOW SPLIT BODY -->
-          <div class="flex-1 min-h-0 pt-3 sm:pt-4 overflow-hidden">
+          <div class="quote-modal-body flex-1 min-h-0 pt-3 sm:pt-4 overflow-hidden">
             
             <!-- ========================================================================= -->
             <!-- SPECIALIZED WORKFLOW FOR STATE: 'En revisión' (PREMIUM 2-COLUMN SPLIT) -->
@@ -859,6 +872,178 @@ export interface ShowBlock {
                             <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1 font-sans">
                               <span class="text-[9px] font-black uppercase block">EXPLICACIÓN DE HORARIOS / FECHA:</span>
                               <p class="italic text-[10px] sm:text-[11px]">"{{ scheduleChangeExplanation() }}"</p>
+                            </div>
+                          }
+                        </div>
+
+                        <!-- CONFIGURACIÓN EDITABLE DE CONDICIONES DE PAGO Y TARJETA RECEPTORA -->
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-surface-container border border-cyan-500/40 space-y-3 text-xs shadow-inner">
+                          <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2">
+                            <span class="text-[9px] font-black text-cyan-300 uppercase tracking-wider block flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs text-cyan-400">account_balance_wallet</span>
+                              CONDICIONES DE PAGO Y TARJETA RECEPTORA
+                            </span>
+                            <span class="text-[9px] font-mono text-cyan-200">FASE DE REVISIÓN</span>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- 1. MONTO MÍNIMO PARA ACEPTAR (ANTICIPO) -->
+                            <div class="space-y-1.5 p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                              <div class="flex justify-between items-center">
+                                <label class="text-[9px] font-bold text-outline uppercase block">1. Monto Mínimo (Anticipo):</label>
+                                <div class="flex rounded-lg bg-surface-container-highest p-0.5 border border-outline-variant/30 text-[9px] font-mono font-bold">
+                                  <button 
+                                    type="button"
+                                    (click)="proposalAdvanceType.set('percentage')"
+                                    [class]="proposalAdvanceType() === 'percentage' ? 'bg-cyan-500 text-black font-black' : 'text-outline hover:text-on-surface'"
+                                    class="px-2 py-0.5 rounded-md transition-all">
+                                    % Porcentaje
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    (click)="proposalAdvanceType.set('fixed')"
+                                    [class]="proposalAdvanceType() === 'fixed' ? 'bg-cyan-500 text-black font-black' : 'text-outline hover:text-on-surface'"
+                                    class="px-2 py-0.5 rounded-md transition-all">
+                                    $ Fijo
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div class="flex items-center gap-2">
+                                <input 
+                                  type="number" 
+                                  [value]="proposalAdvanceValue()" 
+                                  (input)="proposalAdvanceValue.set(+($any($event.target).value))"
+                                  class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface font-mono font-bold focus:outline-none focus:border-cyan-400"
+                                />
+                                <span class="text-xs font-mono font-bold text-cyan-300 shrink-0">
+                                  {{ proposalAdvanceType() === 'percentage' ? '%' : 'MXN' }}
+                                </span>
+                              </div>
+
+                              <div class="text-[9px] font-mono text-emerald-300 flex justify-between pt-0.5">
+                                <span>Anticipo Calculado:</span>
+                                <strong class="font-bold">&#36;{{ calculatedAdvancePaymentAmount() | number:'1.0-0' }} MXN</strong>
+                              </div>
+                            </div>
+
+                            <!-- 2. FECHA LÍMITE DE PAGO -->
+                            <div class="space-y-1.5 p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                              <label class="text-[9px] font-bold text-amber-300 uppercase block">2. Fecha Límite de Pago Saldo:</label>
+                              <input 
+                                type="date" 
+                                [value]="proposalPaymentDueDate()"
+                                (input)="proposalPaymentDueDate.set($any($event.target).value)"
+                                class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400"
+                              />
+                              <span class="text-[8px] text-outline block">Fecha límite para liquidar el saldo restante.</span>
+                            </div>
+                          </div>
+
+                          <!-- 3. TARJETA / CUENTA RECEPTORA -->
+                          <div class="space-y-1.5 p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                            <label class="text-[9px] font-bold text-purple-300 uppercase block">3. Cuenta / Tarjeta Receptora:</label>
+                            <select 
+                              [value]="proposalReceivingCardId()"
+                              (change)="proposalReceivingCardId.set($any($event.target).value)"
+                              class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-purple-300 font-mono font-bold focus:outline-none focus:border-purple-400"
+                            >
+                              @for (card of mockData.getReceivingCards(); track card.id) {
+                                <option [value]="card.id">{{ card.bankName }} - {{ card.accountHolder }} ({{ card.cardNumber }})</option>
+                              }
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- HITOS / PARCIALIDADES DE PAGO PROGRAMADAS INTERACTIVAS (FASE 1) -->
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-surface-container border border-cyan-500/40 space-y-3 text-xs shadow-inner">
+                          <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2">
+                            <span class="text-[9px] font-black text-cyan-300 uppercase tracking-wider block flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs text-cyan-400">calendar_month</span>
+                              HITOS / PARCIALIDADES DE PAGO PROGRAMADAS (INTERMEDIOS)
+                            </span>
+                            <button 
+                              type="button" 
+                              (click)="addMilestone()"
+                              class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 text-[9px] font-bold transition-all flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs">add</span> + Agregar Hito
+                            </button>
+                          </div>
+
+                          @if (proposalMilestones().length === 0) {
+                            <p class="text-[10px] text-outline italic text-center py-2">No se han configurado hitos intermedios. Haz clic en "+ Agregar Hito" para programar parcialidades.</p>
+                          } @else {
+                            <div class="space-y-2">
+                              @for (m of proposalMilestones(); track m.id; let mIdx = $index) {
+                                <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                                  <!-- CONCEPTO / ETIQUETA (4 COLS) -->
+                                  <div class="sm:col-span-4 space-y-0.5">
+                                    <label class="text-[8px] text-outline font-bold uppercase block">Concepto Hito #{{ mIdx + 1 }}:</label>
+                                    <input 
+                                      type="text" 
+                                      [value]="m.label" 
+                                      (input)="updateMilestone(mIdx, 'label', $any($event.target).value)"
+                                      placeholder="Ej. 25% a 30 días antes del show"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs text-on-surface focus:outline-none focus:border-cyan-400"
+                                    />
+                                  </div>
+
+                                  <!-- TIPO Y VALOR NUMÉRICO (4 COLS) -->
+                                  <div class="sm:col-span-4 space-y-0.5">
+                                    <div class="flex justify-between items-center">
+                                      <label class="text-[8px] text-outline font-bold uppercase block">Valor:</label>
+                                      <div class="flex rounded bg-surface-container-highest p-0.5 border border-outline-variant/30 text-[8px] font-mono">
+                                        <button 
+                                          type="button" 
+                                          (click)="updateMilestone(mIdx, 'type', 'percentage')"
+                                          [class]="m.type === 'percentage' ? 'bg-cyan-400 text-black font-bold' : 'text-outline'"
+                                          class="px-1.5 py-0.5 rounded">
+                                          %
+                                        </button>
+                                        <button 
+                                          type="button" 
+                                          (click)="updateMilestone(mIdx, 'type', 'fixed')"
+                                          [class]="m.type === 'fixed' ? 'bg-cyan-400 text-black font-bold' : 'text-outline'"
+                                          class="px-1.5 py-0.5 rounded">
+                                          $
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <input 
+                                      type="number" 
+                                      [value]="m.percentageOrAmount" 
+                                      (input)="updateMilestone(mIdx, 'percentageOrAmount', +($any($event.target).value))"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-emerald-300 focus:outline-none focus:border-cyan-400"
+                                    />
+                                  </div>
+
+                                  <!-- FECHA U HORIZONTE (3 COLS) -->
+                                  <div class="sm:col-span-3 space-y-0.5">
+                                    <label class="text-[8px] text-outline font-bold uppercase block flex items-center gap-1">
+                                      <span class="material-symbols-outlined text-[10px] text-amber-400">calendar_today</span>
+                                      Fecha de Pago:
+                                    </label>
+                                    <input 
+                                      type="date" 
+                                      [value]="m.dueDateOrTimeframe" 
+                                      (change)="updateMilestone(mIdx, 'dueDateOrTimeframe', $any($event.target).value)"
+                                      (input)="updateMilestone(mIdx, 'dueDateOrTimeframe', $any($event.target).value)"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono focus:outline-none focus:border-cyan-400 [color-scheme:dark]"
+                                    />
+                                  </div>
+
+                                  <!-- ELIMINAR (1 COL) -->
+                                  <div class="sm:col-span-1 flex justify-end pt-3 sm:pt-0">
+                                    <button 
+                                      type="button" 
+                                      (click)="removeMilestone(mIdx)"
+                                      title="Eliminar Hito"
+                                      class="p-1 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-all">
+                                      <span class="material-symbols-outlined text-base">delete</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              }
                             </div>
                           }
                         </div>
@@ -1813,6 +1998,201 @@ export interface ShowBlock {
                           }
                         </div>
 
+                        <!-- CONDICIONES DE PAGO Y TARJETA RECEPTORA EN MESA DE NEGOCIACIÓN (CON COMPARACIÓN VS RONDA ANTERIOR) -->
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-surface-container border border-amber-500/40 space-y-3 text-xs shadow-inner">
+                          <div class="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                            <span class="text-[9px] font-black text-amber-300 uppercase tracking-wider block flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs text-amber-400">handshake</span>
+                              NEGOCIACIÓN DE CONDICIONES DE PAGO Y TARJETA RECEPTORA
+                            </span>
+                            <span class="text-[9px] font-mono text-amber-200">RONDA DE NEGOCIACIÓN</span>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- 1. MONTO MÍNIMO DE ANTICIPO -->
+                            <div class="space-y-1.5 p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                              <div class="flex justify-between items-center">
+                                <label class="text-[9px] font-bold text-outline uppercase block">1. Monto Mínimo (Anticipo):</label>
+                                <div class="flex rounded-lg bg-surface-container-highest p-0.5 border border-outline-variant/30 text-[9px] font-mono font-bold">
+                                  <button 
+                                    type="button"
+                                    (click)="proposalAdvanceType.set('percentage')"
+                                    [class]="proposalAdvanceType() === 'percentage' ? 'bg-amber-400 text-black font-black' : 'text-outline hover:text-on-surface'"
+                                    class="px-2 py-0.5 rounded-md transition-all">
+                                    % Porcentaje
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    (click)="proposalAdvanceType.set('fixed')"
+                                    [class]="proposalAdvanceType() === 'fixed' ? 'bg-amber-400 text-black font-black' : 'text-outline hover:text-on-surface'"
+                                    class="px-2 py-0.5 rounded-md transition-all">
+                                    $ Fijo
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div class="flex items-center gap-2">
+                                <input 
+                                  type="number" 
+                                  [value]="proposalAdvanceValue()" 
+                                  (input)="proposalAdvanceValue.set(+($any($event.target).value))"
+                                  class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface font-mono font-bold focus:outline-none focus:border-amber-400"
+                                />
+                                <span class="text-xs font-mono font-bold text-amber-300 shrink-0">
+                                  {{ proposalAdvanceType() === 'percentage' ? '%' : 'MXN' }}
+                                </span>
+                              </div>
+
+                              <!-- COMPARACIÓN VS RONDA ANTERIOR -->
+                              <div class="text-[9px] font-mono flex flex-col gap-0.5 pt-1 border-t border-outline-variant/10">
+                                <div class="flex justify-between text-outline">
+                                  <span>Anticipo Anterior:</span>
+                                  <span>&#36;{{ previousAdvanceAmount() | number:'1.0-0' }} MXN</span>
+                                </div>
+                                <div class="flex justify-between text-emerald-300 font-bold">
+                                  <span>Nuevo Anticipo:</span>
+                                  <span>&#36;{{ calculatedAdvancePaymentAmount() | number:'1.0-0' }} MXN</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- 2. FECHA LÍMITE DE PAGO -->
+                            <div class="space-y-1.5 p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                              <label class="text-[9px] font-bold text-amber-300 uppercase block">2. Fecha Límite de Pago Saldo:</label>
+                              <input 
+                                type="date" 
+                                [value]="proposalPaymentDueDate()"
+                                (input)="proposalPaymentDueDate.set($any($event.target).value)"
+                                class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400"
+                              />
+                              <span class="text-[8px] text-outline block">Ajusta la fecha en que el cliente debe liquidar.</span>
+                            </div>
+                          </div>
+
+                          <!-- 3. TARJETA / CUENTA RECEPTORA -->
+                          <div class="space-y-1.5 p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                            <label class="text-[9px] font-bold text-purple-300 uppercase block">3. Cuenta / Tarjeta Receptora:</label>
+                            <select 
+                              [value]="proposalReceivingCardId()"
+                              (change)="proposalReceivingCardId.set($any($event.target).value)"
+                              class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-purple-300 font-mono font-bold focus:outline-none focus:border-purple-400"
+                            >
+                              @for (card of mockData.getReceivingCards(); track card.id) {
+                                <option [value]="card.id">{{ card.bankName }} - {{ card.accountHolder }} ({{ card.cardNumber }})</option>
+                              }
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- HITOS / PARCIALIDADES DE PAGO EN MESA DE NEGOCIACIÓN (CON COMPARACIÓN VS RONDA ANTERIOR) -->
+                        <div class="p-3.5 sm:p-4 rounded-xl bg-surface-container border border-amber-500/40 space-y-3 text-xs shadow-inner">
+                          <div class="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                            <span class="text-[9px] font-black text-amber-300 uppercase tracking-wider block flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs text-amber-400">calendar_month</span>
+                              RE-NEGOCIACIÓN DE HITOS Y PARCIALIDADES DE PAGO
+                            </span>
+                            <button 
+                              type="button" 
+                              (click)="addMilestone()"
+                              class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[9px] font-bold transition-all flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs">add</span> + Agregar Hito
+                            </button>
+                          </div>
+
+                          <!-- COMPARACIÓN VS RONDA ANTERIOR -->
+                          @if (previousMilestones().length > 0) {
+                            <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20 space-y-1 font-mono text-[9px]">
+                              <span class="text-[8px] text-outline font-bold uppercase block font-sans">Hitos de Pago Propuestos en Ronda Anterior:</span>
+                              <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                                @for (pm of previousMilestones(); track pm.id; let pmIdx = $index) {
+                                  <div class="p-1.5 rounded bg-surface-container border border-outline-variant/10 text-outline">
+                                    <span class="font-bold text-on-surface font-sans block">#{{ pmIdx + 1 }}. {{ pm.label }}</span>
+                                    <span>Valor: {{ pm.type === 'percentage' ? (pm.percentageOrAmount + '%') : ('$' + (pm.percentageOrAmount | number:'1.0-0')) }}</span>
+                                    <span class="block text-[8px] text-amber-300 font-sans">Horizonte: {{ pm.dueDateOrTimeframe }}</span>
+                                  </div>
+                                }
+                              </div>
+                            </div>
+                          }
+
+                          @if (proposalMilestones().length === 0) {
+                            <p class="text-[10px] text-outline italic text-center py-2">No se han configurado hitos para esta nueva propuesta.</p>
+                          } @else {
+                            <div class="space-y-2">
+                              @for (m of proposalMilestones(); track m.id; let mIdx = $index) {
+                                <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                                  <!-- CONCEPTO / ETIQUETA (4 COLS) -->
+                                  <div class="sm:col-span-4 space-y-0.5">
+                                    <label class="text-[8px] text-outline font-bold uppercase block">Nuevo Concepto Hito #{{ mIdx + 1 }}:</label>
+                                    <input 
+                                      type="text" 
+                                      [value]="m.label" 
+                                      (input)="updateMilestone(mIdx, 'label', $any($event.target).value)"
+                                      placeholder="Ej. 25% a 30 días antes del show"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs text-on-surface focus:outline-none focus:border-amber-400"
+                                    />
+                                  </div>
+
+                                  <!-- TIPO Y VALOR NUMÉRICO (4 COLS) -->
+                                  <div class="sm:col-span-4 space-y-0.5">
+                                    <div class="flex justify-between items-center">
+                                      <label class="text-[8px] text-outline font-bold uppercase block">Valor:</label>
+                                      <div class="flex rounded bg-surface-container-highest p-0.5 border border-outline-variant/30 text-[8px] font-mono">
+                                        <button 
+                                          type="button" 
+                                          (click)="updateMilestone(mIdx, 'type', 'percentage')"
+                                          [class]="m.type === 'percentage' ? 'bg-amber-400 text-black font-bold' : 'text-outline'"
+                                          class="px-1.5 py-0.5 rounded">
+                                          %
+                                        </button>
+                                        <button 
+                                          type="button" 
+                                          (click)="updateMilestone(mIdx, 'type', 'fixed')"
+                                          [class]="m.type === 'fixed' ? 'bg-amber-400 text-black font-bold' : 'text-outline'"
+                                          class="px-1.5 py-0.5 rounded">
+                                          $
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <input 
+                                      type="number" 
+                                      [value]="m.percentageOrAmount" 
+                                      (input)="updateMilestone(mIdx, 'percentageOrAmount', +($any($event.target).value))"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-emerald-300 focus:outline-none focus:border-amber-400"
+                                    />
+                                  </div>
+
+                                  <!-- FECHA U HORIZONTE (3 COLS) -->
+                                  <div class="sm:col-span-3 space-y-0.5">
+                                    <label class="text-[8px] text-outline font-bold uppercase block flex items-center gap-1">
+                                      <span class="material-symbols-outlined text-[10px] text-amber-400">calendar_today</span>
+                                      Fecha de Pago:
+                                    </label>
+                                    <input 
+                                      type="date" 
+                                      [value]="m.dueDateOrTimeframe" 
+                                      (change)="updateMilestone(mIdx, 'dueDateOrTimeframe', $any($event.target).value)"
+                                      (input)="updateMilestone(mIdx, 'dueDateOrTimeframe', $any($event.target).value)"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono focus:outline-none focus:border-amber-400 [color-scheme:dark]"
+                                    />
+                                  </div>
+
+                                  <!-- ELIMINAR (1 COL) -->
+                                  <div class="sm:col-span-1 flex justify-end pt-3 sm:pt-0">
+                                    <button 
+                                      type="button" 
+                                      (click)="removeMilestone(mIdx)"
+                                      title="Eliminar Hito"
+                                      class="p-1 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-all">
+                                      <span class="material-symbols-outlined text-base">delete</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+
                         <!-- PLATAFORMAS DE NOTIFICACIÓN INTERACTIVAS (REEMPLAZO DE LISTA DE VERIFICACIÓN) -->
                         <div class="p-3 sm:p-3.5 rounded-xl bg-surface-container border border-outline-variant/30 space-y-2.5 text-xs shadow-sm">
                           <div class="flex items-center justify-between">
@@ -1954,393 +2334,37 @@ export interface ShowBlock {
 
                     </div>
 
+                    <!-- CARD DESTACADA EXCLUSIVA: ÚLTIMA PROPUESTA COMERCIAL ENVIADA AL CLIENTE (EN ESPERA DE DECISIÓN) -->
+                    @if (isInNegotiationRound() && latestSentRoundEntry()) {
+                      <app-quote-latest-proposal-banner
+                        [quote]="selectedQuote()"
+                        [latestEntry]="latestSentRoundEntry()"
+                        [baseline]="getPreviousRoundBaseline((selectedQuote()?.negotiationHistory?.length || 1) - 1)"
+                      ></app-quote-latest-proposal-banner>
+                    }
+
                     <!-- MAIN RICH CONTENT GRID (2 COLUMNS) -->
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
                       
-                      <!-- LEFT COLUMN: FULL PROPOSED SHOW SPECIFICATION DETAILS (6 COLS) -->
-                      <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl">
-                        
-                        <!-- CARD HEADER -->
-                        <div class="border-b border-outline-variant/20 pb-2.5 flex items-center justify-between">
-                          <span class="text-[10px] font-black text-amber-400 uppercase tracking-wider block flex items-center gap-1.5">
-                            <span class="material-symbols-outlined text-base text-amber-400">event_available</span> DETALLES DEL SHOW PROPUESTO
-                          </span>
-                          <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                            {{ selectedQuote()?.groupName }}
-                          </span>
-                        </div>
-
-                        <div class="space-y-3 text-xs">
-                          
-                          <!-- ARTIST COVER AND SHOW DATES -->
-                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2">
-                            <div class="flex justify-between items-center">
-                              <span class="text-outline text-[10px]">Agrupación Solicitada:</span>
-                              <strong class="text-on-surface font-black text-sm uppercase">{{ selectedQuote()?.groupName }}</strong>
-                            </div>
-
-                            <div class="flex justify-between items-center border-t border-outline-variant/10 pt-2">
-                              <span class="text-outline text-[10px]">FECHA ORIGINAL SOLICITADA POR EL CLIENTE:</span>
-                              <span class="text-on-surface font-mono font-bold text-xs">{{ selectedQuote()?.proposedDate }}</span>
-                            </div>
-                          </div>
-
-                          <!-- SI ESTÁ EN NEGOCIACIÓN: HISTORIAL DE HORARIOS Y TANDAS SEPARADO POR RONDA -->
-                          @if (isInNegotiationRound() && negotiationHistory().length > 0) {
-                            <div class="space-y-3">
-                              <span class="text-[9px] font-black text-amber-400 uppercase block font-sans tracking-wider flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-xs text-amber-400">schedule</span>
-                                FECHAS Y HORARIOS CONFIGURADOS POR RONDA DE NEGOCIACIÓN:
-                              </span>
-
-                              @for (entry of negotiationHistory(); track entry.round) {
-                                <div class="p-3.5 rounded-2xl bg-gradient-to-br from-surface-container via-surface-container-high to-surface-container border-2 border-cyan-500/40 space-y-2.5 font-mono text-[11px] shadow-[0_0_20px_rgba(6,182,212,0.15)] relative overflow-hidden group">
-                                  <!-- Top glow accent bar -->
-                                  <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-emerald-400 to-amber-400"></div>
-
-                                  <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2 font-sans pt-1">
-                                    <span class="font-black text-[10px] text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                                      <span class="material-symbols-outlined text-sm text-cyan-400">event_repeat</span>
-                                      RONDA #{{ entry.round }} DE NEGOCIACIÓN
-                                    </span>
-                                    <span class="px-2 py-0.5 rounded-full text-[8px] font-mono font-bold bg-cyan-500/20 text-cyan-200 border border-cyan-400/40">
-                                      {{ entry.scheduleMode === 'tandas' ? 'MODO TANDAS' : 'CONTINUO' }}
-                                    </span>
-                                  </div>
-
-                                  <!-- FECHAS COMPARATIVAS POR RONDA -->
-                                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
-                                    <!-- FECHA PROPUESTA (Glow resplandeciente en verde/esmeralda) -->
-                                    <div class="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/50 flex flex-col justify-center shadow-[0_0_12px_rgba(52,211,153,0.25)]">
-                                      <span class="text-[9px] text-emerald-300 uppercase font-black font-sans block mb-0.5 tracking-wider">FECHA PROPUESTA:</span>
-                                      <strong class="text-emerald-300 font-mono font-black text-xs sm:text-sm flex items-center gap-1 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]">
-                                        <span class="material-symbols-outlined text-xs text-emerald-400">calendar_month</span>
-                                        {{ selectedQuote()?.proposedDate }}
-                                      </strong>
-                                    </div>
-
-                                    <!-- FECHA DE NEGOCIACIÓN (Estilo sobrio para no confundir al administrador) -->
-                                    <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-cyan-500/30 flex flex-col justify-center">
-                                      <span class="text-[9px] text-cyan-300 uppercase font-extrabold font-sans block mb-0.5 tracking-wider">FECHA DE NEGOCIACIÓN (RONDA #{{ entry.round }}):</span>
-                                      <strong class="text-cyan-200 font-mono font-bold text-xs flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-xs text-cyan-400">edit_calendar</span>
-                                        {{ entry.proposedDate || selectedQuote()?.proposedDate }}
-                                        @if (entry.timestamp && getEntryTime(entry.timestamp)) {
-                                          <span class="text-[9px] text-cyan-300/80 font-mono font-normal">({{ getEntryTime(entry.timestamp) }})</span>
-                                        }
-                                      </strong>
-                                    </div>
-                                  </div>
-
-                                  <!-- TANDAS O FRANJA CONTINUA DE ESTA RONDA -->
-                                  <div class="space-y-1.5 pt-1">
-                                    <span class="text-[9px] font-bold text-amber-400 uppercase tracking-wider block font-sans">
-                                      ESTRUCTURA DE SHOW Y HORARIOS (RONDA #{{ entry.round }}):
-                                    </span>
-
-                                    @if (entry.scheduleMode === 'tandas' && entry.showBlocks && entry.showBlocks.length > 0) {
-                                      <div class="space-y-1">
-                                        @for (blk of entry.showBlocks; track blk.id) {
-                                          <div class="p-2 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 flex items-center justify-between text-on-surface text-[10px]">
-                                            <span class="font-sans font-bold flex items-center gap-1">
-                                              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                                              {{ blk.label }}
-                                              @if (blk.date) {
-                                                <span class="text-[9px] font-bold text-emerald-400 font-mono">({{ blk.date }})</span>
-                                              }
-                                              :
-                                            </span>
-                                            <strong class="text-cyan-300 font-mono font-bold text-xs">{{ blk.startTime }} a {{ blk.endTime }} hrs</strong>
-                                          </div>
-                                        }
-                                        <div class="p-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[10px] text-right font-sans flex items-center justify-between">
-                                          <span class="text-[9px] uppercase font-bold text-outline">Formato: Tandas Fragmentadas</span>
-                                          <span>Total: <strong class="text-cyan-200 font-mono font-black">{{ entry.totalShowHours }} Horas</strong></span>
-                                        </div>
-                                      </div>
-                                    } @else if (entry.startTime) {
-                                      <div class="p-2 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 flex items-center justify-between text-on-surface text-[10px]">
-                                        <span class="font-sans font-bold">• Franja Continuada Principal:</span>
-                                        <strong class="text-amber-300 font-mono font-bold text-xs">{{ entry.startTime }} a {{ entry.endTime }} hrs ({{ entry.totalShowHours }}h continuas)</strong>
-                                      </div>
-                                    } @else {
-                                      <div class="p-2 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 flex items-center justify-between text-on-surface text-[10px]">
-                                        <span class="font-sans font-bold">• Franja Continuada Principal:</span>
-                                        <strong class="text-amber-300 font-mono font-bold text-xs">14:30 a 17:30 hrs</strong>
-                                      </div>
-                                    }
-                                  </div>
-                                </div>
-                              }
-                            </div>
-                          } @else {
-                            <!-- PROPUESTA NORMAL DE HORARIOS (SIN NEGOCIACIÓN) -->
-                            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2">
-                              <div class="flex justify-between items-center">
-                                <span class="text-outline text-[10px]">Fecha del Show Propuesta:</span>
-                                <strong class="text-emerald-400 font-mono font-black text-sm flex items-center gap-1">
-                                  <span class="material-symbols-outlined text-xs text-emerald-400">calendar_month</span>
-                                  {{ selectedQuote()?.proposedDate }}
-                                </strong>
-                              </div>
-
-                              <div class="flex justify-between items-center border-t border-outline-variant/10 pt-2">
-                                <span class="text-outline text-[10px]">Duración Total de Show:</span>
-                                <strong class="text-amber-300 font-mono font-black text-xs sm:text-sm">
-                                  {{ selectedQuote()?.durationHours || 3 }} Horas Contratadas
-                                </strong>
-                              </div>
-                            </div>
-
-                            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2">
-                              <span class="text-[9px] font-black text-amber-400 uppercase block font-sans tracking-wider">
-                                ESTRUCTURA DE TANDAS Y HORARIOS CONFIGURADOS:
-                              </span>
-
-                              <div class="space-y-1.5 font-mono text-[11px]">
-                                @if (selectedQuote()?.notes?.includes('[Propuesta de Ajuste de Horario/Fecha]')) {
-                                  <p class="text-on-surface text-[10px] sm:text-xs italic bg-surface-container-high p-2.5 rounded-xl border border-outline-variant/20">
-                                    {{ selectedQuote()?.notes }}
-                                  </p>
-                                } @else {
-                                  <div class="p-2 rounded-xl bg-surface-container-high/80 border border-outline-variant/20 flex items-center justify-between text-on-surface">
-                                    <span class="font-sans font-bold">• Franja Continuada Principal:</span>
-                                    <strong class="text-amber-300">14:30 a 17:30 hrs</strong>
-                                  </div>
-                                }
-                              </div>
-                            </div>
-                          }
-
-                          <!-- RECINTO Y EQUIPO DE AUDIO -->
-                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2">
-                            <div class="flex justify-between items-center">
-                              <span class="text-outline text-[10px]">Lugar / Recinto:</span>
-                              <strong class="text-on-surface text-xs font-bold truncate max-w-[220px]">
-                                {{ selectedQuote()?.eventAddress || (selectedQuote()?.venue + ', ' + selectedQuote()?.city) }}
-                              </strong>
-                            </div>
-
-                            <div class="flex justify-between items-center border-t border-outline-variant/10 pt-2">
-                              <span class="text-outline text-[10px]">Servicio de Audio:</span>
-                              <strong class="text-purple-300 font-bold text-xs">
-                                {{ selectedQuote()?.soundOption === 'proveedor' ? 'Incluye Sistema de Audio Profesional' : 'Proporcionado por el Cliente' }}
-                              </strong>
-                            </div>
-                          </div>
-
-                        </div>
-
+                      <!-- LEFT COLUMN: DETALLES DEL SHOW PROPUESTO (6 COLS) -->
+                      <div class="lg:col-span-6">
+                        <app-quote-show-details
+                          [quote]="selectedQuote()"
+                          [isInNegotiation]="isInNegotiationRound()"
+                          [negotiationHistory]="negotiationHistory()"
+                        ></app-quote-show-details>
                       </div>
 
-                      <!-- RIGHT COLUMN: FINANCIAL ITEMIZATION RECEIPT & ROLLBACK ACTION (6 COLS) -->
-                      <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl flex flex-col justify-between">
-                        
-                        <div class="space-y-3.5">
-                          <!-- CARD HEADER -->
-                          <div class="border-b border-outline-variant/20 pb-2.5 flex items-center justify-between">
-                            <span class="text-[10px] font-black text-purple-300 uppercase tracking-wider block flex items-center gap-1.5">
-                              <span class="material-symbols-outlined text-base text-purple-400">payments</span> DESGLOSE FINANCIERO ENTREGADO
-                            </span>
-                            <span class="font-mono text-[9px] font-extrabold text-cyan-400 uppercase">
-                              5% TARIFARIO FIJO
-                            </span>
-                          </div>
-
-                          <!-- ITEMIZED ITEM RECEIPT -->
-                          <div class="p-4 rounded-2xl bg-gradient-to-br from-surface-container via-surface-container-high to-surface-container border-2 border-amber-400/60 space-y-2 text-xs font-mono shadow-inner relative overflow-hidden">
-                            <div class="flex justify-between text-outline">
-                              <span>Honorarios del Grupo:</span>
-                              <strong class="text-on-surface">&#36;{{ (selectedQuote()?.artistFee || 35000) | number:'1.0-0' }} MXN</strong>
-                            </div>
-
-                            <div class="flex justify-between text-outline">
-                              <span>Viáticos & Hospedaje:</span>
-                              <strong class="text-on-surface">&#36;{{ (selectedQuote()?.viaticosCost || 8500) | number:'1.0-0' }} MXN</strong>
-                            </div>
-
-                            <div class="flex justify-between text-outline">
-                              <span>Equipo de Audio:</span>
-                              <strong class="text-purple-300">&#36;{{ (selectedQuote()?.soundCost || 0) | number:'1.0-0' }} MXN</strong>
-                            </div>
-
-                            <div class="flex justify-between text-purple-300">
-                              <span>Margen Disquera:</span>
-                              <strong>&#36;{{ (selectedQuote()?.marginAmount || 7000) | number:'1.0-0' }} MXN</strong>
-                            </div>
-
-                            <div class="flex justify-between text-cyan-400">
-                              <span>Plataforma Acordex (5% Fijo):</span>
-                              <strong>&#36;{{ ((selectedQuote()?.totalAmount || 50000) * 0.05) | number:'1.0-0' }} MXN</strong>
-                            </div>
-
-                            @if (selectedQuote()?.includeIva) {
-                              <div class="flex justify-between text-blue-300">
-                                <span>Impuesto IVA (+16% Facturado):</span>
-                                <strong>&#36;{{ ((selectedQuote()?.totalAmount || 50000) * 0.16) | number:'1.0-0' }} MXN</strong>
-                              </div>
-                            }
-
-                            <div class="flex justify-between text-amber-400 text-xs sm:text-base font-black pt-2.5 border-t border-outline-variant/20 font-sans">
-                              <span class="uppercase tracking-wider">TOTAL COMERCIAL FINAL:</span>
-                              <span class="text-xl sm:text-2xl font-black font-mono text-amber-300 drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]">
-                                &#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <!-- DESGLOSE COMPARATIVO DE NEGOCIACIÓN DESGLOSADO POR RONDA (VISIBLE CUANDO ESTÁ EN NEGOCIACIÓN) -->
-                        @if (isInNegotiationRound() && negotiationHistory().length > 0) {
-                          <div class="space-y-3">
-                            <div class="flex items-center gap-2">
-                              <span class="material-symbols-outlined text-amber-400 text-base">compare_arrows</span>
-                              <span class="text-[10px] font-black text-amber-400 uppercase tracking-wider">HISTORIAL DE PROPUESTAS ENVIADAS POR RONDA</span>
-                              <span class="w-5 h-5 rounded-full bg-amber-400 text-black font-black text-[9px] flex items-center justify-center">
-                                {{ negotiationHistory().length }}
-                              </span>
-                            </div>
-
-                            @for (entry of negotiationHistory(); track entry.round; let idx = $index) {
-                              @let baseline = getPreviousRoundBaseline(idx);
-                              <div class="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/15 via-surface-container to-amber-500/10 border-2 border-amber-400/50 space-y-2.5 shadow-[0_0_20px_rgba(251,191,36,0.15)]">
-                                <div class="flex items-center justify-between border-b border-amber-400/20 pb-2">
-                                  <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-sm text-amber-400">send</span>
-                                    PROPUESTA DISQUERA — RONDA #{{ entry.round }}
-                                  </span>
-                                  <div class="flex items-center gap-1.5">
-                                    <span class="px-2 py-0.5 rounded-full text-[8px] font-mono font-bold bg-amber-500/20 text-amber-200 border border-amber-400/40">
-                                      {{ baseline.label }} vs. Ronda #{{ entry.round }}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div class="space-y-1.5 text-[10px] font-mono">
-                                  <!-- Honorarios -->
-                                  <div class="p-2 rounded-xl bg-surface-container-high/60 border border-outline-variant/20 flex items-center justify-between">
-                                    <div>
-                                      <span class="font-sans font-bold text-on-surface block text-[10px]">• Honorarios Grupo:</span>
-                                      <span class="text-outline text-[9px]">{{ baseline.label }}: &#36;{{ baseline.artistFee | number:'1.0-0' }} MXN</span>
-                                    </div>
-                                    <div class="text-right">
-                                      <strong class="text-amber-300 block">&#36;{{ entry.artistFee | number:'1.0-0' }} MXN</strong>
-                                      <span [class]="(entry.artistFee - baseline.artistFee) < 0 ? 'text-emerald-400' : ((entry.artistFee > baseline.artistFee) ? 'text-amber-400' : 'text-outline')" class="text-[9px] font-bold">
-                                        {{ (entry.artistFee - baseline.artistFee) < 0 ? ('- ' + (((baseline.artistFee - entry.artistFee) / (baseline.artistFee || 1)) * 100 | number:'1.0-1') + '% 🔻') : ((entry.artistFee > baseline.artistFee) ? '🔺 +%' : '0%') }}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <!-- Viáticos -->
-                                  <div class="p-2 rounded-xl bg-surface-container-high/60 border border-outline-variant/20 flex items-center justify-between">
-                                    <div>
-                                      <span class="font-sans font-bold text-on-surface block text-[10px]">• Viáticos & Hospedaje:</span>
-                                      <span class="text-outline text-[9px]">{{ baseline.label }}: &#36;{{ baseline.viaticosCost | number:'1.0-0' }} MXN</span>
-                                    </div>
-                                    <div class="text-right">
-                                      <strong class="text-amber-300 block">&#36;{{ entry.viaticosCost | number:'1.0-0' }} MXN</strong>
-                                      <span [class]="(entry.viaticosCost - baseline.viaticosCost) < 0 ? 'text-emerald-400' : ((entry.viaticosCost > baseline.viaticosCost) ? 'text-amber-400' : 'text-outline')" class="text-[9px] font-bold">
-                                        {{ (entry.viaticosCost - baseline.viaticosCost) < 0 ? ('- ' + (((baseline.viaticosCost - entry.viaticosCost) / (baseline.viaticosCost || 1)) * 100 | number:'1.0-1') + '% 🔻') : ((entry.viaticosCost > baseline.viaticosCost) ? '🔺 +%' : '0%') }}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <!-- Equipo de Audio Profesional -->
-                                  <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between">
-                                    <div>
-                                      <span class="font-sans font-bold text-purple-300 block text-[10px]">• Equipo de Audio Profesional:</span>
-                                      <span class="text-outline text-[9px]">
-                                        {{ entry.soundOption === 'proveedor' || (entry.soundCost && entry.soundCost > 0) ? 'Proveedor Disquera' : 'Proporcionado por Cliente' }} — {{ baseline.label }}: &#36;{{ baseline.soundCost | number:'1.0-0' }} MXN
-                                      </span>
-                                    </div>
-                                    <div class="text-right">
-                                      <strong class="text-purple-300 block">&#36;{{ (entry.soundCost || 0) | number:'1.0-0' }} MXN</strong>
-                                      <span [class]="(entry.soundCost - baseline.soundCost) < 0 ? 'text-emerald-400' : ((entry.soundCost > baseline.soundCost) ? 'text-amber-400' : 'text-outline')" class="text-[9px] font-bold">
-                                        {{ (entry.soundCost - baseline.soundCost) < 0 ? ('- ' + (((baseline.soundCost - entry.soundCost) / (baseline.soundCost || 1)) * 100 | number:'1.0-1') + '% 🔻') : ((entry.soundCost > baseline.soundCost) ? '🔺 +%' : '0%') }}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <!-- Margen -->
-                                  <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between">
-                                    <div>
-                                      <span class="font-sans font-bold text-purple-300 block text-[10px]">• Margen Disquera:</span>
-                                      <span class="text-outline text-[9px]">{{ baseline.label }}: {{ baseline.marginPercent }}% — Ronda #{{ entry.round }}: {{ entry.marginPercent }}%</span>
-                                    </div>
-                                    <div class="text-right">
-                                      <strong class="text-purple-300 block">{{ entry.marginPercent }}%</strong>
-                                      <span [class]="entry.marginPercent < baseline.marginPercent ? 'text-emerald-400' : 'text-outline'" class="text-[9px] font-bold">
-                                        {{ entry.marginPercent < baseline.marginPercent ? ('- ' + (baseline.marginPercent - entry.marginPercent) + '% pts 🔻') : '0%' }}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <!-- Total Oferta -->
-                                  <div class="flex justify-between text-amber-400 text-xs font-black pt-1.5 border-t border-amber-400/20 font-sans">
-                                    <span>OFERTA NEGOCIADA ENVIADA:</span>
-                                    <span class="font-mono">&#36;{{ entry.totalOffered | number:'1.0-0' }} MXN</span>
-                                  </div>
-
-                                  <!-- Nota de disquera -->
-                                  @if (entry.adminProposalNote) {
-                                    <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-200/90 text-[10px] font-sans">
-                                      <span class="font-black uppercase text-[9px] block mb-0.5">MENSAJE ENVIADO EN RONDA #{{ entry.round }}:</span>
-                                      <p class="italic">&ldquo;{{ entry.adminProposalNote }}&rdquo;</p>
-                                    </div>
-                                  }
-                                </div>
-                              </div>
-                            }
-                          </div>
-                        }
-
-                        <!-- ROLLBACK ACTION CARD — CAMBIA SEGÚN SI ESTÁ EN NEGOCIACIÓN O NO -->
-                        @if (isInNegotiationRound()) {
-                          <!-- ROLLBACK A NEGOCIACIÓN (sin notificar cliente, solo comentario opcional) -->
-                          <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 pt-3">
-                            <div class="flex items-center justify-between">
-                              <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider block flex items-center gap-1">
-                                <span class="material-symbols-outlined text-sm text-amber-400">undo</span> CORRECCIÓN O AJUSTE DE NEGOCIACIÓN
-                              </span>
-                              <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase border bg-amber-500/20 text-amber-300 border-amber-500/40">
-                                SIN NOTIFICAR AL CLIENTE
-                              </span>
-                            </div>
-                            <p class="text-[10px] sm:text-xs text-outline leading-relaxed">
-                              Regresarás al wizard de Negociación para corregir cualquier ajuste de precio, horario o concepto enviado. Solo se pedirá un comentario interno opcional para la bitácora.
-                            </p>
-                            <button 
-                              (click)="openNegotiationRollbackDialog()"
-                              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs shadow-[0_0_20px_rgba(251,191,36,0.35)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02]"
-                            >
-                              <span class="material-symbols-outlined text-base">undo</span> Regresar a Negociación
-                            </button>
-                          </div>
-                        } @else {
-                          <!-- ROLLBACK A REVISIÓN (comportamiento original con validación de visto) -->
-                          <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 pt-3">
-                            <div class="flex items-center justify-between">
-                              <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider block flex items-center gap-1">
-                                <span class="material-symbols-outlined text-sm text-amber-400">undo</span> CORRECCIÓN O MODIFICACIÓN DE PROPUESTA
-                              </span>
-                              <span [class]="clientViewed() ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'" class="px-2 py-0.5 rounded text-[8px] font-bold uppercase border">
-                                {{ clientViewed() ? 'NOTIFICACIÓN REQUERIDA' : 'REVERSIÓN SILENCIOSA' }}
-                              </span>
-                            </div>
-                            <p class="text-[10px] sm:text-xs text-outline leading-relaxed">
-                              {{ clientViewed() 
-                                ? 'El cliente ya vio la propuesta. Al regresar a revisión se le requerirá seleccionar una etiqueta de motivo y un mensaje explicativo obligatorio.' 
-                                : 'El cliente aún no ha visto la propuesta. Puedes regresar a revisión de forma silenciosa ingresando un comentario interno opcional.' }}
-                            </p>
-                            <button 
-                              (click)="openRollbackDialog()"
-                              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs shadow-[0_0_20px_rgba(251,191,36,0.35)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02]"
-                            >
-                              <span class="material-symbols-outlined text-base">undo</span> Regresar a Revisión (Fase 1)
-                            </button>
-                          </div>
-                        }
-
+                      <!-- RIGHT COLUMN: DESGLOSE FINANCIERO ENTREGADO & NEGOCIACIÓN (6 COLS) -->
+                      <div class="lg:col-span-6">
+                        <app-quote-financial-receipt
+                          [quote]="selectedQuote()"
+                          [isInNegotiation]="isInNegotiationRound()"
+                          [clientViewed]="clientViewed()"
+                          [negotiationHistory]="negotiationHistory()"
+                          (openNegotiationRollback)="openNegotiationRollbackDialog()"
+                          (openRollback)="openRollbackDialog()"
+                        ></app-quote-financial-receipt>
                       </div>
 
                     </div>
@@ -2510,7 +2534,7 @@ export interface ShowBlock {
 
             <!-- DYNAMIC WORKFLOW ACTION CONTROL BAR (FOR OTHER STATES OTHER THAN 'En revisión', 'Propuesta enviada', 'Negociación' AND 'Aceptada') -->
             @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada') {
-              <div class="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 shadow-lg">
+              <div class="quote-modal-workflow-bar p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 shadow-lg">
                 <div class="space-y-0.5">
                   <span class="text-xs font-extrabold text-primary uppercase tracking-wider block">Acción Operativa para el Estado Actual</span>
                   <p class="text-xs text-outline">{{ getStateActionDescription(selectedQuote()!.state) }}</p>
@@ -2541,7 +2565,7 @@ export interface ShowBlock {
               <div class="h-full flex flex-col min-h-0 space-y-4">
                 
                 <!-- TOP SUB-TABS NAVIGATION FOR ACEPTADA STATE -->
-                <div class="flex items-center gap-1.5 p-1 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 shrink-0">
+                <div class="quote-modal-tabs flex items-center gap-1.5 p-1 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 shrink-0">
                   <button 
                     (click)="acceptedTab.set('gestion_aceptada')"
                     [class]="acceptedTab() === 'gestion_aceptada' ? 'bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'text-outline hover:text-on-surface border-transparent'"
@@ -2730,6 +2754,173 @@ export interface ShowBlock {
                                 </div>
                               </div>
                             </div>
+
+                            <!-- BLOQUE 4: CONDICIONES FINALES DE PAGO Y CUENTA RECEPTORA -->
+                            <div class="md:col-span-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-surface-container-high to-surface-container border-2 border-emerald-500/50 space-y-3 font-sans shadow-xl">
+                              <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
+                                <span class="text-emerald-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                                  <span class="material-symbols-outlined text-sm text-emerald-400">verified_user</span>
+                                  4. CONDICIONES FINALES DE PAGO ACEPTADAS (CONTRATO)
+                                </span>
+                                <span class="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/40 flex items-center gap-1">
+                                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> VIGENTE & REGISTRADO
+                                </span>
+                              </div>
+
+                              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                                <div class="p-3 rounded-xl bg-surface-container border border-emerald-500/30 space-y-1 shadow-sm">
+                                  <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">1. Monto Mínimo (Anticipo):</span>
+                                  <strong class="text-emerald-400 font-mono text-sm font-black block">&#36;{{ getAdvancePaymentAmount() | number:'1.0-0' }} MXN</strong>
+                                  <span class="text-[10px] text-emerald-300 font-mono font-semibold">({{ getAdvancePaymentLabel() }})</span>
+                                </div>
+
+                                <div class="p-3 rounded-xl bg-surface-container border border-amber-500/30 space-y-1 shadow-sm">
+                                  <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">2. Fecha Límite de Pago Saldo:</span>
+                                  <strong class="text-amber-300 font-mono text-sm font-black block flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs text-amber-400">event</span>
+                                    {{ selectedQuote()?.paymentDueDate || '2026-08-25' }}
+                                  </strong>
+                                  <span class="text-[9px] text-outline block">Fecha límite final para liquidar saldo.</span>
+                                </div>
+
+                                <div class="p-3 rounded-xl bg-surface-container border border-purple-500/30 space-y-1 shadow-sm">
+                                  <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">3. Cuenta / Tarjeta Receptora:</span>
+                                  <strong class="text-purple-300 font-mono text-xs font-bold block flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs text-purple-400">credit_card</span>
+                                    {{ getReceivingCardLabel() }}
+                                  </strong>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- BLOQUE 5: HITOS / PARCIALIDADES DE PAGO PROGRAMADAS DEFINITIVAS -->
+                            @if (getPaymentMilestones().length > 0) {
+                              <div class="md:col-span-3 p-4 rounded-2xl bg-gradient-to-r from-cyan-950/70 via-surface-container-high to-surface-container border-2 border-cyan-500/50 space-y-3 font-sans shadow-xl">
+                                <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2">
+                                  <span class="text-cyan-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                                    <span class="material-symbols-outlined text-sm text-cyan-400">calendar_month</span>
+                                    5. HITOS / PARCIALIDADES DE PAGO PROGRAMADAS DEFINITIVAS
+                                  </span>
+                                  <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                    {{ getPaymentMilestones().length }} Parcialidades Programadas
+                                  </span>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                                  @for (m of getPaymentMilestones(); track m.id; let mIdx = $index) {
+                                    <div class="p-3 rounded-xl bg-surface-container border border-cyan-500/40 flex flex-col justify-between text-xs space-y-2 shadow-sm hover:border-cyan-400 transition-all">
+                                      <div class="flex items-center justify-between border-b border-outline-variant/15 pb-1.5">
+                                        <span class="font-extrabold text-on-surface text-xs truncate">#{{ mIdx + 1 }}. {{ m.label }}</span>
+                                        <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                          {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0') + ' MXN') }}
+                                        </span>
+                                      </div>
+
+                                      <div class="space-y-1 font-mono">
+                                        <div class="flex justify-between items-baseline">
+                                          <span class="text-[10px] text-outline font-sans">Importe Neto:</span>
+                                          <strong class="text-emerald-400 font-black text-sm">&#36;{{ getMilestoneCalculatedAmount(m) | number:'1.0-0' }} MXN</strong>
+                                        </div>
+                                        <div class="flex justify-between items-baseline pt-1 border-t border-outline-variant/10">
+                                          <span class="text-[10px] text-outline font-sans flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-xs text-amber-400">event</span>
+                                            Fecha / Límite:
+                                          </span>
+                                          <strong class="text-amber-300 font-bold text-xs">{{ m.dueDateOrTimeframe }}</strong>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  }
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- TARJETA DESTACADA PERMANENTE: CONDICIONES DE PAGO Y PARCIALIDADES DEFINITIVAS ACEPTADAS -->
+                    <div class="p-4.5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-950/90 via-surface-container-high to-surface-container border-2 border-emerald-500/60 shadow-[0_0_35px_rgba(16,185,129,0.18)] space-y-4 font-sans backdrop-blur-xl">
+                      <div class="flex items-center justify-between border-b border-emerald-500/40 pb-2.5">
+                        <div class="flex items-center gap-2">
+                          <div class="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
+                            <span class="material-symbols-outlined text-xl sm:text-2xl">verified_user</span>
+                          </div>
+                          <div>
+                            <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest block font-sans">CONTRATO PRIVADO • ESPECIFICACIONES DE PAGO ACEPTADAS</span>
+                            <h4 class="text-xs sm:text-sm font-black text-on-surface">Condiciones de Pago & Hitos Programados Definitivos</h4>
+                          </div>
+                        </div>
+                        <span class="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/40 flex items-center gap-1.5">
+                          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                          CONTRATO VIGENTE
+                        </span>
+                      </div>
+
+                      <!-- GRID DE 3 CONDICIONES PRINCIPALES DE PAGO -->
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div class="p-3 rounded-xl bg-surface-container border border-emerald-500/30 space-y-1 shadow-sm">
+                          <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">1. Monto Mínimo Acordado (Anticipo):</span>
+                          <strong class="text-emerald-400 font-mono text-sm font-black block">&#36;{{ getAdvancePaymentAmount() | number:'1.0-0' }} MXN</strong>
+                          <span class="text-[10px] text-emerald-300 font-mono font-semibold">({{ getAdvancePaymentLabel() }})</span>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-surface-container border border-amber-500/30 space-y-1 shadow-sm">
+                          <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">2. Fecha Límite de Pago Saldo:</span>
+                          <strong class="text-amber-300 font-mono text-sm font-black block flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs text-amber-400">event</span>
+                            {{ selectedQuote()?.paymentDueDate || '2026-08-25' }}
+                          </strong>
+                          <span class="text-[9px] text-outline block">Fecha límite final para liquidar saldo.</span>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-surface-container border border-purple-500/30 space-y-1 shadow-sm">
+                          <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">3. Cuenta / Tarjeta Receptora Oficial:</span>
+                          <strong class="text-purple-300 font-mono text-xs font-bold block flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs text-purple-400">credit_card</span>
+                            {{ getReceivingCardLabel() }}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <!-- GRID DE HITOS / PARCIALIDADES DE PAGO DEFINITIVAS -->
+                      @if (getPaymentMilestones().length > 0) {
+                        <div class="pt-3 border-t border-emerald-500/30 space-y-2.5">
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                              <span class="material-symbols-outlined text-sm text-cyan-400">calendar_month</span>
+                              HITOS / PARCIALIDADES DE PAGO PROGRAMADAS DEFINITIVAS
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                              {{ getPaymentMilestones().length }} Parcialidades Programadas
+                            </span>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            @for (m of getPaymentMilestones(); track m.id; let mIdx = $index) {
+                              <div class="p-3 rounded-xl bg-surface-container/90 border border-cyan-500/40 flex flex-col justify-between text-xs space-y-2 shadow-sm hover:border-cyan-400 transition-all">
+                                <div class="flex items-center justify-between border-b border-outline-variant/15 pb-1.5">
+                                  <span class="font-extrabold text-on-surface text-xs truncate">#{{ mIdx + 1 }}. {{ m.label }}</span>
+                                  <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                    {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0') + ' MXN') }}
+                                  </span>
+                                </div>
+
+                                <div class="space-y-1 font-mono">
+                                  <div class="flex justify-between items-baseline">
+                                    <span class="text-[10px] text-outline font-sans">Importe Neto:</span>
+                                    <strong class="text-emerald-400 font-black text-sm">&#36;{{ getMilestoneCalculatedAmount(m) | number:'1.0-0' }} MXN</strong>
+                                  </div>
+                                  <div class="flex justify-between items-baseline pt-1 border-t border-outline-variant/10">
+                                    <span class="text-[10px] text-outline font-sans flex items-center gap-1">
+                                      <span class="material-symbols-outlined text-xs text-amber-400">event</span>
+                                      Fecha / Límite:
+                                    </span>
+                                    <strong class="text-amber-300 font-bold text-xs">{{ m.dueDateOrTimeframe }}</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            }
                           </div>
                         </div>
                       }
@@ -3365,6 +3556,69 @@ export interface ShowBlock {
                                   &#36;{{ entry.totalOffered | number:'1.0-0' }} MXN
                                 </strong>
                               </div>
+                              <!-- CONDICIONES DE PAGO ACORDADAS EN ESTA RONDA DEL HISTORIAL -->
+                              <div class="p-3 rounded-2xl bg-cyan-950/70 border-2 border-cyan-400/50 space-y-2.5 font-sans shadow-lg">
+                                <div class="flex items-center justify-between border-b border-cyan-500/30 pb-1.5">
+                                  <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-cyan-400">payments</span>
+                                    CONDICIONES DE PAGO Y CUENTA RECEPTORA EN RONDA #{{ entry.round }}
+                                  </span>
+                                  <span class="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+                                    REGISTRO HISTÓRICO
+                                  </span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10px]">
+                                  <div class="p-2 rounded-xl bg-surface-container-high border border-emerald-500/30 space-y-0.5">
+                                    <span class="text-outline text-[8px] font-mono uppercase block font-sans">Monto Mínimo (Anticipo):</span>
+                                    <strong class="text-emerald-400 font-mono text-xs font-black block">&#36;{{ getAdvancePaymentAmount(entry) | number:'1.0-0' }} MXN</strong>
+                                    <span class="text-[8px] text-emerald-300 font-mono block">({{ getAdvancePaymentLabel(entry) }})</span>
+                                  </div>
+                                  <div class="p-2 rounded-xl bg-surface-container-high border border-amber-500/30 space-y-0.5">
+                                    <span class="text-outline text-[8px] font-mono uppercase block font-sans">Fecha Límite Pago:</span>
+                                    <strong class="text-amber-300 font-mono text-xs font-bold block flex items-center gap-1">
+                                      <span class="material-symbols-outlined text-[10px] text-amber-400">event</span>
+                                      {{ getPaymentDueDate(entry) }}
+                                    </strong>
+                                  </div>
+                                  <div class="p-2 rounded-xl bg-surface-container-high border border-purple-500/30 space-y-0.5">
+                                    <span class="text-outline text-[8px] font-mono uppercase block font-sans">Cuenta Receptora:</span>
+                                    <strong class="text-purple-300 font-mono text-[9px] font-bold block truncate">{{ getReceivingCardLabel(entry) }}</strong>
+                                  </div>
+                                </div>
+
+                                <!-- HITOS DE PAGO DEFINIDOS EN ESTA RONDA DEL HISTORIAL -->
+                                @if (getPaymentMilestones(entry).length > 0) {
+                                  <div class="pt-2 border-t border-cyan-500/30 space-y-2">
+                                    <span class="text-[10px] font-black text-cyan-300 uppercase tracking-wider block flex items-center gap-1">
+                                      <span class="material-symbols-outlined text-xs text-cyan-400">calendar_month</span>
+                                      HITOS / PARCIALIDADES DE PAGO PROGRAMADAS EN RONDA #{{ entry.round }}:
+                                    </span>
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                      @for (m of getPaymentMilestones(entry); track m.id; let mIdx = $index) {
+                                        <div class="p-2 rounded-xl bg-surface-container border border-cyan-500/30 flex flex-col justify-between text-[10px] space-y-1 shadow-sm">
+                                          <div class="flex justify-between items-center font-bold text-on-surface border-b border-outline-variant/15 pb-1">
+                                            <span class="truncate">#{{ mIdx + 1 }}. {{ m.label }}</span>
+                                            <span class="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                              {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0')) }}
+                                            </span>
+                                          </div>
+                                          <div class="flex justify-between items-baseline font-mono text-[9px]">
+                                            <span class="text-outline font-sans">Importe:</span>
+                                            <strong class="text-emerald-400 font-bold">&#36;{{ getMilestoneCalculatedAmount(m, entry.totalOffered) | number:'1.0-0' }} MXN</strong>
+                                          </div>
+                                          <div class="flex justify-between items-baseline font-mono text-[9px] pt-1 border-t border-outline-variant/10">
+                                            <span class="text-outline font-sans flex items-center gap-0.5">
+                                              <span class="material-symbols-outlined text-[10px] text-amber-400">event</span>
+                                              Fecha:
+                                            </span>
+                                            <strong class="text-amber-300">{{ m.dueDateOrTimeframe }}</strong>
+                                          </div>
+                                        </div>
+                                      }
+                                    </div>
+                                  </div>
+                                }
+                              </div>
 
                               @if (entry.adminProposalNote) {
                                 <div class="p-2 rounded-xl bg-surface-container-high border border-outline-variant/20 text-[10px] font-sans pt-1.5">
@@ -3390,7 +3644,7 @@ export interface ShowBlock {
               <div class="h-full flex flex-col min-h-0 space-y-4 font-sans">
                 
                 <!-- SUB-TABS NAVEGACIÓN DE FASE 4 -->
-                <div class="flex items-center gap-1.5 p-1 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 shrink-0">
+                <div class="quote-modal-tabs flex items-center gap-1.5 p-1 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 shrink-0">
                   <button 
                     (click)="awaitingSignatureTab.set('seguimiento_contrato')"
                     [class]="awaitingSignatureTab() === 'seguimiento_contrato' ? 'bg-gradient-to-r from-purple-500/20 via-indigo-500/20 to-purple-500/20 text-purple-300 border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.25)]' : 'text-outline hover:text-on-surface border-transparent'"
@@ -3613,7 +3867,7 @@ export interface ShowBlock {
                               </div>
                               <div class="flex justify-between">
                                 <span class="text-outline">• Teléfono / WhatsApp:</span>
-                                <strong class="text-on-surface">{{ selectedQuote()?.phone }}</strong>
+                                <strong class="text-on-surface">{{ selectedQuote()?.representativePhone || 'N/A' }}</strong>
                               </div>
                               <div class="flex justify-between">
                                 <span class="text-outline">• Código de Seguridad HASH:</span>
@@ -3774,7 +4028,7 @@ export interface ShowBlock {
                           <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1.5 font-mono text-[11px]">
                             <div class="flex justify-between">
                               <span class="text-outline">Teléfono:</span>
-                              <strong class="text-on-surface">{{ selectedQuote()?.phone }}</strong>
+                              <strong class="text-on-surface">{{ selectedQuote()?.representativePhone || 'N/A' }}</strong>
                             </div>
                             <div class="flex justify-between">
                               <span class="text-outline">Email:</span>
@@ -3968,8 +4222,6 @@ export interface ShowBlock {
             }
 
           </div>
-
-        </div>
 
         <!-- NEGOTIATION ROLLBACK DIALOG MODAL (PROPUESTA ENVIADA EN NEGOCIACIÓN -> NEGOCIACIÓN) -->
         @if (showNegotiationRollbackModal()) {
@@ -4334,8 +4586,6 @@ export interface ShowBlock {
             </div>
           </div>
         }
-
-      </div>
         <!-- MODAL 1: VISTA PREVIA INTERACTIVA DEL CONTRATO Y SELECTOR DE BORRADORES -->
         @if (showContractPreviewModal()) {
           <div class="fixed inset-0 z-[99999] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
@@ -4647,7 +4897,8 @@ export interface ShowBlock {
                 </div>
               </div>
             </div>
-          }
+          </div>
+        }
 
         <!-- MODAL 2: REGRESAR A REVISIÓN (DESDE ACEPTADA) -->
         @if (showAcceptedRollbackModal()) {
@@ -4804,6 +5055,7 @@ export interface ShowBlock {
               </div>
             </div>
           </div>
+        }
         <!-- MODAL 4: REGRESAR DE FASE 4 A FASE 3 (COTIZACIÓN ACEPTADA) -->
         @if (showContractRollbackModal()) {
           <div class="fixed inset-0 z-[99999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 font-sans">
@@ -4901,7 +5153,8 @@ export interface ShowBlock {
             </div>
           </div>
         }
-
+      </div>
+      </div>
     }
   `
 })
@@ -4937,7 +5190,7 @@ export class QuoteDetailModalComponent {
 
   // ─── FASE 3: COTIZACIÓN ACEPTADA SIGNALS ─────────────────────────────────────
   acceptedTab = signal<'gestion_aceptada' | 'info_original_cliente' | 'historial_negociaciones'>('gestion_aceptada');
-  showAcceptedSummaryDetails = signal<boolean>(false);
+  showAcceptedSummaryDetails = signal<boolean>(true);
   contractGenerationMode = signal<'auto' | 'manual'>('auto');
   contractGenerated = signal<boolean>(false);
   isGeneratingContract = signal<boolean>(false);
@@ -5026,7 +5279,7 @@ export class QuoteDetailModalComponent {
 
     this.mockData.updateQuoteDetails(q.id, updated);
     this.mockData.updateQuoteState(q.id, 'Aceptada');
-    
+
     const auditMsg = isViewed
       ? `Se regresó la cotización ${q.id} de Fase 4 a Fase 3 ('Aceptada'). El cliente YA HABÍA VISTO el contrato anterior; se emitió notificación de ANULACIÓN POR CORRECCIÓN. Motivo: ${this.contractRollbackReason()}`
       : `Se regresó la cotización ${q.id} de Fase 4 a Fase 3 ('Aceptada'). Motivo: ${this.contractRollbackReason()}`;
@@ -5062,7 +5315,25 @@ export class QuoteDetailModalComponent {
 
   // Computed: Label de ronda actual (ej. "Ronda #1")
   negotiationRoundLabel = computed(() => `Ronda #${this.negotiationRound()}`);
-  
+
+  // Computed: Última ronda enviada (activa en espera de respuesta del cliente)
+  latestSentRoundEntry = computed(() => {
+    const history = this.negotiationHistory();
+    if (history && history.length > 0) {
+      return history[history.length - 1];
+    }
+    return null;
+  });
+
+  // Computed: Rondas anteriores que ya fueron rechazadas por el cliente
+  pastRejectedRoundsHistory = computed(() => {
+    const history = this.negotiationHistory();
+    if (history && history.length > 1) {
+      return history.slice(0, history.length - 1);
+    }
+    return [];
+  });
+
   getEntryTime(timestamp?: string): string {
     if (!timestamp) return '';
     const parts = timestamp.trim().split(' ');
@@ -5082,7 +5353,7 @@ export class QuoteDetailModalComponent {
   // MODE 1: HORARIO CONTINUO SIGNALS
   singleStartTime = signal<string>('19:00');
   singleDurationHours = signal<number>(3.0);
-  
+
   proposalDate = signal<string>('2026-07-10');
   scheduleChangeExplanation = signal<string>('');
 
@@ -5099,7 +5370,7 @@ export class QuoteDetailModalComponent {
   proposalSoundOption = signal<'cliente' | 'proveedor'>('proveedor');
   proposalMarginPercent = signal<number>(15); // Adjusted customizable disquera margin %
   proposalIncludeIva = signal<boolean>(false);
-  
+
   additionalComments = signal<string>('');
   showRejectionModal = signal<boolean>(false);
   rejectionReason = signal<string>('');
@@ -5153,6 +5424,87 @@ export class QuoteDetailModalComponent {
     }
   ];
 
+  // Signals para Condiciones de Pago, Tarjeta Receptora e Hitos de Pago Programados
+  proposalAdvanceType = signal<'percentage' | 'fixed'>('percentage');
+  proposalAdvanceValue = signal<number>(50);
+  proposalPaymentDueDate = signal<string>('2026-08-25');
+  proposalReceivingCardId = signal<string>('card-bbva-01');
+  proposalMilestones = signal<PaymentMilestone[]>([]);
+
+  calculatedAdvancePaymentAmount = computed(() => {
+    const total = this.calculatedTotalAmount();
+    const type = this.proposalAdvanceType();
+    const val = Number(this.proposalAdvanceValue()) || 0;
+    if (type === 'percentage') {
+      return Math.round((total * val) / 100);
+    }
+    return val;
+  });
+
+  previousAdvanceAmount = computed(() => {
+    const q = this.selectedQuote();
+    if (!q) return 0;
+    const history = q.negotiationHistory;
+    if (history && history.length > 0) {
+      const prev = history[history.length - 1];
+      const total = prev.totalOffered;
+      const type = prev.advancePaymentType || 'percentage';
+      const val = prev.advancePaymentValue ?? 50;
+      return type === 'percentage' ? Math.round((total * val) / 100) : val;
+    }
+    const total = q.totalAmount || 50000;
+    const type = q.advancePaymentType || 'percentage';
+    const val = q.advancePaymentValue ?? 50;
+    return type === 'percentage' ? Math.round((total * val) / 100) : val;
+  });
+
+  previousMilestones = computed(() => {
+    const q = this.selectedQuote();
+    if (!q) return [];
+    const history = q.negotiationHistory;
+    if (history && history.length > 0) {
+      const prev = history[history.length - 1];
+      return prev.paymentMilestones ?? [];
+    }
+    return q.paymentMilestones ?? [];
+  });
+
+  addMilestone(): void {
+    const current = this.proposalMilestones();
+    const defaultDate = this.proposalPaymentDueDate() || '2026-08-15';
+    const newMilestone: PaymentMilestone = {
+      id: `m-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+      label: `Parcialidad #${current.length + 1}`,
+      percentageOrAmount: 25,
+      type: 'percentage',
+      dueDateOrTimeframe: defaultDate
+    };
+    this.proposalMilestones.set([...current, newMilestone]);
+  }
+
+  updateMilestone(index: number, field: keyof PaymentMilestone, value: any): void {
+    const current = [...this.proposalMilestones()];
+    if (current[index]) {
+      current[index] = { ...current[index], [field]: value };
+      this.proposalMilestones.set(current);
+    }
+  }
+
+  removeMilestone(index: number): void {
+    const current = [...this.proposalMilestones()];
+    current.splice(index, 1);
+    this.proposalMilestones.set(current);
+  }
+
+  getMilestoneCalculatedAmount(milestone: PaymentMilestone, totalAmount?: number | null): number {
+    if (!milestone) return 0;
+    const baseTotal = totalAmount ?? (this.selectedQuote()?.totalAmount || 0);
+    if (milestone.type === 'percentage') {
+      return (baseTotal * milestone.percentageOrAmount) / 100;
+    }
+    return milestone.percentageOrAmount;
+  }
+
   constructor() {
     effect(() => {
       const current = this.selectedQuote();
@@ -5161,6 +5513,27 @@ export class QuoteDetailModalComponent {
         this.negotiationHistory.set(current.negotiationHistory ?? []);
         if (current.proposedDate) {
           this.proposalDate.set(current.proposedDate);
+        }
+        if (current.advancePaymentType) {
+          this.proposalAdvanceType.set(current.advancePaymentType);
+        }
+        if (current.advancePaymentValue !== undefined) {
+          this.proposalAdvanceValue.set(current.advancePaymentValue);
+        }
+        if (current.paymentDueDate) {
+          this.proposalPaymentDueDate.set(current.paymentDueDate);
+        }
+        if (current.receivingCardId) {
+          this.proposalReceivingCardId.set(current.receivingCardId);
+        }
+        if (current.paymentMilestones && current.paymentMilestones.length > 0) {
+          this.proposalMilestones.set([...current.paymentMilestones]);
+        } else {
+          this.proposalMilestones.set([
+            { id: 'm1', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: 'Al confirmar contrato' },
+            { id: 'm2', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '30 días antes del evento' },
+            { id: 'm3', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '7 días antes del evento' }
+          ]);
         }
       } else {
         this.negotiationRound.set(0);
@@ -5670,6 +6043,12 @@ export class QuoteDetailModalComponent {
       durationHours: this.totalCalculatedShowHours(),
       proposedDate: this.proposalDate() || current.proposedDate,
       notes: notesText,
+      // Condiciones de pago e hitos
+      advancePaymentType: this.proposalAdvanceType(),
+      advancePaymentValue: this.proposalAdvanceValue(),
+      paymentDueDate: this.proposalPaymentDueDate(),
+      receivingCardId: this.proposalReceivingCardId(),
+      paymentMilestones: [...this.proposalMilestones()],
       // Propuesta inicial: sin rondas de negociación
       negotiationRound: 0,
       negotiationHistory: []
@@ -5679,10 +6058,10 @@ export class QuoteDetailModalComponent {
     this.negotiationRound.set(0);
     this.negotiationHistory.set([]);
 
+    this.mockData.updateQuoteDetails(current.id, updatedQuote);
     this.mockData.updateQuoteState(current.id, 'Propuesta enviada');
     this.layoutState.openQuoteModal(updatedQuote);
   }
-
 
   // Send re-negotiated proposal back to client ('Negociación' -> 'Propuesta enviada' EN NEGOCIACIÓN)
   sendNegotiatedProposal(): void {
@@ -5695,7 +6074,7 @@ export class QuoteDetailModalComponent {
     const diffPct = this.calculatedDiscountDifferencePercent();
     const newRound = (current.negotiationRound ?? 0) + 1;
 
-    // Crear entry de esta ronda de negociación (incluyendo horario propuesto)
+    // Crear entry de esta ronda de negociación (incluyendo horario propuesto, condiciones e hitos de pago)
     const newEntry: NegotiationEntry = {
       round: newRound,
       clientRejectionMessage: this.clientRejectionFeedback(),
@@ -5706,16 +6085,21 @@ export class QuoteDetailModalComponent {
       soundCost: this.proposalSoundOption() === 'proveedor' ? this.proposalSoundCost() : 0,
       marginPercent: this.proposalMarginPercent(),
       timestamp: 'Enviado ahora',
-      // Horario propuesto en esta ronda
+      // Horario propuesto en esa ronda
       proposedDate: this.proposalDate(),
       scheduleMode: this.scheduleMode(),
       startTime: this.scheduleMode() === 'continuo' ? this.singleStartTime() : undefined,
       endTime: this.scheduleMode() === 'continuo' ? this.calculatedSingleEndTime() : undefined,
       durationHours: this.scheduleMode() === 'continuo' ? Number(this.singleDurationHours()) : undefined,
       showBlocks: this.scheduleMode() === 'tandas' ? [...this.showBlocks()] : undefined,
-      totalShowHours: this.totalCalculatedShowHours()
+      totalShowHours: this.totalCalculatedShowHours(),
+      // Condiciones de pago e hitos por ronda
+      advancePaymentType: this.proposalAdvanceType(),
+      advancePaymentValue: this.proposalAdvanceValue(),
+      paymentDueDate: this.proposalPaymentDueDate(),
+      receivingCardId: this.proposalReceivingCardId(),
+      paymentMilestones: [...this.proposalMilestones()]
     };
-
 
     const updatedHistory: NegotiationEntry[] = [
       ...(current.negotiationHistory ?? []),
@@ -5741,6 +6125,12 @@ export class QuoteDetailModalComponent {
       durationHours: this.totalCalculatedShowHours(),
       proposedDate: this.proposalDate() || current.proposedDate,
       notes: notesText,
+      // Condiciones de pago e hitos
+      advancePaymentType: this.proposalAdvanceType(),
+      advancePaymentValue: this.proposalAdvanceValue(),
+      paymentDueDate: this.proposalPaymentDueDate(),
+      receivingCardId: this.proposalReceivingCardId(),
+      paymentMilestones: [...this.proposalMilestones()],
       negotiationRound: newRound,
       negotiationHistory: updatedHistory
     };
@@ -5851,7 +6241,7 @@ export class QuoteDetailModalComponent {
     }
 
     const updatedNotes = current.notes ? `${current.notes}\n\n${rollbackEntry}` : rollbackEntry;
-    
+
     const updatedQuote: Quote = {
       ...current,
       state: 'En revisión',
@@ -5883,6 +6273,39 @@ export class QuoteDetailModalComponent {
       default: return 'bookmark';
     }
   }
+
+  getAdvancePaymentAmount(entry?: NegotiationEntry | null): number {
+    const q = this.selectedQuote();
+    const total = entry ? entry.totalOffered : (q?.totalAmount || 0);
+    const type = entry?.advancePaymentType || q?.advancePaymentType || 'percentage';
+    const val = entry?.advancePaymentValue ?? q?.advancePaymentValue ?? 50;
+    return type === 'percentage' ? (total * (val / 100)) : val;
+  }
+
+  getAdvancePaymentLabel(entry?: NegotiationEntry | null): string {
+    const q = this.selectedQuote();
+    const type = entry?.advancePaymentType || q?.advancePaymentType || 'percentage';
+    const val = entry?.advancePaymentValue ?? q?.advancePaymentValue ?? 50;
+    return type === 'percentage' ? `${val}% del total` : `$${val} MXN Fijo`;
+  }
+
+  getPaymentDueDate(entry?: NegotiationEntry | null): string {
+    const q = this.selectedQuote();
+    return entry?.paymentDueDate || q?.paymentDueDate || '2026-08-25';
+  }
+
+  getReceivingCardLabel(entry?: NegotiationEntry | null): string {
+    const q = this.selectedQuote();
+    const cardId = entry?.receivingCardId || q?.receivingCardId;
+    const card = this.mockData.getReceivingCardById(cardId);
+    return card ? `${card.bankName} - ${card.accountHolder} (${card.cardNumber})` : 'BBVA México - Acordex (**** 4821)';
+  }
+
+  getPaymentMilestones(entry?: NegotiationEntry | null): PaymentMilestone[] {
+    const q = this.selectedQuote();
+    return entry?.paymentMilestones || q?.paymentMilestones || [];
+  }
+
 
   getStatePhaseTitle(state: QuoteState): string {
     switch (state) {

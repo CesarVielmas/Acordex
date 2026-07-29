@@ -85,3 +85,482 @@
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* Quote detail modal ---------------------------------------------------- */
+.quote-modal-backdrop {
+  isolation: isolate;
+  animation: quoteModalBackdropIn 240ms ease-out both;
+  background: rgba(3, 7, 18, .88);
+}
+
+.quote-modal-shell {
+  isolation: isolate;
+  animation: quoteModalShellIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  container-type: inline-size;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(56,189,248,.08), transparent 28%),
+    radial-gradient(circle at 100% 100%, rgba(242,202,80,.07), transparent 30%),
+    rgba(32,31,31,.98);
+  box-shadow: 0 30px 100px rgba(0,0,0,.72), 0 0 0 1px rgba(255,255,255,.06) inset;
+}
+
+.quote-modal-orb {
+  opacity: .55;
+  filter: blur(72px);
+  animation: quoteModalOrbDrift 8s ease-in-out infinite alternate;
+}
+
+.quote-modal-orb-amber { animation-delay: -2.5s; }
+.quote-modal-orb-purple { animation-delay: -5s; opacity: .35; }
+
+[data-modal-state="En revisión"] .quote-modal-shell,
+[data-modal-state="En revisión"] .quote-modal-shell::after {
+  --quote-accent: 245, 158, 11;
+}
+
+[data-modal-state="Propuesta enviada"] .quote-modal-shell {
+  --quote-accent: 34, 211, 238;
+}
+
+[data-modal-state="Negociación"] .quote-modal-shell {
+  --quote-accent: 245, 158, 11;
+}
+
+[data-modal-state="Aceptada"] .quote-modal-shell {
+  --quote-accent: 52, 211, 153;
+}
+
+[data-modal-state="Contrato firmado"] .quote-modal-shell,
+[data-modal-state="Pago confirmado"] .quote-modal-shell,
+[data-modal-state="Evento realizado"] .quote-modal-shell,
+[data-modal-state="Finalizada"] .quote-modal-shell {
+  --quote-accent: 52, 211, 153;
+}
+
+[data-modal-state="Cancelada"] .quote-modal-shell {
+  --quote-accent: 248, 113, 113;
+}
+
+.quote-modal-shell::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1.5rem;
+  bottom: 1.5rem;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(180deg, rgba(var(--quote-accent, 242,202,80), .95), rgba(var(--quote-accent, 242,202,80), .08));
+  box-shadow: 0 0 24px rgba(var(--quote-accent, 242,202,80), .42);
+  pointer-events: none;
+}
+
+.quote-modal-shell .quote-modal-header {
+  padding-bottom: .9rem;
+  border-bottom-color: rgba(var(--quote-accent, 242,202,80), .22);
+}
+
+.quote-modal-shell .quote-modal-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 12%;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(var(--quote-accent,242,202,80),.85), transparent);
+}
+
+.quote-modal-shell .quote-modal-body [class*="rounded-3xl"] {
+  border-radius: 1.25rem;
+}
+
+.quote-modal-shell .quote-modal-body [class*="shadow-2xl"] {
+  box-shadow: 0 16px 36px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.quote-modal-shell .quote-modal-body [class*="border-2"] {
+  border-width: 1px;
+}
+
+.quote-modal-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,.08), transparent 24%, transparent 72%, rgba(242,202,80,.06));
+  z-index: -1;
+}
+
+.quote-modal-header {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+}
+
+.quote-modal-title-row,
+.quote-modal-title-group,
+.quote-modal-title-group > div {
+  min-width: 0;
+}
+
+.quote-modal-title-group h3 {
+  max-width: min(72vw, 58rem);
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.16;
+}
+
+.quote-modal-title-group strong {
+  white-space: normal;
+}
+
+.quote-modal-actions {
+  max-width: 100%;
+}
+
+.quote-modal-actions button {
+  white-space: nowrap;
+}
+
+.quote-modal-body {
+  position: relative;
+  z-index: 1;
+}
+
+.quote-modal-body > * {
+  animation: quoteModalContentIn 360ms 60ms cubic-bezier(.16,1,.3,1) both;
+}
+
+/* Give nested sections a clearer surface hierarchy without touching their content. */
+.quote-modal-shell .bg-surface-container-high\/90,
+.quote-modal-shell .bg-surface-container-high\/80,
+.quote-modal-shell .bg-surface-container\/90 {
+  box-shadow: 0 12px 32px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.quote-modal-shell .border-outline-variant\/30 {
+  border-color: rgba(148, 163, 184, .2);
+}
+
+.quote-modal-shell .text-outline {
+  color: rgba(203, 194, 177, .78);
+}
+
+.quote-modal-body,
+.quote-modal-body > * {
+  min-height: 0;
+}
+
+.quote-modal-tabs {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: stretch;
+}
+
+.quote-modal-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.quote-modal-tabs > div {
+  flex-wrap: nowrap;
+  min-width: max-content;
+}
+
+.quote-modal-tabs button {
+  white-space: nowrap;
+  flex: 0 0 auto;
+  min-height: 2.6rem;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.quote-modal-tabs button:hover {
+  transform: translateY(-1px);
+}
+
+.quote-modal-tabs button .material-symbols-outlined {
+  flex: 0 0 auto;
+}
+
+/* La Fase 2 conserva su navegación compacta en una sola línea. */
+.quote-modal-phase2-tabs {
+  display: flex !important;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.quote-modal-phase2-tabs > div:first-child {
+  display: flex;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.quote-modal-phase2-tabs > div:first-child::-webkit-scrollbar {
+  display: none;
+}
+
+.quote-modal-phase2-tabs > div:last-child {
+  flex: 0 0 auto;
+}
+
+.quote-modal-phase2-tabs button {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.quote-modal-workflow-bar {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(120deg, rgba(var(--quote-accent, 242,202,80), .12), transparent 42%),
+    rgba(47, 46, 45, .78);
+}
+
+.quote-modal-workflow-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(var(--quote-accent, 242,202,80), .9), transparent);
+  pointer-events: none;
+}
+
+.quote-modal-workflow-bar > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 900px) {
+  .quote-modal-tabs {
+    overflow-x: visible;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    align-items: stretch;
+  }
+
+  .quote-modal-tabs > div {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .quote-modal-tabs button {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 899px) {
+  .quote-modal-tabs {
+    padding-bottom: .35rem;
+  }
+
+  .quote-modal-tabs button {
+    min-width: max-content;
+  }
+}
+
+@media (max-width: 719px) {
+  .quote-modal-tabs {
+    display: flex;
+    grid-template-columns: none;
+  }
+}
+
+@container (min-width: 720px) {
+  .quote-modal-tabs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    align-items: stretch;
+    overflow-x: visible;
+  }
+
+  .quote-modal-tabs button {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+.quote-modal-shell [class*="overflow-y-auto"] {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 202, 80, .42) transparent;
+}
+
+.quote-modal-shell [class*="overflow-y-auto"]::-webkit-scrollbar {
+  width: 7px;
+}
+
+.quote-modal-shell [class*="overflow-y-auto"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.quote-modal-shell [class*="overflow-y-auto"]::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(242,202,80,.62), rgba(45,212,191,.42));
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+.quote-modal-body,
+.quote-modal-body [class*="grid"],
+.quote-modal-body [class*="flex"] {
+  min-width: 0;
+}
+
+.quote-modal-body [class*="flex"] > *,
+.quote-modal-body [class*="grid"] > * {
+  min-width: 0;
+}
+
+.quote-modal-body p,
+.quote-modal-body span,
+.quote-modal-body strong,
+.quote-modal-body h4,
+.quote-modal-body h5 {
+  overflow-wrap: anywhere;
+}
+
+.quote-modal-shell [class*="truncate"] {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+.quote-modal-shell button:focus-visible,
+.quote-modal-shell input:focus-visible,
+.quote-modal-shell textarea:focus-visible,
+.quote-modal-shell select:focus-visible {
+  outline: 2px solid rgba(242, 202, 80, .9);
+  outline-offset: 2px;
+}
+
+@container (max-width: 720px) {
+  .quote-modal-shell {
+    border-radius: 1rem;
+    padding: .85rem;
+  }
+
+  .quote-modal-shell .quote-modal-header h3 {
+    max-width: 15rem;
+  }
+
+  .quote-modal-shell .quote-modal-header [title="Rechazar o cancelar esta cotización"] {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .quote-modal-shell {
+    height: calc(100dvh - .5rem);
+    max-height: calc(100dvh - .5rem);
+  }
+
+  .quote-modal-shell [class*="truncate"] {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quote-modal-backdrop,
+  .quote-modal-shell,
+  .quote-modal-shell * {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes quoteModalBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes quoteModalShellIn {
+  from { opacity: 0; transform: translateY(14px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes quoteModalContentIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes quoteModalOrbDrift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(12px, -8px, 0) scale(1.06); }
+}
+
+/* Override final para que la barra de Fase 2 no herede la cuadrícula de las demás pestañas. */
+.quote-modal-shell .quote-modal-phase2-tabs {
+  display: flex !important;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  gap: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.quote-modal-shell:has(.quote-modal-phase2-tabs) .quote-modal-body {
+  padding-top: .55rem;
+}
+
+.quote-modal-shell .quote-modal-phase2-tabs > div:first-child {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  min-width: 0;
+  width: 100%;
+  overflow-x: visible;
+}
+
+.quote-modal-shell .quote-modal-phase2-tabs > div:first-child button {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: max-content;
+}
+
+.quote-modal-shell .quote-modal-phase2-status {
+  align-self: flex-end;
+  min-height: 1.25rem;
+  margin-top: -.45rem;
+  margin-bottom: .1rem;
+  margin-right: .15rem;
+  padding-right: 0;
+}
+
+@media (max-width: 719px) {
+  .quote-modal-shell .quote-modal-phase2-tabs {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .quote-modal-shell .quote-modal-phase2-status {
+    margin-top: -.2rem;
+    margin-bottom: .1rem;
+  }
+
+  .quote-modal-shell:has(.quote-modal-phase2-tabs) .quote-modal-body {
+    padding-top: .35rem;
+  }
+
+  .quote-modal-shell .quote-modal-phase2-tabs > div:first-child {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .quote-modal-shell .quote-modal-phase2-tabs > div:first-child::-webkit-scrollbar {
+    display: none;
+  }
+}
