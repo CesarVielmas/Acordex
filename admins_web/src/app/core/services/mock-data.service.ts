@@ -140,8 +140,12 @@ export class MockDataService {
       city: 'Monterrey, NL',
       totalAmount: 350000,
       marginAmount: 87500,
-      state: 'Contrato firmado',
-      paymentStatus: 'Anticipo 50%',
+      state: 'Finalizada',
+      paymentStatus: 'Pago Confirmado 100%',
+      isCycleSealed: true,
+      sealedAt: '2026-07-28 18:00',
+      sealedBy: 'Lic. Sofía Ramírez (Admin)',
+      finalClosureSummary: 'Expediente COT-8901 finalizado y sellado inmutablemente tras cumplir con las obligaciones contractuales y cobranza tesorería.',
       terms: '50% de anticipo al firmar, 50% el día de la prueba de sonido. Hospedaje y camerino VIP incluidos.',
       contractPdfUrl: 'contrato_COT-8901_firmado.pdf',
       dateCreated: '2026-07-10',
@@ -157,10 +161,151 @@ export class MockDataService {
       advancePaymentValue: 50,
       paymentDueDate: '2026-08-15',
       receivingCardId: 'card-bbva-01',
+      maxAllowedDelays: 2,
       paymentMilestones: [
-        { id: 'm1_8901', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
-        { id: 'm2_8901', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-10' },
-        { id: 'm3_8901', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' }
+        { 
+          id: 'm1_8901', 
+          label: '50% Anticipo de Reserva al Firmar', 
+          percentageOrAmount: 50, 
+          type: 'percentage', 
+          dueDateOrTimeframe: '2026-07-16',
+          status: 'Pagado',
+          amountCalculated: 175000,
+          paidAmount: 175000,
+          paidAt: '2026-07-16 10:15 AM',
+          paymentReceiptUrl: 'comprobante_anticipo_COT8901.pdf',
+          receiptReference: 'SPEI-99382104'
+        },
+        { 
+          id: 'm2_8901', 
+          label: '25% Segundo Pago Intermedio (Soundcheck)', 
+          percentageOrAmount: 25, 
+          type: 'percentage', 
+          dueDateOrTimeframe: '2026-08-01',
+          status: 'Pagado',
+          amountCalculated: 87500,
+          paidAmount: 87500,
+          paidAt: '2026-08-01 11:00 AM',
+          receiptReference: 'SPEI-44912093'
+        },
+        { 
+          id: 'm3_8901', 
+          label: '25% Finiquito Final Día del Evento', 
+          percentageOrAmount: 25, 
+          type: 'percentage', 
+          dueDateOrTimeframe: '2026-08-15',
+          status: 'Pagado',
+          amountCalculated: 87500,
+          paidAmount: 87500,
+          paidAt: '2026-08-15 09:30 PM',
+          receiptReference: 'SPEI-55102948'
+        }
+      ],
+      clientNotices: [
+        {
+          id: 'n_cli_1',
+          target: 'Cliente',
+          title: 'Confirmación de Firma y Recepción de Anticipo',
+          message: 'Se ha verificado el pago del 50% de anticipo ($175,000 MXN). El contrato digital ha entrado en vigor legal vinculante.',
+          sentBy: 'Lic. Sofía Ramírez',
+          sentRole: 'administrador',
+          sentAt: '2026-07-16 10:30 AM',
+          channels: ['Email', 'WhatsApp'],
+          priority: 'Normal'
+        }
+      ],
+      groupNotices: [
+        {
+          id: 'n_grp_1',
+          target: 'Grupo Musical',
+          title: 'Notificación de Fecha Bloqueada y Prueba de Sonido',
+          message: 'Atención Manager: La fecha del 15 de Agosto en Arena Monterrey ha sido confirmada y firmada. El horario de soundcheck se fijó a las 17:00 hrs.',
+          sentBy: 'Lic. Sofía Ramírez',
+          sentRole: 'administrador',
+          sentAt: '2026-07-16 10:35 AM',
+          channels: ['WhatsApp', 'Platform'],
+          priority: 'Alta'
+        }
+      ],
+      chatHistory: [
+        {
+          id: 'c1',
+          senderName: 'Roberto Gómez (Cliente)',
+          senderRole: 'Cliente',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+          message: 'Buenas tardes. Confirmando que ya enviamos el comprobante del primer anticipo SPEI por $175,000 MXN. ¿A qué hora requerirán el acceso para el equipo técnico?',
+          timestamp: '2026-07-16 10:18 AM'
+        },
+        {
+          id: 'c2',
+          senderName: 'Manager Los Elegantes del Norte',
+          senderRole: 'Grupo Musical',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+          message: 'Excelente noticia. Nuestro tráiler con equipo de audio e iluminación llegará a las 15:00 hrs para montaje.',
+          timestamp: '2026-07-16 10:25 AM'
+        },
+        {
+          id: 'c3',
+          senderName: 'Lic. Sofía Ramírez (Disquera)',
+          senderRole: 'Admin',
+          avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+          message: 'Comprobante recibido y validado por la tesorería de Acordex. Todo en orden para la presentación.',
+          timestamp: '2026-07-16 10:32 AM'
+        }
+      ],
+      incidents: [],
+      incidentStatus: 'Ninguno',
+      traceabilityTimeline: [
+        {
+          id: 'ts_1',
+          phaseNumber: 1,
+          phaseName: 'Revisión Solicitud',
+          state: 'En revisión',
+          completedAt: '2026-07-10 09:00 AM',
+          actorName: 'Roberto Gómez (Cliente)',
+          summaryNote: 'Solicitud enviada a través del portal de contrataciones para 3 horas de show.',
+          snapshotData: { totalAmount: 420000, clientEmail: 'rgomez@promonorte.com', venue: 'Arena Monterrey' }
+        },
+        {
+          id: 'ts_2',
+          phaseNumber: 2,
+          phaseName: 'Propuesta & Negociación',
+          state: 'Negociación',
+          completedAt: '2026-07-15 04:45 PM',
+          actorName: 'Lic. Sofía Ramírez (Admin)',
+          summaryNote: 'Cierre de negociación comercial en Ronda #2 por $350,000 MXN con 50% anticipo.',
+          snapshotData: { totalAmount: 350000, negotiationRounds: 2 }
+        },
+        {
+          id: 'ts_3',
+          phaseNumber: 3,
+          phaseName: 'Cotización Aceptada',
+          state: 'Aceptada',
+          completedAt: '2026-07-15 05:30 PM',
+          actorName: 'Roberto Gómez (Cliente)',
+          summaryNote: 'El cliente aceptó formalmente la propuesta comercial ajustada.',
+          snapshotData: { totalAmount: 350000 }
+        },
+        {
+          id: 'ts_4',
+          phaseNumber: 4,
+          phaseName: 'Contrato en Espera de Firma',
+          state: 'Contrato en espera de firma',
+          completedAt: '2026-07-15 06:00 PM',
+          actorName: 'Sistema de Contratos Acordex',
+          summaryNote: 'Borrador de contrato privado de prestación de servicios musicales generado.',
+          snapshotData: { contractHash: '0x8f7a...3b9e' }
+        },
+        {
+          id: 'ts_5',
+          phaseNumber: 5,
+          phaseName: 'Contrato Firmado por Ambas Partes',
+          state: 'Contrato firmado',
+          completedAt: '2026-07-16 10:15 AM',
+          actorName: 'Roberto Gómez & Disquera Acordex',
+          summaryNote: 'Firma digital completada con SHA-256 inmutable y anticipo 50% recibido.',
+          snapshotData: { signedByClientAt: '2026-07-16 10:15 AM', signedByAdminAt: '2026-07-16 10:16 AM', contractHash: '0x8f7a...3b9e', paymentMilestonesCount: 3 }
+        }
       ],
       negotiationRound: 2,
       negotiationHistory: [
@@ -954,8 +1099,8 @@ export class MockDataService {
   );
 
   private loadQuotesWithFreshMocks(): Quote[] {
-    const list = this.storage.getItem<Quote[]>('acordex_quotes_v5', this.INITIAL_QUOTES);
-    for (const qId of ['COT-8903', 'COT-8905']) {
+    const list = this.storage.getItem<Quote[]>('acordex_quotes_v7', this.INITIAL_QUOTES);
+    for (const qId of ['COT-8901', 'COT-8902', 'COT-8903', 'COT-8905']) {
       const fresh = this.INITIAL_QUOTES.find(q => q.id === qId);
       if (fresh) {
         const idx = list.findIndex(q => q.id === qId);
@@ -1083,7 +1228,7 @@ export class MockDataService {
       return q;
     });
     this.quotes.set(updated);
-    this.storage.setItem('acordex_quotes_v4', updated);
+    this.storage.setItem('acordex_quotes_v6', updated);
     this.addAudit('Transición de Estado', 'Cotizaciones', `Cambió estado de ${quoteId} a "${newState}"`);
   }
 
@@ -1095,7 +1240,7 @@ export class MockDataService {
       return q;
     });
     this.quotes.set(updated);
-    this.storage.setItem('acordex_quotes_v4', updated);
+    this.storage.setItem('acordex_quotes_v6', updated);
     this.addAudit('Actualización de Pago', 'Cotizaciones', `Cambió estado de pago de ${quoteId} a "${newPaymentStatus}"`);
   }
 
@@ -1107,7 +1252,7 @@ export class MockDataService {
       return q;
     });
     this.quotes.set(updated);
-    this.storage.setItem('acordex_quotes_v4', updated);
+    this.storage.setItem('acordex_quotes_v6', updated);
     this.addAudit('Actualización de Cotización', 'Cotizaciones', `Se actualizaron los detalles y propuesta comercial de ${quoteId}`);
   }
 
@@ -1120,7 +1265,7 @@ export class MockDataService {
     };
     const updated = [created, ...this.quotes()];
     this.quotes.set(updated);
-    this.storage.setItem('acordex_quotes_v4', updated);
+    this.storage.setItem('acordex_quotes_v6', updated);
     this.addAudit('Creación de Cotización', 'Cotizaciones', `Creó la cotización ${created.id} para ${created.groupName}`);
   }
 

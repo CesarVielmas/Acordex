@@ -495,6 +495,7 @@ export class QuotesComponent {
     'Aceptada',
     'Contrato en espera de firma',
     'Contrato firmado',
+    'Cotización con Pagos Aplazados',
     'Pago pendiente',
     'Anticipo 50% recibido',
     'Logística & Soundcheck',
@@ -502,6 +503,7 @@ export class QuotesComponent {
     'En presentación',
     'Evento realizado',
     'Finalizada',
+    'Cancelada con Imprevisto',
     'Cancelada'
   ];
 
@@ -513,6 +515,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'check_circle';
       case 'Contrato en espera de firma': return 'edit_note';
       case 'Contrato firmado': return 'draw';
+      case 'Cotización con Pagos Aplazados': return 'update';
       case 'Pago pendiente': return 'hourglass_empty';
       case 'Anticipo 50% recibido': return 'savings';
       case 'Logística & Soundcheck': return 'equalizer';
@@ -520,6 +523,7 @@ export class QuotesComponent {
       case 'En presentación': return 'graphic_eq';
       case 'Evento realizado': return 'theater_comedy';
       case 'Finalizada': return 'task_alt';
+      case 'Cancelada con Imprevisto': return 'report_problem';
       case 'Cancelada': return 'cancel';
       default: return 'bookmark';
     }
@@ -533,13 +537,15 @@ export class QuotesComponent {
       case 'Aceptada': return 'Fase 2: Cotización Aceptada por el Cliente';
       case 'Contrato en espera de firma': return 'Fase 2: Contrato Enviado en Espera de Firma Digital del Cliente';
       case 'Contrato firmado': return 'Fase 4.5: Contrato Privado Firmado Digitalmente';
+      case 'Cotización con Pagos Aplazados': return 'Fase 5.5: Cotización con Pagos Aplazados (En Reestructuración)';
       case 'Pago pendiente': return 'Fase 3: Pago de Anticipo 50% Pendiente de Recepción';
       case 'Anticipo 50% recibido': return 'Fase 3: Recepción Registrada de Anticipo del 50%';
       case 'Logística & Soundcheck': return 'Fase 4: Preparación Logística, Rider Técnico & Soundcheck';
       case 'Pago confirmado': return 'Fase 4: Verificación Financiera 100% & Reservas VIP';
       case 'En presentación': return 'Fase 4: Presentación Artística En Vivo En Escenario';
       case 'Evento realizado': return 'Fase 5: Conclusión de Show & Cierre Comercial de Evento';
-      case 'Finalizada': return 'Fase 5: Cierre Definitivo de Cotización & Archivo Histórico';
+      case 'Finalizada': return 'Fase 6: Cierre Definitivo de Cotización & Archivo Histórico';
+      case 'Cancelada con Imprevisto': return 'Fase Excepcional: Cancelación por Imprevisto Grave';
       case 'Cancelada': return 'Cotización Cancelada o Inactiva';
       default: return 'Detalles de Cotización';
     }
@@ -553,6 +559,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'border-emerald-500/50 shadow-emerald-500/10';
       case 'Contrato en espera de firma': return 'border-purple-400/50 shadow-purple-400/10';
       case 'Contrato firmado': return 'border-purple-500/50 shadow-purple-500/10';
+      case 'Cotización con Pagos Aplazados': return 'border-orange-500/50 shadow-orange-500/10';
       case 'Pago pendiente': return 'border-yellow-500/50 shadow-yellow-500/10';
       case 'Anticipo 50% recibido': return 'border-teal-500/50 shadow-teal-500/10';
       case 'Logística & Soundcheck': return 'border-orange-500/50 shadow-orange-500/10';
@@ -560,6 +567,7 @@ export class QuotesComponent {
       case 'En presentación': return 'border-rose-500/50 shadow-rose-500/10';
       case 'Evento realizado': return 'border-indigo-500/50 shadow-indigo-500/10';
       case 'Finalizada': return 'border-slate-500/50 shadow-slate-500/10';
+      case 'Cancelada con Imprevisto': return 'border-rose-600/50 shadow-rose-600/10';
       case 'Cancelada': return 'border-red-500/50 shadow-red-500/10';
       default: return 'border-outline-variant/40';
     }
@@ -573,6 +581,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
       case 'Contrato en espera de firma': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
       case 'Contrato firmado': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'Cotización con Pagos Aplazados': return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
       case 'Pago pendiente': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       case 'Anticipo 50% recibido': return 'bg-teal-500/20 text-teal-300 border-teal-500/30';
       case 'Logística & Soundcheck': return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
@@ -580,6 +589,7 @@ export class QuotesComponent {
       case 'En presentación': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
       case 'Evento realizado': return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
       case 'Finalizada': return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+      case 'Cancelada con Imprevisto': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
       case 'Cancelada': return 'bg-red-500/20 text-red-400 border-red-500/30';
       default: return 'bg-primary/20 text-primary border-primary/30';
     }
@@ -593,6 +603,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'text-emerald-400';
       case 'Contrato en espera de firma': return 'text-purple-300';
       case 'Contrato firmado': return 'text-purple-300';
+      case 'Cotización con Pagos Aplazados': return 'text-orange-400';
       case 'Pago pendiente': return 'text-yellow-400';
       case 'Anticipo 50% recibido': return 'text-teal-300';
       case 'Logística & Soundcheck': return 'text-orange-300';
@@ -600,6 +611,7 @@ export class QuotesComponent {
       case 'En presentación': return 'text-rose-300';
       case 'Evento realizado': return 'text-indigo-300';
       case 'Finalizada': return 'text-slate-300';
+      case 'Cancelada con Imprevisto': return 'text-rose-400';
       case 'Cancelada': return 'text-red-400';
       default: return 'text-primary';
     }
@@ -613,6 +625,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'Confirmar aceptación y redactar borrador preliminar de contrato';
       case 'Contrato en espera de firma': return 'Revisar cláusulas legales y solicitar firma digital de las partes';
       case 'Contrato firmado': return 'Verificar firma de ambas partes y solicitar comprobante de anticipo';
+      case 'Cotización con Pagos Aplazados': return 'Gestionar reestructuración de hitos y acuerdos de mora con la administración';
       case 'Pago pendiente': return 'Validar transferencia de depósito del 50% enviada por el cliente';
       case 'Anticipo 50% recibido': return 'Acreditar anticipo en tesorería e iniciar logística técnica';
       case 'Logística & Soundcheck': return 'Coordinar prueba de sonido (16:00 hrs), rider de audio y pases VIP';
@@ -620,6 +633,7 @@ export class QuotesComponent {
       case 'En presentación': return 'Supervisar ejecución en vivo del concierto y seguridad en escenario';
       case 'Evento realizado': return 'Verificar cumplimiento de horas de show y registrar aforo real';
       case 'Finalizada': return 'Expediente histórico archivado y encuesta de satisfacción concluida';
+      case 'Cancelada con Imprevisto': return 'Expediente cerrado con protocolo de imprevisto grave u opción de reembolso';
       case 'Cancelada': return 'Liberar fecha en el calendario disquera y verificar reembolsos';
       default: return 'Transicionar la cotización al siguiente paso del flujo comercial';
     }

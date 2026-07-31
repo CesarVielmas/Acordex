@@ -7,6 +7,7 @@ export type QuoteState =
   | 'Aceptada' 
   | 'Contrato en espera de firma'
   | 'Contrato firmado' 
+  | 'Cotización con Pagos Aplazados'
   | 'Pago pendiente' 
   | 'Anticipo 50% recibido'
   | 'Logística & Soundcheck'
@@ -14,6 +15,7 @@ export type QuoteState =
   | 'En presentación'
   | 'Evento realizado' 
   | 'Finalizada' 
+  | 'Cancelada con Imprevisto'
   | 'Cancelada';
 
 export type PaymentStatus = 'Pendiente' | 'Anticipo 50%' | 'Pago Confirmado 100%';
@@ -73,13 +75,30 @@ export interface EventItem {
   evidenceMedia: EventEvidence[];
 }
 
-// Interfaz para Hitos / Parcialidades de Pago Programadas
+// Interfaz para Hitos / Parcialidades de Pago Programadas con Soporte de Cargos Moratorios y Control Tesorería
 export interface PaymentMilestone {
   id: string;
   label: string;                   // Concepto (ej. "Pago intermedio 30 días antes", "Segunda parcialidad 25%")
   percentageOrAmount: number;     // Valor numérico (ej. 25 o 15000)
   type: 'percentage' | 'fixed';    // Tipo ('percentage' % o 'fixed' $)
   dueDateOrTimeframe: string;     // Fecha u horizonte de pago (ej. "2026-08-01" o "30 días antes del evento")
+  
+  // Estado y Cobranza Tesorería
+  status?: 'Pagado' | 'Pendiente' | 'Vencido' | 'Moratorio';
+  amountCalculated?: number;        // Monto base calculado en MXN
+  paidAmount?: number;             // Monto efectivamente pagado
+  paidAt?: string;                 // Fecha de registro de pago
+  paymentReceiptUrl?: string;      // Comprobante de pago cargado
+  receiptReference?: string;       // Folio o clave de rastreo bancario
+  manualPaymentReason?: string;    // Explicación obligatoria para pagos manuales por error de sistema
+  
+  // Cargos Moratorios (Ajustables por % o Monto Fijo MXN)
+  hasMoratorio?: boolean;
+  moratorioType?: 'percentage' | 'fixed';
+  moratorioValue?: number;         // e.g. 5% o $2,500 MXN
+  moratorioAmountCalculated?: number; // Monto adicionado en MXN por mora
+  moratorioReason?: string;        // Justificación del cargo por atraso
+  appliedAt?: string;              // Fecha/hora de aplicación de la mora
 }
 
 // Interfaz para Tarjeta / Cuenta Receptora simulada
@@ -91,6 +110,76 @@ export interface ReceivingCard {
   clabe: string;
   cardType: 'Débito' | 'Crédito' | 'Empresarial';
   isDefault?: boolean;
+}
+
+// Notificación / Aviso Independiente a Cliente o Grupo Musical (Bitácoras)
+export interface NoticeItem {
+  id: string;
+  target: 'Cliente' | 'Grupo Musical';
+  title: string;
+  message: string;
+  sentBy: string;
+  sentRole: Role;
+  sentAt: string;
+  channels: ('Email' | 'WhatsApp' | 'Platform')[];
+  priority: 'Alta' | 'Normal' | 'Urgente';
+  read?: boolean;
+  relatedMilestoneId?: string;
+}
+
+// Chat Interactivo Cruzado entre Cliente, Grupo Musical y Administración
+export interface ChatMessage {
+  id: string;
+  senderName: string;
+  senderRole: 'Cliente' | 'Grupo Musical' | 'Admin';
+  avatar?: string;
+  message: string;
+  timestamp: string;
+  incidentTag?: string;
+  attachmentUrl?: string;
+}
+
+// Módulo de Excepciones e Imprevistos Operativos
+export interface QuoteIncident {
+  id: string;
+  type: 'client_cancel' | 'group_cancel' | 'imprevisto_tecnico' | 'otro';
+  initiatedBy: 'Cliente' | 'Grupo Musical' | 'Disquera';
+  reason: string;
+  resolutionType?: 'reschedule' | 'group_change' | 'refund' | 'apology_discount' | 'substitute_group';
+  resolutionNotes?: string;
+  clientMessage?: string;           // Mensaje formal enviado al cliente contratante
+  newProposedDate?: string;
+  newGroupName?: string;
+  refundAmount?: number;
+  discountApplied?: number;
+  formalApologySent?: boolean;
+  substituteGroupAssigned?: string;
+  status: 'Activo' | 'Resuelto' | 'Imprevisto Grave';
+  registeredAt: string;
+  resolvedAt?: string;
+  countdownTimer?: string; // Temporizador de cuenta regresiva (ej. '47:59:12')
+  canClientRevert?: boolean;
+}
+
+// Hito de Trazabilidad Histórica de Auditoría (Solo Lectura)
+export interface TimelineStep {
+  id: string;
+  phaseNumber: number;
+  phaseName: string; // 'Revisión', 'Propuesta enviada', 'Negociación', 'Aceptada', 'Contrato en espera de firma', 'Contrato firmado', 'Finalizada'
+  state: QuoteState;
+  completedAt: string;
+  actorName: string;
+  summaryNote: string;
+  snapshotData?: {
+    totalAmount?: number;
+    contractHash?: string;
+    negotiationRounds?: number;
+    paymentMilestonesCount?: number;
+    signedByClientAt?: string;
+    signedByAdminAt?: string;
+    clientEmail?: string;
+    venue?: string;
+  };
 }
 
 // Registro de cada ronda de negociación comercial
@@ -183,6 +272,22 @@ export interface Quote {
     note: string;
     generatedAt: string;
   };
+
+  // Fase 6 & Gestión de Tesorería, Avisos, Imprevistos y Trazabilidad
+  maxAllowedDelays?: number;                  // Límite máximo de retrasos configurado (def: 2)
+  isDeferred?: boolean;                       // Cotización en estado de pagos aplazados
+  deferredReason?: string;
+  deferredAt?: string;
+  clientNotices?: NoticeItem[];               // Bitácora de avisos independientes al cliente
+  groupNotices?: NoticeItem[];                // Bitácora de avisos independientes al grupo musical
+  chatHistory?: ChatMessage[];               // Chat interactivo cruzado (Cliente <-> Grupo <-> Admin)
+  incidents?: QuoteIncident[];               // Módulo de excepciones e imprevistos
+  incidentStatus?: 'Ninguno' | 'En Proceso' | 'Resuelto' | 'Imprevisto';
+  traceabilityTimeline?: TimelineStep[];      // Línea de tiempo de auditoría histórica inmutable
+  isCycleSealed?: boolean;                    // Cierre definitivo de ciclo (sellado inmutable)
+  sealedAt?: string;
+  sealedBy?: string;
+  finalClosureSummary?: string;
 }
 
 export interface GroupItem {

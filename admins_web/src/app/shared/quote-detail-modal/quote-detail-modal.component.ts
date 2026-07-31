@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
-import { Quote, QuoteState, PaymentStatus, NegotiationEntry, PaymentMilestone } from '../../core/models/admin.models';
+import { Quote, QuoteState, PaymentStatus, NegotiationEntry, PaymentMilestone, TimelineStep, NoticeItem, ChatMessage, QuoteIncident } from '../../core/models/admin.models';
 
 export interface GroupEventSchedule {
   id: string;
@@ -91,7 +91,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
               <!-- TOP RIGHT ACTION BUTTONS: REJECT BUTTON + MODAL CLOSE BUTTON (ALWAYS FIXED & VISIBLE) -->
               <div class="quote-modal-actions flex items-center gap-2 sm:gap-3 shrink-0 self-end sm:self-auto">
-                @if (selectedQuote()?.state !== 'Aceptada') {
+                @if (selectedQuote()?.state !== 'Aceptada' && !isHistoricalPreview()) {
                   <button 
                     (click)="openRejectionDialog()"
                     class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/40 font-extrabold text-[10px] sm:text-xs transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.25)] hover:scale-105"
@@ -159,8 +159,8 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
               </div>
             }
 
-            <!-- STATE SPECIFIC STEP NAVIGATION TABS (FOR OTHER STATES OTHER THAN INITIAL & SIGNATURE PHASES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado') {
+            <!-- STATE SPECIFIC STEP NAVIGATION TABS (FOR OTHER STATES OTHER THAN INITIAL, SIGNATURE & PHASE 6 PHASES) -->
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cotización con Pagos Aplazados' && selectedQuote()?.state !== 'Cancelada con Imprevisto') {
               <div class="quote-modal-tabs p-1 sm:p-1.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-between gap-2 text-xs shadow-inner">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <button 
@@ -203,10 +203,37 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
           <!-- MAIN WORKFLOW SPLIT BODY -->
           <div class="quote-modal-body flex-1 min-h-0 pt-3 sm:pt-4 overflow-hidden">
             
+            @if (historicalPreviewState()) {
+              <div class="p-4 mb-3.5 rounded-3xl bg-gradient-to-r from-purple-950/90 via-slate-900 to-purple-950/90 border-2 border-purple-500/70 flex flex-col sm:flex-row items-center justify-between gap-3.5 shadow-[0_0_40px_rgba(168,85,247,0.35)] shrink-0 z-50 animate-fadeIn font-sans pointer-events-auto backdrop-blur-2xl">
+                <div class="flex items-center gap-3.5">
+                  <div class="p-3 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-400/50 font-mono font-black text-xs flex items-center gap-2 shrink-0 shadow-lg ring-2 ring-purple-500/30">
+                    <span class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-ping"></span>
+                    FASE {{ selectedTimelineSnapshot()?.phaseNumber || 'N/A' }}
+                  </div>
+                  <div>
+                    <h4 class="text-xs sm:text-sm font-black text-purple-100 uppercase tracking-wider flex items-center gap-2 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">
+                      <span>🔒 MODO AUDITORÍA HISTÓRICA 1:1 — VISTA DE SOLO LECTURA</span>
+                    </h4>
+                    <span class="text-[11px] font-mono text-purple-300/90 block mt-0.5">
+                      Visualizando estado histórico inmutable: <strong class="text-purple-200 font-black font-sans px-2 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/30">{{ historicalPreviewState() }}</strong>
+                    </span>
+                  </div>
+                </div>
+
+                <button 
+                  (click)="exitHistoricalPreview()"
+                  class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] flex items-center gap-2 shrink-0 hover:scale-105"
+                >
+                  <span class="material-symbols-outlined text-base">arrow_back</span>
+                  <span>Volver al Timeline de Trazabilidad</span>
+                </button>
+              </div>
+            }
+
             <!-- ========================================================================= -->
             <!-- SPECIALIZED WORKFLOW FOR STATE: 'En revisión' (PREMIUM 2-COLUMN SPLIT) -->
             <!-- ========================================================================= -->
-            @if (selectedQuote()?.state === 'En revisión') {
+            @if (effectiveQuoteState() === 'En revisión') {
               <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 h-full items-start overflow-hidden">
                 
                 <!-- LEFT COLUMN: SOLICITUD DE CLIENTE BASE (6 COLS) -->
@@ -1138,7 +1165,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
             <!-- ========================================================================= -->
             <!-- SPECIALIZED WORKFLOW FOR STATE: 'Negociación' (COMMERCIAL RE-NEGOTIATION) -->
             <!-- ========================================================================= -->
-            @if (selectedQuote()?.state === 'Negociación') {
+            @if (effectiveQuoteState() === 'Negociación') {
               <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 h-full items-start overflow-hidden">
                 
                 <!-- LEFT COLUMN: FULL CLIENT CREDENTIALS + REJECTION FEEDBACK + SPECIFICATIONS (6 COLS) -->
@@ -2270,7 +2297,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
             }
 
             <!-- LUXURY SPECIALIZED WORKFLOW FOR STATE: 'Propuesta enviada' -->
-            @if (selectedQuote()?.state === 'Propuesta enviada') {
+            @if (effectiveQuoteState() === 'Propuesta enviada') {
               <div class="h-full flex flex-col min-h-0 space-y-4">
                 
                 <!-- TAB 1: COTIZACIÓN ENVIADA (VISTA LUXURY DE LECTURA COMPLETA) -->
@@ -2532,8 +2559,8 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
               </div>
             }
 
-            <!-- DYNAMIC WORKFLOW ACTION CONTROL BAR (FOR OTHER STATES OTHER THAN INITIAL PHASES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado') {
+            <!-- DYNAMIC WORKFLOW ACTION CONTROL BAR (FOR OTHER STATES OTHER THAN INITIAL PHASES & PHASE 6) -->
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cotización con Pagos Aplazados' && selectedQuote()?.state !== 'Cancelada con Imprevisto') {
               <div class="quote-modal-workflow-bar p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 shadow-lg">
                 <div class="space-y-0.5">
                   <span class="text-xs font-extrabold text-primary uppercase tracking-wider block">Acción Operativa para el Estado Actual</span>
@@ -2561,7 +2588,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
             }
 
             <!-- SPECIALIZED WORKFLOW FOR STATE: 'Aceptada' -->
-            @if (selectedQuote()?.state === 'Aceptada') {
+            @if (effectiveQuoteState() === 'Aceptada') {
               <div class="h-full flex flex-col min-h-0 space-y-4">
                 
                 <!-- TOP SUB-TABS NAVIGATION FOR ACEPTADA STATE -->
@@ -3518,7 +3545,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
             }
 
             <!-- WORKFLOW ESPECIALIZADO PARA FASE 4: 'Contrato en espera de firma' -->
-            @if (selectedQuote()?.state === 'Contrato en espera de firma') {
+            @if (effectiveQuoteState() === 'Contrato en espera de firma') {
               <div class="h-full flex flex-col min-h-0 space-y-4 font-sans">
                 
                 <!-- SUB-TABS NAVEGACIÓN DE FASE 4 -->
@@ -4661,7 +4688,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
             }
 
             <!-- WORKFLOW ESPECIALIZADO PARA FASE 5: 'Contrato firmado' -->
-            @if (selectedQuote()?.state === 'Contrato firmado') {
+            @if (effectiveQuoteState() === 'Contrato firmado') {
               <div class="h-full flex flex-col min-h-0 space-y-4 font-sans">
                 
                 <!-- SUB-TABS NAVEGACIÓN DE FASE 5: CONTRATO FIRMADO -->
@@ -5644,6 +5671,691 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                         </div>
                       }
                     }
+                  </div>
+                }
+
+              </div>
+            }
+
+            <!-- WORKFLOW ESPECIALIZADO PARA FASE 6: 'Finalizada', 'Cotización con Pagos Aplazados', 'Cancelada con Imprevisto' -->
+            @if (effectiveQuoteState() === 'Finalizada' || effectiveQuoteState() === 'Cotización con Pagos Aplazados' || effectiveQuoteState() === 'Cancelada con Imprevisto') {
+              <div class="h-full flex flex-col min-h-0 space-y-4 font-sans">
+
+                <!-- SUB-TABS NAVEGACIÓN FASE 6 -->
+                <div class="quote-modal-tabs flex items-center gap-1.5 p-1 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 shrink-0">
+                  <button 
+                    (click)="phase6Tab.set('tesoreria')"
+                    [class]="phase6Tab() === 'tesoreria' ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-400/50 shadow-sm' : 'text-outline hover:text-on-surface border-transparent'"
+                    class="px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 flex-1 justify-center"
+                  >
+                    <span class="material-symbols-outlined text-base">payments</span>
+                    <span>1. Tesorería & Cargos Moratorios</span>
+                  </button>
+
+                  <button 
+                    (click)="phase6Tab.set('comunicacion')"
+                    [class]="phase6Tab() === 'comunicacion' ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-400/50 shadow-sm' : 'text-outline hover:text-on-surface border-transparent'"
+                    class="px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 flex-1 justify-center"
+                  >
+                    <span class="material-symbols-outlined text-base">forum</span>
+                    <span>2. Avisos & Chat Cruzado</span>
+                  </button>
+
+                  <button 
+                    (click)="phase6Tab.set('imprevistos')"
+                    [class]="phase6Tab() === 'imprevistos' ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border-amber-400/50 shadow-sm' : 'text-outline hover:text-on-surface border-transparent'"
+                    class="px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 flex-1 justify-center"
+                  >
+                    <span class="material-symbols-outlined text-base">warning</span>
+                    <span>3. Módulo Imprevistos</span>
+                  </button>
+
+                  <button 
+                    (click)="phase6Tab.set('trazabilidad')"
+                    [class]="phase6Tab() === 'trazabilidad' ? 'bg-gradient-to-r from-purple-500/20 to-indigo-500/20 text-purple-300 border-purple-400/50 shadow-sm' : 'text-outline hover:text-on-surface border-transparent'"
+                    class="px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 flex-1 justify-center"
+                  >
+                    <span class="material-symbols-outlined text-base">timeline</span>
+                    <span>4. Trazabilidad Timeline</span>
+                  </button>
+
+                  <button 
+                    (click)="phase6Tab.set('cierre')"
+                    [class]="phase6Tab() === 'cierre' ? 'bg-gradient-to-r from-slate-700/40 to-slate-800/40 text-slate-200 border-slate-500/50 shadow-sm' : 'text-outline hover:text-on-surface border-transparent'"
+                    class="px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 flex-1 justify-center"
+                  >
+                    <span class="material-symbols-outlined text-base">verified</span>
+                    <span>5. Cierre Definitivo</span>
+                  </button>
+                </div>
+
+                <!-- CONTENIDO DE SUB-TAB 1: PANEL DE TESORERÍA E HITOS DE PAGO -->
+                @if (phase6Tab() === 'tesoreria') {
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4">
+                    
+                    @if (selectedQuote()?.isCycleSealed) {
+                      <div class="p-3 rounded-2xl bg-purple-950/60 border border-purple-500/40 flex items-center justify-between text-xs font-sans text-purple-200 shadow-lg">
+                        <span class="flex items-center gap-2 font-bold uppercase tracking-wider">
+                          <span class="material-symbols-outlined text-base text-purple-400">lock</span>
+                          EXPEDIENTE SELLADO EN MODO SOLO LECTURA
+                        </span>
+                        <span class="text-[10px] font-mono text-outline">Modificaciones Deshabilitadas</span>
+                      </div>
+                    }
+
+                    <!-- CONTROL DE UMBRAL Y LÍMITE DE APLAZOS DINÁMICO -->
+                    <div class="p-4 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+                      <div>
+                        <span class="text-xs font-bold text-on-surface flex items-center gap-2">
+                          <span class="material-symbols-outlined text-amber-400 text-sm">tune</span>
+                          Configuración de Límite de Retrasos / Aplazados Tesorería
+                        </span>
+                        <p class="text-[11px] text-outline mt-0.5">Definición administrativa de tolerancia. Ingresa el campo numérico flexible de hitos permitidos vencidos antes de migrar a "Cotización con Pagos Aplazados".</p>
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs text-outline font-mono">Máx. Retrasos Permitidos:</span>
+                        <input 
+                          type="number" 
+                          min="0"
+                          max="20"
+                          [disabled]="!!selectedQuote()?.isCycleSealed"
+                          [ngModel]="maxAllowedDelaysInput()" 
+                          (ngModelChange)="maxAllowedDelaysInput.set($any($event))"
+                          class="bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-1.5 text-xs text-on-surface font-bold font-mono w-20 focus:border-primary outline-none disabled:opacity-40"
+                        />
+                        <button 
+                          [disabled]="!!selectedQuote()?.isCycleSealed"
+                          (click)="updateMaxAllowedDelays()"
+                          class="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all disabled:opacity-40 shadow-sm"
+                        >
+                          Guardar Límite
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- TABLA / GRILLA DE HITOS DE PAGO -->
+                    <div class="p-4 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 space-y-3 shadow-lg">
+                      <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+                        <span class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                          <span class="material-symbols-outlined text-base">account_balance_wallet</span>
+                          CONTROL DESGLOSADO DE HITOS DE PAGO Y COBRANZA
+                        </span>
+                        <span class="text-[11px] font-mono text-outline">
+                          Monto Total: <strong class="text-emerald-300">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</strong>
+                        </span>
+                      </div>
+
+                      <div class="space-y-2.5">
+                        @for (milestone of selectedQuote()?.paymentMilestones || []; track milestone.id) {
+                          <div class="p-3.5 rounded-xl bg-surface-container border border-outline-variant/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all hover:border-outline-variant/40">
+                            
+                            <!-- INFO DEL HITO -->
+                            <div class="space-y-1">
+                              <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-bold text-xs text-on-surface">{{ milestone.label }}</span>
+                                
+                                @if (milestone.status === 'Pagado') {
+                                  <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">check_circle</span> PAGADO
+                                  </span>
+                                } @else if (milestone.status === 'Moratorio') {
+                                  <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-orange-500/20 text-orange-300 border border-orange-500/30 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">warning</span> CON MORATORIO
+                                  </span>
+                                } @else if (milestone.status === 'Vencido') {
+                                  <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">event_busy</span> VENCIDO
+                                  </span>
+                                } @else {
+                                  <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">hourglass_empty</span> PENDIENTE
+                                  </span>
+                                }
+                              </div>
+
+                              <div class="flex items-center gap-3 text-[11px] text-outline font-mono flex-wrap">
+                                <span>Fecha Límite: <strong class="text-on-surface">{{ milestone.dueDateOrTimeframe }}</strong></span>
+                                <span>Monto Calculado: <strong class="text-emerald-300">&#36;{{ milestone.amountCalculated | number:'1.0-0' }} MXN</strong></span>
+                                @if (milestone.paidAt) {
+                                  <span>Pagado el: <strong class="text-teal-300">{{ milestone.paidAt }}</strong> ({{ milestone.receiptReference }})</span>
+                                }
+                              </div>
+
+                              @if (milestone.manualPaymentReason) {
+                                <div class="mt-1 p-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-[11px] text-blue-200 font-sans">
+                                  <span class="font-bold flex items-center gap-1 text-blue-400">
+                                    <span class="material-symbols-outlined text-xs">info</span> Pago Registrado Manualmente (Falla / Error de Sistema)
+                                  </span>
+                                  <p class="text-[10px] text-blue-300/90 italic mt-0.5">Motivo: "{{ milestone.manualPaymentReason }}" | Ref: {{ milestone.receiptReference }}</p>
+                                </div>
+                              }
+
+                              @if (milestone.hasMoratorio) {
+                                <div class="mt-1 p-2 rounded-lg bg-orange-500/10 border border-orange-500/30 text-[11px] text-orange-200">
+                                  <span class="font-bold flex items-center gap-1 text-orange-400">
+                                    <span class="material-symbols-outlined text-xs">error</span> Cargo Moratorio Aplicado: +&#36;{{ milestone.moratorioAmountCalculated | number:'1.0-0' }} MXN ({{ milestone.moratorioType === 'percentage' ? milestone.moratorioValue + '%' : '&#36;' + milestone.moratorioValue + ' MXN' }})
+                                  </span>
+                                  <p class="text-[10px] text-orange-300/80 italic mt-0.5">Motivo: "{{ milestone.moratorioReason }}" (Aplicado: {{ milestone.appliedAt }})</p>
+                                </div>
+                              }
+                            </div>
+
+                            <!-- ACCIONES DE PAGOS & MORATORIOS -->
+                            <div class="flex items-center gap-2 shrink-0 flex-wrap">
+                              @if (milestone.status !== 'Pagado') {
+                                <button 
+                                  [disabled]="!!selectedQuote()?.isCycleSealed"
+                                  (click)="openManualPaymentModal(milestone)"
+                                  class="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all flex items-center gap-1 disabled:opacity-40"
+                                >
+                                  <span class="material-symbols-outlined text-sm">payments</span>
+                                  <span>Pago Manual</span>
+                                </button>
+
+                                <button 
+                                  [disabled]="!!selectedQuote()?.isCycleSealed"
+                                  (click)="openMoratorioModal(milestone)"
+                                  class="px-3 py-1.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 border border-orange-500/40 text-xs font-bold transition-all flex items-center gap-1 disabled:opacity-40"
+                                >
+                                  <span class="material-symbols-outlined text-sm">add_alert</span>
+                                  <span>Aplicar Mora</span>
+                                </button>
+
+                                <button 
+                                  [disabled]="!!selectedQuote()?.isCycleSealed"
+                                  (click)="sendMilestoneReminder(milestone)"
+                                  class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all flex items-center gap-1 disabled:opacity-40"
+                                  title="Enviar recordatorio sutil enfocado en este hito específico al cliente"
+                                >
+                                  <span class="material-symbols-outlined text-sm">notifications</span>
+                                  <span>Recordatorio Hito</span>
+                                </button>
+                              } @else {
+                                <span class="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                                  <span class="material-symbols-outlined text-sm">verified</span> Liquidado
+                                </span>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- CONTENIDO DE SUB-TAB 2: AVISOS INDEPENDIENTES Y CHAT -->
+                @if (phase6Tab() === 'comunicacion') {
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      
+                      <!-- SECCIÓN IZQUIERDA: BITÁCORA DE AVISOS INDEPENDIENTES -->
+                      <div class="p-4 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 space-y-3.5 shadow-lg flex flex-col justify-between">
+                        <div>
+                          <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+                            <span class="text-xs font-black text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <span class="material-symbols-outlined text-base">notifications_active</span>
+                              BITÁCORA DE AVISOS INDEPENDIENTES
+                            </span>
+                          </div>
+
+                          <!-- FORMULARIO NUEVO AVISO -->
+                          <div class="mt-3 p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                              <span class="text-[11px] font-bold text-outline uppercase tracking-wider">Enviar Aviso Oficial A:</span>
+                              <div class="flex items-center gap-1 bg-surface-container-high p-0.5 rounded-lg border border-outline-variant/30">
+                                <button 
+                                  (click)="noticeTarget.set('Cliente')"
+                                  [class]="noticeTarget() === 'Cliente' ? 'bg-cyan-500/20 text-cyan-300 font-bold' : 'text-outline'"
+                                  class="px-2 py-0.5 rounded-md text-[10px] transition-all"
+                                >
+                                  Cliente
+                                </button>
+                                <button 
+                                  (click)="noticeTarget.set('Grupo Musical')"
+                                  [class]="noticeTarget() === 'Grupo Musical' ? 'bg-cyan-500/20 text-cyan-300 font-bold' : 'text-outline'"
+                                  class="px-2 py-0.5 rounded-md text-[10px] transition-all"
+                                >
+                                  Grupo Musical
+                                </button>
+                              </div>
+                            </div>
+
+                            <input 
+                              type="text" 
+                              [(ngModel)]="noticeTitle" 
+                              placeholder="Título del aviso u homologación operativa..."
+                              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface focus:border-cyan-400 outline-none"
+                            />
+
+                            <textarea 
+                              [(ngModel)]="noticeMessage" 
+                              rows="2"
+                              placeholder="Escribe el cuerpo de la notificación oficial que se notificará..."
+                              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface focus:border-cyan-400 outline-none resize-none"
+                            ></textarea>
+
+                            <div class="flex items-center justify-between gap-2 pt-1">
+                              <div class="flex items-center gap-2 text-[10px] text-outline">
+                                <label class="flex items-center gap-1 cursor-pointer">
+                                  <input type="checkbox" [(ngModel)]="noticeChannelsEmail" class="accent-cyan-400 rounded" /> Email
+                                </label>
+                                <label class="flex items-center gap-1 cursor-pointer">
+                                  <input type="checkbox" [(ngModel)]="noticeChannelsWhatsApp" class="accent-cyan-400 rounded" /> WhatsApp
+                                </label>
+                                <label class="flex items-center gap-1 cursor-pointer">
+                                  <input type="checkbox" [(ngModel)]="noticeChannelsPlatform" class="accent-cyan-400 rounded" /> App Push
+                                </label>
+                              </div>
+
+                              <button 
+                                (click)="sendIndependentNotice()"
+                                class="px-3 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all flex items-center gap-1"
+                              >
+                                <span class="material-symbols-outlined text-xs">send</span> Enviar Aviso
+                              </button>
+                            </div>
+                          </div>
+
+                          <!-- LISTA HISTÓRICA DE AVISOS -->
+                          <div class="mt-3 space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                            <span class="text-[10px] font-mono text-outline block uppercase">Avisos Registrados en Bitácora:</span>
+                            @for (notice of (noticeTarget() === 'Cliente' ? (selectedQuote()?.clientNotices || []) : (selectedQuote()?.groupNotices || [])); track notice.id) {
+                              <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20 space-y-1">
+                                <div class="flex items-center justify-between text-[11px]">
+                                  <strong class="text-cyan-300 font-bold">{{ notice.title }}</strong>
+                                  <span class="text-[10px] font-mono text-outline">{{ notice.sentAt }}</span>
+                                </div>
+                                <p class="text-xs text-on-surface/90 leading-relaxed">{{ notice.message }}</p>
+                                <div class="flex items-center gap-2 text-[10px] font-mono text-outline pt-0.5">
+                                  <span>Canales: [{{ notice.channels.join(', ') }}]</span>
+                                  <span>Enviado por: {{ notice.sentBy }}</span>
+                                </div>
+                              </div>
+                            } @empty {
+                              <p class="text-xs text-outline italic text-center py-3">No hay avisos registrados para {{ noticeTarget() }}.</p>
+                            }
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- SECCIÓN DERECHA: CHAT INTERACTIVO CRUZADO -->
+                      <div class="p-4 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 space-y-3 shadow-lg flex flex-col justify-between">
+                        <div>
+                          <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+                            <span class="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <span class="material-symbols-outlined text-base">chat</span>
+                              CHAT INTERACTIVO CRUZADO DE OPERACIONES
+                            </span>
+                            <span class="text-[10px] font-mono text-outline">Cliente &harr; Grupo &harr; Admin</span>
+                          </div>
+
+                          <!-- HISTORIAL DE MENSAJES -->
+                          <div class="mt-3 space-y-3 max-h-72 overflow-y-auto custom-scrollbar pr-1">
+                            @for (msg of selectedQuote()?.chatHistory || []; track msg.id) {
+                              <div 
+                                [class]="msg.senderRole === 'Admin' ? 'bg-emerald-500/10 border-emerald-500/30 ml-4' : (msg.senderRole === 'Cliente' ? 'bg-cyan-500/10 border-cyan-500/30 mr-4' : 'bg-amber-500/10 border-amber-500/30 ml-2 mr-2')"
+                                class="p-3 rounded-2xl border space-y-1"
+                              >
+                                <div class="flex items-center justify-between text-[11px]">
+                                  <div class="flex items-center gap-1.5">
+                                    <img [src]="msg.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'" class="w-4 h-4 rounded-full object-cover" />
+                                    <span class="font-bold text-on-surface">{{ msg.senderName }}</span>
+                                  </div>
+                                  <span class="text-[10px] font-mono text-outline">{{ msg.timestamp }}</span>
+                                </div>
+                                <p class="text-xs text-on-surface leading-relaxed">{{ msg.message }}</p>
+                              </div>
+                            } @empty {
+                              <p class="text-xs text-outline italic text-center py-6">No hay mensajes previos en el canal de chat.</p>
+                            }
+                          </div>
+                        </div>
+
+                        <!-- INPUT PARA NUEVO MENSAJE DE CHAT -->
+                        <div class="mt-3 pt-2 border-t border-outline-variant/20 space-y-2">
+                          <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-mono text-outline">Publicar como:</span>
+                            <select 
+                              [(ngModel)]="chatSenderRole"
+                              class="bg-surface-container border border-outline-variant/30 rounded-lg px-2 py-0.5 text-[11px] text-on-surface outline-none"
+                            >
+                              <option value="Admin">Administración Disquera</option>
+                              <option value="Cliente">Cliente Contratante</option>
+                              <option value="Grupo Musical">Grupo Musical / Manager</option>
+                            </select>
+                          </div>
+
+                          <div class="flex items-center gap-2">
+                            <input 
+                              type="text" 
+                              [(ngModel)]="chatNewMessage" 
+                              (keyup.enter)="sendChatMessage()"
+                              placeholder="Escribe un mensaje en el chat cruzado..."
+                              class="flex-1 bg-surface-container border border-outline-variant/30 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-emerald-400 outline-none"
+                            />
+                            <button 
+                              (click)="sendChatMessage()"
+                              class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all flex items-center gap-1"
+                            >
+                              <span class="material-symbols-outlined text-sm">send</span>
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- CONTENIDO DE SUB-TAB 3: MÓDULO DE IMPREVISTOS -->
+                @if (phase6Tab() === 'imprevistos') {
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4 font-sans">
+                    
+                    @if (selectedQuote()?.isCycleSealed) {
+                      <div class="p-3 rounded-2xl bg-purple-950/60 border border-purple-500/40 flex items-center justify-between text-xs text-purple-200 shadow-lg">
+                        <span class="flex items-center gap-2 font-bold uppercase tracking-wider">
+                          <span class="material-symbols-outlined text-base text-purple-400">lock</span>
+                          EXPEDIENTE SELLADO EN MODO SOLO LECTURA
+                        </span>
+                        <span class="text-[10px] font-mono text-outline">Modificaciones Deshabilitadas</span>
+                      </div>
+                    }
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      <!-- A. IMPREVISTO POR PARTE DEL GRUPO MUSICAL (FORMULARIO DE ADMINISTRACIÓN) -->
+                      <div class="p-5 rounded-3xl bg-surface-container-high/90 border border-rose-500/40 space-y-4 shadow-xl">
+                        <div class="flex items-center justify-between border-b border-rose-500/20 pb-2.5">
+                          <span class="text-xs font-black text-rose-300 uppercase tracking-wider flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base text-rose-400">group_off</span>
+                            A. IMPREVISTO DEL GRUPO MUSICAL (ADMINISTRACIÓN)
+                          </span>
+                          <span class="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 font-mono text-[9px] border border-rose-500/30">REGISTRO ADMIN</span>
+                        </div>
+
+                        <p class="text-xs text-outline leading-relaxed">
+                          Captura el inconveniente del grupo musical. Al registrar el imprevisto se notificará formalmente al cliente y el estado de la cotización cambiará <strong>automáticamente</strong>.
+                        </p>
+
+                        <div class="space-y-3.5 text-xs">
+                          <div>
+                            <label class="text-[11px] font-bold text-outline block mb-1 uppercase font-mono">
+                              Descripción Detallada del Imprevisto del Grupo:
+                            </label>
+                            <textarea 
+                              [disabled]="!!selectedQuote()?.isCycleSealed"
+                              [(ngModel)]="groupIncidentReason" 
+                              rows="3"
+                              placeholder="Ej. Complicaciones médicas imprevistas del vocalista principal o contratiempo logístico grave de transporte..."
+                              class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-rose-400 outline-none resize-none disabled:opacity-40"
+                            ></textarea>
+                          </div>
+
+                          <div>
+                            <label class="text-[11px] font-bold text-outline block mb-1 uppercase font-mono">
+                              Propuesta de Solución:
+                            </label>
+                            <select 
+                              [disabled]="!!selectedQuote()?.isCycleSealed"
+                              [(ngModel)]="groupIncidentSolutionType"
+                              class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface font-bold focus:border-rose-400 outline-none disabled:opacity-40"
+                            >
+                              <option value="reschedule">Reprogramación de Fecha de Evento</option>
+                              <option value="substitute_group">Reasignación de Grupo Sustituto Disquera</option>
+                              <option value="apology_discount">Carta de Disculpa Formal + Bonificación de Descuento</option>
+                              <option value="refund">Cancelación con Reembolso Directo al Cliente</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label class="text-[11px] font-bold text-outline block mb-1 uppercase font-mono">
+                              Mensaje Formal para el Cliente:
+                            </label>
+                            <textarea 
+                              [disabled]="!!selectedQuote()?.isCycleSealed"
+                              [(ngModel)]="groupIncidentClientMessage" 
+                              rows="2"
+                              placeholder="Redacta la explicación oficial que recibirá el cliente en sus notificaciones..."
+                              class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-rose-400 outline-none resize-none disabled:opacity-40"
+                            ></textarea>
+                          </div>
+
+                          <button 
+                            [disabled]="!!selectedQuote()?.isCycleSealed || !groupIncidentReason().trim()"
+                            (click)="submitGroupIncident()"
+                            class="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-40"
+                          >
+                            <span class="material-symbols-outlined text-sm">send</span>
+                            <span>REGISTRAR IMPREVISTO Y CAMBIAR ESTADO AUTOMÁTICAMENTE</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- B. IMPREVISTO POR PARTE DEL CLIENTE (VISTA INFORMATIVA + TEMPORIZADOR) -->
+                      <div class="p-5 rounded-3xl bg-surface-container-high/90 border border-amber-500/40 space-y-4 shadow-xl flex flex-col justify-between">
+                        <div class="space-y-3">
+                          <div class="flex items-center justify-between border-b border-amber-500/20 pb-2.5">
+                            <span class="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
+                              <span class="material-symbols-outlined text-base text-amber-400">person_alert</span>
+                              B. IMPREVISTO SOLICITADO POR EL CLIENTE
+                            </span>
+                            <span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-mono text-[9px] border border-amber-500/30">VISTA INFORMATIVA</span>
+                          </div>
+
+                          <!-- TARJETA INFORMATIVA -->
+                          @if (selectedQuote()?.incidents?.length) {
+                            @for (inc of selectedQuote()?.incidents || []; track inc.id) {
+                              @if (inc.initiatedBy === 'Cliente') {
+                                <div class="p-3.5 rounded-2xl bg-surface-container border border-amber-500/30 space-y-2 text-xs">
+                                  <div class="flex items-center justify-between font-bold">
+                                    <span class="text-amber-300 font-mono flex items-center gap-1">
+                                      <span class="material-symbols-outlined text-sm">account_circle</span> {{ selectedQuote()?.clientName }} (Cliente)
+                                    </span>
+                                    <span class="text-outline text-[10px] font-mono">{{ inc.registeredAt }}</span>
+                                  </div>
+
+                                  <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-on-surface leading-relaxed text-xs">
+                                    <span class="text-[10px] font-bold text-amber-400 uppercase block mb-0.5 font-mono">Detalles Reportados por el Cliente:</span>
+                                    "{{ inc.reason }}"
+                                  </div>
+                                </div>
+                              }
+                            }
+                          } @else {
+                            <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 text-center text-xs text-outline space-y-1">
+                              <span class="material-symbols-outlined text-2xl text-outline/50">task_alt</span>
+                              <p>El cliente no ha registrado imprevistos activos en esta cotización.</p>
+                            </div>
+                          }
+                        </div>
+
+                        <!-- TARJETA PROMINENTE TEMPORIZADOR DE CUENTA REGRESIVA -->
+                        <div class="p-4 rounded-2xl bg-gradient-to-br from-amber-950 via-slate-900 to-amber-950/80 border-2 border-amber-500/60 shadow-[0_0_20px_rgba(245,158,11,0.25)] space-y-2 text-center">
+                          <span class="text-[10px] font-black text-amber-300 uppercase tracking-widest block font-mono">
+                            ⏳ CONTADOR DE TIEMPO LÍMITE (CAMBIO AUTOMÁTICO DE ESTADO)
+                          </span>
+
+                          <div class="text-3xl font-black font-mono text-amber-300 tracking-wider py-1 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)] animate-pulse">
+                            {{ clientIncidentCountdown() }}
+                          </div>
+
+                          <p class="text-[11px] text-outline leading-tight max-w-xs mx-auto">
+                            Al expirar esta cuenta regresiva, la cotización cambiará automáticamente a <strong>"Cancelada con Imprevisto"</strong>.
+                          </p>
+
+                          @if (selectedQuote()?.incidents?.length) {
+                            <div class="pt-1">
+                              <button 
+                                [disabled]="!!selectedQuote()?.isCycleSealed"
+                                (click)="revertClientIncident(selectedQuote()?.incidents?.[0])"
+                                class="w-full py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-1.5"
+                              >
+                                <span class="material-symbols-outlined text-sm">undo</span>
+                                <span>Revertir Incidencia y Reanudar Cotización</span>
+                              </button>
+                            </div>
+                          }
+                        </div>
+
+                      </div>
+
+                    </div>
+                  </div>
+                }
+
+                <!-- CONTENIDO DE SUB-TAB 4: LÍNEA DE TIEMPO DE TRAZABILIDAD HISTÓRICA (ENRIQUECIDA 1:1) -->
+                @if (phase6Tab() === 'trazabilidad') {
+                  <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 space-y-4 font-sans">
+                    
+                    <div class="p-5 rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-5 shadow-2xl backdrop-blur-xl">
+                      <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+                        <div class="space-y-0.5">
+                          <span class="text-xs font-black text-purple-300 uppercase tracking-wider flex items-center gap-2 font-sans">
+                            <span class="material-symbols-outlined text-base text-purple-400">lock</span>
+                            LÍNEA DE TIEMPO DE TRAZABILIDAD HISTÓRICA (AUDITORÍA 1:1 INMUTABLE)
+                          </span>
+                          <p class="text-[11px] text-outline">
+                            Registro criptográfico inmutable disquera. Haz clic en cualquier fase para desplegar la vista completa 1:1 en modo lectura.
+                          </p>
+                        </div>
+
+                        <span class="px-3 py-1 rounded-xl bg-purple-500/20 text-purple-300 font-mono text-[10px] font-bold border border-purple-500/40 shadow-sm flex items-center gap-1">
+                          <span class="material-symbols-outlined text-xs">verified</span> SHA-256 VERIFICADO
+                        </span>
+                      </div>
+
+                      <!-- TIMELINE GRAPHIC LIST WITH HIGH FIDELITY CLICK -->
+                      <div class="relative py-4 pl-8 border-l-2 border-purple-500/40 space-y-6">
+                        @for (step of selectedQuote()?.traceabilityTimeline || []; track step.id) {
+                          <div class="relative group">
+                            <!-- NODO CIRCULAR CON PULSO DE NEÓN -->
+                            <div class="absolute -left-[45px] top-1.5 w-8 h-8 rounded-2xl bg-purple-950 border-2 border-purple-400 flex items-center justify-center text-xs font-black text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.5)] group-hover:scale-110 group-hover:border-purple-300 transition-all">
+                              {{ step.phaseNumber }}
+                            </div>
+
+                            <div 
+                              (click)="openTimelineSnapshot(step)"
+                              class="p-4 sm:p-5 rounded-3xl bg-surface-container/90 border border-outline-variant/30 hover:border-purple-400/70 transition-all duration-300 cursor-pointer space-y-3 hover:scale-[1.008] shadow-lg hover:shadow-[0_0_25px_rgba(168,85,247,0.2)]"
+                            >
+                              <div class="flex items-center justify-between flex-wrap gap-2">
+                                <span class="text-xs sm:text-sm font-black text-purple-200 flex items-center gap-2">
+                                  <span>Fase {{ step.phaseNumber }}: {{ step.phaseName }}</span>
+                                  <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-purple-500/20 text-purple-200 border border-purple-500/30">
+                                    {{ step.state }}
+                                  </span>
+                                </span>
+                                <span class="text-[10px] font-mono text-outline bg-surface-container-high px-2.5 py-1 rounded-lg border border-outline-variant/20">
+                                  {{ step.completedAt }}
+                                </span>
+                              </div>
+
+                              <p class="text-xs text-on-surface/90 leading-relaxed font-sans">{{ step.summaryNote }}</p>
+
+                              <!-- METADATOS ENRIQUECIDOS DE AUDITORÍA -->
+                              <div class="p-3 rounded-2xl bg-surface-container-high/90 border border-outline-variant/20 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[10px] font-mono text-outline">
+                                <div>Monto Registrado: <strong class="text-emerald-300 text-xs font-black">&#36;{{ step.snapshotData?.totalAmount | number:'1.0-0' }} MXN</strong></div>
+                                <div>Responsable Registrar: <strong class="text-on-surface">{{ step.actorName }}</strong></div>
+                                @if (step.snapshotData?.contractHash) {
+                                  <div class="truncate">Hash Checksum: <strong class="text-cyan-300">{{ step.snapshotData?.contractHash }}</strong></div>
+                                } @else {
+                                  <div>Firma / Sello: <strong class="text-purple-300 font-bold">SHA256 Validado ✔</strong></div>
+                                }
+                              </div>
+
+                              <div class="flex items-center justify-end text-[11px] font-mono text-purple-300 font-bold gap-1.5 pt-1">
+                                <span>Desplegar Vista Modal 1:1 de esta Fase</span>
+                                <span class="material-symbols-outlined text-sm text-purple-400">open_in_full</span>
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                    </div>
+                  </div>
+                }
+
+                <!-- CONTENIDO DE SUB-TAB 5: CIERRE DEFINITIVO DE CICLO Y FIDELIZACIÓN -->
+                @if (phase6Tab() === 'cierre') {
+                  <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2 space-y-4 font-sans">
+                    
+                    @if (!selectedQuote()?.isCycleSealed) {
+                      <!-- TARJETA CIERRE PENDIENTE -->
+                      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-amber-950/80 via-slate-900 to-slate-950 border-2 border-amber-500/50 space-y-4 text-center shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                        <div class="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-black text-3xl mx-auto shadow-[0_0_25px_rgba(245,158,11,0.3)]">
+                          <span class="material-symbols-outlined text-3xl">hourglass_top</span>
+                        </div>
+                        
+                        <div class="max-w-xl mx-auto space-y-2">
+                          <h3 class="text-sm sm:text-base font-black text-amber-300 uppercase tracking-wide">
+                            EXPEDIENTE EN PROCESO DE FINALIZACIÓN Y SELLO DEFINITIVO
+                          </h3>
+                          <p class="text-xs text-outline leading-relaxed">
+                            La fecha del evento es el <strong>{{ selectedQuote()?.proposedDate }}</strong>. Una vez concluida la fecha y validados los hitos de pago al 100%, la administración procederá al sello inmutable.
+                          </p>
+                        </div>
+
+                        <div class="pt-2">
+                          <button 
+                            (click)="sealQuoteCycle()"
+                            class="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-xs transition-all shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:scale-105 flex items-center justify-center gap-2 mx-auto"
+                          >
+                            <span class="material-symbols-outlined text-lg">verified_user</span>
+                            <span>Ejecutar Sello Definitivo de Cierre Disquera</span>
+                          </button>
+                        </div>
+                      </div>
+                    } @else {
+                      <!-- TARJETA SELLADA INMUTABLE CON CUPO COMPENSACIÓN -->
+                      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-emerald-950/90 via-slate-900 to-purple-950/90 border-2 border-emerald-500/60 space-y-5 text-center shadow-2xl relative overflow-hidden backdrop-blur-2xl">
+                        <div class="w-16 h-16 rounded-3xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 flex items-center justify-center font-black text-3xl mx-auto shadow-[0_0_30px_rgba(52,211,153,0.35)]">
+                          <span class="material-symbols-outlined text-3xl text-emerald-400">verified</span>
+                        </div>
+
+                        <div class="max-w-xl mx-auto space-y-2">
+                          <span class="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase tracking-widest">
+                            SELLO DEF. INMUTABLE SHA256-ACORDEX-2026-SEALED
+                          </span>
+                          <h3 class="text-base sm:text-lg font-black text-on-surface uppercase tracking-wide pt-1">
+                            EXPEDIENTE HISTÓRICO COMPLETADO AL 100% Y CONCLUIDO
+                          </h3>
+                          <p class="text-xs text-outline leading-relaxed">
+                            Cobranza y servicios concluidos con éxito. Todas las modificaciones han sido inhabilitadas para garantizar el estándar de auditoría disquera.
+                          </p>
+                        </div>
+
+                        <!-- SECCIÓN COMPENSACIÓN / DESCUENTO FIDELIZACIÓN OPCIONAL -->
+                        <div class="max-w-md mx-auto p-4 rounded-2xl bg-surface-container/90 border border-purple-500/40 text-left space-y-3 shadow-lg">
+                          <div class="flex items-center justify-between border-b border-purple-500/20 pb-2">
+                            <span class="text-xs font-black text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+                              <span class="material-symbols-outlined text-base text-purple-400">card_giftcard</span>
+                              CUPÓN DE FIDELIZACIÓN / COMPENSACIÓN PARA CLIENTE
+                            </span>
+                          </div>
+
+                          <div class="space-y-2 text-xs">
+                            <div class="flex justify-between items-center text-outline">
+                              <span>Código del Cupón:</span>
+                              <strong class="text-purple-300 font-mono font-bold">{{ generatedCouponCode() }}</strong>
+                            </div>
+                            <div class="flex justify-between items-center text-outline">
+                              <span>Bonificación:</span>
+                              <strong class="text-emerald-300 font-mono font-bold">{{ compensationDiscountValue() }}% de Descuento</strong>
+                            </div>
+                            <button 
+                              (click)="generateCompensationCoupon()"
+                              class="w-full py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/40 text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5"
+                            >
+                              <span class="material-symbols-outlined text-sm">local_offer</span>
+                              <span>Generar Nuevo Cupón de Fidelización</span>
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    }
+
                   </div>
                 }
 
@@ -6802,6 +7514,548 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
             </div>
           </div>
         }
+        <!-- MODAL: APLICAR CARGO MORATORIO EN HITO DE PAGO -->
+        @if (showMoratorioModal() && selectedMilestoneForMoratorio()) {
+          <div class="fixed inset-0 z-[999999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 font-sans">
+            <div class="bg-surface-container-high border border-orange-500/50 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4 p-6 animate-fadeIn">
+              
+              <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="p-2.5 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/40">
+                    <span class="material-symbols-outlined text-2xl">add_alert</span>
+                  </div>
+                  <div>
+                    <h3 class="text-base font-black text-on-surface uppercase">APLICAR CARGO POR MORA</h3>
+                    <span class="text-[10px] font-mono text-outline block">Hito: {{ selectedMilestoneForMoratorio()?.label }}</span>
+                  </div>
+                </div>
+
+                <button 
+                  (click)="showMoratorioModal.set(false)"
+                  class="p-2 rounded-xl bg-surface-bright text-outline hover:text-on-surface transition-all"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <div class="space-y-4 text-xs">
+                <div>
+                  <label class="text-[11px] font-bold text-outline block mb-1 uppercase">Tipo de Configuración de Mora:</label>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button 
+                      (click)="moratorioType.set('percentage')"
+                      [class]="moratorioType() === 'percentage' ? 'bg-orange-500/20 text-orange-300 border-orange-500/50 font-bold' : 'bg-surface-container text-outline border-outline-variant/30'"
+                      class="py-2 rounded-xl border text-xs text-center transition-all"
+                    >
+                      Porcentaje (%)
+                    </button>
+                    <button 
+                      (click)="moratorioType.set('fixed')"
+                      [class]="moratorioType() === 'fixed' ? 'bg-orange-500/20 text-orange-300 border-orange-500/50 font-bold' : 'bg-surface-container text-outline border-outline-variant/30'"
+                      class="py-2 rounded-xl border text-xs text-center transition-all"
+                    >
+                      Monto Fijo MXN ($)
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-bold text-outline block mb-1 uppercase">
+                    Valor del Cargo Moratorio ({{ moratorioType() === 'percentage' ? '%' : 'MXN' }}):
+                  </label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="moratorioValue" 
+                    class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface font-mono font-bold focus:border-orange-400 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-bold text-outline block mb-1 uppercase">Justificación del Cargo por Atraso:</label>
+                  <textarea 
+                    [(ngModel)]="moratorioReason" 
+                    rows="2"
+                    placeholder="Motivo o días de retraso tras la fecha límite..."
+                    class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-orange-400 outline-none resize-none"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-3 pt-3 border-t border-outline-variant/20">
+                <button 
+                  (click)="showMoratorioModal.set(false)"
+                  class="px-4 py-2 rounded-xl bg-surface-bright text-outline hover:text-on-surface text-xs font-bold transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  (click)="confirmApplyMoratorio()"
+                  class="px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black text-xs shadow-lg transition-all"
+                >
+                  Aplicar Cargo Moratorio
+                </button>
+              </div>
+
+            </div>
+          </div>
+        }
+
+        <!-- MODAL: REGISTRO MANUAL DE PAGO DE HITO POR ERROR DE SISTEMA -->
+        @if (showManualPaymentModal() && selectedMilestoneForManualPayment()) {
+          <div class="fixed inset-0 z-[999999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 font-sans">
+            <div class="bg-surface-container-high border border-emerald-500/50 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4 p-6 animate-fadeIn">
+              
+              <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    <span class="material-symbols-outlined text-2xl">payments</span>
+                  </div>
+                  <div>
+                    <h3 class="text-base font-black text-on-surface uppercase">REGISTRO MANUAL DE PAGO DE HITO</h3>
+                    <span class="text-[10px] font-mono text-outline block">Hito: {{ selectedMilestoneForManualPayment()?.label }}</span>
+                  </div>
+                </div>
+
+                <button 
+                  (click)="showManualPaymentModal.set(false)"
+                  class="p-2 rounded-xl bg-surface-bright text-outline hover:text-on-surface transition-all"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <div class="space-y-3.5 text-xs">
+                <div class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-200 text-[11px]">
+                  <span class="font-bold block text-blue-300 uppercase mb-0.5">SOBREPOSICIÓN POR ERROR / FALLA DE SISTEMA</span>
+                  <p class="leading-relaxed text-[10px]">Para registrar un pago de forma manual ante fallas de pasarela bancaria, es obligatorio ingresar el motivo del problema y la URL o referencia del comprobante digital. Si no hay error, el sistema detecta el pago de forma automática.</p>
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-bold text-outline block mb-1 uppercase font-mono">
+                    Motivo / Explicación del Problema (Obligatorio):
+                  </label>
+                  <textarea 
+                    [(ngModel)]="manualPaymentReason" 
+                    rows="2"
+                    placeholder="Describe obligatoriamente la causa del pago manual (ej. Fallo en pasarela bancaria, transferencia directa comprobada por tesorería)..."
+                    class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-emerald-400 outline-none resize-none"
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-bold text-outline block mb-1 uppercase font-mono">
+                    Folio SPEI / Clave de Rastreo (Obligatorio):
+                  </label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="manualPaymentReference" 
+                    placeholder="Ej. SPEI-99481029"
+                    class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface font-mono focus:border-emerald-400 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label class="text-[11px] font-bold text-outline block mb-1 uppercase font-mono">
+                    Comprobante Digital / URL Ficha Pago (Obligatorio):
+                  </label>
+                  <input 
+                    type="text" 
+                    [(ngModel)]="manualPaymentReceiptUrl" 
+                    placeholder="Ej. comprobante_pago_manual_COT8902.pdf"
+                    class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface font-mono focus:border-emerald-400 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-3 pt-3 border-t border-outline-variant/20">
+                <button 
+                  (click)="showManualPaymentModal.set(false)"
+                  class="px-4 py-2 rounded-xl bg-surface-bright text-outline hover:text-on-surface text-xs font-bold transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  [disabled]="!manualPaymentReason().trim() || !manualPaymentReceiptUrl().trim()"
+                  (click)="confirmManualPayment()"
+                  class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-black text-xs shadow-lg transition-all disabled:opacity-40"
+                >
+                  Confirmar Pago Manual
+                </button>
+              </div>
+
+            </div>
+          </div>
+        }
+
+        <!-- MODAL: GESTOR DE INCIDENCIAS E IMPREVISTOS OPERATIVOS -->
+        @if (showIncidentModal()) {
+          <div class="fixed inset-0 z-[999999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 font-sans">
+            <div class="bg-surface-container-high border border-amber-500/50 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4 p-6 animate-fadeIn">
+              
+              <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                    <span class="material-symbols-outlined text-2xl">support</span>
+                  </div>
+                  <div>
+                    <h3 class="text-base font-black text-on-surface uppercase">RESOLUCIÓN DE INCIDENCIA OPERATIVA</h3>
+                    <span class="text-[10px] font-mono text-outline block">Tipo: {{ incidentType() }}</span>
+                  </div>
+                </div>
+
+                <button 
+                  (click)="showIncidentModal.set(false)"
+                  class="p-2 rounded-xl bg-surface-bright text-outline hover:text-on-surface transition-all"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <div class="space-y-4 text-xs">
+                <div>
+                  <label class="text-[11px] font-bold text-outline block mb-1 uppercase">Descripción / Motivo del Imprevisto:</label>
+                  <textarea 
+                    [(ngModel)]="incidentReason" 
+                    rows="2"
+                    placeholder="Detalla las causas de la incidencia u homologación..."
+                    class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-amber-400 outline-none resize-none"
+                  ></textarea>
+                </div>
+
+                @if (incidentType() === 'client_reschedule') {
+                  <div>
+                    <label class="text-[11px] font-bold text-outline block mb-1 uppercase">Nueva Fecha Propuesta:</label>
+                    <input 
+                      type="date" 
+                      [(ngModel)]="incidentNewDate" 
+                      class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-amber-400 outline-none"
+                    />
+                  </div>
+                }
+
+                @if (incidentType() === 'client_group_change') {
+                  <div>
+                    <label class="text-[11px] font-bold text-outline block mb-1 uppercase">Nueva Agrupación Musical Asignada:</label>
+                    <input 
+                      type="text" 
+                      [(ngModel)]="incidentNewGroupName" 
+                      placeholder="Ej. Banda Los Recoditos..."
+                      class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-amber-400 outline-none"
+                    />
+                  </div>
+                }
+
+                @if (incidentType() === 'client_refund') {
+                  <div>
+                    <label class="text-[11px] font-bold text-outline block mb-1 uppercase">Monto de Reembolso (MXN):</label>
+                    <input 
+                      type="number" 
+                      [(ngModel)]="incidentRefundAmount" 
+                      class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-amber-400 outline-none"
+                    />
+                  </div>
+                }
+
+                @if (incidentType() === 'group_discount') {
+                  <div>
+                    <label class="text-[11px] font-bold text-outline block mb-1 uppercase">Porcentaje de Bonificación Compensatoria (%):</label>
+                    <input 
+                      type="number" 
+                      [(ngModel)]="incidentDiscountValue" 
+                      class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-amber-400 outline-none"
+                    />
+                  </div>
+                }
+
+                @if (incidentType() === 'group_substitute') {
+                  <div>
+                    <label class="text-[11px] font-bold text-outline block mb-1 uppercase">Nombre de Grupo Sustituto Confirmado:</label>
+                    <input 
+                      type="text" 
+                      [(ngModel)]="incidentSubstituteGroup" 
+                      placeholder="Ej. Grupo Frontera (Sustituto)..."
+                      class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:border-amber-400 outline-none"
+                    />
+                  </div>
+                }
+              </div>
+
+              <div class="flex items-center justify-end gap-3 pt-3 border-t border-outline-variant/20">
+                <button 
+                  (click)="showIncidentModal.set(false)"
+                  class="px-4 py-2 rounded-xl bg-surface-bright text-outline hover:text-on-surface text-xs font-bold transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  (click)="processIncidentResolution()"
+                  class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black text-xs shadow-lg transition-all"
+                >
+                  Procesar Resolución
+                </button>
+              </div>
+
+            </div>
+          </div>
+        }
+
+        <!-- MODAL / SNAPSHOT DRAWER DE TRAZABILIDAD HISTÓRICA 1:1 (SOLO LECTURA) -->
+        @if (showTimelineSnapshotModal() && selectedTimelineSnapshot()) {
+          <div class="fixed inset-0 z-[999999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 font-sans">
+            <div class="bg-surface-container-high border-2 border-purple-500/60 rounded-3xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl animate-fadeIn">
+              
+              <!-- HEADER SNAPSHOT -->
+              <div class="px-6 py-4 bg-gradient-to-r from-purple-950 via-slate-900 to-purple-950 border-b border-purple-500/40 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center font-black text-lg shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                    {{ selectedTimelineSnapshot()?.phaseNumber }}
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-black text-on-surface uppercase tracking-wide flex items-center gap-2">
+                      RÉPLICA 1:1 SNAPSHOT HISTÓRICO — FASE {{ selectedTimelineSnapshot()?.phaseNumber }}: {{ selectedTimelineSnapshot()?.phaseName }}
+                    </h3>
+                    <div class="flex items-center gap-3 text-[10px] font-mono text-outline">
+                      <span>Responsable: <strong class="text-purple-300">{{ selectedTimelineSnapshot()?.actorName }}</strong></span>
+                      <span>Completado: <strong class="text-on-surface">{{ selectedTimelineSnapshot()?.completedAt }}</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <span class="px-3 py-1 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono text-[10px] font-bold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">lock</span> MODO CONSULTA INMUTABLE
+                  </span>
+
+                  <button 
+                    (click)="showTimelineSnapshotModal.set(false)"
+                    class="p-2 rounded-xl bg-surface-bright text-outline hover:text-on-surface transition-all"
+                  >
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- CONTENIDO BODY 1:1 SEGÚN FASE SELECCIONADA -->
+              <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
+                
+                <!-- FASE 1: REVISIÓN SOLICITUD (1:1 REPLICA) -->
+                @if (selectedTimelineSnapshot()?.phaseNumber === 1) {
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- SOLICITUD CLIENTE -->
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/30 space-y-3">
+                      <span class="text-xs font-black text-purple-300 uppercase tracking-wider block">SOLICITUD ORIGINAL REGISTRADA POR CLIENTE</span>
+                      
+                      <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                        <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                          <span class="text-[10px] text-outline block">Cliente:</span>
+                          <strong class="text-on-surface">{{ selectedQuote()?.clientName }}</strong>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                          <span class="text-[10px] text-outline block">Empresa:</span>
+                          <strong class="text-on-surface">{{ selectedQuote()?.clientCompany }}</strong>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                          <span class="text-[10px] text-outline block">Tipo Evento:</span>
+                          <strong class="text-amber-300">{{ selectedQuote()?.eventType }}</strong>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                          <span class="text-[10px] text-outline block">Fecha Solicitada:</span>
+                          <strong class="text-emerald-300">{{ selectedQuote()?.proposedDate }}</strong>
+                        </div>
+                      </div>
+
+                      <div class="p-3 rounded-xl bg-surface-container-high border border-outline-variant/20 space-y-1 text-xs">
+                        <span class="text-[10px] text-outline font-mono block">Recinto / Dirección:</span>
+                        <p class="text-on-surface font-bold">{{ selectedQuote()?.venue }} — {{ selectedQuote()?.eventAddress }}</p>
+                      </div>
+                    </div>
+
+                    <!-- EVALUACIÓN DISQUERA -->
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/30 space-y-3">
+                      <span class="text-xs font-black text-emerald-400 uppercase tracking-wider block">EVALUACIÓN Y COTIZACIÓN INICIAL DISQUERA</span>
+
+                      <div class="space-y-2 text-xs font-mono">
+                        <div class="flex justify-between p-2 rounded-xl bg-surface-container-high">
+                          <span class="text-outline">Agrupación Musical:</span>
+                          <strong class="text-on-surface">{{ selectedQuote()?.groupName }}</strong>
+                        </div>
+                        <div class="flex justify-between p-2 rounded-xl bg-surface-container-high">
+                          <span class="text-outline">Duración Solicitada:</span>
+                          <strong class="text-on-surface">{{ selectedQuote()?.durationHours }} Horas</strong>
+                        </div>
+                        <div class="flex justify-between p-2 rounded-xl bg-surface-container-high">
+                          <span class="text-outline">Monto Cotizado Inicial:</span>
+                          <strong class="text-emerald-300">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</strong>
+                        </div>
+                        <div class="flex justify-between p-2 rounded-xl bg-surface-container-high">
+                          <span class="text-outline">Margen Disquera:</span>
+                          <strong class="text-teal-300">&#36;{{ selectedQuote()?.marginAmount | number:'1.0-0' }} MXN (25%)</strong>
+                        </div>
+                      </div>
+
+                      <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center justify-between">
+                        <span>Estado al Concluir Fase 1:</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 font-mono text-[10px]">ENVIADA A CLIENTE</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- FASE 2: PROPUESTA & NEGOCIACIÓN (1:1 REPLICA) -->
+                @if (selectedTimelineSnapshot()?.phaseNumber === 2) {
+                  <div class="space-y-4">
+                    <div class="flex items-center gap-2 border-b border-outline-variant/20 pb-2">
+                      <button 
+                        (click)="snapshotSubTab.set('cotizacion_enviada')"
+                        [class]="snapshotSubTab() === 'cotizacion_enviada' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold' : 'bg-surface-container text-outline border-outline-variant/20'"
+                        class="px-4 py-2 rounded-xl text-xs border transition-all"
+                      >
+                        1. Cotización Comercial Enviada
+                      </button>
+                      <button 
+                        (click)="snapshotSubTab.set('informacion_cliente')"
+                        [class]="snapshotSubTab() === 'informacion_cliente' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold' : 'bg-surface-container text-outline border-outline-variant/20'"
+                        class="px-4 py-2 rounded-xl text-xs border transition-all"
+                      >
+                        2. Historial Rondas de Negociación ({{ selectedQuote()?.negotiationHistory?.length || 2 }} Rondas)
+                      </button>
+                    </div>
+
+                    @if (snapshotSubTab() === 'cotizacion_enviada') {
+                      <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/30 space-y-3">
+                        <span class="text-xs font-black text-purple-300 uppercase tracking-wider block">DESGLOSE DE HONORARIOS Y OFERTA COMERCIAL</span>
+                        <div class="grid grid-cols-3 gap-3 text-xs font-mono">
+                          <div class="p-3 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                            <span class="text-[10px] text-outline block">Monto Pactado:</span>
+                            <strong class="text-emerald-300 text-base">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</strong>
+                          </div>
+                          <div class="p-3 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                            <span class="text-[10px] text-outline block">Margen Disquera:</span>
+                            <strong class="text-teal-300 text-base">&#36;{{ selectedQuote()?.marginAmount | number:'1.0-0' }} MXN</strong>
+                          </div>
+                          <div class="p-3 rounded-xl bg-surface-container-high border border-outline-variant/20">
+                            <span class="text-[10px] text-outline block">Anticipo Pactado:</span>
+                            <strong class="text-amber-300 text-base">50% al Firmar</strong>
+                          </div>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="space-y-3">
+                        @for (round of selectedQuote()?.negotiationHistory || []; track round.round) {
+                          <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/30 space-y-2 text-xs">
+                            <div class="flex items-center justify-between font-bold">
+                              <span class="text-amber-300 font-mono">Ronda #{{ round.round }} de Negociación</span>
+                              <span class="text-emerald-300 font-mono">&#36;{{ round.totalOffered | number:'1.0-0' }} MXN</span>
+                            </div>
+                            @if (round.clientRejectionMessage) {
+                              <p class="text-rose-300/90 italic">Comentario Cliente: "{{ round.clientRejectionMessage }}"</p>
+                            }
+                            @if (round.adminProposalNote) {
+                              <p class="text-purple-300/90">Respuesta Admin: "{{ round.adminProposalNote }}"</p>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- FASE 3: COTIZACIÓN ACEPTADA (1:1 REPLICA) -->
+                @if (selectedTimelineSnapshot()?.phaseNumber === 3) {
+                  <div class="space-y-4">
+                    <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-200 space-y-3">
+                      <div class="flex items-center justify-between font-bold">
+                        <span class="text-xs uppercase tracking-wider flex items-center gap-1.5">
+                          <span class="material-symbols-outlined text-base">check_circle</span> FASE 3 COMPLETADA: PROPIEDAD COMERCIAL Y CONDICIONES ACEPTADAS
+                        </span>
+                        <span class="text-xs font-mono text-emerald-300">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</span>
+                      </div>
+                      <p class="text-xs text-outline leading-relaxed">
+                        El cliente aceptó la cotización formalmente. Se procedió al desglose de parcialidades e inició la generación del contrato privado.
+                      </p>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/30 space-y-3">
+                      <span class="text-xs font-black text-on-surface uppercase tracking-wider block">ESQUEMA DE HITOS DE PAGO DEFINIDO EN FASE 3</span>
+                      <div class="space-y-2">
+                        @for (m of selectedQuote()?.paymentMilestones || []; track m.id) {
+                          <div class="p-3 rounded-xl bg-surface-container-high flex items-center justify-between text-xs font-mono">
+                            <span class="font-bold text-on-surface">{{ m.label }}</span>
+                            <span class="text-emerald-300">&#36;{{ m.amountCalculated | number:'1.0-0' }} MXN</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- FASE 4: CONTRATO EN ESPERA DE FIRMA (1:1 REPLICA) -->
+                @if (selectedTimelineSnapshot()?.phaseNumber === 4) {
+                  <div class="space-y-4">
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/30 space-y-3">
+                      <span class="text-xs font-black text-cyan-300 uppercase tracking-wider block">BORRADOR DE CONTRATO PRIVADO GENERADO</span>
+                      <div class="p-4 rounded-xl bg-slate-950 border border-outline-variant/30 text-xs font-mono space-y-2 text-outline">
+                        <div class="text-on-surface font-bold">Documento: {{ selectedQuote()?.contractPdfUrl || 'contrato_COT-8901_borrador.pdf' }}</div>
+                        <div>Hash Checksum SHA256: <strong class="text-cyan-300">0x8f7a93b21c4e90a98213b9e</strong></div>
+                        <div>Estatus: <strong class="text-amber-300">Enviado al portal de cliente y correo electrónico</strong></div>
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- FASE 5: CONTRATO FIRMADO (1:1 REPLICA) -->
+                @if (selectedTimelineSnapshot()?.phaseNumber === 5) {
+                  <div class="space-y-4">
+                    <div class="p-4 rounded-2xl bg-purple-950/80 border border-purple-500/50 space-y-3 text-xs">
+                      <div class="flex items-center justify-between border-b border-purple-500/30 pb-2 font-bold">
+                        <span class="text-purple-300 uppercase tracking-wider">FIRMAS DIGITALES SHA-256 VERIFICADAS</span>
+                        <span class="text-emerald-300 font-mono">FIRMA VINCULANTE LEGAL</span>
+                      </div>
+
+                      <div class="grid grid-cols-2 gap-3 font-mono">
+                        <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20">
+                          <span class="text-[10px] text-outline block">Firma Cliente:</span>
+                          <strong class="text-on-surface">{{ selectedQuote()?.clientName }}</strong>
+                          <span class="text-[10px] text-emerald-400 block pt-0.5">✔ 2026-07-16 10:15 AM</span>
+                        </div>
+                        <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20">
+                          <span class="text-[10px] text-outline block">Firma Disquera Acordex:</span>
+                          <strong class="text-on-surface">Lic. Sofía Ramírez</strong>
+                          <span class="text-[10px] text-emerald-400 block pt-0.5">✔ 2026-07-16 10:16 AM</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- FASE 6: FINALIZADA & CIERRE DEFINITIVO -->
+                @if (selectedTimelineSnapshot()?.phaseNumber === 6) {
+                  <div class="p-6 rounded-3xl bg-emerald-950/60 border border-emerald-500/40 text-center space-y-3">
+                    <span class="material-symbols-outlined text-4xl text-emerald-400">verified_user</span>
+                    <h4 class="text-base font-black text-on-surface uppercase">EXPEDIENTE HISTÓRICO SELLADO DEFINITIVAMENTE</h4>
+                    <p class="text-xs text-outline max-w-lg mx-auto">
+                      Operación y cobranza al 100% concluidas. Sello inmutable de cierre disquera SHA256-ACORDEX-2026-SEALED.
+                    </p>
+                  </div>
+                }
+
+              </div>
+
+              <!-- FOOTER SNAPSHOT -->
+              <div class="px-6 py-3 bg-surface-container border-t border-outline-variant/20 flex items-center justify-between text-xs font-mono shrink-0">
+                <span class="text-outline">Checksum Snapshot: <strong class="text-purple-300">SHA256-SNAPSHOT-FASE-{{ selectedTimelineSnapshot()?.phaseNumber }}</strong></span>
+                <button 
+                  (click)="showTimelineSnapshotModal.set(false)"
+                  class="px-5 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-bold transition-all"
+                >
+                  Cerrar Modal Snapshot
+                </button>
+              </div>
+
+            </div>
+          </div>
+        }
+
       </div>
       </div>
     }
@@ -6814,6 +8068,22 @@ export class QuoteDetailModalComponent {
 
   // Helper Math property for template access
   Math = Math;
+
+  formatCurrency(val?: number): string {
+    return (val || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 });
+  }
+
+  get quoteTotalAmountFormatted(): string {
+    return (this.selectedQuote()?.totalAmount || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 });
+  }
+
+  get quoteMarginAmountFormatted(): string {
+    return (this.selectedQuote()?.marginAmount || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 });
+  }
+
+  get timelineSnapshotTotalAmountFormatted(): string {
+    return (this.selectedTimelineSnapshot()?.snapshotData?.totalAmount || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 });
+  }
 
   getQuoteShowBlocks(q?: Quote | null): ShowBlock[] {
     if (!q) return [];
@@ -6832,6 +8102,16 @@ export class QuoteDetailModalComponent {
   }
 
   selectedQuote = computed(() => this.layoutState.activeQuote());
+
+  // Estado para la previsualización de auditoría histórica 1:1 (Solo Lectura)
+  historicalPreviewState = signal<QuoteState | null>(null);
+
+  effectiveQuoteState = computed(() => {
+    return this.historicalPreviewState() || this.selectedQuote()?.state;
+  });
+
+  isHistoricalPreview = computed(() => this.historicalPreviewState() !== null);
+
   modalTab = signal<'estado_actual' | 'solicitud' | 'cobranza' | 'contrato'>('estado_actual');
 
   // Phase 2 tab navigation signal
@@ -6976,7 +8256,7 @@ export class QuoteDetailModalComponent {
     const q = this.selectedQuote();
     const customNote = this.clientNoticeCustomText().trim();
     const baseMsg = 'Recordatorio de Firma Digital de Contrato Pendiente';
-    const msg = customNote ? `${baseMsg} — Nota: ${customNote}` : baseMsg;
+    const msg = customNote ? (baseMsg) + ' — Nota: ' + (customNote) : baseMsg;
 
     const channels: ('acordex' | 'whatsapp' | 'email')[] = [];
     if (this.clientNoticeAcordex()) channels.push('acordex');
@@ -6989,7 +8269,7 @@ export class QuoteDetailModalComponent {
     }
 
     const newLog = {
-      id: `CN-${Date.now().toString().slice(-4)}`,
+      id: 'CN-' + (Date.now().toString().slice(-4)),
       timestamp: 'Hace un momento',
       channels,
       message: msg,
@@ -7005,8 +8285,8 @@ export class QuoteDetailModalComponent {
     const fecha = q?.proposedDate || 'Fecha por definir';
     const recinto = q?.venue || 'Ubicación por definir';
     const customNote = this.groupNoticeCustomText().trim();
-    const baseMsg = `Aviso de Nuevo Evento: Se agendó presentación para el día ${fecha} en el recinto/lugar ${recinto}`;
-    const msg = customNote ? `${baseMsg} — Nota: ${customNote}` : baseMsg;
+    const baseMsg = 'Aviso de Nuevo Evento: Se agendó presentación para el día ' + (fecha) + ' en el recinto/lugar ' + (recinto);
+    const msg = customNote ? (baseMsg) + ' — Nota: ' + (customNote) : baseMsg;
 
     const channels: ('acordex' | 'whatsapp' | 'email')[] = [];
     if (this.groupNoticeAcordex()) channels.push('acordex');
@@ -7019,7 +8299,7 @@ export class QuoteDetailModalComponent {
     }
 
     const newLog = {
-      id: `GN-${Date.now().toString().slice(-4)}`,
+      id: 'GN-' + (Date.now().toString().slice(-4)),
       timestamp: 'Hace un momento',
       channels,
       message: msg,
@@ -7050,7 +8330,7 @@ export class QuoteDetailModalComponent {
 
     this.mockData.updateQuoteDetails(q.id, updated);
     this.mockData.updateQuoteState(q.id, 'Aceptada');
-    this.mockData.addAudit('Regreso Directo a Cotización Aceptada (Fase 3)', 'Cotizaciones', `Se regresó la cotización ${q.id} de Fase 4 a Fase 3 ('Aceptada') de forma directa por no haber sido visualizada aún por el cliente.`);
+    this.mockData.addAudit('Regreso Directo a Cotización Aceptada (Fase 3)', 'Cotizaciones', 'Se regresó la cotización ' + (q.id) + ' de Fase 4 a Fase 3 (\'Aceptada\') de forma directa por no haber sido visualizada aún por el cliente.');
 
     this.layoutState.openQuoteModal(updated);
   }
@@ -7070,8 +8350,8 @@ export class QuoteDetailModalComponent {
     this.mockData.updateQuoteState(q.id, 'Aceptada');
 
     const auditMsg = isViewed
-      ? `Se regresó la cotización ${q.id} de Fase 4 a Fase 3 ('Aceptada'). El cliente YA HABÍA VISTO el contrato anterior; se emitió notificación de ANULACIÓN POR CORRECCIÓN. Motivo: ${this.contractRollbackReason()}`
-      : `Se regresó la cotización ${q.id} de Fase 4 a Fase 3 ('Aceptada'). Motivo: ${this.contractRollbackReason()}`;
+      ? 'Se regresó la cotización ' + (q.id) + ' de Fase 4 a Fase 3 (\'Aceptada\'). El cliente YA HABÍA VISTO el contrato anterior; se emitió notificación de ANULACIÓN POR CORRECCIÓN. Motivo: ' + (this.contractRollbackReason())
+      : 'Se regresó la cotización ' + (q.id) + ' de Fase 4 a Fase 3 (\'Aceptada\'). Motivo: ' + (this.contractRollbackReason());
 
     this.mockData.addAudit('Regreso a Cotización Aceptada (Fase 3)', 'Cotizaciones', auditMsg);
 
@@ -7084,13 +8364,88 @@ export class QuoteDetailModalComponent {
     const q = this.selectedQuote();
     if (!q) return;
 
+    const timeline: TimelineStep[] = q.traceabilityTimeline && q.traceabilityTimeline.length > 0 ? q.traceabilityTimeline : [
+      {
+        id: 'ts_1',
+        phaseNumber: 1,
+        phaseName: 'Revisión Solicitud',
+        state: 'En revisión',
+        completedAt: q.dateCreated + ' 09:00 AM',
+        actorName: q.clientName + ' (Cliente)',
+        summaryNote: 'Solicitud recibida para ' + q.groupName + ' en ' + q.venue,
+        snapshotData: { totalAmount: q.totalAmount, clientEmail: q.clientEmail, venue: q.venue }
+      },
+      {
+        id: 'ts_2',
+        phaseNumber: 2,
+        phaseName: 'Propuesta & Negociación',
+        state: 'Negociación',
+        completedAt: q.dateCreated + ' 03:00 PM',
+        actorName: 'Administración Disquera',
+        summaryNote: 'Propuesta ajustada enviada al cliente.',
+        snapshotData: { totalAmount: q.totalAmount }
+      },
+      {
+        id: 'ts_3',
+        phaseNumber: 3,
+        phaseName: 'Cotización Aceptada',
+        state: 'Aceptada',
+        completedAt: q.dateCreated + ' 05:00 PM',
+        actorName: q.clientName + ' (Cliente)',
+        summaryNote: 'Aceptación comercial confirmada.',
+        snapshotData: { totalAmount: q.totalAmount }
+      },
+      {
+        id: 'ts_4',
+        phaseNumber: 4,
+        phaseName: 'Contrato en Espera de Firma',
+        state: 'Contrato en espera de firma',
+        completedAt: q.dateCreated + ' 06:00 PM',
+        actorName: 'Sistema de Contratos',
+        summaryNote: 'Borrador de contrato digital generado.',
+        snapshotData: { contractHash: '0x8f7a...3b9e' }
+      },
+      {
+        id: 'ts_5',
+        phaseNumber: 5,
+        phaseName: 'Contrato Firmado',
+        state: 'Contrato firmado',
+        completedAt: new Date().toLocaleString(),
+        actorName: q.clientName + ' & Disquera Acordex',
+        summaryNote: 'Firma digital completada con SHA-256 vinculante.',
+        snapshotData: { contractHash: '0x8f7a...3b9e', signedByClientAt: new Date().toLocaleString() }
+      },
+      {
+        id: 'ts_6',
+        phaseNumber: 6,
+        phaseName: 'Finalizada & Cierre Definitivo',
+        state: 'Finalizada',
+        completedAt: new Date().toLocaleString(),
+        actorName: 'Lic. Sofía Ramírez (Admin Tesorería)',
+        summaryNote: 'Ciclo comercial y operativo concluido formalmente. Expediente archivado.',
+        snapshotData: { totalAmount: q.totalAmount }
+      }
+    ];
+
+    const updated: Quote = {
+      ...q,
+      state: 'Finalizada',
+      isCycleSealed: true,
+      sealedAt: new Date().toLocaleString(),
+      sealedBy: 'Lic. Sofía Ramírez (Admin Tesorería)',
+      finalClosureSummary: 'Expediente ' + (q.id) + ' finalizado y sellado inmutablemente tras cumplir con las obligaciones contractuales y cobranza tesorería.',
+      traceabilityTimeline: timeline
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.updateQuoteState(q.id, 'Finalizada');
     this.mockData.addAudit(
-      'Cierre Formal de Contrato (Fase 5)',
+      'Cierre Formal de Contrato & Transición a Fase 6 (Finalizada)',
       'Cotizaciones',
-      `Se concluyó y validó formalmente el ciclo del contrato firmado para la cotización ${q.id} (${q.clientName} - ${q.groupName}). Expediente archivado e iniciado proceso de cobranza.`
+      'Se concluyó formalmente la cotización ' + (q.id) + ' (' + (q.clientName) + ' - ' + (q.groupName) + '). Expediente sellado e inmutable.'
     );
-    alert(`El contrato para la cotización ${q.id} ha sido cerrado formalmente y archivado exitosamente.`);
-    this.closeModal();
+
+    this.layoutState.openQuoteModal(updated);
   }
 
   handleSignedContractRollbackClick(): void {
@@ -7103,7 +8458,7 @@ export class QuoteDetailModalComponent {
 
     const reason = this.signedContractRollbackReason();
     const note = this.signedContractRollbackNote().trim();
-    const fullReason = note ? `${reason} — Nota: ${note}` : reason;
+    const fullReason = note ? (reason) + ' — Nota: ' + (note) : reason;
 
     const updated = {
       ...q,
@@ -7117,12 +8472,580 @@ export class QuoteDetailModalComponent {
     this.mockData.addAudit(
       'Regreso de Contrato Firmado a Cotización Aceptada (Fase 3)',
       'Cotizaciones',
-      `Se regresó la cotización ${q.id} de 'Contrato firmado' (Fase 5) a 'Aceptada' (Fase 3) por corrección administrativa posterior a la firma. Motivo: ${fullReason}. Se invalidó el documento firmado anterior.`
+      'Se regresó la cotización ' + (q.id) + ' de \'Contrato firmado\' (Fase 5) a \'Aceptada\' (Fase 3) por corrección administrativa posterior a la firma. Motivo: ' + (fullReason) + '. Se invalidó el documento firmado anterior.'
     );
 
     this.showSignedContractRollbackModal.set(false);
     this.layoutState.openQuoteModal(updated);
   }
+
+  // ─── FASE 6: FINALIZADA, TESORERÍA, AVISOS, CHAT, IMPREVISTOS Y TRAZABILIDAD ───
+  phase6Tab = signal<'tesoreria' | 'comunicacion' | 'imprevistos' | 'trazabilidad' | 'cierre'>('tesoreria');
+
+  // Tesorería & Moratorios Signals
+  showMoratorioModal = signal<boolean>(false);
+  selectedMilestoneForMoratorio = signal<PaymentMilestone | null>(null);
+  moratorioType = signal<'percentage' | 'fixed'>('percentage');
+  moratorioValue = signal<number>(5);
+  moratorioReason = signal<string>('Retraso en transferencia tras fecha límite pactada');
+  maxAllowedDelaysInput = signal<number>(2);
+
+  // Manual Payment Signals
+  showManualPaymentModal = signal<boolean>(false);
+  selectedMilestoneForManualPayment = signal<PaymentMilestone | null>(null);
+  manualPaymentReason = signal<string>('');
+  manualPaymentReceiptUrl = signal<string>('');
+  manualPaymentReference = signal<string>('');
+  clientIncidentCountdown = signal<string>('47:58:30');
+
+  // Avisos independientes & Chat Signals
+  noticeTarget = signal<'Cliente' | 'Grupo Musical'>('Cliente');
+  noticeTitle = signal<string>('');
+  noticeMessage = signal<string>('');
+  noticeChannelsEmail = signal<boolean>(true);
+  noticeChannelsWhatsApp = signal<boolean>(true);
+  noticeChannelsPlatform = signal<boolean>(true);
+  noticePriority = signal<'Alta' | 'Normal' | 'Urgente'>('Normal');
+  chatNewMessage = signal<string>('');
+  chatSenderRole = signal<'Admin' | 'Cliente' | 'Grupo Musical'>('Admin');
+
+  // Módulo de Imprevistos Signals
+  showIncidentModal = signal<boolean>(false);
+  incidentType = signal<'client_reschedule' | 'client_group_change' | 'client_refund' | 'group_apology' | 'group_discount' | 'group_substitute' | 'imprevisto_grave'>('client_reschedule');
+  incidentReason = signal<string>('');
+  incidentNewDate = signal<string>('');
+  incidentNewGroupName = signal<string>('');
+  incidentRefundAmount = signal<number>(0);
+  incidentDiscountValue = signal<number>(10);
+  incidentSubstituteGroup = signal<string>('');
+
+  // Imprevisto del Grupo Musical Signals (Formulario Admin)
+  groupIncidentReason = signal<string>('');
+  groupIncidentSolutionType = signal<'reschedule' | 'substitute_group' | 'apology_discount' | 'refund'>('reschedule');
+  groupIncidentClientMessage = signal<string>('');
+
+  // Trazabilidad Snapshot Drawer (Solo Lectura) Signals
+  selectedTimelineSnapshot = signal<TimelineStep | null>(null);
+  showTimelineSnapshotModal = signal<boolean>(false);
+  snapshotSubTab = signal<string>('default');
+
+  // Helper Methods for Treasury & Moratorios
+  openMoratorioModal(milestone: PaymentMilestone): void {
+    this.selectedMilestoneForMoratorio.set(milestone);
+    this.moratorioType.set('percentage');
+    this.moratorioValue.set(5);
+    this.moratorioReason.set('Demora en recepción de parcialidad tras fecha límite estipulada');
+    this.showMoratorioModal.set(true);
+  }
+
+  confirmApplyMoratorio(): void {
+    const q = this.selectedQuote();
+    const m = this.selectedMilestoneForMoratorio();
+    if (!q || !m) return;
+
+    const baseAmount = m.amountCalculated || (q.totalAmount * (m.percentageOrAmount / 100));
+    let moratorioAmount = 0;
+    if (this.moratorioType() === 'percentage') {
+      moratorioAmount = Math.round(baseAmount * (this.moratorioValue() / 100));
+    } else {
+      moratorioAmount = this.moratorioValue();
+    }
+
+    const updatedMilestones = (q.paymentMilestones || []).map(item => {
+      if (item.id === m.id) {
+        return {
+          ...item,
+          status: 'Moratorio' as const,
+          hasMoratorio: true,
+          moratorioType: this.moratorioType(),
+          moratorioValue: this.moratorioValue(),
+          moratorioAmountCalculated: moratorioAmount,
+          moratorioReason: this.moratorioReason(),
+          appliedAt: new Date().toLocaleString()
+        };
+      }
+      return item;
+    });
+
+    const delayedCount = updatedMilestones.filter(item => item.status === 'Vencido' || item.status === 'Moratorio').length;
+    const maxAllowed = q.maxAllowedDelays ?? this.maxAllowedDelaysInput();
+
+    let newState = q.state;
+    let isDeferred = q.isDeferred;
+    let deferredReason = q.deferredReason;
+    let deferredAt = q.deferredAt;
+
+    if (delayedCount > maxAllowed) {
+      newState = 'Cotización con Pagos Aplazados';
+      isDeferred = true;
+      deferredReason = 'Se superó el límite máximo configurado de ' + (maxAllowed) + ' hitos con retraso/mora. Expediente migrado a Pagos Aplazados.';
+      deferredAt = new Date().toLocaleString();
+    }
+
+    const updated: Quote = {
+      ...q,
+      totalAmount: q.totalAmount + moratorioAmount,
+      paymentMilestones: updatedMilestones,
+      state: newState,
+      isDeferred,
+      deferredReason,
+      deferredAt
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    if (newState !== q.state) {
+      this.mockData.updateQuoteState(q.id, newState);
+    }
+
+    this.mockData.addAudit(
+      'Aplicación de Cargo Moratorio',
+      'Tesorería',
+      'Se aplicó mora de $' + (moratorioAmount.toLocaleString()) + ' MXN al hito "' + (m.label) + '" de la cotización ' + (q.id) + '. Justificación: ' + (this.moratorioReason())
+    );
+
+    this.showMoratorioModal.set(false);
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  markMilestonePaid(milestoneId: string): void {
+    const q = this.selectedQuote();
+    if (!q) return;
+
+    const updatedMilestones = (q.paymentMilestones || []).map(m => {
+      if (m.id === milestoneId) {
+        const baseAmount = (m.amountCalculated || (q.totalAmount * (m.percentageOrAmount / 100))) + (m.moratorioAmountCalculated || 0);
+        return {
+          ...m,
+          status: 'Pagado' as const,
+          paidAmount: baseAmount,
+          paidAt: new Date().toLocaleString(),
+          receiptReference: 'REC-' + Math.floor(100000 + Math.random() * 900000)
+        };
+      }
+      return m;
+    });
+
+    const allPaid = updatedMilestones.every(m => m.status === 'Pagado');
+    const paymentStatus: PaymentStatus = allPaid ? 'Pago Confirmado 100%' : 'Anticipo 50%';
+
+    const updated: Quote = {
+      ...q,
+      paymentMilestones: updatedMilestones,
+      paymentStatus
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.updateQuotePaymentStatus(q.id, paymentStatus);
+    this.mockData.addAudit(
+      'Confirmación de Pago de Hito Tesorería',
+      'Tesorería',
+      'Se registró la recepción de pago del hito ' + (milestoneId) + ' para la cotización ' + (q.id) + '.'
+    );
+
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  openManualPaymentModal(milestone: PaymentMilestone): void {
+    this.selectedMilestoneForManualPayment.set(milestone);
+    this.manualPaymentReason.set('');
+    this.manualPaymentReceiptUrl.set('comprobante_manual_' + milestone.id + '.pdf');
+    this.manualPaymentReference.set('SPEI-' + Math.floor(100000 + Math.random() * 900000));
+    this.showManualPaymentModal.set(true);
+  }
+
+  confirmManualPayment(): void {
+    const q = this.selectedQuote();
+    const m = this.selectedMilestoneForManualPayment();
+    if (!q || !m || !this.manualPaymentReason().trim() || !this.manualPaymentReceiptUrl().trim()) return;
+
+    const baseAmount = (m.amountCalculated || (q.totalAmount * (m.percentageOrAmount / 100))) + (m.moratorioAmountCalculated || 0);
+    const updatedMilestones = (q.paymentMilestones || []).map(item => {
+      if (item.id === m.id) {
+        return {
+          ...item,
+          status: 'Pagado' as const,
+          paidAmount: baseAmount,
+          paidAt: new Date().toLocaleString(),
+          receiptReference: this.manualPaymentReference().trim() || ('SPEI-' + Math.floor(100000 + Math.random() * 900000)),
+          paymentReceiptUrl: this.manualPaymentReceiptUrl().trim(),
+          manualPaymentReason: this.manualPaymentReason().trim()
+        };
+      }
+      return item;
+    });
+
+    const allPaid = updatedMilestones.every(item => item.status === 'Pagado');
+    const paymentStatus: PaymentStatus = allPaid ? 'Pago Confirmado 100%' : 'Anticipo 50%';
+
+    const updated: Quote = {
+      ...q,
+      paymentMilestones: updatedMilestones,
+      paymentStatus
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.updateQuotePaymentStatus(q.id, paymentStatus);
+    this.mockData.addAudit(
+      'Registro Manual de Pago por Error de Sistema',
+      'Tesorería',
+      'Se registró manualmente el pago del hito "' + (m.label) + '" para la cotización ' + (q.id) + '. Motivo: ' + (this.manualPaymentReason())
+    );
+
+    this.showManualPaymentModal.set(false);
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  sendMilestoneReminder(milestone: PaymentMilestone): void {
+    const q = this.selectedQuote();
+    if (!q) return;
+
+    const amt = milestone.amountCalculated || Math.round(q.totalAmount * (milestone.percentageOrAmount / 100));
+    const newNotice: NoticeItem = {
+      id: 'not_rem_' + Date.now(),
+      target: 'Cliente',
+      title: 'Recordatorio de Pago: ' + (milestone.label),
+      message: 'Estimado ' + (q.clientName) + ', le recordamos amablemente que el hito de pago "' + (milestone.label) + '" por $' + (amt.toLocaleString('es-MX')) + ' MXN tiene fecha límite para el ' + (milestone.dueDateOrTimeframe) + '. Agradecemos su pronta atención.',
+      sentBy: 'Lic. Sofía Ramírez',
+      sentRole: 'administrador',
+      sentAt: new Date().toLocaleString(),
+      channels: ['Email', 'WhatsApp', 'Platform'],
+      priority: 'Alta',
+      relatedMilestoneId: milestone.id
+    };
+
+    const updated: Quote = {
+      ...q,
+      clientNotices: [newNotice, ...(q.clientNotices || [])]
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.addAudit(
+      'Envío de Recordatorio Específico de Hito',
+      'Comunicación',
+      'Recordatorio enviado al cliente para el hito "' + (milestone.label) + '".'
+    );
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  revertClientIncident(incident?: QuoteIncident): void {
+    const q = this.selectedQuote();
+    if (!q) return;
+
+    const updatedIncidents = (q.incidents || []).map(inc => {
+      if (!incident || inc.id === incident.id) {
+        return {
+          ...inc,
+          status: 'Resuelto' as const,
+          resolvedAt: new Date().toLocaleString(),
+          resolutionNotes: 'Incidencia de cliente revertida por acuerdo común con la disquera. Cotización reanudada.'
+        };
+      }
+      return inc;
+    });
+
+    const updated: Quote = {
+      ...q,
+      incidents: updatedIncidents,
+      incidentStatus: 'Resuelto'
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.addAudit(
+      'Reversión de Incidencia de Cliente',
+      'Excepciones',
+      'Se revirtió la incidencia del cliente para la cotización ' + (q.id) + '. Proceso reanudado normalmente.'
+    );
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  submitGroupIncident(): void {
+    const q = this.selectedQuote();
+    if (!q || !this.groupIncidentReason().trim()) return;
+
+    const sol = this.groupIncidentSolutionType();
+    let resNotes = '';
+    if (sol === 'reschedule') resNotes = 'Solución propuesta por grupo: Reprogramación de fecha del evento.';
+    else if (sol === 'substitute_group') resNotes = 'Solución propuesta por grupo: Reasignación de grupo sustituto disquera.';
+    else if (sol === 'apology_discount') resNotes = 'Solución propuesta por grupo: Carta de disculpa formal e inclusión de bonificación/descuento.';
+    else if (sol === 'refund') resNotes = 'Solución propuesta por grupo: Cancelación y reembolso directo.';
+
+    const clientMsg = this.groupIncidentClientMessage().trim() || 'Estimado cliente, le informamos un imprevisto con la agrupación musical. Hemos preparado alternativas comerciales para resolver su evento.';
+
+    const newIncident: QuoteIncident = {
+      id: 'inc_grp_' + Date.now(),
+      type: 'group_cancel',
+      initiatedBy: 'Grupo Musical',
+      reason: this.groupIncidentReason().trim(),
+      resolutionNotes: resNotes,
+      clientMessage: clientMsg,
+      status: 'Imprevisto Grave',
+      registeredAt: new Date().toLocaleString(),
+      resolvedAt: new Date().toLocaleString()
+    };
+
+    const newNotice: NoticeItem = {
+      id: 'not_grp_inc_' + Date.now(),
+      target: 'Cliente',
+      title: 'Notificación Oficial de Imprevisto de la Agrupación Musical',
+      message: clientMsg,
+      sentBy: 'Lic. Sofía Ramírez (Administración Disquera)',
+      sentRole: 'administrador',
+      sentAt: new Date().toLocaleString(),
+      channels: ['Email', 'WhatsApp', 'Platform'],
+      priority: 'Urgente'
+    };
+
+    const updated: Quote = {
+      ...q,
+      incidents: [newIncident, ...(q.incidents || [])],
+      clientNotices: [newNotice, ...(q.clientNotices || [])],
+      incidentStatus: 'Imprevisto',
+      state: 'Cancelada con Imprevisto'
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.updateQuoteState(q.id, 'Cancelada con Imprevisto');
+    this.mockData.addAudit(
+      'Imprevisto del Grupo Musical Registrado por Administración',
+      'Excepciones',
+      'Incidencia de grupo registrada para cotización ' + (q.id) + '. Se notificó al cliente y el estado cambió automáticamente a "Cancelada con Imprevisto".'
+    );
+
+    this.groupIncidentReason.set('');
+    this.groupIncidentClientMessage.set('');
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  // Helper Method for Timeline Snapshot & Historical Preview (1:1 Read-Only View)
+  openTimelineSnapshot(step: TimelineStep): void {
+    this.selectedTimelineSnapshot.set(step);
+    let st: QuoteState | null = (step.state as QuoteState) || null;
+    if (!st) {
+      if (step.phaseNumber === 1) st = 'En revisión';
+      else if (step.phaseNumber === 2) st = 'Propuesta enviada';
+      else if (step.phaseNumber === 3) st = 'Aceptada';
+      else if (step.phaseNumber === 4) st = 'Contrato en espera de firma';
+      else if (step.phaseNumber === 5) st = 'Contrato firmado';
+      else if (step.phaseNumber === 6) st = 'Finalizada';
+    }
+    this.historicalPreviewState.set(st);
+  }
+
+  exitHistoricalPreview(): void {
+    this.historicalPreviewState.set(null);
+    this.selectedTimelineSnapshot.set(null);
+  }
+
+  generateCompensationCoupon(): void {
+    const q = this.selectedQuote();
+    if (!q) return;
+
+    const coupon = {
+      code: 'FIDELITY-ACORDEX-' + Math.floor(100 + Math.random() * 900),
+      discountValue: 10,
+      type: 'percentage' as const,
+      note: 'Cupón de beneficio y compensación disquera por fidelización de cliente.',
+      generatedAt: new Date().toLocaleString()
+    };
+
+    const updated: Quote = {
+      ...q,
+      compensationCoupon: coupon
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.addAudit(
+      'Otorgamiento de Cupón de Compensación / Fidelización',
+      'Tesorería',
+      'Se generó el cupón ' + (coupon.code) + ' del 10% de descuento para el cliente ' + (q.clientName) + '.'
+    );
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  sealQuoteCycle(): void {
+    const q = this.selectedQuote();
+    if (!q) return;
+
+    const updated: Quote = {
+      ...q,
+      state: 'Finalizada',
+      isCycleSealed: true,
+      sealedAt: new Date().toLocaleString(),
+      sealedBy: 'Lic. Sofía Ramírez (Admin Tesorería)',
+      finalClosureSummary: 'Expediente ' + (q.id) + ' finalizado y sellado inmutablemente tras cumplir con las obligaciones contractuales y cobranza tesorería.'
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.updateQuoteState(q.id, 'Finalizada');
+    this.mockData.addAudit(
+      'Sello Inmutable de Ciclo Definitivo (Fase 6)',
+      'Cotizaciones',
+      'Se completó y selló inmutablemente el expediente de la cotización ' + (q.id) + '.'
+    );
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  updateMaxAllowedDelays(): void {
+    const q = this.selectedQuote();
+    if (!q) return;
+
+    const newLimit = this.maxAllowedDelaysInput();
+    const updated: Quote = {
+      ...q,
+      maxAllowedDelays: newLimit
+    };
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.addAudit(
+      'Ajuste Límite de Retrasos Tesorería',
+      'Tesorería',
+      'Se actualizó el límite dinámico de retrasos a ' + (newLimit) + ' hitos para la cotización ' + (q.id) + '.'
+    );
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  // Helper Methods for Communication & Chat
+  sendIndependentNotice(): void {
+    const q = this.selectedQuote();
+    if (!q || !this.noticeTitle().trim() || !this.noticeMessage().trim()) return;
+
+    const channels: ('Email' | 'WhatsApp' | 'Platform')[] = [];
+    if (this.noticeChannelsEmail()) channels.push('Email');
+    if (this.noticeChannelsWhatsApp()) channels.push('WhatsApp');
+    if (this.noticeChannelsPlatform()) channels.push('Platform');
+
+    const newNotice: NoticeItem = {
+      id: 'not_' + Date.now(),
+      target: this.noticeTarget(),
+      title: this.noticeTitle().trim(),
+      message: this.noticeMessage().trim(),
+      sentBy: 'Lic. Sofía Ramírez',
+      sentRole: 'administrador',
+      sentAt: new Date().toLocaleString(),
+      channels,
+      priority: this.noticePriority()
+    };
+
+    const updated: Quote = {
+      ...q,
+      clientNotices: this.noticeTarget() === 'Cliente' ? [newNotice, ...(q.clientNotices || [])] : (q.clientNotices || []),
+      groupNotices: this.noticeTarget() === 'Grupo Musical' ? [newNotice, ...(q.groupNotices || [])] : (q.groupNotices || [])
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.addAudit(
+      'Envío de Aviso Oficial al ' + (this.noticeTarget()),
+      'Comunicación',
+      'Aviso "' + (newNotice.title) + '" enviado a ' + (this.noticeTarget()) + ' vía [' + (channels.join(', ')) + '].'
+    );
+
+    this.noticeTitle.set('');
+    this.noticeMessage.set('');
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  sendChatMessage(): void {
+    const q = this.selectedQuote();
+    if (!q || !this.chatNewMessage().trim()) return;
+
+    let senderName = 'Lic. Sofía Ramírez (Disquera)';
+    let avatar = 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150';
+    if (this.chatSenderRole() === 'Cliente') {
+      senderName = (q.clientName) + ' (Cliente)';
+      avatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+    } else if (this.chatSenderRole() === 'Grupo Musical') {
+      senderName = 'Manager ' + (q.groupName);
+      avatar = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150';
+    }
+
+    const newMsg: ChatMessage = {
+      id: 'chat_' + Date.now(),
+      senderName,
+      senderRole: this.chatSenderRole(),
+      avatar,
+      message: this.chatNewMessage().trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    const updated: Quote = {
+      ...q,
+      chatHistory: [...(q.chatHistory || []), newMsg]
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.chatNewMessage.set('');
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  // Helper Methods for Incidents
+  processIncidentResolution(): void {
+    const q = this.selectedQuote();
+    if (!q || !this.incidentReason().trim()) return;
+
+    const type = this.incidentType();
+    let resolutionNotes = '';
+    let newState = q.state;
+    let incidentStatus: 'Ninguno' | 'En Proceso' | 'Resuelto' | 'Imprevisto' = 'Resuelto';
+
+    if (type === 'client_reschedule') {
+      resolutionNotes = 'Reprogramación de fecha solicitada por el cliente para el ' + (this.incidentNewDate() || 'Fecha pendiente de definir') + '.';
+    } else if (type === 'client_group_change') {
+      resolutionNotes = 'Cambio de agrupación musical asignada a "' + (this.incidentNewGroupName() || 'Nueva agrupación') + '".';
+    } else if (type === 'client_refund') {
+      resolutionNotes = 'Acuerdo especial de reembolso procesado por $' + (this.incidentRefundAmount().toLocaleString()) + ' MXN.';
+    } else if (type === 'group_apology') {
+      resolutionNotes = 'Carta institucional de disculpa formal emitida al cliente contratante.';
+    } else if (type === 'group_discount') {
+      resolutionNotes = 'Bonificación comercial del ' + (this.incidentDiscountValue()) + '% aplicada como compensación por retraso o ajuste operativo.';
+    } else if (type === 'group_substitute') {
+      resolutionNotes = 'Reasignación de grupo sustituto "' + (this.incidentSubstituteGroup() || 'Grupo Sustituto') + '" para mantener el show en la misma fecha.';
+    } else if (type === 'imprevisto_grave') {
+      resolutionNotes = 'Imprevisto grave de fuerza mayor activado. Expediente derivado a cancelación con imprevisto y seguro disquera.';
+      newState = 'Cancelada con Imprevisto';
+      incidentStatus = 'Imprevisto';
+    }
+
+    const newIncident: QuoteIncident = {
+      id: 'inc_' + Date.now(),
+      type: type.startsWith('client') ? 'client_cancel' : (type.startsWith('group') ? 'group_cancel' : 'imprevisto_tecnico'),
+      initiatedBy: type.startsWith('client') ? 'Cliente' : 'Grupo Musical',
+      reason: this.incidentReason().trim(),
+      resolutionType: type.includes('reschedule') ? 'reschedule' : (type.includes('group_change') ? 'group_change' : (type.includes('refund') ? 'refund' : 'apology_discount')),
+      resolutionNotes,
+      newProposedDate: this.incidentNewDate(),
+      newGroupName: this.incidentNewGroupName(),
+      refundAmount: this.incidentRefundAmount(),
+      discountApplied: this.incidentDiscountValue(),
+      substituteGroupAssigned: this.incidentSubstituteGroup(),
+      status: type === 'imprevisto_grave' ? 'Imprevisto Grave' : 'Resuelto',
+      registeredAt: new Date().toLocaleString(),
+      resolvedAt: new Date().toLocaleString()
+    };
+
+    const updated: Quote = {
+      ...q,
+      incidents: [newIncident, ...(q.incidents || [])],
+      incidentStatus,
+      state: newState,
+      proposedDate: this.incidentNewDate() ? this.incidentNewDate() : q.proposedDate,
+      groupName: this.incidentNewGroupName() ? this.incidentNewGroupName() : q.groupName
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    if (newState !== q.state) {
+      this.mockData.updateQuoteState(q.id, newState);
+    }
+    this.mockData.addAudit(
+      'Resolución de Incidencia / Imprevisto',
+      'Excepciones',
+      'Incidencia procesada para cotización ' + (q.id) + ': ' + (resolutionNotes)
+    );
+
+    this.showIncidentModal.set(false);
+    this.incidentReason.set('');
+    this.layoutState.openQuoteModal(updated);
+  }
+
+
 
   // Admin wizard state for 'En revisión'
   adminStep = signal<number>(1);
@@ -7148,7 +9071,7 @@ export class QuoteDetailModalComponent {
   isInNegotiationRound = computed(() => (this.negotiationRound() ?? 0) > 0);
 
   // Computed: Label de ronda actual (ej. "Ronda #1")
-  negotiationRoundLabel = computed(() => `Ronda #${this.negotiationRound()}`);
+  negotiationRoundLabel = computed(() => 'Ronda #' + (this.negotiationRound()));
 
   // Computed: Última ronda enviada (activa en espera de respuesta del cliente)
   latestSentRoundEntry = computed(() => {
@@ -7307,8 +9230,8 @@ export class QuoteDetailModalComponent {
     const current = this.proposalMilestones();
     const defaultDate = this.proposalPaymentDueDate() || '2026-08-15';
     const newMilestone: PaymentMilestone = {
-      id: `m-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      label: `Parcialidad #${current.length + 1}`,
+      id: 'm-' + (Date.now()) + '-' + (Math.floor(Math.random() * 1000)),
+      label: 'Parcialidad #' + (current.length + 1),
       percentageOrAmount: 25,
       type: 'percentage',
       dueDateOrTimeframe: defaultDate
@@ -7443,7 +9366,7 @@ export class QuoteDetailModalComponent {
         soundCost: prev.soundCost,
         marginPercent: prev.marginPercent,
         totalOffered: prev.totalOffered,
-        label: `Ronda #${prev.round}`
+        label: 'Ronda #' + (prev.round)
       };
     }
     const q = this.selectedQuote();
@@ -7477,7 +9400,7 @@ export class QuoteDetailModalComponent {
     totalMinutes += Math.round(duration * 60);
     const endH = Math.floor(totalMinutes / 60) % 24;
     const endM = totalMinutes % 60;
-    return `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+    return (endH.toString().padStart(2, '0')) + ':' + (endM.toString().padStart(2, '0'));
   });
 
   // CHECK CONFLICT FOR SINGLE CONTINUOUS MODE
@@ -7548,13 +9471,13 @@ export class QuoteDetailModalComponent {
       const [h, m] = lastBlock.endTime.split(':').map(Number);
       const newStartH = (h + 1) % 24;
       const newEndH = (h + 2) % 24;
-      nextStart = `${newStartH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-      nextEnd = `${newEndH.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+      nextStart = (newStartH.toString().padStart(2, '0')) + ':' + (m.toString().padStart(2, '0'));
+      nextEnd = (newEndH.toString().padStart(2, '0')) + ':' + (m.toString().padStart(2, '0'));
     }
 
     const newBlock: ShowBlock = {
       id: 'blk_' + Date.now(),
-      label: `Set ${current.length + 1}: Tanda Adicional`,
+      label: 'Set ' + (current.length + 1) + ': Tanda Adicional',
       date: this.proposalDate(),
       startTime: nextStart,
       endTime: nextEnd
@@ -7605,7 +9528,7 @@ export class QuoteDetailModalComponent {
       artistNotified: true,
       artistNotifiedTime: nowStr
     });
-    this.mockData.addAudit('Notificación al Grupo', 'Cotizaciones', `Se notificó la fecha confirmada de ${q.id} al grupo musical ${q.groupName}`);
+    this.mockData.addAudit('Notificación al Grupo', 'Cotizaciones', 'Se notificó la fecha confirmada de ' + (q.id) + ' al grupo musical ' + (q.groupName));
   }
 
   handleSimulatedContractUpload(event: Event): void {
@@ -7623,11 +9546,11 @@ export class QuoteDetailModalComponent {
       this.contractGenerationMode.set('manual');
       this.contractGenerated.set(true);
 
-      const newTplId = `tpl_manual_${Date.now()}`;
+      const newTplId = 'tpl_manual_' + (Date.now());
       const currentTpls = this.contractTemplates();
       const updatedTpls = [
         ...currentTpls,
-        { id: newTplId, name: `Plantilla #${currentTpls.length + 1}`, tag: `Subido: ${file.name}`, isManual: true }
+        { id: newTplId, name: 'Plantilla #' + (currentTpls.length + 1), tag: 'Subido: ' + (file.name), isManual: true }
       ];
       this.contractTemplates.set(updatedTpls);
       this.selectedTemplateId.set(newTplId);
@@ -7652,20 +9575,20 @@ export class QuoteDetailModalComponent {
       estandar: 'Plantilla Estándar Acordex',
       masivo: 'Plantilla Eventos Masivos & Festivales',
       vip: 'Plantilla Exclusiva VIP / Disquera',
-      manual: `Documento Manual Subido: ${this.uploadedContractFile()?.name || 'Contrato_Privado.pdf'}`
+      manual: 'Documento Manual Subido: ' + (this.uploadedContractFile()?.name || 'Contrato_Privado.pdf')
     };
     const tplLabel = tplNames[this.selectedContractTemplate()] || 'Plantilla Estándar Acordex';
 
     const updated = {
       ...q,
       contractStatus: 'Subido' as const,
-      contractFileName: this.uploadedContractFile()?.name || `Contrato_${q.id}.pdf`,
+      contractFileName: this.uploadedContractFile()?.name || 'Contrato_' + (q.id) + '.pdf',
       state: 'Contrato en espera de firma' as const
     };
 
     this.mockData.updateQuoteDetails(q.id, updated);
     this.mockData.updateQuoteState(q.id, 'Contrato en espera de firma');
-    this.mockData.addAudit('Envío de Contrato', 'Cotizaciones', `Se envió el contrato (${tplLabel}) al cliente ${q.clientName} para firma digital. Cotización ${q.id} avanza a 'Contrato en espera de firma'.`);
+    this.mockData.addAudit('Envío de Contrato', 'Cotizaciones', 'Se envió el contrato (' + (tplLabel) + ') al cliente ' + (q.clientName) + ' para firma digital. Cotización ' + (q.id) + ' avanza a \'Contrato en espera de firma\'.');
 
     this.showContractPreviewModal.set(false);
     this.layoutState.openQuoteModal(updated);
@@ -7675,7 +9598,7 @@ export class QuoteDetailModalComponent {
     const q = this.selectedQuote();
     if (!q) return;
     this.mockData.updateQuoteState(q.id, 'En revisión');
-    this.mockData.addAudit('Reversión desde Aceptada', 'Cotizaciones', `Se regresó la cotización ${q.id} a En revisión. Motivo: ${this.acceptedRollbackTag()}`);
+    this.mockData.addAudit('Reversión desde Aceptada', 'Cotizaciones', 'Se regresó la cotización ' + (q.id) + ' a En revisión. Motivo: ' + (this.acceptedRollbackTag()));
     this.showAcceptedRollbackModal.set(false);
     this.layoutState.closeQuoteModal();
   }
@@ -7685,7 +9608,7 @@ export class QuoteDetailModalComponent {
     if (!q) return;
     const updates: Partial<Quote> = {
       state: 'Cancelada',
-      notes: `Cancelada por la administración. Disculpa enviada: "${this.acceptedRejectionApology()}"`
+      notes: 'Cancelada por la administración. Disculpa enviada: "' + (this.acceptedRejectionApology()) + '"'
     };
     if (this.includeCompensationCoupon()) {
       updates.compensationCoupon = {
@@ -7698,7 +9621,7 @@ export class QuoteDetailModalComponent {
     }
     this.mockData.updateQuoteDetails(q.id, updates);
     this.mockData.updateQuoteState(q.id, 'Cancelada');
-    this.mockData.addAudit('Cancelación de Cotización Aceptada', 'Cotizaciones', `Se canceló la cotización aceptada ${q.id} con envío de disculpas${this.includeCompensationCoupon() ? ' y cupón ' + this.generatedCouponCode() : ''}`);
+    this.mockData.addAudit('Cancelación de Cotización Aceptada', 'Cotizaciones', 'Se canceló la cotización aceptada ' + (q.id) + ' con envío de disculpas' + (this.includeCompensationCoupon() ? ' y cupón ' + this.generatedCouponCode() : ''));
     this.showAcceptedRejectionModal.set(false);
     this.layoutState.closeQuoteModal();
   }
@@ -7860,7 +9783,7 @@ export class QuoteDetailModalComponent {
     if (!day) return [];
     const monthStr = (this.currentCalendarMonth() + 1).toString().padStart(2, '0');
     const dayStr = day.toString().padStart(2, '0');
-    const targetDate = `${this.currentCalendarYear()}-${monthStr}-${dayStr}`;
+    const targetDate = (this.currentCalendarYear()) + '-' + (monthStr) + '-' + (dayStr);
 
     return this.mockGroupEvents.filter(e => e.date === targetDate);
   }
@@ -7869,7 +9792,7 @@ export class QuoteDetailModalComponent {
     if (!day) return false;
     const monthStr = (this.currentCalendarMonth() + 1).toString().padStart(2, '0');
     const dayStr = day.toString().padStart(2, '0');
-    const targetDate = `${this.currentCalendarYear()}-${monthStr}-${dayStr}`;
+    const targetDate = (this.currentCalendarYear()) + '-' + (monthStr) + '-' + (dayStr);
     return targetDate === this.proposalDate();
   }
 
@@ -7908,10 +9831,10 @@ export class QuoteDetailModalComponent {
 
     let notesText = current.notes || '';
     if (this.scheduleChangeExplanation().trim()) {
-      notesText += `\n\n[Propuesta de Ajuste de Horario/Fecha]: ${this.scheduleChangeExplanation().trim()}`;
+      notesText += '\\n\\n[Propuesta de Ajuste de Horario/Fecha]: ' + (this.scheduleChangeExplanation().trim());
     }
     if (this.additionalComments().trim()) {
-      notesText += `\n\n[Notas Admin]: ${this.additionalComments().trim()}`;
+      notesText += '\\n\\n[Notas Admin]: ' + (this.additionalComments().trim());
     }
 
     const updatedQuote: Quote = {
@@ -7991,9 +9914,9 @@ export class QuoteDetailModalComponent {
     ];
 
     let notesText = current.notes || '';
-    notesText += `\n\n[Re-Negociación Ronda #${newRound}]: Ajuste neto calculado: $${diffAmt} MXN (${diffPct}%). Nuevo Total: $${this.calculatedTotalAmount()} MXN.`;
+    notesText += '\\n\\n[Re-Negociación Ronda #' + (newRound) + ']: Ajuste neto calculado: $' + (diffAmt) + ' MXN (' + (diffPct) + '%). Nuevo Total: $' + (this.calculatedTotalAmount()) + ' MXN.';
     if (this.scheduleChangeExplanation().trim()) {
-      notesText += ` Nota: "${this.scheduleChangeExplanation().trim()}"`;
+      notesText += ' Nota: "' + (this.scheduleChangeExplanation().trim()) + '"';
     }
 
     const updatedQuote: Quote = {
@@ -8042,15 +9965,15 @@ export class QuoteDetailModalComponent {
     const current = this.selectedQuote();
     if (!current) return;
 
-    let notesEntry = `[Regreso a Negociación desde Ronda #${this.negotiationRound()} — Sin notificar cliente]`;
+    let notesEntry = '[Regreso a Negociación desde Ronda #' + (this.negotiationRound()) + ' — Sin notificar cliente]';
     if (this.negotiationRollbackNote().trim()) {
-      notesEntry += `\n• Nota Interna: "${this.negotiationRollbackNote().trim()}"`;
+      notesEntry += '\\n• Nota Interna: "' + (this.negotiationRollbackNote().trim()) + '"';
     }
 
     const updatedQuote: Quote = {
       ...current,
       state: 'Negociación',
-      notes: current.notes ? `${current.notes}\n\n${notesEntry}` : notesEntry
+      notes: current.notes ? (current.notes) + '\\n\\n' + (notesEntry) : notesEntry
     };
 
     this.mockData.updateQuoteState(current.id, 'Negociación');
@@ -8080,7 +10003,7 @@ export class QuoteDetailModalComponent {
       const updatedQuote: Quote = {
         ...current,
         state: 'Cancelada',
-        notes: `[Motivo de Cancelación]: ${reason}`
+        notes: '[Motivo de Cancelación]: ' + (reason)
       };
       this.mockData.updateQuoteState(current.id, 'Cancelada');
       this.layoutState.openQuoteModal(updatedQuote);
@@ -8112,19 +10035,19 @@ export class QuoteDetailModalComponent {
       return;
     }
 
-    let rollbackEntry = `[Retorno a Revisión]`;
+    let rollbackEntry = '[Retorno a Revisión]';
     if (isViewed) {
-      rollbackEntry += `\n• Tag/Categoría: ${this.rollbackTag()}`;
-      rollbackEntry += `\n• Mensaje al Cliente: "${this.rollbackClientMessage().trim()}"`;
+      rollbackEntry += '\\n• Tag/Categoría: ' + (this.rollbackTag());
+      rollbackEntry += '\\n• Mensaje al Cliente: "' + (this.rollbackClientMessage().trim()) + '"';
     } else {
-      rollbackEntry += ` (Silencioso - El cliente no vio la propuesta)`;
+      rollbackEntry += ' (Silencioso - El cliente no vio la propuesta)';
     }
 
     if (this.rollbackInternalNote().trim()) {
-      rollbackEntry += `\n• Nota Interna Disquera: "${this.rollbackInternalNote().trim()}"`;
+      rollbackEntry += '\\n• Nota Interna Disquera: "' + (this.rollbackInternalNote().trim()) + '"';
     }
 
-    const updatedNotes = current.notes ? `${current.notes}\n\n${rollbackEntry}` : rollbackEntry;
+    const updatedNotes = current.notes ? (current.notes) + '\\n\\n' + (rollbackEntry) : rollbackEntry;
 
     const updatedQuote: Quote = {
       ...current,
@@ -8170,7 +10093,7 @@ export class QuoteDetailModalComponent {
     const q = this.selectedQuote();
     const type = entry?.advancePaymentType || q?.advancePaymentType || 'percentage';
     const val = entry?.advancePaymentValue ?? q?.advancePaymentValue ?? 50;
-    return type === 'percentage' ? `${val}% del total` : `$${val} MXN Fijo`;
+    return type === 'percentage' ? (val) + '% del total' : '$' + (val) + ' MXN Fijo';
   }
 
   getPaymentDueDate(entry?: NegotiationEntry | null): string {
@@ -8182,7 +10105,7 @@ export class QuoteDetailModalComponent {
     const q = this.selectedQuote();
     const cardId = entry?.receivingCardId || q?.receivingCardId;
     const card = this.mockData.getReceivingCardById(cardId);
-    return card ? `${card.bankName} - ${card.accountHolder} (${card.cardNumber})` : 'BBVA México - Acordex (**** 4821)';
+    return card ? (card.bankName) + ' - ' + (card.accountHolder) + ' (' + (card.cardNumber) + ')' : 'BBVA México - Acordex (**** 4821)';
   }
 
   getPaymentMilestones(entry?: NegotiationEntry | null): PaymentMilestone[] {
@@ -8206,7 +10129,7 @@ export class QuoteDetailModalComponent {
       case 'Propuesta enviada': {
         // Diferencia el título si hay rondas de negociación activas
         if (this.isInNegotiationRound()) {
-          return `Fase 2: Negociación Comercial Enviada — ${this.negotiationRoundLabel()}`;
+          return 'Fase 2: Negociación Comercial Enviada — ' + (this.negotiationRoundLabel());
         }
         return 'Fase 2: Propuesta Comercial Enviada al Cliente';
       }
@@ -8348,8 +10271,11 @@ export class QuoteDetailModalComponent {
   contactWhatsApp(): void {
     const q = this.selectedQuote();
     const phone = q?.representativePhone || '+528112345678';
-    const text = encodeURIComponent(`Hola ${q?.representativeName || 'Ing. Luis Donaldo'}, me interesa la cotización para el grupo ${q?.groupName}.`);
-    window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
+    const repName = q?.representativeName || 'Ing. Luis Donaldo';
+    const gName = q?.groupName || '';
+    const text = encodeURIComponent('Hola ' + repName + ', me interesa la cotización para el grupo ' + gName + '.');
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    window.open('https://wa.me/' + cleanPhone + '?text=' + text, '_blank');
   }
 
   downloadMockPdf(): void {
