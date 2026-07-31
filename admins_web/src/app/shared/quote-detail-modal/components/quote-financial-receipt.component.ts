@@ -271,49 +271,51 @@ import { MockDataService } from '../../../core/services/mock-data.service';
       }
 
       <!-- ROLLBACK ACTION CARD -->
-      <div class="pt-2">
-        @if (isInNegotiation) {
-          <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 pt-3">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider block flex items-center gap-1">
-                <span class="material-symbols-outlined text-sm text-amber-400">undo</span> CORRECCIÓN O AJUSTE DE NEGOCIACIÓN
-              </span>
-              <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase border bg-amber-500/20 text-amber-300 border-amber-500/40">
-                SIN NOTIFICAR AL CLIENTE
-              </span>
+      @if (!isHistoricalPreview) {
+        <div class="pt-2">
+          @if (isInNegotiation) {
+            <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 pt-3">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider block flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm text-amber-400">undo</span> CORRECCIÓN O AJUSTE DE NEGOCIACIÓN
+                </span>
+                <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase border bg-amber-500/20 text-amber-300 border-amber-500/40">
+                  SIN NOTIFICAR AL CLIENTE
+                </span>
+              </div>
+              <p class="text-[10px] sm:text-xs text-outline leading-relaxed">
+                Regresarás al wizard de Negociación para corregir cualquier ajuste de precio, horario o concepto enviado. Solo se pedirá un comentario interno opcional para la bitácora.
+              </p>
+              <button 
+                (click)="openNegotiationRollback.emit()"
+                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs shadow-[0_0_20px_rgba(251,191,36,0.35)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02]"
+              >
+                <span class="material-symbols-outlined text-base">undo</span> Regresar a Negociación
+              </button>
             </div>
-            <p class="text-[10px] sm:text-xs text-outline leading-relaxed">
-              Regresarás al wizard de Negociación para corregir cualquier ajuste de precio, horario o concepto enviado. Solo se pedirá un comentario interno opcional para la bitácora.
-            </p>
-            <button 
-              (click)="openNegotiationRollback.emit()"
-              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs shadow-[0_0_20px_rgba(251,191,36,0.35)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02]"
-            >
-              <span class="material-symbols-outlined text-base">undo</span> Regresar a Negociación
-            </button>
-          </div>
-        } @else {
-          <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 pt-3">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider block flex items-center gap-1">
-                <span class="material-symbols-outlined text-sm text-amber-400">undo</span> CORRECCIÓN O MODIFICACIÓN DE PROPUESTA
-              </span>
-              <span [class]="clientViewed ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'" class="px-2 py-0.5 rounded text-[8px] font-bold uppercase border">
-                {{ clientViewed ? 'NOTIFICACIÓN REQUERIDA' : 'REVERSIÓN SILENCIOSA' }}
-              </span>
+          } @else {
+            <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 pt-3">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider block flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm text-amber-400">undo</span> CORRECCIÓN O MODIFICACIÓN DE PROPUESTA
+                </span>
+                <span [class]="clientViewed ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'" class="px-2 py-0.5 rounded text-[8px] font-bold uppercase border">
+                  {{ clientViewed ? 'NOTIFICACIÓN REQUERIDA' : 'REVERSIÓN SILENCIOSA' }}
+                </span>
+              </div>
+              <p class="text-[10px] sm:text-xs text-outline leading-relaxed">
+                Regresarás la cotización a Fase 1 de Revisión para realizar ajustes administrativos en costos, viáticos, comisión o servicios.
+              </p>
+              <button 
+                (click)="openRollback.emit()"
+                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs shadow-[0_0_20px_rgba(251,191,36,0.35)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02]"
+              >
+                <span class="material-symbols-outlined text-base">undo</span> Regresar Cotización a Revisión
+              </button>
             </div>
-            <p class="text-[10px] sm:text-xs text-outline leading-relaxed">
-              Regresarás la cotización a Fase 1 de Revisión para realizar ajustes administrativos en costos, viáticos, comisión o servicios.
-            </p>
-            <button 
-              (click)="openRollback.emit()"
-              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-xs shadow-[0_0_20px_rgba(251,191,36,0.35)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02]"
-            >
-              <span class="material-symbols-outlined text-base">undo</span> Regresar Cotización a Revisión
-            </button>
-          </div>
-        }
-      </div>
+          }
+        </div>
+      }
 
     </div>
   `
@@ -325,6 +327,7 @@ export class QuoteFinancialReceiptComponent {
   @Input() isInNegotiation: boolean = false;
   @Input() clientViewed: boolean = false;
   @Input() negotiationHistory: NegotiationEntry[] = [];
+  @Input() isHistoricalPreview: boolean = false;
 
   @Output() openNegotiationRollback = new EventEmitter<void>();
   @Output() openRollback = new EventEmitter<void>();

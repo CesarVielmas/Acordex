@@ -201,7 +201,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
           </div>
 
           <!-- MAIN WORKFLOW SPLIT BODY -->
-          <div class="quote-modal-body flex-1 min-h-0 pt-3 sm:pt-4 overflow-hidden">
+          <div class="quote-modal-body flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4 space-y-4 flex flex-col">
             
             @if (historicalPreviewState()) {
               <div class="p-4 mb-3.5 rounded-3xl bg-gradient-to-r from-purple-950/90 via-slate-900 to-purple-950/90 border-2 border-purple-500/70 flex flex-col sm:flex-row items-center justify-between gap-3.5 shadow-[0_0_40px_rgba(168,85,247,0.35)] shrink-0 z-50 animate-fadeIn font-sans pointer-events-auto backdrop-blur-2xl">
@@ -212,7 +212,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                   </div>
                   <div>
                     <h4 class="text-xs sm:text-sm font-black text-purple-100 uppercase tracking-wider flex items-center gap-2 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">
-                      <span>🔒 MODO AUDITORÍA HISTÓRICA 1:1 — VISTA DE SOLO LECTURA</span>
+                      <span>🔒 MODO AUDITORÍA HISTÓRICA — VISUALIZANDO FASE: {{ historicalPreviewState()?.toUpperCase() }} (SOLO LECTURA)</span>
                     </h4>
                     <span class="text-[11px] font-mono text-purple-300/90 block mt-0.5">
                       Visualizando estado histórico inmutable: <strong class="text-purple-200 font-black font-sans px-2 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/30">{{ historicalPreviewState() }}</strong>
@@ -359,8 +359,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                   </div>
 
                   <button 
+                    [disabled]="isHistoricalPreview()"
                     (click)="contactWhatsApp()"
-                    class="w-full py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] shrink-0"
+                    class="w-full py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span class="material-symbols-outlined text-base sm:text-lg">chat</span> CONTACTAR AL CLIENTE POR WHATSAPP
                   </button>
@@ -453,17 +454,19 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           
                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="scheduleMode.set('continuo')"
                               [class]="scheduleMode() === 'continuo' ? 'bg-primary text-on-primary font-black shadow-[0_0_15px_rgba(147,51,234,0.4)] border-primary' : 'bg-surface-container-high text-outline border-outline-variant/20 hover:text-on-surface'"
-                              class="py-2 px-2.5 rounded-xl border text-[10px] sm:text-xs text-center transition-all flex items-center justify-center gap-1.5"
+                              class="py-2 px-2.5 rounded-xl border text-[10px] sm:text-xs text-center transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-xs sm:text-sm">schedule</span> Franja Única Continuada
                             </button>
 
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="scheduleMode.set('tandas')"
                               [class]="scheduleMode() === 'tandas' ? 'bg-primary text-on-primary font-black shadow-[0_0_15px_rgba(147,51,234,0.4)] border-primary' : 'bg-surface-container-high text-outline border-outline-variant/20 hover:text-on-surface'"
-                              class="py-2 px-2.5 rounded-xl border text-[10px] sm:text-xs text-center transition-all flex items-center justify-center gap-1.5"
+                              class="py-2 px-2.5 rounded-xl border text-[10px] sm:text-xs text-center transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-xs sm:text-sm">layers</span> Tandas / Bloques Fragmentados
                             </button>
@@ -479,9 +482,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                 <div class="flex-1">
                                   <input 
                                     type="date" 
+                                    [disabled]="isHistoricalPreview()"
                                     [ngModel]="proposalDate()"
                                     (ngModelChange)="proposalDate.set($event)"
-                                    class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-mono font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.25)] transition-all"
+                                    class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-mono font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.25)] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                   />
                                 </div>
                                 <span class="text-[10px] text-outline hidden sm:inline-block">Modifica si la fecha difiere de la solicitada.</span>
@@ -496,18 +500,20 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                   <span class="text-outline text-[9px] block mb-1">Hora Inicio:</span>
                                   <input 
                                     type="time" 
+                                    [disabled]="isHistoricalPreview()"
                                     [ngModel]="singleStartTime()"
                                     (ngModelChange)="singleStartTime.set($event)"
-                                    class="w-full px-2 py-1 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all"
+                                    class="w-full px-2 py-1 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                   />
                                 </div>
 
                                 <div>
                                   <span class="text-outline text-[9px] block mb-1">Duración (Horas):</span>
                                   <select 
+                                    [disabled]="isHistoricalPreview()"
                                     [ngModel]="singleDurationHours()"
                                     (ngModelChange)="singleDurationHours.set(Number($event))"
-                                    class="w-full px-2 py-1 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-bold text-xs focus:outline-none focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all"
+                                    class="w-full px-2 py-1 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-bold text-xs focus:outline-none focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                   >
                                     <option [value]="0.5">0.5 hrs (30 min)</option>
                                     <option [value]="1.0">1.0 hr (60 min)</option>
@@ -550,8 +556,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                 <span class="text-[9px] text-outline">Agrega franjas de tiempo fraccionadas</span>
                               </div>
                               <button 
+                                [disabled]="isHistoricalPreview()"
                                 (click)="addShowBlock()"
-                                class="px-2.5 py-1 rounded-xl bg-amber-500 text-black font-extrabold text-[10px] sm:text-xs hover:bg-amber-400 transition-all flex items-center gap-1 shadow-[0_0_15px_rgba(251,191,36,0.35)] hover:scale-105 shrink-0"
+                                class="px-2.5 py-1 rounded-xl bg-amber-500 text-black font-extrabold text-[10px] sm:text-xs hover:bg-amber-400 transition-all flex items-center gap-1 shadow-[0_0_15px_rgba(251,191,36,0.35)] hover:scale-105 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 <span class="material-symbols-outlined text-xs">add</span> + Tanda
                               </button>
@@ -570,9 +577,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                       </span>
                                       <input 
                                         type="text" 
+                                        [disabled]="isHistoricalPreview()"
                                         [(ngModel)]="block.label"
                                         placeholder="Nombre de la tanda (ej. Set 1)"
-                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-bold text-xs focus:outline-none focus:border-amber-400 transition-all"
+                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-bold text-xs focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                       />
                                     </div>
 
@@ -581,7 +589,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                         {{ getBlockDuration(block.startTime, block.endTime) }} hrs
                                       </span>
 
-                                      @if (showBlocks().length > 1) {
+                                      @if (showBlocks().length > 1 && !isHistoricalPreview()) {
                                         <button 
                                           (click)="removeShowBlock(idx)"
                                           class="p-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
@@ -598,16 +606,18 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                       <span class="text-[9px] text-outline block mb-0.5">Fecha del Set:</span>
                                       <input 
                                         type="date" 
+                                        [disabled]="isHistoricalPreview()"
                                         [(ngModel)]="block.date"
-                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-[10px] focus:outline-none focus:border-amber-400 transition-all"
+                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-[10px] focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                       />
                                     </div>
                                     <div>
                                       <span class="text-[9px] text-outline block mb-0.5">Hora Inicio:</span>
                                       <input 
                                         type="time" 
+                                        [disabled]="isHistoricalPreview()"
                                         [(ngModel)]="block.startTime"
-                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 transition-all"
+                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                       />
                                     </div>
 
@@ -615,8 +625,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                       <span class="text-[9px] text-outline block mb-0.5">Hora Fin:</span>
                                       <input 
                                         type="time" 
+                                        [disabled]="isHistoricalPreview()"
                                         [(ngModel)]="block.endTime"
-                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 transition-all"
+                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                       />
                                     </div>
                                   </div>
@@ -649,11 +660,12 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             <span class="text-amber-400 font-bold">(Opcional)</span>
                           </label>
                           <textarea 
+                            [disabled]="isHistoricalPreview()"
                             [ngModel]="scheduleChangeExplanation()"
                             (ngModelChange)="scheduleChangeExplanation.set($event)"
                             rows="2"
                             placeholder="Ej. Se propone ajustar el show a las 19:30 hrs..."
-                            class="w-full p-2 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface focus:outline-none focus:border-amber-400 transition-all resize-none shadow-inner"
+                            class="w-full p-2 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface focus:outline-none focus:border-amber-400 transition-all resize-none shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
                           ></textarea>
                         </div>
 
@@ -685,10 +697,11 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <label class="text-[9px] font-black text-outline uppercase tracking-wider block">Honorarios Grupo ($ MXN)</label>
                               <input 
                                 type="number" 
+                                [disabled]="isHistoricalPreview()"
                                 [ngModel]="proposalArtistFee()"
                                 (ngModelChange)="proposalArtistFee.set($event)"
                                 step="1000"
-                                class="w-full px-2.5 py-1.5 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-black text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-all"
+                                class="w-full px-2.5 py-1.5 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-black text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                               />
                             </div>
 
@@ -696,10 +709,11 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <label class="text-[9px] font-black text-outline uppercase tracking-wider block">Viáticos & Hospedaje ($ MXN)</label>
                               <input 
                                 type="number" 
+                                [disabled]="isHistoricalPreview()"
                                 [ngModel]="proposalViaticosCost()"
                                 (ngModelChange)="proposalViaticosCost.set($event)"
                                 step="500"
-                                class="w-full px-2.5 py-1.5 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-black text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-all"
+                                class="w-full px-2.5 py-1.5 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-black text-xs sm:text-sm focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                               />
                             </div>
                           </div>
@@ -716,10 +730,11 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <div class="flex items-center gap-1 shrink-0">
                                 <input 
                                   type="number" 
+                                  [disabled]="isHistoricalPreview()"
                                   [ngModel]="proposalMarginPercent()"
                                   (ngModelChange)="proposalMarginPercent.set($event)"
                                   min="0" max="100"
-                                  class="w-14 px-2 py-1 text-center rounded-xl bg-surface-container-high border border-purple-500/40 text-purple-300 font-black text-xs focus:outline-none focus:border-purple-400 transition-all"
+                                  class="w-14 px-2 py-1 text-center rounded-xl bg-surface-container-high border border-purple-500/40 text-purple-300 font-black text-xs focus:outline-none focus:border-purple-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                 />
                                 <span class="font-bold text-purple-300">%</span>
                               </div>
@@ -743,17 +758,19 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             
                             <div class="grid grid-cols-2 gap-2">
                               <button 
+                                [disabled]="isHistoricalPreview()"
                                 (click)="proposalSoundOption.set('proveedor')"
                                 [class]="proposalSoundOption() === 'proveedor' ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)]' : 'bg-surface-container text-outline border-outline-variant/20'"
-                                class="py-1.5 px-2 rounded-xl border text-[10px] sm:text-xs text-center transition-all"
+                                class="py-1.5 px-2 rounded-xl border text-[10px] sm:text-xs text-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Con Equipo ($ Costo)
                               </button>
 
                               <button 
+                                [disabled]="isHistoricalPreview()"
                                 (click)="proposalSoundOption.set('cliente')"
                                 [class]="proposalSoundOption() === 'cliente' ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)]' : 'bg-surface-container text-outline border-outline-variant/20'"
-                                class="py-1.5 px-2 rounded-xl border text-[10px] sm:text-xs text-center transition-all"
+                                class="py-1.5 px-2 rounded-xl border text-[10px] sm:text-xs text-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Sin Equipo ($0 MXN)
                               </button>
@@ -762,11 +779,12 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             @if (proposalSoundOption() === 'proveedor') {
                               <input 
                                 type="number" 
+                                [disabled]="isHistoricalPreview()"
                                 [ngModel]="proposalSoundCost()"
                                 (ngModelChange)="proposalSoundCost.set($event)"
                                 step="1000"
                                 placeholder="Costo de Equipo de Audio"
-                                class="w-full px-2.5 py-1.5 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-black text-xs focus:outline-none focus:border-purple-400 transition-all mt-1"
+                                class="w-full px-2.5 py-1.5 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-black text-xs focus:outline-none focus:border-purple-400 transition-all mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
                               />
                             }
                           </div>
@@ -775,9 +793,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             <input 
                               type="checkbox" 
                               id="includeIva" 
+                              [disabled]="isHistoricalPreview()"
                               [ngModel]="proposalIncludeIva()"
                               (ngModelChange)="proposalIncludeIva.set($event)"
-                              class="w-3.5 h-3.5 rounded accent-amber-400 cursor-pointer"
+                              class="w-3.5 h-3.5 rounded accent-amber-400 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                             />
                             <label for="includeIva" class="text-[11px] font-bold text-on-surface cursor-pointer select-none">
                               Incluir Impuesto IVA (+16% Facturado)
@@ -921,16 +940,18 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                 <div class="flex rounded-lg bg-surface-container-highest p-0.5 border border-outline-variant/30 text-[9px] font-mono font-bold">
                                   <button 
                                     type="button"
+                                    [disabled]="isHistoricalPreview()"
                                     (click)="proposalAdvanceType.set('percentage')"
                                     [class]="proposalAdvanceType() === 'percentage' ? 'bg-cyan-500 text-black font-black' : 'text-outline hover:text-on-surface'"
-                                    class="px-2 py-0.5 rounded-md transition-all">
+                                    class="px-2 py-0.5 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                     % Porcentaje
                                   </button>
                                   <button 
                                     type="button"
+                                    [disabled]="isHistoricalPreview()"
                                     (click)="proposalAdvanceType.set('fixed')"
                                     [class]="proposalAdvanceType() === 'fixed' ? 'bg-cyan-500 text-black font-black' : 'text-outline hover:text-on-surface'"
-                                    class="px-2 py-0.5 rounded-md transition-all">
+                                    class="px-2 py-0.5 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                     $ Fijo
                                   </button>
                                 </div>
@@ -939,9 +960,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <div class="flex items-center gap-2">
                                 <input 
                                   type="number" 
+                                  [disabled]="isHistoricalPreview()"
                                   [value]="proposalAdvanceValue()" 
                                   (input)="proposalAdvanceValue.set(+($any($event.target).value))"
-                                  class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface font-mono font-bold focus:outline-none focus:border-cyan-400"
+                                  class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface font-mono font-bold focus:outline-none focus:border-cyan-400 disabled:opacity-60 disabled:cursor-not-allowed"
                                 />
                                 <span class="text-xs font-mono font-bold text-cyan-300 shrink-0">
                                   {{ proposalAdvanceType() === 'percentage' ? '%' : 'MXN' }}
@@ -959,9 +981,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <label class="text-[9px] font-bold text-amber-300 uppercase block">2. Fecha Límite de Pago Saldo:</label>
                               <input 
                                 type="date" 
+                                [disabled]="isHistoricalPreview()"
                                 [value]="proposalPaymentDueDate()"
                                 (input)="proposalPaymentDueDate.set($any($event.target).value)"
-                                class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400"
+                                class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400 disabled:opacity-60 disabled:cursor-not-allowed"
                               />
                               <span class="text-[8px] text-outline block">Fecha límite para liquidar el saldo restante.</span>
                             </div>
@@ -971,9 +994,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           <div class="space-y-1.5 p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
                             <label class="text-[9px] font-bold text-purple-300 uppercase block">3. Cuenta / Tarjeta Receptora:</label>
                             <select 
+                              [disabled]="isHistoricalPreview()"
                               [value]="proposalReceivingCardId()"
                               (change)="proposalReceivingCardId.set($any($event.target).value)"
-                              class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-purple-300 font-mono font-bold focus:outline-none focus:border-purple-400"
+                              class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-purple-300 font-mono font-bold focus:outline-none focus:border-purple-400 disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                               @for (card of mockData.getReceivingCards(); track card.id) {
                                 <option [value]="card.id">{{ card.bankName }} - {{ card.accountHolder }} ({{ card.cardNumber }})</option>
@@ -991,8 +1015,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             </span>
                             <button 
                               type="button" 
+                              [disabled]="isHistoricalPreview()"
                               (click)="addMilestone()"
-                              class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 text-[9px] font-bold transition-all flex items-center gap-1">
+                              class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 text-[9px] font-bold transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                               <span class="material-symbols-outlined text-xs">add</span> + Agregar Hito
                             </button>
                           </div>
@@ -1008,10 +1033,11 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                     <label class="text-[8px] text-outline font-bold uppercase block">Concepto Hito #{{ mIdx + 1 }}:</label>
                                     <input 
                                       type="text" 
+                                      [disabled]="isHistoricalPreview()"
                                       [value]="m.label" 
                                       (input)="updateMilestone(mIdx, 'label', $any($event.target).value)"
                                       placeholder="Ej. 25% a 30 días antes del show"
-                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs text-on-surface focus:outline-none focus:border-cyan-400"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs text-on-surface focus:outline-none focus:border-cyan-400 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                   </div>
 
@@ -1022,25 +1048,28 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                       <div class="flex rounded bg-surface-container-highest p-0.5 border border-outline-variant/30 text-[8px] font-mono">
                                         <button 
                                           type="button" 
+                                          [disabled]="isHistoricalPreview()"
                                           (click)="updateMilestone(mIdx, 'type', 'percentage')"
                                           [class]="m.type === 'percentage' ? 'bg-cyan-400 text-black font-bold' : 'text-outline'"
-                                          class="px-1.5 py-0.5 rounded">
+                                          class="px-1.5 py-0.5 rounded disabled:opacity-50 disabled:cursor-not-allowed">
                                           %
                                         </button>
                                         <button 
                                           type="button" 
+                                          [disabled]="isHistoricalPreview()"
                                           (click)="updateMilestone(mIdx, 'type', 'fixed')"
                                           [class]="m.type === 'fixed' ? 'bg-cyan-400 text-black font-bold' : 'text-outline'"
-                                          class="px-1.5 py-0.5 rounded">
+                                          class="px-1.5 py-0.5 rounded disabled:opacity-50 disabled:cursor-not-allowed">
                                           $
                                         </button>
                                       </div>
                                     </div>
                                     <input 
                                       type="number" 
+                                      [disabled]="isHistoricalPreview()"
                                       [value]="m.percentageOrAmount" 
                                       (input)="updateMilestone(mIdx, 'percentageOrAmount', +($any($event.target).value))"
-                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-emerald-300 focus:outline-none focus:border-cyan-400"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-emerald-300 focus:outline-none focus:border-cyan-400 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                   </div>
 
@@ -1052,22 +1081,25 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                     </label>
                                     <input 
                                       type="date" 
+                                      [disabled]="isHistoricalPreview()"
                                       [value]="m.dueDateOrTimeframe" 
                                       (change)="updateMilestone(mIdx, 'dueDateOrTimeframe', $any($event.target).value)"
                                       (input)="updateMilestone(mIdx, 'dueDateOrTimeframe', $any($event.target).value)"
-                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono focus:outline-none focus:border-cyan-400 [color-scheme:dark]"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono focus:outline-none focus:border-cyan-400 [color-scheme:dark] disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                   </div>
 
                                   <!-- ELIMINAR (1 COL) -->
                                   <div class="sm:col-span-1 flex justify-end pt-3 sm:pt-0">
-                                    <button 
-                                      type="button" 
-                                      (click)="removeMilestone(mIdx)"
-                                      title="Eliminar Hito"
-                                      class="p-1 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-all">
-                                      <span class="material-symbols-outlined text-base">delete</span>
-                                    </button>
+                                    @if (!isHistoricalPreview()) {
+                                      <button 
+                                        type="button" 
+                                        (click)="removeMilestone(mIdx)"
+                                        title="Eliminar Hito"
+                                        class="p-1 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-all">
+                                        <span class="material-symbols-outlined text-base">delete</span>
+                                      </button>
+                                    }
                                   </div>
                                 </div>
                               }
@@ -1087,9 +1119,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <!-- PLATAFORMA 1: WHATSAPP -->
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="sendNotificationWhatsApp.set(!sendNotificationWhatsApp())"
                               [class]="sendNotificationWhatsApp() ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]' : 'bg-surface-container-high text-outline border-outline-variant/20 opacity-60'"
-                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2"
+                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-emerald-400">chat</span>
                               <div class="truncate">
@@ -1100,9 +1133,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                             <!-- PLATAFORMA 2: EMAIL -->
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="sendNotificationEmail.set(!sendNotificationEmail())"
                               [class]="sendNotificationEmail() ? 'bg-blue-500/20 border-blue-400 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.25)]' : 'bg-surface-container-high text-outline border-outline-variant/20 opacity-60'"
-                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2"
+                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-blue-400">mail</span>
                               <div class="truncate">
@@ -1113,9 +1147,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                             <!-- PLATAFORMA 3: PLATAFORMA ACORDEX -->
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="sendNotificationAcordex.set(!sendNotificationAcordex())"
                               [class]="sendNotificationAcordex() ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)]' : 'bg-surface-container-high text-outline border-outline-variant/20 opacity-60'"
-                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2"
+                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-cyan-400">space_dashboard</span>
                               <div class="truncate">
@@ -1129,11 +1164,12 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                         <div class="space-y-1">
                           <label class="text-[9px] font-black text-outline uppercase tracking-wider block">Comentarios Adicionales / Cláusulas Especiales</label>
                           <textarea 
+                            [disabled]="isHistoricalPreview()"
                             [ngModel]="additionalComments()"
                             (ngModelChange)="additionalComments.set($event)"
                             rows="2"
                             placeholder="Ingresa notas sobre el show, horario de soundcheck, viáticos..."
-                            class="w-full p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface focus:outline-none focus:border-cyan-400 transition-all resize-none"
+                            class="w-full p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface focus:outline-none focus:border-cyan-400 transition-all resize-none disabled:opacity-60 disabled:cursor-not-allowed"
                           ></textarea>
                         </div>
 
@@ -1146,8 +1182,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           </button>
 
                           <button 
+                            [disabled]="isHistoricalPreview()"
                             (click)="sendProposal()"
-                            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 hover:from-cyan-300 hover:to-indigo-500 text-white font-black text-[11px] sm:text-xs shadow-[0_0_30px_rgba(6,182,212,0.6)] transition-all duration-300 flex items-center gap-1.5 ml-auto hover:scale-105"
+                            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 hover:from-cyan-300 hover:to-indigo-500 text-white font-black text-[11px] sm:text-xs shadow-[0_0_30px_rgba(6,182,212,0.6)] transition-all duration-300 flex items-center gap-1.5 ml-auto hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span class="material-symbols-outlined text-base">send</span> ENVIAR PROPUESTA SELECCIONADA
                           </button>
@@ -1314,8 +1351,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                   </div>
 
                   <button 
+                    [disabled]="isHistoricalPreview()"
                     (click)="contactWhatsApp()"
-                    class="w-full py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] shrink-0"
+                    class="w-full py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span class="material-symbols-outlined text-base sm:text-lg">chat</span> NEGOCIAR DIRECTAMENTE POR WHATSAPP
                   </button>
@@ -1412,17 +1450,19 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           
                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="scheduleMode.set('continuo')"
                               [class]="scheduleMode() === 'continuo' ? 'bg-amber-500/25 border-amber-400 text-amber-300 font-bold shadow-md' : 'bg-surface-container-high text-outline border-outline-variant/20 hover:text-on-surface'"
-                              class="py-2 px-2.5 rounded-xl border text-[10px] sm:text-xs text-center transition-all flex items-center justify-center gap-1.5"
+                              class="py-2 px-2.5 rounded-xl border text-[10px] sm:text-xs text-center transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-xs sm:text-sm">schedule</span> Franja Única Continuada
                             </button>
 
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="scheduleMode.set('tandas')"
                               [class]="scheduleMode() === 'tandas' ? 'bg-amber-500/25 border-amber-400 text-amber-300 font-bold shadow-md' : 'bg-surface-container-high text-outline border-outline-variant/20 hover:text-on-surface'"
-                              class="py-2 px-2.5 rounded-xl border text-[10px] sm:text-xs text-center transition-all flex items-center justify-center gap-1.5"
+                              class="py-2 px-2.5 rounded-xl border text-[10px] sm:text-xs text-center transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-xs sm:text-sm">layers</span> Tandas / Bloques Fragmentados
                             </button>
@@ -1439,9 +1479,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                 <div class="flex-1">
                                   <input 
                                     type="date" 
+                                    [disabled]="isHistoricalPreview()"
                                     [ngModel]="proposalDate()"
                                     (ngModelChange)="proposalDate.set($event)"
-                                    class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-mono font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.25)] transition-all"
+                                    class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-mono font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.25)] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                   />
                                 </div>
                               </div>
@@ -1455,18 +1496,20 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                   <span class="text-outline text-[9px] block mb-1">Hora Inicio:</span>
                                   <input 
                                     type="time" 
+                                    [disabled]="isHistoricalPreview()"
                                     [ngModel]="singleStartTime()"
                                     (ngModelChange)="singleStartTime.set($event)"
-                                    class="w-full px-2 py-1 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 transition-all"
+                                    class="w-full px-2 py-1 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                   />
                                 </div>
 
                                 <div>
                                   <span class="text-outline text-[9px] block mb-1">Duración (Horas):</span>
                                   <select 
+                                    [disabled]="isHistoricalPreview()"
                                     [ngModel]="singleDurationHours()"
                                     (ngModelChange)="singleDurationHours.set(Number($event))"
-                                    class="w-full px-2 py-1 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-bold text-xs focus:outline-none focus:border-amber-400 transition-all"
+                                    class="w-full px-2 py-1 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-bold text-xs focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                   >
                                     <option [value]="0.5">0.5 hrs (30 min)</option>
                                     <option [value]="1.0">1.0 hr (60 min)</option>
@@ -1510,8 +1553,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                 <span class="text-[9px] text-outline">Agrega franjas de tiempo fraccionadas</span>
                               </div>
                               <button 
+                                [disabled]="isHistoricalPreview()"
                                 (click)="addShowBlock()"
-                                class="px-2.5 py-1 rounded-xl bg-amber-500 text-black font-extrabold text-[10px] sm:text-xs hover:bg-amber-400 transition-all flex items-center gap-1 shadow-[0_0_15px_rgba(251,191,36,0.35)] hover:scale-105 shrink-0"
+                                class="px-2.5 py-1 rounded-xl bg-amber-500 text-black font-extrabold text-[10px] sm:text-xs hover:bg-amber-400 transition-all flex items-center gap-1 shadow-[0_0_15px_rgba(251,191,36,0.35)] hover:scale-105 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 <span class="material-symbols-outlined text-xs">add</span> + Tanda
                               </button>
@@ -1530,9 +1574,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                       </span>
                                       <input 
                                         type="text" 
+                                        [disabled]="isHistoricalPreview()"
                                         [(ngModel)]="block.label"
                                         placeholder="Nombre de la tanda (ej. Set 1)"
-                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-bold text-xs focus:outline-none focus:border-amber-400 transition-all"
+                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-bold text-xs focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                       />
                                     </div>
 
@@ -1541,7 +1586,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                         {{ getBlockDuration(block.startTime, block.endTime) }} hrs
                                       </span>
 
-                                      @if (showBlocks().length > 1) {
+                                      @if (showBlocks().length > 1 && !isHistoricalPreview()) {
                                         <button 
                                           (click)="removeShowBlock(idx)"
                                           class="p-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
@@ -1558,16 +1603,18 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                       <span class="text-[9px] text-outline block mb-0.5">Fecha del Set:</span>
                                       <input 
                                         type="date" 
+                                        [disabled]="isHistoricalPreview()"
                                         [(ngModel)]="block.date"
-                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-[10px] focus:outline-none focus:border-amber-400 transition-all"
+                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-[10px] focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                       />
                                     </div>
                                     <div>
                                       <span class="text-[9px] text-outline block mb-0.5">Hora Inicio:</span>
                                       <input 
                                         type="time" 
+                                        [disabled]="isHistoricalPreview()"
                                         [(ngModel)]="block.startTime"
-                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 transition-all"
+                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                       />
                                     </div>
 
@@ -1575,8 +1622,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                       <span class="text-[9px] text-outline block mb-0.5">Hora Fin:</span>
                                       <input 
                                         type="time" 
+                                        [disabled]="isHistoricalPreview()"
                                         [(ngModel)]="block.endTime"
-                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 transition-all"
+                                        class="w-full px-2 py-1 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface font-mono font-bold text-xs focus:outline-none focus:border-amber-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                       />
                                     </div>
                                   </div>
@@ -1606,11 +1654,12 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                         <div class="space-y-1">
                           <label class="text-[9px] font-black text-amber-400 uppercase tracking-wider block">Propuesta / Mensaje Escrito para la Negociación</label>
                           <textarea 
+                            [disabled]="isHistoricalPreview()"
                             [ngModel]="scheduleChangeExplanation()"
                             (ngModelChange)="scheduleChangeExplanation.set($event)"
                             rows="2"
                             placeholder="Ej. Ofrecemos este precio especial ajustando la hora de inicio a las 20:00 hrs y absorbiendo parte del viático..."
-                            class="w-full p-2.5 rounded-xl bg-surface-container border border-amber-500/30 text-xs text-on-surface focus:outline-none focus:border-amber-400 transition-all resize-none shadow-inner"
+                            class="w-full p-2.5 rounded-xl bg-surface-container border border-amber-500/30 text-xs text-on-surface focus:outline-none focus:border-amber-400 transition-all resize-none shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
                           ></textarea>
                         </div>
 
@@ -1728,17 +1777,19 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                             <div class="grid grid-cols-2 gap-2">
                               <button 
+                                [disabled]="isHistoricalPreview()"
                                 (click)="proposalSoundOption.set('proveedor')"
                                 [class]="proposalSoundOption() === 'proveedor' ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 font-bold shadow-sm' : 'bg-surface-container-high text-outline border-outline-variant/20'"
-                                class="py-1.5 px-2 rounded-xl border text-[10px] sm:text-xs text-center transition-all"
+                                class="py-1.5 px-2 rounded-xl border text-[10px] sm:text-xs text-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Con Equipo ($ Costo)
                               </button>
 
                               <button 
+                                [disabled]="isHistoricalPreview()"
                                 (click)="proposalSoundOption.set('cliente')"
                                 [class]="proposalSoundOption() === 'cliente' ? 'bg-purple-500/20 text-purple-300 border-purple-500/50 font-bold shadow-sm' : 'bg-surface-container-high text-outline border-outline-variant/20'"
-                                class="py-1.5 px-2 rounded-xl border text-[10px] sm:text-xs text-center transition-all"
+                                class="py-1.5 px-2 rounded-xl border text-[10px] sm:text-xs text-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Sin Equipo ($0 MXN)
                               </button>
@@ -1747,11 +1798,12 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             @if (proposalSoundOption() === 'proveedor') {
                               <input 
                                 type="number" 
+                                [disabled]="isHistoricalPreview()"
                                 [ngModel]="proposalSoundCost()"
                                 (ngModelChange)="proposalSoundCost.set($event)"
                                 step="1000"
                                 placeholder="Costo de Equipo de Audio"
-                                class="w-full px-2.5 py-1.5 rounded-xl bg-surface-container-high border border-purple-500/40 text-purple-300 font-mono font-black text-xs focus:outline-none focus:border-purple-400 mt-1"
+                                class="w-full px-2.5 py-1.5 rounded-xl bg-surface-container-high border border-purple-500/40 text-purple-300 font-mono font-black text-xs focus:outline-none focus:border-purple-400 mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
                               />
                             }
 
@@ -1787,10 +1839,11 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             <div class="flex items-center gap-1">
                               <input 
                                 type="number" 
+                                [disabled]="isHistoricalPreview()"
                                 [ngModel]="proposalMarginPercent()"
                                 (ngModelChange)="proposalMarginPercent.set($event)"
                                 min="0" max="100"
-                                class="w-full px-2.5 py-1.5 rounded-xl bg-surface-container-high border border-purple-500/40 text-purple-300 font-mono font-black text-xs sm:text-sm focus:outline-none"
+                                class="w-full px-2.5 py-1.5 rounded-xl bg-surface-container-high border border-purple-500/40 text-purple-300 font-mono font-black text-xs sm:text-sm focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                               />
                               <span class="font-bold text-purple-300 text-xs shrink-0">% Margen</span>
                             </div>
@@ -1821,9 +1874,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             <input 
                               type="checkbox" 
                               id="includeIvaNeg" 
+                              [disabled]="isHistoricalPreview()"
                               [ngModel]="proposalIncludeIva()"
                               (ngModelChange)="proposalIncludeIva.set($event)"
-                              class="w-3.5 h-3.5 rounded accent-amber-400 cursor-pointer"
+                              class="w-3.5 h-3.5 rounded accent-amber-400 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                             />
                             <label for="includeIvaNeg" class="text-[11px] font-bold text-on-surface cursor-pointer select-none">
                               Incluir Impuesto IVA (+16% Facturado)
@@ -2043,16 +2097,18 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                 <div class="flex rounded-lg bg-surface-container-highest p-0.5 border border-outline-variant/30 text-[9px] font-mono font-bold">
                                   <button 
                                     type="button"
+                                    [disabled]="isHistoricalPreview()"
                                     (click)="proposalAdvanceType.set('percentage')"
                                     [class]="proposalAdvanceType() === 'percentage' ? 'bg-amber-400 text-black font-black' : 'text-outline hover:text-on-surface'"
-                                    class="px-2 py-0.5 rounded-md transition-all">
+                                    class="px-2 py-0.5 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                     % Porcentaje
                                   </button>
                                   <button 
                                     type="button"
+                                    [disabled]="isHistoricalPreview()"
                                     (click)="proposalAdvanceType.set('fixed')"
                                     [class]="proposalAdvanceType() === 'fixed' ? 'bg-amber-400 text-black font-black' : 'text-outline hover:text-on-surface'"
-                                    class="px-2 py-0.5 rounded-md transition-all">
+                                    class="px-2 py-0.5 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                     $ Fijo
                                   </button>
                                 </div>
@@ -2061,9 +2117,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <div class="flex items-center gap-2">
                                 <input 
                                   type="number" 
+                                  [disabled]="isHistoricalPreview()"
                                   [value]="proposalAdvanceValue()" 
                                   (input)="proposalAdvanceValue.set(+($any($event.target).value))"
-                                  class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface font-mono font-bold focus:outline-none focus:border-amber-400"
+                                  class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface font-mono font-bold focus:outline-none focus:border-amber-400 disabled:opacity-60 disabled:cursor-not-allowed"
                                 />
                                 <span class="text-xs font-mono font-bold text-amber-300 shrink-0">
                                   {{ proposalAdvanceType() === 'percentage' ? '%' : 'MXN' }}
@@ -2088,9 +2145,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <label class="text-[9px] font-bold text-amber-300 uppercase block">2. Fecha Límite de Pago Saldo:</label>
                               <input 
                                 type="date" 
+                                [disabled]="isHistoricalPreview()"
                                 [value]="proposalPaymentDueDate()"
                                 (input)="proposalPaymentDueDate.set($any($event.target).value)"
-                                class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400"
+                                class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400 disabled:opacity-60 disabled:cursor-not-allowed"
                               />
                               <span class="text-[8px] text-outline block">Ajusta la fecha en que el cliente debe liquidar.</span>
                             </div>
@@ -2100,9 +2158,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           <div class="space-y-1.5 p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20">
                             <label class="text-[9px] font-bold text-purple-300 uppercase block">3. Cuenta / Tarjeta Receptora:</label>
                             <select 
+                              [disabled]="isHistoricalPreview()"
                               [value]="proposalReceivingCardId()"
                               (change)="proposalReceivingCardId.set($any($event.target).value)"
-                              class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-purple-300 font-mono font-bold focus:outline-none focus:border-purple-400"
+                              class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-purple-300 font-mono font-bold focus:outline-none focus:border-purple-400 disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                               @for (card of mockData.getReceivingCards(); track card.id) {
                                 <option [value]="card.id">{{ card.bankName }} - {{ card.accountHolder }} ({{ card.cardNumber }})</option>
@@ -2120,8 +2179,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             </span>
                             <button 
                               type="button" 
+                              [disabled]="isHistoricalPreview()"
                               (click)="addMilestone()"
-                              class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[9px] font-bold transition-all flex items-center gap-1">
+                              class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-[9px] font-bold transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                               <span class="material-symbols-outlined text-xs">add</span> + Agregar Hito
                             </button>
                           </div>
@@ -2153,10 +2213,11 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                     <label class="text-[8px] text-outline font-bold uppercase block">Nuevo Concepto Hito #{{ mIdx + 1 }}:</label>
                                     <input 
                                       type="text" 
+                                      [disabled]="isHistoricalPreview()"
                                       [value]="m.label" 
                                       (input)="updateMilestone(mIdx, 'label', $any($event.target).value)"
                                       placeholder="Ej. 25% a 30 días antes del show"
-                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs text-on-surface focus:outline-none focus:border-amber-400"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs text-on-surface focus:outline-none focus:border-amber-400 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                   </div>
 
@@ -2167,25 +2228,28 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                       <div class="flex rounded bg-surface-container-highest p-0.5 border border-outline-variant/30 text-[8px] font-mono">
                                         <button 
                                           type="button" 
+                                          [disabled]="isHistoricalPreview()"
                                           (click)="updateMilestone(mIdx, 'type', 'percentage')"
                                           [class]="m.type === 'percentage' ? 'bg-amber-400 text-black font-bold' : 'text-outline'"
-                                          class="px-1.5 py-0.5 rounded">
+                                          class="px-1.5 py-0.5 rounded disabled:opacity-50 disabled:cursor-not-allowed">
                                           %
                                         </button>
                                         <button 
                                           type="button" 
+                                          [disabled]="isHistoricalPreview()"
                                           (click)="updateMilestone(mIdx, 'type', 'fixed')"
                                           [class]="m.type === 'fixed' ? 'bg-amber-400 text-black font-bold' : 'text-outline'"
-                                          class="px-1.5 py-0.5 rounded">
+                                          class="px-1.5 py-0.5 rounded disabled:opacity-50 disabled:cursor-not-allowed">
                                           $
                                         </button>
                                       </div>
                                     </div>
                                     <input 
                                       type="number" 
+                                      [disabled]="isHistoricalPreview()"
                                       [value]="m.percentageOrAmount" 
                                       (input)="updateMilestone(mIdx, 'percentageOrAmount', +($any($event.target).value))"
-                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-emerald-300 focus:outline-none focus:border-amber-400"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-emerald-300 focus:outline-none focus:border-amber-400 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                   </div>
 
@@ -2197,22 +2261,25 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                     </label>
                                     <input 
                                       type="date" 
+                                      [disabled]="isHistoricalPreview()"
                                       [value]="m.dueDateOrTimeframe" 
                                       (change)="updateMilestone(mIdx, 'dueDateOrTimeframe', $any($event.target).value)"
                                       (input)="updateMilestone(mIdx, 'dueDateOrTimeframe', $any($event.target).value)"
-                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono focus:outline-none focus:border-amber-400 [color-scheme:dark]"
+                                      class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono focus:outline-none focus:border-amber-400 [color-scheme:dark] disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                   </div>
 
                                   <!-- ELIMINAR (1 COL) -->
                                   <div class="sm:col-span-1 flex justify-end pt-3 sm:pt-0">
-                                    <button 
-                                      type="button" 
-                                      (click)="removeMilestone(mIdx)"
-                                      title="Eliminar Hito"
-                                      class="p-1 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-all">
-                                      <span class="material-symbols-outlined text-base">delete</span>
-                                    </button>
+                                    @if (!isHistoricalPreview()) {
+                                      <button 
+                                        type="button" 
+                                        (click)="removeMilestone(mIdx)"
+                                        title="Eliminar Hito"
+                                        class="p-1 rounded-lg text-rose-400 hover:bg-rose-500/20 transition-all">
+                                        <span class="material-symbols-outlined text-base">delete</span>
+                                      </button>
+                                    }
                                   </div>
                                 </div>
                               }
@@ -2232,9 +2299,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <!-- PLATAFORMA 1: WHATSAPP -->
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="sendNotificationWhatsApp.set(!sendNotificationWhatsApp())"
                               [class]="sendNotificationWhatsApp() ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]' : 'bg-surface-container-high text-outline border-outline-variant/20 opacity-60'"
-                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2"
+                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-emerald-400">chat</span>
                               <div class="truncate">
@@ -2245,9 +2313,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                             <!-- PLATAFORMA 2: EMAIL -->
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="sendNotificationEmail.set(!sendNotificationEmail())"
                               [class]="sendNotificationEmail() ? 'bg-blue-500/20 border-blue-400 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.25)]' : 'bg-surface-container-high text-outline border-outline-variant/20 opacity-60'"
-                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2"
+                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-blue-400">mail</span>
                               <div class="truncate">
@@ -2258,9 +2327,10 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                             <!-- PLATAFORMA 3: PLATAFORMA ACORDEX -->
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="sendNotificationAcordex.set(!sendNotificationAcordex())"
                               [class]="sendNotificationAcordex() ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)]' : 'bg-surface-container-high text-outline border-outline-variant/20 opacity-60'"
-                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2"
+                              class="p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-cyan-400">space_dashboard</span>
                               <div class="truncate">
@@ -2280,8 +2350,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           </button>
 
                           <button 
+                            [disabled]="isHistoricalPreview()"
                             (click)="sendNegotiatedProposal()"
-                            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-black font-black text-[11px] sm:text-xs shadow-[0_0_30px_rgba(251,191,36,0.5)] transition-all duration-300 flex items-center gap-1.5 ml-auto hover:scale-105"
+                            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-black font-black text-[11px] sm:text-xs shadow-[0_0_30px_rgba(251,191,36,0.5)] transition-all duration-300 flex items-center gap-1.5 ml-auto hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span class="material-symbols-outlined text-base">send</span> RE-ENVIAR PROPUESTA SELECCIONADA
                           </button>
@@ -2389,6 +2460,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           [isInNegotiation]="isInNegotiationRound()"
                           [clientViewed]="clientViewed()"
                           [negotiationHistory]="negotiationHistory()"
+                          [isHistoricalPreview]="isHistoricalPreview()"
                           (openNegotiationRollback)="openNegotiationRollbackDialog()"
                           (openRollback)="openRollbackDialog()"
                         ></app-quote-financial-receipt>
@@ -2506,8 +2578,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                         <!-- UNIFIED SINGLE HIGH-IMPACT WHATSAPP ACTION BUTTON -->
                         <button 
+                          [disabled]="isHistoricalPreview()"
                           (click)="contactWhatsApp()"
-                          class="w-full py-3 sm:py-3.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] mt-3"
+                          class="w-full py-3 sm:py-3.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <span class="material-symbols-outlined text-lg sm:text-xl">chat</span> CONTACTAR AL CLIENTE POR WHATSAPP
                         </button>
@@ -2569,7 +2642,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                 <div class="flex items-center gap-2 flex-wrap">
                   <button 
-                    [disabled]="isFirstState(selectedQuote()!.state)"
+                    [disabled]="isFirstState(selectedQuote()!.state) || isHistoricalPreview()"
                     (click)="moveState(selectedQuote()!, -1)"
                     class="px-3.5 sm:px-4 py-2 rounded-xl bg-surface-bright hover:bg-primary/20 text-on-surface font-bold text-xs disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 shadow-sm"
                   >
@@ -2577,7 +2650,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                   </button>
 
                   <button 
-                    [disabled]="isLastState(selectedQuote()!.state)"
+                    [disabled]="isLastState(selectedQuote()!.state) || isHistoricalPreview()"
                     (click)="moveState(selectedQuote()!, 1)"
                     class="px-4 sm:px-5 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary-hover font-extrabold text-xs shadow-lg shadow-primary/20 disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1.5 sm:gap-2"
                   >
@@ -2941,8 +3014,8 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <!-- BOTÓN PRINCIPAL: GENERAR CONTRATO DE ESTA PLANTILLA -->
                               <button 
                                 (click)="generateContractFromTemplate()"
-                                [disabled]="isGeneratingContract()"
-                                class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black text-xs shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                                [disabled]="isGeneratingContract() || isHistoricalPreview()"
+                                class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black text-xs shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 <span class="material-symbols-outlined text-lg">auto_awesome</span>
                                 <span>{{ isGeneratingContract() ? 'Generando Documento...' : 'GENERAR CONTRATO PDF CON ESTA PLANTILLA' }}</span>
@@ -2999,8 +3072,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               </div>
 
                               <button 
+                                [disabled]="isHistoricalPreview()"
                                 (click)="switchToAutoMode()"
-                                class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-[10px] shadow-sm transition-all flex items-center gap-1 hover:scale-105 shrink-0"
+                                class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-[10px] shadow-sm transition-all flex items-center gap-1 hover:scale-105 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 <span class="material-symbols-outlined text-sm">auto_awesome</span>
                                 <span>USAR PLANTILLAS AUTOMÁTICAS</span>
@@ -3029,17 +3103,17 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               SUBIR O REEMPLAZAR DOCUMENTO DE CONTRATO (PDF/DOCX):
                             </span>
 
-                            <label class="p-4 rounded-xl border-2 border-dashed border-outline-variant/40 hover:border-cyan-400/60 bg-surface-container-high/60 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer group">
+                            <label [class.pointer-events-none]="isHistoricalPreview()" [class.opacity-50]="isHistoricalPreview()" class="p-4 rounded-xl border-2 border-dashed border-outline-variant/40 hover:border-cyan-400/60 bg-surface-container-high/60 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer group">
                               <span class="material-symbols-outlined text-2xl text-cyan-400 group-hover:scale-110 transition-all">cloud_upload</span>
                               <span class="text-xs font-bold text-on-surface">Haz clic para examinar o arrastra tu archivo aquí</span>
                               <span class="text-[9px] text-outline font-mono">Formatos aceptados: PDF, DOCX (Máx. 10 MB)</span>
-                              <input type="file" (change)="handleSimulatedContractUpload($event)" accept=".pdf,.docx" class="hidden">
+                              <input type="file" [disabled]="isHistoricalPreview()" (change)="handleSimulatedContractUpload($event)" accept=".pdf,.docx" class="hidden">
                             </label>
 
                             <!-- BOTÓN DE VISTA PREVIA DIRECTA -->
                             @if (contractGenerationMode() === 'manual' && uploadedContractFile()) {
                               <div class="p-3.5 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/40 flex items-center justify-between gap-2 animate-fadeIn font-sans mt-2 shadow-lg">
-                                <div class="flex items-center gap-2.5 truncate">
+                                <div class="flex items-center gap-3 truncate">
                                   <div class="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 shrink-0">
                                     <span class="material-symbols-outlined text-2xl">picture_as_pdf</span>
                                   </div>
@@ -3078,8 +3152,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                             <!-- BOTÓN PRINCIPAL DE ENVÍO DE CONTRATO -->
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="sendContractToClient()"
-                              class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 hover:from-emerald-300 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(52,211,153,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02]"
+                              class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 hover:from-emerald-300 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(52,211,153,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-lg">mark_email_read</span>
                               <span>ENVIAR CONTRATO AL CLIENTE</span>
@@ -3088,8 +3163,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                               <!-- BOTÓN REGRESAR A REVISIÓN -->
                               <button 
+                                [disabled]="isHistoricalPreview()"
                                 (click)="showAcceptedRollbackModal.set(true)"
-                                class="p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-center hover:scale-105"
+                                class="p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-center hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 <span class="material-symbols-outlined text-base text-amber-400">undo</span>
                                 Regresar a Revisión (Fase 1)
@@ -3097,17 +3173,16 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                               <!-- BOTÓN RECHAZAR / CANCELAR COTIZACIÓN ACEPTADA -->
                               <button 
+                                [disabled]="isHistoricalPreview()"
                                 (click)="showAcceptedRejectionModal.set(true)"
-                                class="p-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-center hover:scale-105"
+                                class="p-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold text-xs transition-all flex items-center justify-center gap-1.5 text-center hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 <span class="material-symbols-outlined text-base text-red-400">cancel</span>
                                 Rechazar Cotización Aceptada
                               </button>
                             </div>
                           </div>
-
                         </div>
-
                       </div>
 
                     </div>
@@ -3729,8 +3804,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           </span>
 
                           <button 
+                            [disabled]="isHistoricalPreview()"
                             (click)="handleContractRollbackClick()"
-                            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500/30 hover:to-amber-500/30 border border-amber-500/40 text-amber-300 font-black text-xs transition-all flex items-center justify-center gap-2 hover:scale-[1.02] shadow-md"
+                            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500/30 hover:to-amber-500/30 border border-amber-500/40 text-amber-300 font-black text-xs transition-all flex items-center justify-center gap-2 hover:scale-[1.02] shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span class="material-symbols-outlined text-base text-amber-400">undo</span>
                             <span>REGRESAR A FASE 3 (MODIFICAR & GENERAR NUEVO CONTRATO)</span>
@@ -3837,27 +3913,30 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           <span class="text-[9px] font-bold text-outline uppercase block">Canales de Notificación:</span>
                           <div class="grid grid-cols-3 gap-2">
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="clientNoticeAcordex.set(!clientNoticeAcordex())"
                               [class]="clientNoticeAcordex() ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
-                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-cyan-400">space_dashboard</span>
                               <span class="text-[9px]">Platform</span>
                             </button>
 
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="clientNoticeWhatsapp.set(!clientNoticeWhatsapp())"
                               [class]="clientNoticeWhatsapp() ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
-                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-emerald-400">chat</span>
                               <span class="text-[9px]">WhatsApp</span>
                             </button>
 
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="clientNoticeEmail.set(!clientNoticeEmail())"
                               [class]="clientNoticeEmail() ? 'bg-blue-500/20 border-blue-400 text-blue-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
-                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-blue-400">mail</span>
                               <span class="text-[9px]">Correo</span>
@@ -3875,15 +3954,17 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                           <input 
                             type="text"
+                            [disabled]="isHistoricalPreview()"
                             [value]="clientNoticeCustomText()"
                             (input)="clientNoticeCustomText.set($any($event.target).value)"
                             placeholder="Nota adicional o comentario personalizado (opcional)..."
-                            class="w-full p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface"
+                            class="w-full p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface disabled:opacity-60 disabled:cursor-not-allowed"
                           />
 
                           <button 
+                            [disabled]="isHistoricalPreview()"
                             (click)="sendClientNoticeAction()"
-                            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-400 to-cyan-500 text-black font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
+                            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-400 to-cyan-500 text-black font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span class="material-symbols-outlined text-base">send</span>
                             <span>ENVIAR AVISO DE FIRMA PENDIENTE AL CLIENTE</span>
@@ -3932,27 +4013,30 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           <span class="text-[9px] font-bold text-outline uppercase block">Canales de Notificación:</span>
                           <div class="grid grid-cols-3 gap-2">
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="groupNoticeAcordex.set(!groupNoticeAcordex())"
                               [class]="groupNoticeAcordex() ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
-                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-amber-400">space_dashboard</span>
                               <span class="text-[9px]">Platform</span>
                             </button>
 
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="groupNoticeWhatsapp.set(!groupNoticeWhatsapp())"
                               [class]="groupNoticeWhatsapp() ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
-                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-emerald-400">chat</span>
                               <span class="text-[9px]">WhatsApp</span>
                             </button>
 
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="groupNoticeEmail.set(!groupNoticeEmail())"
                               [class]="groupNoticeEmail() ? 'bg-blue-500/20 border-blue-400 text-blue-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
-                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-base text-blue-400">mail</span>
                               <span class="text-[9px]">Correo</span>
@@ -3972,15 +4056,17 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                           <input 
                             type="text"
+                            [disabled]="isHistoricalPreview()"
                             [value]="groupNoticeCustomText()"
                             (input)="groupNoticeCustomText.set($any($event.target).value)"
                             placeholder="Nota adicional para los músicos (opcional)..."
-                            class="w-full p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface"
+                            class="w-full p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface disabled:opacity-60 disabled:cursor-not-allowed"
                           />
 
                           <button 
+                            [disabled]="isHistoricalPreview()"
                             (click)="sendGroupNoticeAction()"
-                            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
+                            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span class="material-symbols-outlined text-base">campaign</span>
                             <span>ENVIAR AVISO DE NUEVO EVENTO AL GRUPO</span>
@@ -4877,23 +4963,26 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           </span>
                           <div class="flex items-center gap-1.5">
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="groupNoticeAcordex.set(!groupNoticeAcordex())" 
                               [class]="groupNoticeAcordex() ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-surface-container-high text-outline border-outline-variant/20'"
-                              class="px-2 py-1 rounded-lg text-[9px] font-mono font-bold border transition-all"
+                              class="px-2 py-1 rounded-lg text-[9px] font-mono font-bold border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               Acordex {{ groupNoticeAcordex() ? '✔' : '' }}
                             </button>
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="groupNoticeWhatsapp.set(!groupNoticeWhatsapp())" 
                               [class]="groupNoticeWhatsapp() ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-surface-container-high text-outline border-outline-variant/20'"
-                              class="px-2 py-1 rounded-lg text-[9px] font-mono font-bold border transition-all"
+                              class="px-2 py-1 rounded-lg text-[9px] font-mono font-bold border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               WhatsApp {{ groupNoticeWhatsapp() ? '✔' : '' }}
                             </button>
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="groupNoticeEmail.set(!groupNoticeEmail())" 
                               [class]="groupNoticeEmail() ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' : 'bg-surface-container-high text-outline border-outline-variant/20'"
-                              class="px-2 py-1 rounded-lg text-[9px] font-mono font-bold border transition-all"
+                              class="px-2 py-1 rounded-lg text-[9px] font-mono font-bold border transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               Correo {{ groupNoticeEmail() ? '✔' : '' }}
                             </button>
@@ -4913,17 +5002,19 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                           <label class="text-[9px] font-bold text-outline uppercase block font-sans">Instrucción / Nota Adicional para el Grupo (Opcional):</label>
                           <input 
                             type="text" 
+                            [disabled]="isHistoricalPreview()"
                             [value]="groupNoticeCustomText()" 
                             (input)="groupNoticeCustomText.set($any($event.target).value)" 
                             placeholder="Ej. Favor de preparar rider técnico y coordinar horario de soundcheck a las 16:00 hrs..." 
-                            class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-xs text-on-surface placeholder:text-outline/50 focus:outline-none focus:border-amber-400 font-sans"
+                            class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-xs text-on-surface placeholder:text-outline/50 focus:outline-none focus:border-amber-400 font-sans disabled:opacity-60 disabled:cursor-not-allowed"
                           />
                         </div>
 
                         <div class="flex justify-end pt-1">
                           <button 
+                            [disabled]="isHistoricalPreview()"
                             (click)="sendGroupNoticeAction()" 
-                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-xs transition-all flex items-center gap-1.5 shadow-md"
+                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-xs transition-all flex items-center gap-1.5 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span class="material-symbols-outlined text-base">send</span>
                             <span>Emitir Notificación al Grupo</span>
@@ -4983,8 +5074,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             </p>
                           </div>
                           <button 
+                            [disabled]="isHistoricalPreview()"
                             (click)="closeSignedContractAction()"
-                            class="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black text-xs transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:scale-[1.01]"
+                            class="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black text-xs transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span class="material-symbols-outlined text-lg">task_alt</span>
                             <span>Cerrar Contrato & Concluir Ciclo</span>
@@ -5000,8 +5092,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             </p>
                           </div>
                           <button 
+                            [disabled]="isHistoricalPreview()"
                             (click)="handleSignedContractRollbackClick()"
-                            class="w-full mt-2 py-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+                            class="w-full mt-2 py-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span class="material-symbols-outlined text-lg text-amber-400">undo</span>
                             <span>Regresar a Fase 3 - Cotización Aceptada</span>
@@ -5923,34 +6016,37 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                             <input 
                               type="text" 
+                              [disabled]="isHistoricalPreview()"
                               [(ngModel)]="noticeTitle" 
                               placeholder="Título del aviso u homologación operativa..."
-                              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface focus:border-cyan-400 outline-none"
+                              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface focus:border-cyan-400 outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                             />
 
                             <textarea 
+                              [disabled]="isHistoricalPreview()"
                               [(ngModel)]="noticeMessage" 
                               rows="2"
                               placeholder="Escribe el cuerpo de la notificación oficial que se notificará..."
-                              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface focus:border-cyan-400 outline-none resize-none"
+                              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-on-surface focus:border-cyan-400 outline-none resize-none disabled:opacity-60 disabled:cursor-not-allowed"
                             ></textarea>
 
                             <div class="flex items-center justify-between gap-2 pt-1">
                               <div class="flex items-center gap-2 text-[10px] text-outline">
                                 <label class="flex items-center gap-1 cursor-pointer">
-                                  <input type="checkbox" [(ngModel)]="noticeChannelsEmail" class="accent-cyan-400 rounded" /> Email
+                                  <input type="checkbox" [disabled]="isHistoricalPreview()" [(ngModel)]="noticeChannelsEmail" class="accent-cyan-400 rounded disabled:opacity-60 disabled:cursor-not-allowed" /> Email
                                 </label>
                                 <label class="flex items-center gap-1 cursor-pointer">
-                                  <input type="checkbox" [(ngModel)]="noticeChannelsWhatsApp" class="accent-cyan-400 rounded" /> WhatsApp
+                                  <input type="checkbox" [disabled]="isHistoricalPreview()" [(ngModel)]="noticeChannelsWhatsApp" class="accent-cyan-400 rounded disabled:opacity-60 disabled:cursor-not-allowed" /> WhatsApp
                                 </label>
                                 <label class="flex items-center gap-1 cursor-pointer">
-                                  <input type="checkbox" [(ngModel)]="noticeChannelsPlatform" class="accent-cyan-400 rounded" /> App Push
+                                  <input type="checkbox" [disabled]="isHistoricalPreview()" [(ngModel)]="noticeChannelsPlatform" class="accent-cyan-400 rounded disabled:opacity-60 disabled:cursor-not-allowed" /> App Push
                                 </label>
                               </div>
 
                               <button 
+                                [disabled]="isHistoricalPreview()"
                                 (click)="sendIndependentNotice()"
-                                class="px-3 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all flex items-center gap-1"
+                                class="px-3 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 <span class="material-symbols-outlined text-xs">send</span> Enviar Aviso
                               </button>
@@ -6298,8 +6394,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                         <div class="pt-2">
                           <button 
+                            [disabled]="isHistoricalPreview()"
                             (click)="sealQuoteCycle()"
-                            class="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-xs transition-all shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:scale-105 flex items-center justify-center gap-2 mx-auto"
+                            class="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-xs transition-all shadow-[0_0_25px_rgba(245,158,11,0.4)] hover:scale-105 flex items-center justify-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span class="material-symbols-outlined text-lg">verified_user</span>
                             <span>Ejecutar Sello Definitivo de Cierre Disquera</span>
@@ -6344,8 +6441,9 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <strong class="text-emerald-300 font-mono font-bold">{{ compensationDiscountValue() }}% de Descuento</strong>
                             </div>
                             <button 
+                              [disabled]="isHistoricalPreview()"
                               (click)="generateCompensationCoupon()"
-                              class="w-full py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/40 text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5"
+                              class="w-full py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-400/40 text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span class="material-symbols-outlined text-sm">local_offer</span>
                               <span>Generar Nuevo Cupón de Fidelización</span>
@@ -9262,9 +9360,20 @@ export class QuoteDetailModalComponent {
     return milestone.percentageOrAmount;
   }
 
+  private lastObservedQuoteId: string | null = null;
+
   constructor() {
     effect(() => {
       const current = this.selectedQuote();
+      const currentId = current?.id || null;
+
+      // Resetea automáticamente cualquier estado histórico previamente cargado al cambiar de cotización o cerrar el modal
+      if (currentId !== this.lastObservedQuoteId) {
+        this.lastObservedQuoteId = currentId;
+        this.historicalPreviewState.set(null);
+        this.selectedTimelineSnapshot.set(null);
+      }
+
       if (current) {
         this.negotiationRound.set(current.negotiationRound ?? 0);
 
@@ -9811,6 +9920,9 @@ export class QuoteDetailModalComponent {
   }
 
   closeModal(): void {
+    this.historicalPreviewState.set(null);
+    this.selectedTimelineSnapshot.set(null);
+    this.lastObservedQuoteId = null;
     this.layoutState.closeQuoteModal();
   }
 
