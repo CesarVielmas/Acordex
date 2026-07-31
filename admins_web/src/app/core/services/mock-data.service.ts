@@ -152,7 +152,59 @@ export class MockDataService {
       representativePhone: '+52 81 1234 5678',
       genre: 'Norteño Sax',
       rating: 4.8,
-      artistImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80'
+      artistImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80',
+      advancePaymentType: 'percentage',
+      advancePaymentValue: 50,
+      paymentDueDate: '2026-08-15',
+      receivingCardId: 'card-bbva-01',
+      paymentMilestones: [
+        { id: 'm1_8901', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
+        { id: 'm2_8901', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-10' },
+        { id: 'm3_8901', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' }
+      ],
+      negotiationRound: 2,
+      negotiationHistory: [
+        {
+          round: 1,
+          clientRejectionMessage: 'El presupuesto inicial de $420,000 MXN excede el límite autorizado del comité. Solicitamos evaluar descuento por pago anticipado.',
+          adminProposalNote: 'Se redujo la tarifa de honorarios en un 12% y se ajustaron viáticos para cerrar en $380,000 MXN.',
+          totalOffered: 380000,
+          artistFee: 260000,
+          viaticosCost: 50000,
+          soundCost: 70000,
+          marginPercent: 20,
+          timestamp: '2026-07-12 11:30 AM',
+          proposedDate: '2026-08-15',
+          scheduleMode: 'continuo',
+          startTime: '21:00',
+          endTime: '00:00',
+          durationHours: 3,
+          soundOption: 'proveedor',
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-08-01'
+        },
+        {
+          round: 2,
+          clientRejectionMessage: 'Requerimos un ajuste adicional en la comisión de audio ya que la empresa contratante cuenta con su propio personal técnico.',
+          adminProposalNote: 'Acuerdo comercial definitivo alcanzado a $350,000 MXN con 50% de anticipo y 3 parcialidades.',
+          totalOffered: 350000,
+          artistFee: 240000,
+          viaticosCost: 45000,
+          soundCost: 65000,
+          marginPercent: 18,
+          timestamp: '2026-07-15 04:45 PM',
+          proposedDate: '2026-08-15',
+          scheduleMode: 'continuo',
+          startTime: '21:00',
+          endTime: '00:00',
+          durationHours: 3,
+          soundOption: 'proveedor',
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-08-15'
+        }
+      ]
     },
     {
       id: 'COT-8902',

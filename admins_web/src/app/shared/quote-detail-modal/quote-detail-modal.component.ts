@@ -159,8 +159,8 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
               </div>
             }
 
-            <!-- STATE SPECIFIC STEP NAVIGATION TABS (FOR OTHER STATES OTHER THAN 'En revisión', 'Propuesta enviada', 'Negociación' AND 'Aceptada') -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada') {
+            <!-- STATE SPECIFIC STEP NAVIGATION TABS (FOR OTHER STATES OTHER THAN INITIAL & SIGNATURE PHASES) -->
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado') {
               <div class="quote-modal-tabs p-1 sm:p-1.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-between gap-2 text-xs shadow-inner">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <button 
@@ -2532,8 +2532,8 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
               </div>
             }
 
-            <!-- DYNAMIC WORKFLOW ACTION CONTROL BAR (FOR OTHER STATES OTHER THAN 'En revisión', 'Propuesta enviada', 'Negociación' AND 'Aceptada') -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada') {
+            <!-- DYNAMIC WORKFLOW ACTION CONTROL BAR (FOR OTHER STATES OTHER THAN INITIAL PHASES) -->
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado') {
               <div class="quote-modal-workflow-bar p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 shadow-lg">
                 <div class="space-y-0.5">
                   <span class="text-xs font-extrabold text-primary uppercase tracking-wider block">Acción Operativa para el Estado Actual</span>
@@ -2601,34 +2601,37 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                   <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4">
                     
                     <!-- CONFIRMED ACCEPTANCE STATUS BANNER & COLLAPSIBLE CONTRACT SPECS -->
-                    <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border-2 border-emerald-500/40 shadow-[0_0_30px_rgba(16,185,129,0.15)] space-y-3 relative overflow-hidden">
+                    <div class="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-950/90 via-teal-950/80 to-slate-900 border-2 border-emerald-500/50 shadow-[0_0_35px_rgba(16,185,129,0.2)] space-y-4 relative overflow-hidden backdrop-blur-xl">
                       <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                          <div class="p-3 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shrink-0 shadow-lg">
-                            <span class="material-symbols-outlined text-2xl sm:text-3xl">task_alt</span>
+                        <div class="flex items-center gap-3 sm:gap-4">
+                          <div class="p-3 sm:p-3.5 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shrink-0 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/20">
+                            <span class="material-symbols-outlined text-2xl sm:text-3xl animate-pulse">task_alt</span>
                           </div>
-                          <div class="space-y-0.5">
-                            <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest block">PROPUESTA COMERCIAL ACEPTADA POR EL CLIENTE</span>
-                            <h4 class="text-xs sm:text-sm font-black text-on-surface flex items-center gap-2">
+                          <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                              <span class="text-[9px] sm:text-[10px] font-black text-emerald-400 uppercase tracking-widest block font-sans">PROPUESTA COMERCIAL ACEPTADA POR EL CLIENTE</span>
+                              <span class="px-2 py-0.5 rounded-full text-[8px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">OFICIAL</span>
+                            </div>
+                            <h4 class="text-sm sm:text-base font-black text-on-surface flex items-center gap-2 font-sans">
                               <span>{{ selectedQuote()?.groupName }}</span>
-                              <span class="text-emerald-400 font-mono">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</span>
+                              <span class="text-emerald-400 font-mono text-base sm:text-lg drop-shadow-[0_0_10px_rgba(52,211,153,0.4)]">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</span>
                             </h4>
-                            <span class="text-[10px] text-outline font-mono block">
-                              Fecha Confirmada: <strong>{{ selectedQuote()?.proposedDate }}</strong> • Duración: <strong class="text-amber-300">{{ selectedQuote()?.durationHours || 3 }} Horas de Show</strong> • Recinto: <strong>{{ selectedQuote()?.venue }}</strong>
+                            <span class="text-[10px] sm:text-xs text-outline font-mono block">
+                              Fecha Confirmada: <strong class="text-on-surface">{{ selectedQuote()?.proposedDate }}</strong> • Duración: <strong class="text-amber-300">{{ selectedQuote()?.durationHours || 3 }} Horas de Show</strong> • Recinto: <strong class="text-on-surface">{{ selectedQuote()?.venue }}</strong>
                             </span>
                           </div>
                         </div>
 
                         <div class="flex items-center gap-2 shrink-0">
-                          <span class="px-2.5 py-1 rounded-xl bg-purple-500/20 text-purple-300 font-mono font-bold text-xs border border-purple-400/40">
+                          <span class="px-3 py-1 rounded-xl bg-purple-500/25 text-purple-300 font-mono font-bold text-xs border border-purple-400/40 shadow-sm">
                             {{ hasQuoteTandas(selectedQuote()) ? 'Tandas / Sets' : 'Horario Continuo' }}
                           </span>
 
                           <button 
                             (click)="showAcceptedSummaryDetails.set(!showAcceptedSummaryDetails())"
-                            class="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-extrabold text-xs border border-emerald-400/40 transition-all flex items-center gap-1.5 shadow-sm hover:scale-105"
+                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500/25 to-teal-500/25 hover:from-emerald-500/35 hover:to-teal-500/35 text-emerald-300 font-extrabold text-xs border border-emerald-400/50 transition-all flex items-center gap-2 shadow-md hover:scale-105"
                           >
-                            <span class="material-symbols-outlined text-sm">
+                            <span class="material-symbols-outlined text-base">
                               {{ showAcceptedSummaryDetails() ? 'unfold_less' : 'unfold_more' }}
                             </span>
                             <span>{{ showAcceptedSummaryDetails() ? 'Ocultar Datos de Contrato ▴' : 'Ver Datos de Contrato ▾' }}</span>
@@ -2638,26 +2641,28 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                       <!-- COLLAPSIBLE CONTRACT SPECIFICATIONS DETAILS PANEL -->
                       @if (showAcceptedSummaryDetails()) {
-                        <div class="pt-3 border-t border-emerald-500/30 space-y-3 animate-fadeIn">
+                        <div class="pt-4 border-t border-emerald-500/30 space-y-4 animate-fadeIn">
                           <div class="flex items-center justify-between">
-                            <span class="text-[10px] font-black text-emerald-300 uppercase tracking-wider flex items-center gap-1 font-sans">
-                              <span class="material-symbols-outlined text-sm text-emerald-400">verified</span>
+                            <span class="text-xs font-black text-emerald-300 uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                              <span class="material-symbols-outlined text-base text-emerald-400">verified</span>
                               ESPECIFICACIONES COMERCIALES Y TÉCNICAS ACEPTADAS PARA EL CONTRATO
                             </span>
-                            <span class="text-[9px] font-mono text-outline">Información Definitiva Aceptada por Cliente y Disquera</span>
+                            <span class="text-[10px] font-mono text-outline bg-surface-container/60 px-2.5 py-1 rounded-lg border border-outline-variant/20">Información Definitiva Aceptada</span>
                           </div>
 
-                          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                          <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
                             <!-- BLOQUE 1: DURACIÓN Y HORARIOS DEL SHOW -->
-                            <div class="p-3 rounded-xl bg-surface-container/90 border border-emerald-500/30 space-y-2">
-                              <span class="text-emerald-400 text-[9px] font-bold uppercase block font-sans">1. Duración & Horario del Show:</span>
-                              <div class="space-y-1">
+                            <div class="p-3.5 rounded-2xl bg-surface-container/90 border border-emerald-500/30 space-y-2.5 shadow-md hover:border-emerald-400/50 transition-all">
+                              <span class="text-emerald-400 text-[10px] font-black uppercase block font-sans tracking-wider flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">schedule</span> 1. Duración & Horario del Show:
+                              </span>
+                              <div class="space-y-1.5">
                                 <div class="flex justify-between text-[11px]">
                                   <span class="text-outline">Duración Contratada:</span>
                                   <strong class="text-amber-300 font-mono font-black">{{ selectedQuote()?.durationHours || 3 }} Horas Totales</strong>
                                 </div>
                                 <div class="flex justify-between text-[11px]">
-                                  <span class="text-outline">Formato Presentation:</span>
+                                  <span class="text-outline">Formato Presentación:</span>
                                   <strong class="text-purple-300 font-sans font-bold">
                                     {{ hasQuoteTandas(selectedQuote()) ? 'Tandas / Bloques' : 'Show Continuo' }}
                                   </strong>
@@ -2665,7 +2670,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               </div>
 
                               <!-- DESGLOSE DE TANDAS O CONTINUO -->
-                              <div class="p-2 rounded-lg bg-surface-container-high border border-outline-variant/20 space-y-1 font-mono text-[10px]">
+                              <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 space-y-1 font-mono text-[10px]">
                                 @if (hasQuoteTandas(selectedQuote())) {
                                   @for (block of getQuoteShowBlocks(selectedQuote()); track block.id; let bIdx = $index) {
                                     <div class="flex justify-between text-on-surface">
@@ -2683,9 +2688,11 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             </div>
 
                             <!-- BLOQUE 2: SERVICIO DE AUDIO & LOGÍSTICA -->
-                            <div class="p-3 rounded-xl bg-surface-container/90 border border-purple-500/30 space-y-2">
-                              <span class="text-purple-300 text-[9px] font-bold uppercase block font-sans">2. Servicio de Audio & Recinto:</span>
-                              <div class="space-y-1">
+                            <div class="p-3.5 rounded-2xl bg-surface-container/90 border border-purple-500/30 space-y-2.5 shadow-md hover:border-purple-400/50 transition-all">
+                              <span class="text-purple-300 text-[10px] font-black uppercase block font-sans tracking-wider flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">speaker</span> 2. Servicio de Audio & Recinto:
+                              </span>
+                              <div class="space-y-1.5">
                                 <div class="flex justify-between text-[11px]">
                                   <span class="text-outline">Servicio de Audio:</span>
                                   <strong class="text-purple-300 font-sans font-bold">
@@ -2698,19 +2705,19 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                 </div>
                               </div>
 
-                              <div class="p-2 rounded-lg bg-surface-container-high border border-outline-variant/20 space-y-1 font-sans text-[10px]">
-                                <span class="text-outline block text-[9px]">Dirección Completa:</span>
+                              <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 space-y-1 font-sans text-[10px]">
+                                <span class="text-outline block text-[9px] uppercase font-bold">Dirección Completa:</span>
                                 <p class="font-bold text-on-surface truncate">{{ selectedQuote()?.eventAddress || (selectedQuote()?.venue + ', ' + selectedQuote()?.city) }}</p>
                               </div>
                             </div>
 
                             <!-- BLOQUE 3: DESGLOSE FINANCIERO ACEPTADO -->
-                            <div class="p-3 rounded-xl bg-surface-container/90 border-2 border-amber-400/50 space-y-2 font-mono shadow-inner">
-                              <div class="flex items-center justify-between border-b border-amber-400/20 pb-1">
-                                <span class="text-amber-400 text-[9px] font-black uppercase tracking-wider font-sans flex items-center gap-1">
-                                  <span class="material-symbols-outlined text-xs text-amber-400">receipt_long</span> 3. DESGLOSE FINANCIERO ACEPTADO:
+                            <div class="p-3.5 rounded-2xl bg-surface-container/90 border-2 border-amber-400/50 space-y-2.5 font-mono shadow-xl">
+                              <div class="flex items-center justify-between border-b border-amber-400/20 pb-1.5">
+                                <span class="text-amber-400 text-[10px] font-black uppercase tracking-wider font-sans flex items-center gap-1">
+                                  <span class="material-symbols-outlined text-sm text-amber-400">receipt_long</span> 3. DESGLOSE FINANCIERO ACEPTADO:
                                 </span>
-                                <span class="text-[8px] font-bold text-cyan-400 bg-cyan-500/20 px-1.5 py-0.5 rounded border border-cyan-500/30">5% ACORDEX</span>
+                                <span class="text-[8px] font-bold text-cyan-400 bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30">5% ACORDEX</span>
                               </div>
 
                               <div class="space-y-1.5 text-[10px]">
@@ -2756,25 +2763,25 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                             </div>
 
                             <!-- BLOQUE 4: CONDICIONES FINALES DE PAGO Y CUENTA RECEPTORA -->
-                            <div class="md:col-span-3 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-surface-container-high to-surface-container border-2 border-emerald-500/50 space-y-3 font-sans shadow-xl">
+                            <div class="md:col-span-3 p-4 sm:p-4.5 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-surface-container-high to-surface-container border-2 border-emerald-500/60 space-y-3 font-sans shadow-xl">
                               <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
-                                <span class="text-emerald-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 font-sans">
-                                  <span class="material-symbols-outlined text-sm text-emerald-400">verified_user</span>
+                                <span class="text-emerald-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
+                                  <span class="material-symbols-outlined text-base text-emerald-400">verified_user</span>
                                   4. CONDICIONES FINALES DE PAGO ACEPTADAS (CONTRATO)
                                 </span>
-                                <span class="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/40 flex items-center gap-1">
+                                <span class="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/40 flex items-center gap-1.5">
                                   <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> VIGENTE & REGISTRADO
                                 </span>
                               </div>
 
                               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
-                                <div class="p-3 rounded-xl bg-surface-container border border-emerald-500/30 space-y-1 shadow-sm">
+                                <div class="p-3 rounded-xl bg-surface-container/90 border border-emerald-500/30 space-y-1 shadow-sm">
                                   <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">1. Monto Mínimo (Anticipo):</span>
                                   <strong class="text-emerald-400 font-mono text-sm font-black block">&#36;{{ getAdvancePaymentAmount() | number:'1.0-0' }} MXN</strong>
                                   <span class="text-[10px] text-emerald-300 font-mono font-semibold">({{ getAdvancePaymentLabel() }})</span>
                                 </div>
 
-                                <div class="p-3 rounded-xl bg-surface-container border border-amber-500/30 space-y-1 shadow-sm">
+                                <div class="p-3 rounded-xl bg-surface-container/90 border border-amber-500/30 space-y-1 shadow-sm">
                                   <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">2. Fecha Límite de Pago Saldo:</span>
                                   <strong class="text-amber-300 font-mono text-sm font-black block flex items-center gap-1">
                                     <span class="material-symbols-outlined text-xs text-amber-400">event</span>
@@ -2783,7 +2790,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                   <span class="text-[9px] text-outline block">Fecha límite final para liquidar saldo.</span>
                                 </div>
 
-                                <div class="p-3 rounded-xl bg-surface-container border border-purple-500/30 space-y-1 shadow-sm">
+                                <div class="p-3 rounded-xl bg-surface-container/90 border border-purple-500/30 space-y-1 shadow-sm">
                                   <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">3. Cuenta / Tarjeta Receptora:</span>
                                   <strong class="text-purple-300 font-mono text-xs font-bold block flex items-center gap-1">
                                     <span class="material-symbols-outlined text-xs text-purple-400">credit_card</span>
@@ -2793,40 +2800,44 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               </div>
                             </div>
 
-                            <!-- BLOQUE 5: HITOS / PARCIALIDADES DE PAGO PROGRAMADAS DEFINITIVAS -->
+                            <!-- BLOQUE 5: HITOS Y PROGRAMACIÓN DE PARCIALIDADES DE PAGO ACEPTADAS -->
                             @if (getPaymentMilestones().length > 0) {
-                              <div class="md:col-span-3 p-4 rounded-2xl bg-gradient-to-r from-cyan-950/70 via-surface-container-high to-surface-container border-2 border-cyan-500/50 space-y-3 font-sans shadow-xl">
-                                <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2">
-                                  <span class="text-cyan-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 font-sans">
-                                    <span class="material-symbols-outlined text-sm text-cyan-400">calendar_month</span>
-                                    5. HITOS / PARCIALIDADES DE PAGO PROGRAMADAS DEFINITIVAS
+                              <div class="md:col-span-3 p-4 sm:p-4.5 rounded-2xl bg-gradient-to-r from-cyan-950/80 via-surface-container-high to-slate-900 border-2 border-cyan-500/60 space-y-3.5 font-sans shadow-2xl backdrop-blur-xl">
+                                <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2.5">
+                                  <span class="text-cyan-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
+                                    <span class="material-symbols-outlined text-base text-cyan-400 animate-bounce">calendar_month</span>
+                                    5. HITOS Y PROGRAMACIÓN DE PARCIALIDADES DE PAGO ACEPTADAS (DEFINITIVAS)
                                   </span>
-                                  <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                  <span class="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 shadow-sm">
+                                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
                                     {{ getPaymentMilestones().length }} Parcialidades Programadas
                                   </span>
                                 </div>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
                                   @for (m of getPaymentMilestones(); track m.id; let mIdx = $index) {
-                                    <div class="p-3 rounded-xl bg-surface-container border border-cyan-500/40 flex flex-col justify-between text-xs space-y-2 shadow-sm hover:border-cyan-400 transition-all">
-                                      <div class="flex items-center justify-between border-b border-outline-variant/15 pb-1.5">
-                                        <span class="font-extrabold text-on-surface text-xs truncate">#{{ mIdx + 1 }}. {{ m.label }}</span>
-                                        <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                    <div class="p-3.5 rounded-xl bg-surface-container/90 border border-cyan-500/40 flex flex-col justify-between text-xs space-y-2.5 shadow-md hover:border-cyan-400 hover:-translate-y-0.5 transition-all">
+                                      <div class="flex items-center justify-between border-b border-outline-variant/15 pb-2">
+                                        <span class="font-extrabold text-on-surface text-xs truncate flex items-center gap-1">
+                                          <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                          #{{ mIdx + 1 }}. {{ m.label }}
+                                        </span>
+                                        <span class="px-2 py-0.5 rounded-lg text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
                                           {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0') + ' MXN') }}
                                         </span>
                                       </div>
 
-                                      <div class="space-y-1 font-mono">
+                                      <div class="space-y-1.5 font-mono">
                                         <div class="flex justify-between items-baseline">
                                           <span class="text-[10px] text-outline font-sans">Importe Neto:</span>
-                                          <strong class="text-emerald-400 font-black text-sm">&#36;{{ getMilestoneCalculatedAmount(m) | number:'1.0-0' }} MXN</strong>
+                                          <strong class="text-emerald-400 font-black text-sm text-shadow-sm">&#36;{{ getMilestoneCalculatedAmount(m) | number:'1.0-0' }} MXN</strong>
                                         </div>
-                                        <div class="flex justify-between items-baseline pt-1 border-t border-outline-variant/10">
+                                        <div class="flex justify-between items-baseline pt-1.5 border-t border-outline-variant/10">
                                           <span class="text-[10px] text-outline font-sans flex items-center gap-1">
                                             <span class="material-symbols-outlined text-xs text-amber-400">event</span>
                                             Fecha / Límite:
                                           </span>
-                                          <strong class="text-amber-300 font-bold text-xs">{{ m.dueDateOrTimeframe }}</strong>
+                                          <strong class="text-amber-300 font-bold text-xs bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">{{ m.dueDateOrTimeframe }}</strong>
                                         </div>
                                       </div>
                                     </div>
@@ -2839,117 +2850,27 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                       }
                     </div>
 
-                    <!-- TARJETA DESTACADA PERMANENTE: CONDICIONES DE PAGO Y PARCIALIDADES DEFINITIVAS ACEPTADAS -->
-                    <div class="p-4.5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-950/90 via-surface-container-high to-surface-container border-2 border-emerald-500/60 shadow-[0_0_35px_rgba(16,185,129,0.18)] space-y-4 font-sans backdrop-blur-xl">
-                      <div class="flex items-center justify-between border-b border-emerald-500/40 pb-2.5">
-                        <div class="flex items-center gap-2">
-                          <div class="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
-                            <span class="material-symbols-outlined text-xl sm:text-2xl">verified_user</span>
-                          </div>
-                          <div>
-                            <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest block font-sans">CONTRATO PRIVADO • ESPECIFICACIONES DE PAGO ACEPTADAS</span>
-                            <h4 class="text-xs sm:text-sm font-black text-on-surface">Condiciones de Pago & Hitos Programados Definitivos</h4>
-                          </div>
-                        </div>
-                        <span class="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/40 flex items-center gap-1.5">
-                          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                          CONTRATO VIGENTE
-                        </span>
-                      </div>
-
-                      <!-- GRID DE 3 CONDICIONES PRINCIPALES DE PAGO -->
-                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                        <div class="p-3 rounded-xl bg-surface-container border border-emerald-500/30 space-y-1 shadow-sm">
-                          <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">1. Monto Mínimo Acordado (Anticipo):</span>
-                          <strong class="text-emerald-400 font-mono text-sm font-black block">&#36;{{ getAdvancePaymentAmount() | number:'1.0-0' }} MXN</strong>
-                          <span class="text-[10px] text-emerald-300 font-mono font-semibold">({{ getAdvancePaymentLabel() }})</span>
-                        </div>
-
-                        <div class="p-3 rounded-xl bg-surface-container border border-amber-500/30 space-y-1 shadow-sm">
-                          <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">2. Fecha Límite de Pago Saldo:</span>
-                          <strong class="text-amber-300 font-mono text-sm font-black block flex items-center gap-1">
-                            <span class="material-symbols-outlined text-xs text-amber-400">event</span>
-                            {{ selectedQuote()?.paymentDueDate || '2026-08-25' }}
-                          </strong>
-                          <span class="text-[9px] text-outline block">Fecha límite final para liquidar saldo.</span>
-                        </div>
-
-                        <div class="p-3 rounded-xl bg-surface-container border border-purple-500/30 space-y-1 shadow-sm">
-                          <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">3. Cuenta / Tarjeta Receptora Oficial:</span>
-                          <strong class="text-purple-300 font-mono text-xs font-bold block flex items-center gap-1">
-                            <span class="material-symbols-outlined text-xs text-purple-400">credit_card</span>
-                            {{ getReceivingCardLabel() }}
-                          </strong>
-                        </div>
-                      </div>
-
-                      <!-- GRID DE HITOS / PARCIALIDADES DE PAGO DEFINITIVAS -->
-                      @if (getPaymentMilestones().length > 0) {
-                        <div class="pt-3 border-t border-emerald-500/30 space-y-2.5">
-                          <div class="flex items-center justify-between">
-                            <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                              <span class="material-symbols-outlined text-sm text-cyan-400">calendar_month</span>
-                              HITOS / PARCIALIDADES DE PAGO PROGRAMADAS DEFINITIVAS
-                            </span>
-                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                              {{ getPaymentMilestones().length }} Parcialidades Programadas
-                            </span>
-                          </div>
-
-                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            @for (m of getPaymentMilestones(); track m.id; let mIdx = $index) {
-                              <div class="p-3 rounded-xl bg-surface-container/90 border border-cyan-500/40 flex flex-col justify-between text-xs space-y-2 shadow-sm hover:border-cyan-400 transition-all">
-                                <div class="flex items-center justify-between border-b border-outline-variant/15 pb-1.5">
-                                  <span class="font-extrabold text-on-surface text-xs truncate">#{{ mIdx + 1 }}. {{ m.label }}</span>
-                                  <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                                    {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0') + ' MXN') }}
-                                  </span>
-                                </div>
-
-                                <div class="space-y-1 font-mono">
-                                  <div class="flex justify-between items-baseline">
-                                    <span class="text-[10px] text-outline font-sans">Importe Neto:</span>
-                                    <strong class="text-emerald-400 font-black text-sm">&#36;{{ getMilestoneCalculatedAmount(m) | number:'1.0-0' }} MXN</strong>
-                                  </div>
-                                  <div class="flex justify-between items-baseline pt-1 border-t border-outline-variant/10">
-                                    <span class="text-[10px] text-outline font-sans flex items-center gap-1">
-                                      <span class="material-symbols-outlined text-xs text-amber-400">event</span>
-                                      Fecha / Límite:
-                                    </span>
-                                    <strong class="text-amber-300 font-bold text-xs">{{ m.dueDateOrTimeframe }}</strong>
-                                  </div>
-                                </div>
-                              </div>
-                            }
-                          </div>
-                        </div>
-                      }
-                    </div>
-
                     <!-- MAIN 2-COLUMN GRID FOR ACCEPTED QUOTE MANAGEMENT -->
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
                       
-                      <!-- LEFT COLUMN: CONTRATO COMERCIAL & VISUALIZACIÓN PREVIA (6 COLS) -->
+                      <!-- LEFT COLUMN: GENERACIÓN DE CONTRATO VÍA PLANTILLAS (6 COLS) -->
                       <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl flex flex-col justify-between">
                         <div class="space-y-3.5">
-                          <!-- CARD HEADER -->
-                          <div class="border-b border-outline-variant/20 pb-2.5 flex items-center justify-between">
-                            <span class="text-[10px] font-black text-emerald-400 uppercase tracking-wider block flex items-center gap-1.5">
-                              <span class="material-symbols-outlined text-base text-emerald-400">description</span>
-                              CONTRATO PRIVADO & DOCUMENTACIÓN
+                          <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
+                            <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
+                              <span class="material-symbols-outlined text-sm text-amber-400">description</span> CONTRATO PRIVADO & PLANTILLAS
                             </span>
-                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                              {{ contractGenerationMode() === 'manual' ? 'DOCUMENTO SUBIDO MANUAL' : (contractGenerated() ? 'CONTRATO GENERADO' : 'PLANTILLAS DISPONIBLES') }}
+                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                              PLANTILLAS DISPONIBLES
                             </span>
                           </div>
 
-                          <!-- MODO A: GENERACIÓN AUTOMÁTICA CON PLANTILLAS (SE MUESTRA SÓLO EN MODO AUTOMÁTICO) -->
+                          <!-- MODO A: PLANTILLAS Y GENERACIÓN AUTOMÁTICA -->
                           @if (contractGenerationMode() === 'auto') {
-                            <!-- SELECTOR CAROUSEL DE PLANTILLAS Y BORRADORES DE CONTRATO (CON FLECHAS < y >) -->
-                            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2.5 font-sans animate-fadeIn">
+                            <div class="space-y-3">
                               <div class="flex items-center justify-between">
-                                <span class="text-[9px] font-black text-amber-400 uppercase tracking-wider block">
-                                  PLANTILLA / BORRADOR DE CONTRATO A USAR:
+                                <span class="text-[9px] font-black text-outline uppercase tracking-wider block font-sans">
+                                  SELECCIONAR PLANTILLA / BORRADOR:
                                 </span>
                                 <div class="flex items-center gap-1">
                                   <button 
@@ -2969,7 +2890,6 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                 </div>
                               </div>
 
-                              <!-- CAROUSEL SCROLL CONTAINER -->
                               <div 
                                 id="template-carousel-container"
                                 class="flex items-center gap-2 overflow-x-auto scroll-smooth custom-scrollbar py-1"
@@ -2995,7 +2915,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <button 
                                 (click)="generateContractFromTemplate()"
                                 [disabled]="isGeneratingContract()"
-                                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black text-xs shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                                class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black text-xs shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                               >
                                 <span class="material-symbols-outlined text-lg">auto_awesome</span>
                                 <span>{{ isGeneratingContract() ? 'Generando Documento...' : 'GENERAR CONTRATO PDF CON ESTA PLANTILLA' }}</span>
@@ -3004,7 +2924,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
 
                             <!-- CONTRACT FILE DISPLAY CARD (SÓLO TRAS GENERAR) -->
                             @if (contractGenerated()) {
-                              <div class="p-4 rounded-2xl bg-gradient-to-br from-surface-container via-surface-container-high to-surface-container border-2 border-emerald-500/40 space-y-3 text-xs shadow-inner animate-fadeIn font-sans">
+                              <div class="p-4 rounded-2xl bg-gradient-to-br from-surface-container via-surface-container-high to-surface-container border-2 border-emerald-500/40 space-y-3 text-xs shadow-inner animate-fadeIn font-sans mt-3">
                                 <div class="flex items-center justify-between">
                                   <div class="flex items-center gap-3">
                                     <div class="p-2.5 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30">
@@ -3015,7 +2935,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                         Contrato_Privado_{{ selectedQuote()?.id }}.pdf
                                       </strong>
                                       <span class="text-outline text-[10px] block font-mono">
-                                        Tamaño: 1.4 MB • PDF Firma Digital • {{ selectedTemplateId() | uppercase }}
+                                        Tamaño: 1.4 MB • PDF Firma Digital
                                       </span>
                                     </div>
                                   </div>
@@ -3030,26 +2950,21 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                   </button>
                                 </div>
 
-                                <!-- AVISO DE REVISIÓN OBLIGATORIA DEL CONTRATO GENERADO -->
                                 <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-200/90 leading-relaxed space-y-1">
                                   <div class="flex items-center gap-1.5 text-amber-400 font-black uppercase text-[10px]">
                                     <span class="material-symbols-outlined text-sm text-amber-400">warning</span>
-                                    <span>AVISO DE REVISIÓN DE CONTRATO AUTOMÁTICO:</span>
+                                    <span>AVISO DE REVISIÓN DE CONTRATO:</span>
                                   </div>
                                   <p>
-                                    Este borrador ha sido generado <strong>automáticamente por el sistema</strong> con base en la cotización acordada por <strong>&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</strong> para el show de <strong>{{ selectedQuote()?.groupName }}</strong>.
-                                  </p>
-                                  <p class="text-[10px] text-amber-300 font-bold italic pt-0.5">
-                                    📌 Se solicita al administrador REVISAR detalladamente las cláusulas y especificaciones en la Vista Previa antes de proceder con el envío al cliente.
+                                    Borrador generado por <strong>&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</strong> para <strong>{{ selectedQuote()?.groupName }}</strong>.
                                   </p>
                                 </div>
                               </div>
                             }
                           }
 
-                          <!-- MODO B: MODO MANUAL DE CARGA (SI contractGenerationMode() === 'manual') -->
+                          <!-- MODO B: MODO MANUAL DE CARGA -->
                           @if (contractGenerationMode() === 'manual') {
-                            <!-- BOTÓN ARRIBA: VOLVER A GENERACIÓN AUTOMÁTICA -->
                             <div class="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between gap-2 font-sans animate-fadeIn">
                               <div class="flex items-center gap-2">
                                 <span class="material-symbols-outlined text-cyan-400 text-lg">file_present</span>
@@ -3061,14 +2976,29 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                 class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-[10px] shadow-sm transition-all flex items-center gap-1 hover:scale-105 shrink-0"
                               >
                                 <span class="material-symbols-outlined text-sm">auto_awesome</span>
-                                <span>VOLVER A GENERACIÓN AUTOMÁTICA CON PLANTILLAS</span>
+                                <span>USAR PLANTILLAS AUTOMÁTICAS</span>
                               </button>
                             </div>
                           }
+                        </div>
+                      </div>
 
-                          <!-- UPLOAD / REPLACE CONTRACT FILE ACTIONS -->
+                      <!-- RIGHT COLUMN: CARGA MANUAL DE CONTRATO & APROBACIÓN FINAL (6 COLS) -->
+                      <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl flex flex-col justify-between">
+                        
+                        <div class="space-y-4">
+                          <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
+                            <span class="text-[10px] font-black text-cyan-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
+                              <span class="material-symbols-outlined text-sm text-cyan-400">upload_file</span> CARGA MANUAL Y ENVÍO DE CONTRATO
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                              DOCUMENTACIÓN OFICIAL
+                            </span>
+                          </div>
+
+                          <!-- UPLOAD / REPLACE CONTRACT FILE DROPZONE -->
                           <div class="p-3.5 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2.5">
-                            <span class="text-[9px] font-black text-amber-400 uppercase tracking-wider block font-sans">
+                            <span class="text-[9px] font-black text-cyan-300 uppercase tracking-wider block font-sans">
                               SUBIR O REEMPLAZAR DOCUMENTO DE CONTRATO (PDF/DOCX):
                             </span>
 
@@ -3079,7 +3009,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               <input type="file" (change)="handleSimulatedContractUpload($event)" accept=".pdf,.docx" class="hidden">
                             </label>
 
-                            <!-- BOTÓN DE VISTA PREVIA DIRECTA HASTA ABAJO (SÓLO APARECE CUANDO SE SUBE UN PDF MANUAL) -->
+                            <!-- BOTÓN DE VISTA PREVIA DIRECTA -->
                             @if (contractGenerationMode() === 'manual' && uploadedContractFile()) {
                               <div class="p-3.5 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/40 flex items-center justify-between gap-2 animate-fadeIn font-sans mt-2 shadow-lg">
                                 <div class="flex items-center gap-2.5 truncate">
@@ -3087,14 +3017,14 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                     <span class="material-symbols-outlined text-2xl">picture_as_pdf</span>
                                   </div>
                                   <div class="truncate">
-                                    <span class="text-[9px] font-black text-emerald-400 uppercase block font-mono">CONTRATO CARGADO POR EL USUARIO:</span>
+                                    <span class="text-[9px] font-black text-emerald-400 uppercase block font-mono">CONTRATO CARGADO:</span>
                                     <strong class="text-xs text-on-surface font-bold truncate block">{{ uploadedContractFile()?.name }}</strong>
                                   </div>
                                 </div>
 
                                 <button 
                                   (click)="selectedContractTemplate.set('manual'); showContractPreviewModal.set(true)"
-                                  class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 hover:from-emerald-300 hover:to-teal-300 text-black font-black text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] transition-all flex items-center gap-1.5 shrink-0 hover:scale-105"
+                                  class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 hover:from-emerald-300 hover:to-teal-300 text-black font-black text-xs shadow-[0_0_20px_rgba(52,211,153,0.4)] transition-all flex items-center gap-1.5 shrink-0 hover:scale-105"
                                 >
                                   <span class="material-symbols-outlined text-base">visibility</span>
                                   <span>VISTA PREVIA</span>
@@ -3111,67 +3041,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                         
                         <div class="space-y-4">
                           
-                          <!-- NOTIFICAR AL GRUPO MUSICAL CARD -->
-                          <div class="p-4 rounded-2xl bg-surface-container border border-cyan-500/30 space-y-3 shadow-inner">
-                            <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2">
-                              <span class="text-[10px] font-black text-cyan-300 uppercase tracking-wider block flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-base text-cyan-400">campaign</span>
-                                NOTIFICACIÓN AL GRUPO MUSICAL
-                              </span>
-                              @if (artistNotificationSent() || selectedQuote()?.artistNotified) {
-                                <span class="px-2 py-0.5 rounded text-[8px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                                  GRUPO NOTIFICADO ✔
-                                </span>
-                              }
-                            </div>
 
-                            <p class="text-[10px] sm:text-xs text-outline leading-relaxed">
-                              Notifica al representante y miembros de <strong>{{ selectedQuote()?.groupName }}</strong> para que bloqueen de forma definitiva la fecha <strong>{{ selectedQuote()?.proposedDate }}</strong> en su agenda máster.
-                            </p>
-
-                            <!-- CANALES DE NOTIFICACIÓN MULTICANAL -->
-                            <div class="grid grid-cols-3 gap-2">
-                              <button 
-                                (click)="sendArtistWhatsApp.set(!sendArtistWhatsApp())"
-                                [class]="sendArtistWhatsApp() ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300' : 'bg-surface-container-high text-outline border-outline-variant/20 opacity-60'"
-                                class="p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1"
-                              >
-                                <span class="material-symbols-outlined text-lg text-emerald-400">chat</span>
-                                <span class="text-[9px] font-bold">WhatsApp</span>
-                              </button>
-
-                              <button 
-                                (click)="sendArtistEmail.set(!sendArtistEmail())"
-                                [class]="sendArtistEmail() ? 'bg-blue-500/20 border-blue-400 text-blue-300' : 'bg-surface-container-high text-outline border-outline-variant/20 opacity-60'"
-                                class="p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1"
-                              >
-                                <span class="material-symbols-outlined text-lg text-blue-400">mail</span>
-                                <span class="text-[9px] font-bold">Correo</span>
-                              </button>
-
-                              <button 
-                                (click)="sendArtistApp.set(!sendArtistApp())"
-                                [class]="sendArtistApp() ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300' : 'bg-surface-container-high text-outline border-outline-variant/20 opacity-60'"
-                                class="p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1"
-                              >
-                                <span class="material-symbols-outlined text-lg text-cyan-400">space_dashboard</span>
-                                <span class="text-[9px] font-bold">App Acordex</span>
-                              </button>
-                            </div>
-
-                            <button 
-                              (click)="notifyArtistGroup()"
-                              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 via-teal-400 to-cyan-500 hover:from-cyan-400 hover:to-teal-300 text-black font-black text-xs shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02]"
-                            >
-                              <span class="material-symbols-outlined text-base">send</span> ENVIAR ALERTA DE CONFIRMACIÓN AL GRUPO
-                            </button>
-
-                            @if (artistNotificationSent() || selectedQuote()?.artistNotified) {
-                              <div class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[9px] text-center font-mono">
-                                Notificación enviada: <strong>{{ artistNotificationTime() || selectedQuote()?.artistNotifiedTime || 'Hoy' }}</strong>
-                              </div>
-                            }
-                          </div>
 
                           <!-- ACCIONES COMERCIALES DE SEGURIDAD Y APROBACIÓN DE CONTRATO -->
                           <div class="space-y-2.5 pt-2 border-t border-outline-variant/20">
@@ -3550,68 +3420,76 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                               </div>
 
                               <!-- Total Oferta Final -->
-                              <div class="p-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-surface-container-high to-amber-500/20 border-2 border-amber-400/50 flex items-center justify-between mt-2 shadow-sm">
-                                <span class="font-sans font-black text-amber-300 text-xs uppercase tracking-wider">OFERTA TOTAL EN RONDA #{{ entry.round }}:</span>
-                                <strong class="text-amber-300 font-mono font-black text-base sm:text-lg drop-shadow-[0_0_10px_rgba(251,191,36,0.4)]">
+                              <div class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-surface-container-high to-amber-500/20 border-2 border-amber-400/60 flex items-center justify-between mt-2 shadow-lg backdrop-blur-md">
+                                <span class="font-sans font-black text-amber-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                  <span class="material-symbols-outlined text-sm text-amber-400">monetization_on</span>
+                                  OFERTA TOTAL EN RONDA #{{ entry.round }}:
+                                </span>
+                                <strong class="text-amber-300 font-mono font-black text-lg sm:text-xl drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]">
                                   &#36;{{ entry.totalOffered | number:'1.0-0' }} MXN
                                 </strong>
                               </div>
+
                               <!-- CONDICIONES DE PAGO ACORDADAS EN ESTA RONDA DEL HISTORIAL -->
-                              <div class="p-3 rounded-2xl bg-cyan-950/70 border-2 border-cyan-400/50 space-y-2.5 font-sans shadow-lg">
-                                <div class="flex items-center justify-between border-b border-cyan-500/30 pb-1.5">
-                                  <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-sm text-cyan-400">payments</span>
+                              <div class="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/80 via-surface-container-high to-slate-900 border-2 border-cyan-400/60 space-y-3 font-sans shadow-xl backdrop-blur-xl">
+                                <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2">
+                                  <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-2 font-sans">
+                                    <span class="material-symbols-outlined text-base text-cyan-400">payments</span>
                                     CONDICIONES DE PAGO Y CUENTA RECEPTORA EN RONDA #{{ entry.round }}
                                   </span>
-                                  <span class="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+                                  <span class="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/40">
                                     REGISTRO HISTÓRICO
                                   </span>
                                 </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10px]">
-                                  <div class="p-2 rounded-xl bg-surface-container-high border border-emerald-500/30 space-y-0.5">
-                                    <span class="text-outline text-[8px] font-mono uppercase block font-sans">Monto Mínimo (Anticipo):</span>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[10px]">
+                                  <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-emerald-500/30 space-y-1 shadow-sm">
+                                    <span class="text-outline text-[8px] font-bold uppercase tracking-wider block font-sans">Monto Mínimo (Anticipo):</span>
                                     <strong class="text-emerald-400 font-mono text-xs font-black block">&#36;{{ getAdvancePaymentAmount(entry) | number:'1.0-0' }} MXN</strong>
                                     <span class="text-[8px] text-emerald-300 font-mono block">({{ getAdvancePaymentLabel(entry) }})</span>
                                   </div>
-                                  <div class="p-2 rounded-xl bg-surface-container-high border border-amber-500/30 space-y-0.5">
-                                    <span class="text-outline text-[8px] font-mono uppercase block font-sans">Fecha Límite Pago:</span>
+                                  <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-amber-500/30 space-y-1 shadow-sm">
+                                    <span class="text-outline text-[8px] font-bold uppercase tracking-wider block font-sans">Fecha Límite Pago:</span>
                                     <strong class="text-amber-300 font-mono text-xs font-bold block flex items-center gap-1">
                                       <span class="material-symbols-outlined text-[10px] text-amber-400">event</span>
                                       {{ getPaymentDueDate(entry) }}
                                     </strong>
                                   </div>
-                                  <div class="p-2 rounded-xl bg-surface-container-high border border-purple-500/30 space-y-0.5">
-                                    <span class="text-outline text-[8px] font-mono uppercase block font-sans">Cuenta Receptora:</span>
+                                  <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-purple-500/30 space-y-1 shadow-sm">
+                                    <span class="text-outline text-[8px] font-bold uppercase tracking-wider block font-sans">Cuenta Receptora:</span>
                                     <strong class="text-purple-300 font-mono text-[9px] font-bold block truncate">{{ getReceivingCardLabel(entry) }}</strong>
                                   </div>
                                 </div>
 
                                 <!-- HITOS DE PAGO DEFINIDOS EN ESTA RONDA DEL HISTORIAL -->
                                 @if (getPaymentMilestones(entry).length > 0) {
-                                  <div class="pt-2 border-t border-cyan-500/30 space-y-2">
-                                    <span class="text-[10px] font-black text-cyan-300 uppercase tracking-wider block flex items-center gap-1">
+                                  <div class="pt-2.5 border-t border-cyan-500/30 space-y-2.5">
+                                    <span class="text-[10px] font-black text-cyan-300 uppercase tracking-wider block flex items-center gap-1.5">
                                       <span class="material-symbols-outlined text-xs text-cyan-400">calendar_month</span>
-                                      HITOS / PARCIALIDADES DE PAGO PROGRAMADAS EN RONDA #{{ entry.round }}:
+                                      HITOS Y PROGRAMACIÓN DE PARCIALIDADES DE PAGO EN RONDA #{{ entry.round }}:
                                     </span>
-                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                       @for (m of getPaymentMilestones(entry); track m.id; let mIdx = $index) {
-                                        <div class="p-2 rounded-xl bg-surface-container border border-cyan-500/30 flex flex-col justify-between text-[10px] space-y-1 shadow-sm">
-                                          <div class="flex justify-between items-center font-bold text-on-surface border-b border-outline-variant/15 pb-1">
-                                            <span class="truncate">#{{ mIdx + 1 }}. {{ m.label }}</span>
-                                            <span class="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                        <div class="p-2.5 rounded-xl bg-surface-container/90 border border-cyan-500/40 flex flex-col justify-between text-[10px] space-y-1.5 shadow-md hover:border-cyan-400 hover:-translate-y-0.5 transition-all">
+                                          <div class="flex justify-between items-center font-extrabold text-on-surface border-b border-outline-variant/15 pb-1">
+                                            <span class="truncate flex items-center gap-1">
+                                              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                              #{{ mIdx + 1 }}. {{ m.label }}
+                                            </span>
+                                            <span class="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
                                               {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0')) }}
                                             </span>
                                           </div>
                                           <div class="flex justify-between items-baseline font-mono text-[9px]">
                                             <span class="text-outline font-sans">Importe:</span>
-                                            <strong class="text-emerald-400 font-bold">&#36;{{ getMilestoneCalculatedAmount(m, entry.totalOffered) | number:'1.0-0' }} MXN</strong>
+                                            <strong class="text-emerald-400 font-black">&#36;{{ getMilestoneCalculatedAmount(m, entry.totalOffered) | number:'1.0-0' }} MXN</strong>
                                           </div>
                                           <div class="flex justify-between items-baseline font-mono text-[9px] pt-1 border-t border-outline-variant/10">
                                             <span class="text-outline font-sans flex items-center gap-0.5">
                                               <span class="material-symbols-outlined text-[10px] text-amber-400">event</span>
                                               Fecha:
                                             </span>
-                                            <strong class="text-amber-300">{{ m.dueDateOrTimeframe }}</strong>
+                                            <strong class="text-amber-300 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">{{ m.dueDateOrTimeframe }}</strong>
                                           </div>
                                         </div>
                                       }
@@ -3651,16 +3529,16 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                     class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
                   >
                     <span class="material-symbols-outlined text-base">draw</span>
-                    <span>Vista de Contrato Enviado & Seguimiento</span>
+                    <span>Vista De Contrato Enviado & Seguimiento</span>
                   </button>
 
                   <button 
                     (click)="awaitingSignatureTab.set('info_acuerdo')"
-                    [class]="awaitingSignatureTab() === 'info_acuerdo' ? 'bg-surface-bright text-on-surface border-outline-variant/40 shadow-sm' : 'text-outline hover:text-on-surface border-transparent'"
+                    [class]="awaitingSignatureTab() === 'info_acuerdo' ? 'bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow-[0_0_15px_rgba(52,211,153,0.25)]' : 'text-outline hover:text-emerald-300 border-transparent hover:bg-emerald-500/10'"
                     class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
                   >
-                    <span class="material-symbols-outlined text-base">verified</span>
-                    <span>Información Inmutable del Acuerdo</span>
+                    <span class="material-symbols-outlined text-base text-emerald-400">verified</span>
+                    <span>Información Aceptada Del Acuerdo</span>
                   </button>
 
                   <button 
@@ -3669,90 +3547,106 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                     class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
                   >
                     <span class="material-symbols-outlined text-base">assignment_ind</span>
-                    <span>Información Original del Cliente</span>
+                    <span>Información Original Del Cliente</span>
                   </button>
 
-                  @if (isInNegotiationRound() || (negotiationHistory() && negotiationHistory().length > 0)) {
-                    <button 
-                      (click)="awaitingSignatureTab.set('historial')"
-                      [class]="awaitingSignatureTab() === 'historial' ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.2)]' : 'text-outline hover:text-on-surface border-transparent'"
-                      class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
-                    >
-                      <span class="material-symbols-outlined text-base">history</span>
-                      <span>Historial de Negociaciones ({{ negotiationHistory().length }})</span>
-                    </button>
-                  }
+                  <button 
+                    (click)="awaitingSignatureTab.set('historial')"
+                    [class]="awaitingSignatureTab() === 'historial' ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.2)]' : 'text-outline hover:text-on-surface border-transparent'"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
+                  >
+                    <span class="material-symbols-outlined text-base">history</span>
+                    <span>Historial De Negociaciones ({{ negotiationHistory().length }})</span>
+                  </button>
                 </div>
 
                 <!-- SUB-TAB 1: VISTA DE CONTRATO ENVIADO & SEGUIMIENTO -->
                 @if (awaitingSignatureTab() === 'seguimiento_contrato') {
-                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4">
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4 font-sans">
                     
-                    <!-- BANNER SUPERIOR DE ESTADO DE CONTRATO & LECTURA DEL CLIENTE -->
-                    <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-500/15 via-indigo-500/10 to-purple-500/15 border-2 border-purple-500/40 shadow-[0_0_30px_rgba(168,85,247,0.15)] space-y-3 relative overflow-hidden">
-                      <div class="flex flex-wrap items-center justify-between gap-2">
-                        <div class="flex items-center gap-2.5">
-                          <div class="p-2.5 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/30">
-                            <span class="material-symbols-outlined text-2xl">mark_email_read</span>
+                    <!-- 1. BLOQUE SUPERIOR: ESTADO DE VISUALIZACIÓN Y SEGUIMIENTO DE LECTURA -->
+                    <div class="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-purple-950/90 via-indigo-950/80 to-slate-900 border-2 border-purple-500/50 shadow-[0_0_35px_rgba(168,85,247,0.2)] space-y-3.5 relative overflow-hidden backdrop-blur-xl">
+                      <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 sm:gap-4">
+                          <div class="p-3 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-400/40 shrink-0 shadow-lg shadow-purple-500/10 ring-2 ring-purple-500/20">
+                            <span class="material-symbols-outlined text-2xl sm:text-3xl animate-pulse">mark_email_read</span>
                           </div>
-                          <div>
-                            <span class="text-[9px] font-black text-purple-300 uppercase tracking-widest block font-mono">
-                              FASE 4 • CONTRATO ENVIADO EN ESPERA DE FIRMA DIGITAL
-                            </span>
-                            <h2 class="text-sm sm:text-base font-black text-on-surface flex items-center gap-2">
+                          <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                              <span class="text-[9px] sm:text-[10px] font-black text-purple-400 uppercase tracking-widest block font-sans">FASE 4 • CONTRATO ENVIADO EN ESPERA DE FIRMA DIGITAL</span>
+                              <span class="px-2 py-0.5 rounded-full text-[8px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">FIRMABLE</span>
+                            </div>
+                            <h4 class="text-sm sm:text-base font-black text-on-surface flex items-center gap-2 font-sans">
                               <span>DOCUMENTO ENVIADO A {{ selectedQuote()?.clientName | uppercase }}</span>
-                              <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                                {{ selectedQuote()?.id }}
-                              </span>
-                            </h2>
+                              <span class="text-purple-300 font-mono text-xs sm:text-sm font-bold bg-purple-500/20 px-2 py-0.5 rounded border border-purple-500/30">&#35;{{ selectedQuote()?.id }}</span>
+                            </h4>
                           </div>
                         </div>
 
-                        <!-- BADGE DE SEGUIMIENTO DE LECTURA DEL CLIENTE -->
-                        <div class="flex items-center gap-2">
+                        <!-- ESTATUS DE LECTURA DE CLIENTE E INDICADOR INTERACTIVO DE DEMO -->
+                        <div class="flex items-center gap-2 shrink-0">
                           @if (clientViewed()) {
-                            <div class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-xs font-black flex items-center gap-1.5 shadow-[0_0_15px_rgba(52,211,153,0.3)]">
-                              <span class="material-symbols-outlined text-sm text-emerald-400">visibility</span>
-                              <span>VISTO POR EL CLIENTE ✔</span>
+                            <div class="px-3.5 py-1.5 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-xs font-black flex items-center gap-2 shadow-[0_0_20px_rgba(52,211,153,0.3)]">
+                              <span class="material-symbols-outlined text-base text-emerald-400 animate-pulse">visibility</span>
+                              <span>CONTRATO VISTO POR EL CLIENTE ✔</span>
                             </div>
                           } @else {
-                            <div class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-black flex items-center gap-1.5 shadow-sm">
-                              <span class="material-symbols-outlined text-sm text-amber-400">hourglass_top</span>
+                            <div class="px-3.5 py-1.5 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-400/40 text-xs font-black flex items-center gap-2 shadow-sm">
+                              <span class="material-symbols-outlined text-base text-amber-400 animate-spin">hourglass_top</span>
                               <span>PENDIENTE DE LECTURA ⏳</span>
                             </div>
                           }
+
+                          <!-- BOTÓN SIMULADOR INTERACTIVO DE LECTURA (PARA PROBAR AMBOS ESTADOS Y REGLA DE REVERSIÓN) -->
+                          <button 
+                            (click)="clientViewed.set(!clientViewed())"
+                            class="px-2.5 py-1.5 rounded-xl bg-surface-bright hover:bg-surface-container-high text-outline hover:text-on-surface font-mono text-[9px] border border-outline-variant/30 transition-all"
+                            title="Alternar estado de lectura para probar regla de reversión"
+                          >
+                            [Simular: {{ clientViewed() ? 'Marcar NO visto' : 'Marcar Visto' }}]
+                          </button>
                         </div>
                       </div>
 
-                      <div class="p-3 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 text-xs text-on-surface/90 flex flex-wrap items-center justify-between gap-2">
-                        <span class="text-outline">
-                          @if (clientViewed()) {
-                            <span>• El cliente abrió y revisó el borrador de contrato el <strong>{{ clientViewedTime() }}</strong>.</span>
-                          } @else {
-                            <span>• Notificación enviada al cliente. El documento aún no ha sido abierto en el portal.</span>
-                          }
-                        </span>
-                        <span class="font-mono text-[10px] text-purple-300 font-bold">Estado: Pendiente de Firma Digital</span>
+                      <!-- TIMESTAMP EXACTO DE ENVÍO Y APERTURA -->
+                      <div class="p-3 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 text-xs text-on-surface/90 flex flex-wrap items-center justify-between gap-3 font-mono">
+                        <div class="flex flex-wrap items-center gap-4 text-outline">
+                          <!-- SIEMPRE SE MUESTRA LA FECHA Y HORA DE EMISIÓN DE DICHO CONTRATO -->
+                          <div class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm text-cyan-400">send</span>
+                            <span>Emisión Original: <strong class="text-cyan-300 font-bold font-sans">{{ contractSentTime() }}</strong></span>
+                          </div>
+
+                          <!-- ESTATUS DE VISUALIZACIÓN / APERTURA POR PARTE DEL CLIENTE -->
+                          <div class="flex items-center gap-1.5 border-l border-outline-variant/30 pl-3">
+                            <span class="material-symbols-outlined text-sm text-purple-400">schedule</span>
+                            @if (clientViewed()) {
+                              <span>Última Apertura: <strong class="text-emerald-400 font-bold font-sans">{{ clientViewedTime() }}</strong></span>
+                            } @else {
+                              <span>Estatus de Lectura: <strong class="text-amber-300 font-sans">Sin lectura por el cliente aún</strong></span>
+                            }
+                          </div>
+                        </div>
+                        <span class="text-[10px] text-purple-300 font-extrabold bg-purple-500/20 px-2 py-0.5 rounded border border-purple-500/30 font-sans">Firma Digital 0/2 Recibidas</span>
                       </div>
                     </div>
 
-                    <!-- GRID DE 2 COLUMNAS PARA FASE 4 -->
+                    <!-- 2. RESUMEN DEL CONTRATO Y ESTADO DE FIRMAS -->
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
                       
-                      <!-- COLUMNA IZQUIERDA: DETALLES DEL CONTRATO ENVIADO & VISUALIZACIÓN (6 COLS) -->
+                      <!-- RESUMEN CLAVE DEL CONTRATO Y VISTA PREVIA (6 COLS) -->
                       <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl flex flex-col justify-between">
                         <div class="space-y-3.5">
-                          <div class="border-b border-outline-variant/20 pb-2.5 flex items-center justify-between">
-                            <span class="text-[10px] font-black text-purple-300 uppercase tracking-wider block flex items-center gap-1.5">
-                              <span class="material-symbols-outlined text-base text-purple-400">picture_as_pdf</span>
-                              CONTRATO ENVIADO A FIRMA
+                          <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
+                            <span class="text-[10px] font-black text-purple-300 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
+                              <span class="material-symbols-outlined text-sm text-purple-400">description</span> RESUMEN CLAVE DEL CONTRATO
                             </span>
                             <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                              DOCUMENTO FIRMABLE
+                              PDF FIRMABLE
                             </span>
                           </div>
 
-                          <!-- TARJETA DEL ARCHIVO DE CONTRATO INMUTABLE -->
+                          <!-- DOCUMENT CARD & PREVIEW BUTTON -->
                           <div class="p-4 rounded-2xl bg-gradient-to-br from-surface-container via-surface-container-high to-surface-container border-2 border-purple-500/40 space-y-3 text-xs shadow-inner">
                             <div class="flex items-center justify-between">
                               <div class="flex items-center gap-3">
@@ -3769,123 +3663,325 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                                 </div>
                               </div>
 
-                              <!-- BOTÓN VISTA PREVIA -->
+                              <!-- BOTÓN FUNCIONAL DE VISTA PREVIA DEL CONTRATO -->
                               <button 
                                 (click)="showContractPreviewModal.set(true)"
                                 class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-500/30 to-indigo-500/30 hover:from-purple-500/40 hover:to-indigo-500/40 text-purple-200 font-extrabold text-xs border border-purple-400/50 transition-all flex items-center gap-1.5 hover:scale-105 shrink-0 shadow-md"
                               >
                                 <span class="material-symbols-outlined text-base text-purple-300">visibility</span>
-                                <span>Abrir Vista Previa</span>
+                                <span>Vista Previa</span>
                               </button>
                             </div>
 
-                            <div class="p-3 rounded-xl bg-surface-container-high border border-outline-variant/20 space-y-1 text-[11px]">
+                            <!-- DATOS ESSENCIALES -->
+                            <div class="p-3 rounded-xl bg-surface-container-high border border-outline-variant/20 space-y-1.5 text-[11px] font-sans">
                               <div class="flex justify-between">
-                                <span class="text-outline">• Agrupación:</span>
-                                <strong class="text-amber-300">{{ selectedQuote()?.groupName }}</strong>
+                                <span class="text-outline">• Grupo Musical:</span>
+                                <strong class="text-amber-300 font-bold">{{ selectedQuote()?.groupName }}</strong>
                               </div>
                               <div class="flex justify-between">
-                                <span class="text-outline">• Recinto:</span>
-                                <strong class="text-on-surface">{{ selectedQuote()?.venue }}</strong>
+                                <span class="text-outline">• Recinto & Ubicación:</span>
+                                <strong class="text-on-surface truncate max-w-[180px]">{{ selectedQuote()?.venue }}</strong>
                               </div>
-                              <div class="flex justify-between border-t border-outline-variant/20 pt-1">
-                                <span class="text-outline">• Total Firmable Pactado:</span>
-                                <strong class="text-emerald-400 font-mono text-xs font-black">$ {{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</strong>
+                              <div class="flex justify-between">
+                                <span class="text-outline">• Fecha del Evento:</span>
+                                <strong class="text-emerald-400 font-mono font-bold">{{ selectedQuote()?.proposedDate }}</strong>
                               </div>
-                            </div>
-                          </div>
-
-                          <div class="p-3.5 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2 text-xs">
-                            <span class="text-[9px] font-black text-purple-300 uppercase tracking-wider block font-sans">
-                              ESTADO DE FIRMAS DIGITALES:
-                            </span>
-
-                            <div class="space-y-1.5">
-                              <div class="flex items-center justify-between p-2 rounded-xl bg-surface-container-high border border-emerald-500/30 text-[11px]">
-                                <span class="font-bold text-on-surface">1. Acordex Music (Disquera):</span>
-                                <span class="text-emerald-400 font-mono font-bold text-[10px]">FIRMADO ✔</span>
-                              </div>
-                              <div class="flex items-center justify-between p-2 rounded-xl bg-surface-container-high border border-amber-500/30 text-[11px]">
-                                <span class="font-bold text-on-surface">2. Cliente ({{ selectedQuote()?.clientName }}):</span>
-                                <span class="text-amber-300 font-mono font-bold text-[10px]">ESPERANDO FIRMA ⏳</span>
+                              <div class="flex justify-between border-t border-outline-variant/20 pt-1.5">
+                                <span class="text-outline font-bold">• Total Comercial Pactado:</span>
+                                <strong class="text-amber-300 font-mono text-sm font-black">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</strong>
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <!-- ACCIÓN DE REGRESO A FASE 3 (COTIZACIÓN ACEPTADA) -->
+                        <!-- ACCIÓN DE REGRESO A FASE 3 CON REGLA DINÁMICA -->
                         <div class="pt-3 border-t border-outline-variant/20 space-y-2">
                           <span class="text-[9px] font-black text-amber-400 uppercase tracking-wider block font-sans">
-                            CORRECCIÓN DE CONTRATO Y CONTROL DE FASE:
+                            CONTROL DE CONTRATO Y REVERSIÓN DE FASE:
                           </span>
 
                           <button 
-                            (click)="showContractRollbackModal.set(true)"
-                            class="w-full py-3 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black text-xs transition-all flex items-center justify-center gap-2 hover:scale-[1.02] shadow-sm"
+                            (click)="handleContractRollbackClick()"
+                            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 hover:from-amber-500/30 hover:to-amber-500/30 border border-amber-500/40 text-amber-300 font-black text-xs transition-all flex items-center justify-center gap-2 hover:scale-[1.02] shadow-md"
                           >
                             <span class="material-symbols-outlined text-base text-amber-400">undo</span>
-                            <span>REGRESAR A FASE 3 (COTIZACIÓN ACEPTADA)</span>
+                            <span>REGRESAR A FASE 3 (MODIFICAR & GENERAR NUEVO CONTRATO)</span>
                           </button>
                         </div>
                       </div>
 
-                      <!-- COLUMNA DERECHA: NOTIFICACIONES & RESUMEN DE SEGUIMIENTO (6 COLS) -->
+                      <!-- ESTADO DETALLADO DE FIRMAS DIGITALES (6 COLS) -->
                       <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl flex flex-col justify-between">
-                        <div class="space-y-4">
-                          <div class="p-4 rounded-2xl bg-surface-container border border-cyan-500/30 space-y-3 shadow-inner">
-                            <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2">
-                              <span class="text-[10px] font-black text-cyan-300 uppercase tracking-wider block flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-base text-cyan-400">chat</span>
-                                CONTACTO Y RECORDATORIO AL CLIENTE
-                              </span>
-                              <span class="px-2 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                                RECORDATORIO
-                              </span>
-                            </div>
-
-                            <p class="text-xs text-on-surface/90 leading-relaxed font-sans">
-                              Puedes enviar un recordatorio directo a <strong>{{ selectedQuote()?.clientName }}</strong> por WhatsApp para agilizar la firma digital del contrato.
-                            </p>
-
-                            <button 
-                              (click)="contactWhatsApp()"
-                              class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-black font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
-                            >
-                              <span class="material-symbols-outlined text-lg">chat</span>
-                              <span>ENVIAR RECORDATORIO DE FIRMA POR WHATSAPP</span>
-                            </button>
+                        <div class="space-y-3.5">
+                          <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
+                            <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
+                              <span class="material-symbols-outlined text-sm text-emerald-400">draw</span> ESTADO DE FIRMAS DIGITALES
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                              VALIDEZ JURÍDICA
+                            </span>
                           </div>
 
-                          <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2.5 text-xs">
-                            <span class="text-[10px] font-black text-purple-300 uppercase tracking-wider block">
-                              DETALLES DE LA SOLICITUD DE FIRMA
-                            </span>
-                            <div class="space-y-1.5 text-[11px]">
-                              <div class="flex justify-between">
-                                <span class="text-outline">• Correo Notificado:</span>
-                                <strong class="text-on-surface">{{ selectedQuote()?.clientEmail || 'cliente@ejemplo.com' }}</strong>
+                          <div class="space-y-2.5">
+                            <!-- 1. ACORDEX DISQUERA -->
+                            <div class="p-3 rounded-2xl bg-surface-container/90 border border-emerald-500/40 flex items-center justify-between text-xs space-y-0 shadow-sm">
+                              <div class="flex items-center gap-2.5">
+                                <div class="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+                                  <span class="material-symbols-outlined text-lg">verified_user</span>
+                                </div>
+                                <div>
+                                  <strong class="text-on-surface font-bold text-xs block">1. Representante Acordex Music</strong>
+                                  <span class="text-[9px] text-outline font-mono">Disquera / Sello Discográfico</span>
+                                </div>
                               </div>
-                              <div class="flex justify-between">
-                                <span class="text-outline">• Teléfono / WhatsApp:</span>
-                                <strong class="text-on-surface">{{ selectedQuote()?.representativePhone || 'N/A' }}</strong>
+                              <div class="text-right">
+                                <span class="px-2.5 py-1 rounded-xl text-[9px] font-mono font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 block">
+                                  FIRMADO ✔
+                                </span>
+                                <span class="text-[8px] text-emerald-400 font-mono block pt-0.5">Hash SHA256 OK</span>
                               </div>
-                              <div class="flex justify-between">
-                                <span class="text-outline">• Código de Seguridad HASH:</span>
-                                <strong class="text-purple-300 font-mono text-[10px]">SHA256-{{ selectedQuote()?.id }}-VERIFIED</strong>
+                            </div>
+
+                            <!-- 2. REPRESENTANTE DEL GRUPO MUSICAL -->
+                            <div class="p-3 rounded-2xl bg-surface-container/90 border border-emerald-500/40 flex items-center justify-between text-xs space-y-0 shadow-sm">
+                              <div class="flex items-center gap-2.5">
+                                <div class="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+                                  <span class="material-symbols-outlined text-lg">groups</span>
+                                </div>
+                                <div>
+                                  <strong class="text-on-surface font-bold text-xs block">2. {{ selectedQuote()?.groupName }}</strong>
+                                  <span class="text-[9px] text-outline font-mono">Representante Artístico</span>
+                                </div>
+                              </div>
+                              <div class="text-right">
+                                <span class="px-2.5 py-1 rounded-xl text-[9px] font-mono font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 block">
+                                  CONFIRMADO ✔
+                                </span>
+                                <span class="text-[8px] text-emerald-400 font-mono block pt-0.5">Sello Digital OK</span>
+                              </div>
+                            </div>
+
+                            <!-- 3. CLIENTE CONTRATANTE -->
+                            <div class="p-3 rounded-2xl bg-surface-container/90 border border-amber-500/40 flex items-center justify-between text-xs space-y-0 shadow-sm">
+                              <div class="flex items-center gap-2.5">
+                                <div class="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+                                  <span class="material-symbols-outlined text-lg">person_edit</span>
+                                </div>
+                                <div>
+                                  <strong class="text-on-surface font-bold text-xs block">3. {{ selectedQuote()?.clientName }}</strong>
+                                  <span class="text-[9px] text-outline font-mono">Cliente / Contratante</span>
+                                </div>
+                              </div>
+                              <div class="text-right">
+                                <span class="px-2.5 py-1 rounded-xl text-[9px] font-mono font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 block animate-pulse">
+                                  PENDIENTE ⏳
+                                </span>
+                                <span class="text-[8px] text-amber-400 font-mono block pt-0.5">En espera de firma</span>
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <!-- FOOTER ACTION BACK BUTTON -->
-                        <div class="pt-3 border-t border-outline-variant/20">
+                        <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 text-[10px] font-mono text-outline flex justify-between items-center">
+                          <span>Código Hash de Autenticidad:</span>
+                          <strong class="text-purple-300 font-bold">SHA256-{{ selectedQuote()?.id }}-ACORDEX-VERIFIED</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 3. SISTEMA DE AVISOS Y BITÁCORA DUAL (CLIENTE & GRUPO MUSICAL) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      
+                      <!-- SECCIÓN A: AVISOS Y BITÁCORA AL CLIENTE (6 COLS) -->
+                      <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-cyan-500/40 space-y-4 shadow-xl backdrop-blur-xl">
+                        <div class="border-b border-cyan-500/30 pb-2 flex items-center justify-between">
+                          <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-base text-cyan-400">send</span>
+                            SISTEMA DE AVISOS AL CLIENTE
+                          </span>
+                          <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                            ENVÍO AL CLIENTE
+                          </span>
+                        </div>
+
+                        <!-- SELECCIÓN MULTICANAL DE ENVÍO -->
+                        <div class="space-y-2 text-xs">
+                          <span class="text-[9px] font-bold text-outline uppercase block">Canales de Notificación:</span>
+                          <div class="grid grid-cols-3 gap-2">
+                            <button 
+                              (click)="clientNoticeAcordex.set(!clientNoticeAcordex())"
+                              [class]="clientNoticeAcordex() ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                            >
+                              <span class="material-symbols-outlined text-base text-cyan-400">space_dashboard</span>
+                              <span class="text-[9px]">Platform</span>
+                            </button>
+
+                            <button 
+                              (click)="clientNoticeWhatsapp.set(!clientNoticeWhatsapp())"
+                              [class]="clientNoticeWhatsapp() ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                            >
+                              <span class="material-symbols-outlined text-base text-emerald-400">chat</span>
+                              <span class="text-[9px]">WhatsApp</span>
+                            </button>
+
+                            <button 
+                              (click)="clientNoticeEmail.set(!clientNoticeEmail())"
+                              [class]="clientNoticeEmail() ? 'bg-blue-500/20 border-blue-400 text-blue-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                            >
+                              <span class="material-symbols-outlined text-base text-blue-400">mail</span>
+                              <span class="text-[9px]">Correo</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- MENSAJE Y NOTA DE AVISO AL CLIENTE -->
+                        <div class="space-y-2 text-xs">
+                          <div class="p-3 rounded-xl bg-surface-container border border-cyan-500/30 text-xs">
+                            <span class="text-[9px] font-bold text-cyan-400 uppercase tracking-wider block mb-0.5">Asunto de Notificación al Cliente:</span>
+                            <strong class="text-on-surface text-xs block font-bold">Recordatorio de Firma Digital de Contrato Pendiente</strong>
+                            <p class="text-[10px] text-outline mt-1 leading-normal font-mono">Se enviará la alerta formal solicitando la firma digital del contrato emitido.</p>
+                          </div>
+
+                          <input 
+                            type="text"
+                            [value]="clientNoticeCustomText()"
+                            (input)="clientNoticeCustomText.set($any($event.target).value)"
+                            placeholder="Nota adicional o comentario personalizado (opcional)..."
+                            class="w-full p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface"
+                          />
+
                           <button 
-                            (click)="showContractRollbackModal.set(true)"
-                            class="w-full py-2.5 px-3 rounded-xl bg-surface-bright hover:bg-surface-container-high text-amber-300 font-bold text-xs border border-amber-500/30 transition-all flex items-center justify-center gap-1.5"
+                            (click)="sendClientNoticeAction()"
+                            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-400 via-teal-400 to-cyan-500 text-black font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
                           >
-                            <span class="material-symbols-outlined text-sm text-amber-400">history_toggle_off</span>
-                            <span>Reversar Contrato y Modificar en Fase 3</span>
+                            <span class="material-symbols-outlined text-base">send</span>
+                            <span>ENVIAR AVISO DE FIRMA PENDIENTE AL CLIENTE</span>
                           </button>
+                        </div>
+
+                        <!-- BITÁCORA HISTÓRICA DE AVISOS MANDADOS AL CLIENTE -->
+                        <div class="space-y-2 pt-2 border-t border-cyan-500/20">
+                          <span class="text-[9px] font-black text-cyan-300 uppercase tracking-wider block flex items-center justify-between">
+                            <span>BITÁCORA HISTÓRICA DE AVISOS (CLIENTE):</span>
+                            <span class="text-[8px] font-mono text-outline font-normal">{{ clientNoticesLog().length }} Envíos Registrados</span>
+                          </span>
+
+                          <div class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                            @for (log of clientNoticesLog(); track log.id) {
+                              <div class="p-2.5 rounded-xl bg-surface-container/90 border border-outline-variant/20 text-[10px] space-y-1">
+                                <div class="flex items-center justify-between">
+                                  <span class="font-bold text-cyan-300 font-mono">{{ log.id }} • {{ log.timestamp }}</span>
+                                  <div class="flex items-center gap-1 font-mono text-[8px]">
+                                    @if (log.channels.includes('acordex')) { <span class="px-1 bg-cyan-500/20 text-cyan-300 rounded">App</span> }
+                                    @if (log.channels.includes('whatsapp')) { <span class="px-1 bg-emerald-500/20 text-emerald-300 rounded">WA</span> }
+                                    @if (log.channels.includes('email')) { <span class="px-1 bg-blue-500/20 text-blue-300 rounded">Mail</span> }
+                                  </div>
+                                </div>
+                                <p class="text-on-surface/90 text-xs italic">&ldquo;{{ log.message }}&rdquo;</p>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- SECCIÓN B: AVISOS Y BITÁCORA AL GRUPO MUSICAL (6 COLS) -->
+                      <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-amber-500/40 space-y-4 shadow-xl backdrop-blur-xl">
+                        <div class="border-b border-amber-500/30 pb-2 flex items-center justify-between">
+                          <span class="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-base text-amber-400">campaign</span>
+                            SISTEMA DE AVISOS AL GRUPO MUSICAL
+                          </span>
+                          <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            ENVÍO AL GRUPO
+                          </span>
+                        </div>
+
+                        <!-- SELECCIÓN MULTICANAL DE ENVÍO -->
+                        <div class="space-y-2 text-xs">
+                          <span class="text-[9px] font-bold text-outline uppercase block">Canales de Notificación:</span>
+                          <div class="grid grid-cols-3 gap-2">
+                            <button 
+                              (click)="groupNoticeAcordex.set(!groupNoticeAcordex())"
+                              [class]="groupNoticeAcordex() ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                            >
+                              <span class="material-symbols-outlined text-base text-amber-400">space_dashboard</span>
+                              <span class="text-[9px]">Platform</span>
+                            </button>
+
+                            <button 
+                              (click)="groupNoticeWhatsapp.set(!groupNoticeWhatsapp())"
+                              [class]="groupNoticeWhatsapp() ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                            >
+                              <span class="material-symbols-outlined text-base text-emerald-400">chat</span>
+                              <span class="text-[9px]">WhatsApp</span>
+                            </button>
+
+                            <button 
+                              (click)="groupNoticeEmail.set(!groupNoticeEmail())"
+                              [class]="groupNoticeEmail() ? 'bg-blue-500/20 border-blue-400 text-blue-300 font-bold' : 'bg-surface-container text-outline opacity-60'"
+                              class="p-2 rounded-xl border text-center transition-all flex flex-col items-center gap-1"
+                            >
+                              <span class="material-symbols-outlined text-base text-blue-400">mail</span>
+                              <span class="text-[9px]">Correo</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- MENSAJE Y NOTA DE AVISO AL GRUPO MUSICAL -->
+                        <div class="space-y-2 text-xs">
+                          <div class="p-3 rounded-xl bg-surface-container border border-amber-500/30 text-xs">
+                            <span class="text-[9px] font-bold text-amber-400 uppercase tracking-wider block mb-0.5">Asunto de Notificación al Grupo Musical:</span>
+                            <strong class="text-amber-300 text-xs block font-bold">Aviso de Nuevo Evento Agendado</strong>
+                            <p class="text-[10px] text-on-surface/90 mt-1 leading-normal font-mono">
+                              Evento el día <span class="text-emerald-400 font-bold">{{ selectedQuote()?.proposedDate }}</span> en el recinto <span class="text-cyan-300 font-bold">{{ selectedQuote()?.venue }}</span>.
+                            </p>
+                          </div>
+
+                          <input 
+                            type="text"
+                            [value]="groupNoticeCustomText()"
+                            (input)="groupNoticeCustomText.set($any($event.target).value)"
+                            placeholder="Nota adicional para los músicos (opcional)..."
+                            class="w-full p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface"
+                          />
+
+                          <button 
+                            (click)="sendGroupNoticeAction()"
+                            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-xs shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
+                          >
+                            <span class="material-symbols-outlined text-base">campaign</span>
+                            <span>ENVIAR AVISO DE NUEVO EVENTO AL GRUPO</span>
+                          </button>
+                        </div>
+
+                        <!-- BITÁCORA HISTÓRICA DE AVISOS MANDADOS AL GRUPO MUSICAL -->
+                        <div class="space-y-2 pt-2 border-t border-amber-500/20">
+                          <span class="text-[9px] font-black text-amber-300 uppercase tracking-wider block flex items-center justify-between">
+                            <span>BITÁCORA HISTÓRICA DE AVISOS (GRUPO):</span>
+                            <span class="text-[8px] font-mono text-outline font-normal">{{ groupNoticesLog().length }} Envíos Registrados</span>
+                          </span>
+
+                          <div class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                            @for (log of groupNoticesLog(); track log.id) {
+                              <div class="p-2.5 rounded-xl bg-surface-container/90 border border-outline-variant/20 text-[10px] space-y-1">
+                                <div class="flex items-center justify-between">
+                                  <span class="font-bold text-amber-300 font-mono">{{ log.id }} • {{ log.timestamp }}</span>
+                                  <div class="flex items-center gap-1 font-mono text-[8px]">
+                                    @if (log.channels.includes('acordex')) { <span class="px-1 bg-amber-500/20 text-amber-300 rounded">App</span> }
+                                    @if (log.channels.includes('whatsapp')) { <span class="px-1 bg-emerald-500/20 text-emerald-300 rounded">WA</span> }
+                                    @if (log.channels.includes('email')) { <span class="px-1 bg-blue-500/20 text-blue-300 rounded">Mail</span> }
+                                  </div>
+                                </div>
+                                <p class="text-on-surface/90 text-xs italic">&ldquo;{{ log.message }}&rdquo;</p>
+                              </div>
+                            }
+                          </div>
                         </div>
                       </div>
 
@@ -3894,192 +3990,1659 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
                   </div>
                 }
 
-                <!-- SUB-TAB 2: INFORMACIÓN INMUTABLE DEL ACUERDO -->
+                <!-- SUB-TAB 2: INFORMACIÓN ACEPTADA DEL ACUERDO (DATOS DE CONTRATO PACTADOS EN FASE 3) -->
                 @if (awaitingSignatureTab() === 'info_acuerdo') {
-                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4">
-                    <div class="p-4 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl">
-                      <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
-                        <span class="text-[10px] font-black text-emerald-400 uppercase tracking-wider block flex items-center gap-1.5">
-                          <span class="material-symbols-outlined text-base text-emerald-400">verified</span>
-                          INFORMACIÓN INMUTABLE DEL ACUERDO PACTADO (FASE 4)
-                        </span>
-                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                          DATOS CONTRATADOS
-                        </span>
-                      </div>
-
-                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                        <div class="p-3.5 rounded-2xl bg-surface-container border border-emerald-500/30 space-y-2">
-                          <span class="text-emerald-400 text-[9px] font-bold uppercase block font-sans">1. Show & Horarios Contratados:</span>
-                          <div class="space-y-1 text-[11px]">
-                            <div class="flex justify-between">
-                              <span class="text-outline">Duración:</span>
-                              <strong class="text-amber-300 font-mono font-bold">{{ selectedQuote()?.durationHours || 3 }} Horas</strong>
-                            </div>
-                            <div class="flex justify-between">
-                              <span class="text-outline">Formato:</span>
-                              <strong class="text-purple-300 uppercase font-bold">{{ hasQuoteTandas(selectedQuote()) ? 'Tandas' : 'Continuo' }}</strong>
-                            </div>
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4 font-sans">
+                    <div class="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-emerald-500/40 space-y-4 shadow-xl backdrop-blur-xl">
+                      
+                      <!-- ENCABEZADO DE SECCIÓN -->
+                      <div class="border-b border-emerald-500/30 pb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2.5">
+                          <div class="p-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            <span class="material-symbols-outlined text-xl">verified</span>
+                          </div>
+                          <div>
+                            <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest block font-sans">TRAZABILIDAD COMERCIAL COMPLETA • FASE 4</span>
+                            <h3 class="text-sm sm:text-base font-black text-on-surface flex items-center gap-2 font-sans">
+                              <span>INFORMACIÓN ACEPTADA DEL ACUERDO Y DATOS DE CONTRATO</span>
+                            </h3>
                           </div>
                         </div>
 
-                        <div class="p-3.5 rounded-2xl bg-surface-container border border-purple-500/30 space-y-2">
-                          <span class="text-purple-300 text-[9px] font-bold uppercase block font-sans">2. Equipo de Audio:</span>
-                          <div class="space-y-1 text-[11px]">
-                            <div class="flex justify-between">
-                              <span class="text-outline">Sistema:</span>
-                              <strong class="text-purple-300 font-bold">
-                                {{ selectedQuote()?.soundOption === 'proveedor' || (selectedQuote()?.soundCost && selectedQuote()!.soundCost! > 0) ? 'Incluido por Acordex' : 'Proporcionado por Cliente' }}
+                        <span class="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 shadow-sm">
+                          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                          CONTRATADO EN FASE 3
+                        </span>
+                      </div>
+
+                      <!-- DESGLOSE DE 5 BLOQUES COMPLETOS HEREDADOS DE FASE 3 -->
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
+                        
+                        <!-- BLOQUE 1: DURACIÓN Y HORARIOS DEL SHOW -->
+                        <div class="p-3.5 rounded-2xl bg-surface-container/90 border border-emerald-500/30 space-y-2.5 shadow-md hover:border-emerald-400/50 transition-all">
+                          <span class="text-emerald-400 text-[10px] font-black uppercase block font-sans tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">schedule</span> 1. Duración & Horario del Show:
+                          </span>
+                          <div class="space-y-1.5">
+                            <div class="flex justify-between text-[11px]">
+                              <span class="text-outline">Duración Contratada:</span>
+                              <strong class="text-amber-300 font-mono font-black">{{ selectedQuote()?.durationHours || 3 }} Horas Totales</strong>
+                            </div>
+                            <div class="flex justify-between text-[11px]">
+                              <span class="text-outline">Formato Presentación:</span>
+                              <strong class="text-purple-300 font-sans font-bold">
+                                {{ hasQuoteTandas(selectedQuote()) ? 'Tandas / Bloques' : 'Show Continuo' }}
                               </strong>
                             </div>
-                            <div class="flex justify-between">
-                              <span class="text-outline">Costo Audio:</span>
-                              <strong class="text-on-surface font-mono">$ {{ (selectedQuote()?.soundCost || 0) | number:'1.0-0' }} MXN</strong>
+                          </div>
+
+                          <!-- DESGLOSE DE TANDAS O CONTINUO -->
+                          <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 space-y-1 font-mono text-[10px]">
+                            @if (hasQuoteTandas(selectedQuote())) {
+                              @for (block of getQuoteShowBlocks(selectedQuote()); track block.id; let bIdx = $index) {
+                                <div class="flex justify-between text-on-surface">
+                                  <span class="text-amber-300 font-sans">• Tanda #{{ bIdx + 1 }}:</span>
+                                  <strong class="font-bold">{{ block.startTime }} - {{ block.endTime }} hrs</strong>
+                                </div>
+                              }
+                            } @else {
+                              <div class="flex justify-between text-cyan-300">
+                                <span class="font-sans">• Show Continuo:</span>
+                                <strong class="font-bold">21:00 a 00:00 hrs</strong>
+                              </div>
+                            }
+                          </div>
+                        </div>
+
+                        <!-- BLOQUE 2: SERVICIO DE AUDIO & LOGÍSTICA -->
+                        <div class="p-3.5 rounded-2xl bg-surface-container/90 border border-purple-500/30 space-y-2.5 shadow-md hover:border-purple-400/50 transition-all">
+                          <span class="text-purple-300 text-[10px] font-black uppercase block font-sans tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">speaker</span> 2. Servicio de Audio & Recinto:
+                          </span>
+                          <div class="space-y-1.5">
+                            <div class="flex justify-between text-[11px]">
+                              <span class="text-outline">Servicio de Audio:</span>
+                              <strong class="text-purple-300 font-sans font-bold">
+                                {{ selectedQuote()?.soundOption === 'proveedor' || (selectedQuote()?.soundCost && selectedQuote()!.soundCost! > 0) ? 'Incluye Audio Disquera' : 'Trae el Cliente' }}
+                              </strong>
+                            </div>
+                            <div class="flex justify-between text-[11px]">
+                              <span class="text-outline">Recinto / Lugar:</span>
+                              <strong class="text-on-surface truncate max-w-[140px] font-sans">{{ selectedQuote()?.venue }}</strong>
+                            </div>
+                          </div>
+
+                          <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 space-y-1 font-sans text-[10px]">
+                            <span class="text-outline block text-[9px] uppercase font-bold">Dirección Completa:</span>
+                            <p class="font-bold text-on-surface truncate">{{ selectedQuote()?.eventAddress || (selectedQuote()?.venue + ', ' + selectedQuote()?.city) }}</p>
+                          </div>
+                        </div>
+
+                        <!-- BLOQUE 3: DESGLOSE FINANCIERO ACEPTADO -->
+                        <div class="p-3.5 rounded-2xl bg-surface-container/90 border-2 border-amber-400/50 space-y-2.5 font-mono shadow-xl">
+                          <div class="flex items-center justify-between border-b border-amber-400/20 pb-1.5">
+                            <span class="text-amber-400 text-[10px] font-black uppercase tracking-wider font-sans flex items-center gap-1">
+                              <span class="material-symbols-outlined text-sm text-amber-400">receipt_long</span> 3. DESGLOSE FINANCIERO ACEPTADO:
+                            </span>
+                            <span class="text-[8px] font-bold text-cyan-400 bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30">5% ACORDEX</span>
+                          </div>
+
+                          <div class="space-y-1.5 text-[10px]">
+                            <div class="flex justify-between text-outline">
+                              <span>Honorarios del Grupo:</span>
+                              <strong class="text-on-surface">&#36;{{ (selectedQuote()?.artistFee || 35000) | number:'1.0-0' }} MXN</strong>
+                            </div>
+
+                            <div class="flex justify-between text-outline">
+                              <span>Viáticos & Hospedaje:</span>
+                              <strong class="text-on-surface">&#36;{{ (selectedQuote()?.viaticosCost || 8500) | number:'1.0-0' }} MXN</strong>
+                            </div>
+
+                            <div class="flex justify-between text-outline">
+                              <span>Equipo de Audio Profesional:</span>
+                              <strong class="text-purple-300">&#36;{{ (selectedQuote()?.soundCost || 0) | number:'1.0-0' }} MXN</strong>
+                            </div>
+
+                            <div class="flex justify-between text-purple-300">
+                              <span>Margen Disquera / Agencia:</span>
+                              <strong>&#36;{{ (selectedQuote()?.marginAmount || 7000) | number:'1.0-0' }} MXN</strong>
+                            </div>
+
+                            <div class="flex justify-between text-cyan-400">
+                              <span>Comisión Plataforma (5% Fijo):</span>
+                              <strong>&#36;{{ ((selectedQuote()?.totalAmount || 50000) * 0.05) | number:'1.0-0' }} MXN</strong>
+                            </div>
+
+                            @if (selectedQuote()?.includeIva) {
+                              <div class="flex justify-between text-blue-300">
+                                <span>Impuesto IVA (+16% Facturado):</span>
+                                <strong>&#36;{{ ((selectedQuote()?.totalAmount || 50000) * 0.16) | number:'1.0-0' }} MXN</strong>
+                              </div>
+                            }
+
+                            <div class="flex justify-between text-amber-400 font-bold border-t border-amber-400/30 pt-2 font-sans text-xs sm:text-sm">
+                              <span class="uppercase tracking-wider font-black">TOTAL COMERCIAL ACEPTADO:</span>
+                              <span class="font-mono font-black text-amber-300 text-sm sm:text-base drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]">
+                                &#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN
+                              </span>
                             </div>
                           </div>
                         </div>
 
-                        <div class="p-3.5 rounded-2xl bg-surface-container border border-cyan-500/30 space-y-2">
-                          <span class="text-cyan-300 text-[9px] font-bold uppercase block font-sans">3. Recinto & Lugar:</span>
-                          <p class="font-bold text-on-surface text-xs pt-0.5 truncate">
-                            {{ selectedQuote()?.venue }} — {{ selectedQuote()?.eventAddress || selectedQuote()?.city }}
-                          </p>
+                        <!-- BLOQUE 4: CONDICIONES FINALES DE PAGO Y CUENTA RECEPTORA -->
+                        <div class="md:col-span-3 p-4 sm:p-4.5 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-surface-container-high to-surface-container border-2 border-emerald-500/60 space-y-3 font-sans shadow-xl">
+                          <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
+                            <span class="text-emerald-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
+                              <span class="material-symbols-outlined text-base text-emerald-400">verified_user</span>
+                              4. CONDICIONES FINALES DE PAGO ACEPTADAS (CONTRATO)
+                            </span>
+                            <span class="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/40 flex items-center gap-1.5">
+                              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> VIGENTE & REGISTRADO
+                            </span>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                            <div class="p-3 rounded-xl bg-surface-container/90 border border-emerald-500/30 space-y-1 shadow-sm">
+                              <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">1. Monto Mínimo (Anticipo):</span>
+                              <strong class="text-emerald-400 font-mono text-sm font-black block">&#36;{{ getAdvancePaymentAmount() | number:'1.0-0' }} MXN</strong>
+                              <span class="text-[10px] text-emerald-300 font-mono font-semibold">({{ getAdvancePaymentLabel() }})</span>
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-surface-container/90 border border-amber-500/30 space-y-1 shadow-sm">
+                              <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">2. Fecha Límite de Pago Saldo:</span>
+                              <strong class="text-amber-300 font-mono text-sm font-black block flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-amber-400">event</span>
+                                {{ selectedQuote()?.paymentDueDate || '2026-08-25' }}
+                              </strong>
+                              <span class="text-[9px] text-outline block">Fecha límite final para liquidar saldo.</span>
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-surface-container/90 border border-purple-500/30 space-y-1 shadow-sm">
+                              <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">3. Cuenta / Tarjeta Receptora:</span>
+                              <strong class="text-purple-300 font-mono text-xs font-bold block flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-purple-400">credit_card</span>
+                                {{ getReceivingCardLabel() }}
+                              </strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- BLOQUE 5: HITOS Y PROGRAMACIÓN DE PARCIALIDADES DE PAGO ACEPTADAS -->
+                        @if (getPaymentMilestones().length > 0) {
+                          <div class="md:col-span-3 p-4 sm:p-4.5 rounded-2xl bg-gradient-to-r from-cyan-950/80 via-surface-container-high to-slate-900 border-2 border-cyan-500/60 space-y-3.5 font-sans shadow-2xl backdrop-blur-xl">
+                            <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2.5">
+                              <span class="text-cyan-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
+                                <span class="material-symbols-outlined text-base text-cyan-400 animate-bounce">calendar_month</span>
+                                5. HITOS Y PROGRAMACIÓN DE PARCIALIDADES DE PAGO ACEPTADAS (DEFINITIVAS)
+                              </span>
+                              <span class="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 shadow-sm">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                                {{ getPaymentMilestones().length }} Parcialidades Programadas
+                              </span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+                              @for (m of getPaymentMilestones(); track m.id; let mIdx = $index) {
+                                <div class="p-3.5 rounded-xl bg-surface-container/90 border border-cyan-500/40 flex flex-col justify-between text-xs space-y-2.5 shadow-md hover:border-cyan-400 hover:-translate-y-0.5 transition-all">
+                                  <div class="flex items-center justify-between border-b border-outline-variant/15 pb-2">
+                                    <span class="font-extrabold text-on-surface text-xs truncate flex items-center gap-1">
+                                      <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                      #{{ mIdx + 1 }}. {{ m.label }}
+                                    </span>
+                                    <span class="px-2 py-0.5 rounded-lg text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                      {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0') + ' MXN') }}
+                                    </span>
+                                  </div>
+
+                                  <div class="space-y-1.5 font-mono">
+                                    <div class="flex justify-between items-baseline">
+                                      <span class="text-[10px] text-outline font-sans">Importe Neto:</span>
+                                      <strong class="text-emerald-400 font-black text-sm text-shadow-sm">&#36;{{ getMilestoneCalculatedAmount(m) | number:'1.0-0' }} MXN</strong>
+                                    </div>
+                                    <div class="flex justify-between items-baseline pt-1.5 border-t border-outline-variant/10">
+                                      <span class="text-[10px] text-outline font-sans flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-xs text-amber-400">event</span>
+                                        Fecha / Límite:
+                                      </span>
+                                      <strong class="text-amber-300 font-bold text-xs bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">{{ m.dueDateOrTimeframe }}</strong>
+                                    </div>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
+
+                      </div>
+
+                    </div>
+                  </div>
+                }
+
+                <!-- SUB-TAB 3: INFORMACIÓN ORIGINAL DEL CLIENTE (HERENCIA EXACTA DE FASE 3) -->
+                @if (awaitingSignatureTab() === 'info_cliente') {
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4 font-sans">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      
+                      <!-- LEFT COLUMN: EXPEDIENTE Y CONTRATANTE (6 COLS) -->
+                      <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl">
+                        <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
+                          <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
+                            <span class="material-symbols-outlined text-sm text-blue-400">badge</span> EXPEDIENTE DEL CONTRATANTE
+                          </span>
+                          <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                            CLIENTE VERIFICADO
+                          </span>
+                        </div>
+
+                        <div class="space-y-3 text-xs">
+                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold block uppercase font-sans">Nombre del Cliente / Representante:</span>
+                            <p class="font-extrabold text-on-surface text-sm flex items-center gap-2">
+                              <span class="material-symbols-outlined text-base text-primary">person</span> {{ selectedQuote()?.clientName }}
+                            </p>
+                          </div>
+
+                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold block uppercase font-sans">Empresa / Razón Social / Organización:</span>
+                            <p class="font-extrabold text-on-surface text-sm flex items-center gap-2">
+                              <span class="material-symbols-outlined text-base text-outline">domain</span> {{ selectedQuote()?.clientCompany }}
+                            </p>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                              <span class="text-outline text-[9px] font-bold block uppercase font-sans">Correo Electrónico:</span>
+                              <p class="font-bold text-primary text-xs truncate flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-primary">mail</span> {{ selectedQuote()?.clientEmail }}
+                              </p>
+                            </div>
+
+                            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                              <span class="text-outline text-[9px] font-bold block uppercase font-sans">Teléfono Directo:</span>
+                              <p class="font-bold text-on-surface text-xs flex items-center gap-1 font-mono">
+                                <span class="material-symbols-outlined text-xs text-outline">call</span> {{ selectedQuote()?.representativePhone || '+52 81 1234 5678' }}
+                              </p>
+                            </div>
+                          </div>
+
+                          <!-- NOTAS DEL CLIENTE -->
+                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold block uppercase font-sans">Notas Adicionales del Cliente:</span>
+                            <p class="text-xs text-on-surface/90 italic leading-relaxed pt-0.5 font-sans">
+                              "{{ selectedQuote()?.notes || 'Sin especificaciones adicionales enviadas al solicitar el presupuesto.' }}"
+                            </p>
+                          </div>
                         </div>
                       </div>
 
-                      <!-- DESGLOSE FINANCIERO INMUTABLE COMPLETO -->
-                      <div class="p-4 rounded-2xl bg-surface-container border-2 border-amber-400/50 space-y-3 font-mono">
-                        <div class="flex items-center justify-between border-b border-amber-400/30 pb-2">
-                          <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider font-sans">
-                            DESGLOSE FINANCIERO COMPLETO PACTADO EN CONTRATO
+                      <!-- RIGHT COLUMN: AGRUPACIÓN & ESTRUCTURA DEL SHOW SOLICITADO (6 COLS) -->
+                      <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl">
+                        <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
+                          <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
+                            <span class="material-symbols-outlined text-sm text-amber-400">music_note</span> DETALLES DEL SHOW Y HORARIOS SOLICITADOS
                           </span>
-                          <span class="text-[9px] font-bold text-cyan-400">TARIFARIO OFICIAL</span>
+                          <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            {{ selectedQuote()?.eventType || 'Evento Privado' }}
+                          </span>
                         </div>
 
-                        <div class="space-y-1.5 text-xs">
+                        <!-- COVER ARTIST CARD -->
+                        <div class="relative rounded-2xl overflow-hidden shadow-md border border-outline-variant/30 h-28 group">
+                          <img 
+                            [src]="selectedQuote()?.artistImage || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80'" 
+                            alt="Group Banner" 
+                            class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
+                          />
+                          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-end p-3 justify-between">
+                            <div>
+                              <span class="text-[8px] font-bold text-amber-300 uppercase tracking-widest block font-sans">AGRUPACIÓN MUSICAL</span>
+                              <h4 class="text-sm sm:text-base font-black text-white uppercase tracking-wider font-sans drop-shadow-md">
+                                {{ selectedQuote()?.groupName }}
+                              </h4>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-xl bg-black/60 text-amber-300 font-mono font-bold text-xs border border-amber-400/40 backdrop-blur-md">
+                              ⭐ {{ selectedQuote()?.rating || 4.8 }} Rating
+                            </span>
+                          </div>
+                        </div>
+
+                        <div class="space-y-2.5 text-xs font-sans">
+                          <!-- ESTRUCTURA DE FECHA Y HORAS -->
+                          <div class="grid grid-cols-2 gap-2">
+                            <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20">
+                              <span class="text-outline text-[9px] font-bold block uppercase font-sans">FECHA ORIGINAL SOLICITADA POR EL CLIENTE:</span>
+                              <span class="font-extrabold text-emerald-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)] font-mono text-xs flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-emerald-400">calendar_today</span> {{ selectedQuote()?.proposedDate }}
+                              </span>
+                            </div>
+
+                            <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20">
+                              <span class="text-outline text-[9px] font-bold block uppercase font-sans">Duración Contratada:</span>
+                              <span class="font-black text-amber-300 font-mono text-xs flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-amber-400">timer</span> {{ selectedQuote()?.durationHours || 3 }} Horas Totales
+                              </span>
+                            </div>
+                          </div>
+
+                          <!-- ESTRUCTURA DE HORARIOS (TANDAS VS CONTINUO) -->
+                          <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-2">
+                            <div class="flex items-center justify-between border-b border-outline-variant/10 pb-1.5">
+                              <span class="text-outline text-[9px] font-bold uppercase font-sans">Formato de Presentación:</span>
+                              <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                {{ hasQuoteTandas(selectedQuote()) ? 'Tandas / Bloques Fragmentados' : 'Horario Continuo' }}
+                              </span>
+                            </div>
+
+                            @if (hasQuoteTandas(selectedQuote())) {
+                              <div class="space-y-1.5">
+                                @for (block of getQuoteShowBlocks(selectedQuote()); track block.id; let bIdx = $index) {
+                                  <div class="p-2 rounded-lg bg-surface-container-high/80 border border-outline-variant/20 flex items-center justify-between text-[11px] font-mono">
+                                    <span class="font-bold text-amber-300 font-sans">• Tanda #{{ bIdx + 1 }}: {{ block.label || 'Set Musical' }}</span>
+                                    <span class="text-on-surface font-extrabold">{{ block.startTime }} a {{ block.endTime }} hrs</span>
+                                  </div>
+                                }
+                              </div>
+                            } @else {
+                              <div class="p-2 rounded-lg bg-surface-container-high/80 border border-outline-variant/20 flex items-center justify-between text-[11px] font-mono">
+                                <span class="font-bold text-cyan-300 font-sans">• Show Continuo Sin Pausas</span>
+                                <span class="text-on-surface font-extrabold">21:00 a 00:00 hrs</span>
+                              </div>
+                            }
+                          </div>
+
+                          <!-- RECINTO Y UBICACIÓN -->
+                          <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold block uppercase font-sans">Recinto & Dirección del Evento:</span>
+                            <p class="font-bold text-on-surface text-xs flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs text-primary">location_on</span> {{ selectedQuote()?.venue }} — {{ selectedQuote()?.eventAddress || selectedQuote()?.city }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                }
+
+                <!-- SUB-TAB 4: HISTORIAL DE NEGOCIACIONES (CRONOLOGÍA COMPLETA DE FASE 4) -->
+                @if (awaitingSignatureTab() === 'historial') {
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-5 font-sans">
+                    <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+                      <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5 font-sans">
+                        <span class="material-symbols-outlined text-sm text-amber-400">history</span>
+                        AUDITORÍA Y CRONOLOGÍA DE NEGOCIACIÓN PREVIA A LA FIRMA
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold text-[9px] border border-amber-500/40">
+                        {{ negotiationHistory().length }} Rondas de Negociación Registradas
+                      </span>
+                    </div>
+
+                    @if (negotiationHistory().length === 0) {
+                      <div class="p-6 rounded-3xl bg-surface-container-high/90 border border-emerald-500/30 text-center space-y-2 shadow-xl backdrop-blur-xl">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto">
+                          <span class="material-symbols-outlined text-2xl">verified</span>
+                        </div>
+                        <h4 class="text-sm font-black text-on-surface">ACEPTACIÓN DIRECTA EN PRIMERA PROPUESTA</h4>
+                        <p class="text-xs text-outline max-w-md mx-auto">
+                          Esta cotización fue aceptada directamente por el cliente en su primer envío, sin requerir rondas adicionales de contraoferta ni modificaciones comerciales.
+                        </p>
+                      </div>
+                    } @else {
+                      @for (entry of negotiationHistory(); track entry.round; let idx = $index) {
+                        @let baseline = getPreviousRoundBaseline(idx);
+
+                        <!-- ROUND ITEM CONTAINER -->
+                        <div class="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border-2 border-amber-400/50 space-y-4 shadow-[0_0_30px_rgba(251,191,36,0.12)] backdrop-blur-xl">
+                          
+                          <!-- ROUND HEADER BANNER -->
+                          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-amber-400/30 pb-3">
+                            <div class="flex items-center gap-2">
+                              <span class="px-3 py-1 rounded-xl bg-amber-500/20 text-amber-300 font-mono font-black text-xs border border-amber-400/40 flex items-center gap-1 shadow-sm">
+                                <span class="material-symbols-outlined text-sm text-amber-400">event_repeat</span>
+                                RONDA #{{ entry.round }}
+                              </span>
+                              <span class="text-xs font-bold text-on-surface hidden sm:inline">| Auditoría Comercial de Acuerdo</span>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                              <span class="px-3 py-1 rounded-xl text-cyan-200 bg-surface-container-high/90 border border-cyan-500/30 font-mono text-xs font-bold flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-cyan-400">schedule</span>
+                                FECHA DE NEGOCIACIÓN: {{ entry.timestamp }}
+                              </span>
+                            </div>
+                          </div>
+
+                          <!-- MOTIVO DE RECHAZO DEL CLIENTE EN ESTA RONDA -->
+                          <div class="p-3.5 rounded-2xl bg-black/50 border border-amber-500/30 space-y-1.5 shadow-inner">
+                            <span class="text-[9px] font-black text-amber-400 uppercase tracking-wider block flex items-center gap-1 font-sans">
+                              <span class="material-symbols-outlined text-xs text-amber-400">feedback</span>
+                              MOTIVO DE RECHAZO / OBSERVACIÓN DEL CLIENTE EN RONDA #{{ entry.round }}:
+                            </span>
+                            <p class="text-xs text-on-surface/90 italic font-sans leading-relaxed">
+                              &ldquo;{{ entry.clientRejectionMessage }}&rdquo;
+                            </p>
+                          </div>
+
+                          <!-- 2-COLUMN SPLIT FOR ROUND #N DETAILS -->
+                          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            
+                            <!-- LEFT COLUMN: DETALLES DEL SHOW PROPUESTO EN RONDA #N (6 COLS) -->
+                            <div class="lg:col-span-6 p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-3.5">
+                              <span class="text-[10px] font-black text-emerald-400 uppercase tracking-wider block flex items-center gap-1 font-sans">
+                                <span class="material-symbols-outlined text-xs text-emerald-400">event</span>
+                                DETALLES DEL SHOW PROPUESTO EN RONDA #{{ entry.round }}
+                              </span>
+
+                              <div class="space-y-2 text-xs font-sans">
+                                <!-- FECHAS -->
+                                <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20 space-y-1">
+                                  <span class="text-outline text-[9px] font-bold block uppercase font-sans">FECHA ORIGINAL SOLICITADA POR EL CLIENTE:</span>
+                                  <span class="text-on-surface font-mono font-bold text-xs block">{{ selectedQuote()?.proposedDate }}</span>
+                                </div>
+
+                                <div class="p-2.5 rounded-xl bg-surface-container-high border border-emerald-500/40 space-y-1">
+                                  <span class="text-outline text-[9px] font-bold block uppercase font-sans">FECHA PROPUESTA (RONDA #{{ entry.round }}):</span>
+                                  <span class="text-emerald-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)] font-black font-mono text-xs block">
+                                    {{ entry.proposedDate || selectedQuote()?.proposedDate }}
+                                  </span>
+                                </div>
+
+                                <!-- DURACIÓN Y ESTRUCTURA -->
+                                <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20 space-y-2">
+                                  <div class="flex items-center justify-between">
+                                    <span class="text-outline text-[9px] font-bold uppercase font-sans">Estructura de Horarios:</span>
+                                    <span class="px-2 py-0.5 rounded text-[8px] font-mono font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                      {{ entry.scheduleMode === 'tandas' || (entry.showBlocks && entry.showBlocks.length > 0) ? 'Tandas / Bloques Fragmentados' : 'Horario Continuo' }}
+                                    </span>
+                                  </div>
+
+                                  @if (entry.showBlocks && entry.showBlocks.length > 0) {
+                                    <div class="space-y-1">
+                                      @for (block of entry.showBlocks; track block.id; let bIdx = $index) {
+                                        <div class="p-1.5 rounded-lg bg-surface-container border border-outline-variant/20 flex items-center justify-between text-[10px] font-mono">
+                                          <span class="font-bold text-amber-300 font-sans">• Tanda #{{ bIdx + 1 }}: {{ block.label || 'Set Musical' }}</span>
+                                          <span class="text-on-surface font-extrabold">{{ block.startTime }} a {{ block.endTime }} hrs</span>
+                                        </div>
+                                      }
+                                    </div>
+                                  } @else {
+                                    <div class="p-1.5 rounded-lg bg-surface-container border border-outline-variant/20 flex items-center justify-between text-[10px] font-mono">
+                                      <span class="font-bold text-cyan-300 font-sans">• Show Continuo Sin Pausas</span>
+                                      <span class="text-on-surface font-extrabold">{{ entry.startTime || '21:00' }} a {{ entry.endTime || '00:00' }} hrs</span>
+                                    </div>
+                                  }
+                                </div>
+
+                                <!-- SERVICIO DE AUDIO EN ESTA RONDA -->
+                                <div class="p-2.5 rounded-xl bg-surface-container-high border border-purple-500/30 space-y-1">
+                                  <span class="text-outline text-[9px] font-bold block uppercase font-sans">Servicio de Equipo de Audio (Ronda #{{ entry.round }}):</span>
+                                  <div class="flex items-center justify-between">
+                                    <span class="font-bold text-purple-300 font-sans text-xs flex items-center gap-1">
+                                      <span class="material-symbols-outlined text-xs text-purple-400">speaker_group</span>
+                                      {{ entry.soundOption === 'proveedor' || (entry.soundCost && entry.soundCost > 0) ? 'Incluye Sistema de Audio Profesional Disquera' : 'Proporcionado por el Cliente' }}
+                                    </span>
+                                    <span class="font-mono text-xs font-black text-on-surface">
+                                      &#36;{{ (entry.soundCost || 0) | number:'1.0-0' }} MXN
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- RIGHT COLUMN: DETALLES DE LA PROPUESTA DISQUERA EN RONDA #N (6 COLS) -->
+                            <div class="lg:col-span-6 p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-3.5">
+                              <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+                                <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider block flex items-center gap-1 font-sans">
+                                  <span class="material-symbols-outlined text-xs text-amber-400">payments</span>
+                                  DETALLES DE LA PROPUESTA DISQUERA EN RONDA #{{ entry.round }}
+                                </span>
+                                <span class="px-2 py-0.5 rounded text-[8px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                  {{ baseline.label }} vs Ronda #{{ entry.round }}
+                                </span>
+                              </div>
+
+                              <div class="space-y-1.5 text-[10px] font-mono">
+                                <!-- Honorarios -->
+                                <div class="p-2 rounded-xl bg-surface-container-high border border-outline-variant/20 flex items-center justify-between">
+                                  <div>
+                                    <span class="font-sans font-bold text-on-surface block text-[10px]">• Honorarios Grupo:</span>
+                                    <span class="text-outline text-[9px]">{{ baseline.label }}: &#36;{{ baseline.artistFee | number:'1.0-0' }} MXN</span>
+                                  </div>
+                                  <div class="text-right">
+                                    <strong class="text-amber-300 block">&#36;{{ entry.artistFee | number:'1.0-0' }} MXN</strong>
+                                    <span [class]="(entry.artistFee - baseline.artistFee) < 0 ? 'text-emerald-400' : ((entry.artistFee > baseline.artistFee) ? 'text-amber-400' : 'text-outline')" class="text-[9px] font-bold">
+                                      {{ (entry.artistFee - baseline.artistFee) < 0 ? ('- ' + (((baseline.artistFee - entry.artistFee) / (baseline.artistFee || 1)) * 100 | number:'1.0-1') + '% 🔻') : ((entry.artistFee > baseline.artistFee) ? '🔺 +%' : '0%') }}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <!-- Viáticos -->
+                                <div class="p-2 rounded-xl bg-surface-container-high border border-outline-variant/20 flex items-center justify-between">
+                                  <div>
+                                    <span class="font-sans font-bold text-on-surface block text-[10px]">• Viáticos & Hospedaje:</span>
+                                    <span class="text-outline text-[9px]">{{ baseline.label }}: &#36;{{ baseline.viaticosCost | number:'1.0-0' }} MXN</span>
+                                  </div>
+                                  <div class="text-right">
+                                    <strong class="text-amber-300 block">&#36;{{ entry.viaticosCost | number:'1.0-0' }} MXN</strong>
+                                    <span [class]="(entry.viaticosCost - baseline.viaticosCost) < 0 ? 'text-emerald-400' : ((entry.viaticosCost > baseline.viaticosCost) ? 'text-amber-400' : 'text-outline')" class="text-[9px] font-bold">
+                                      {{ (entry.viaticosCost - baseline.viaticosCost) < 0 ? ('- ' + (((baseline.viaticosCost - entry.viaticosCost) / (baseline.viaticosCost || 1)) * 100 | number:'1.0-1') + '% 🔻') : ((entry.viaticosCost > baseline.viaticosCost) ? '🔺 +%' : '0%') }}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <!-- Equipo de Audio Profesional -->
+                                <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between">
+                                  <div>
+                                    <span class="font-sans font-bold text-purple-300 block text-[10px]">• Equipo de Audio Profesional:</span>
+                                    <span class="text-outline text-[9px]">
+                                      {{ entry.soundOption === 'proveedor' || (entry.soundCost && entry.soundCost > 0) ? 'Proveedor Disquera' : 'Proporcionado por Cliente' }} — {{ baseline.label }}: &#36;{{ baseline.soundCost | number:'1.0-0' }} MXN
+                                    </span>
+                                  </div>
+                                  <div class="text-right">
+                                    <strong class="text-purple-300 block">&#36;{{ (entry.soundCost || 0) | number:'1.0-0' }} MXN</strong>
+                                    <span [class]="(entry.soundCost - baseline.soundCost) < 0 ? 'text-emerald-400' : ((entry.soundCost > baseline.soundCost) ? 'text-amber-400' : 'text-outline')" class="text-[9px] font-bold">
+                                      {{ (entry.soundCost - baseline.soundCost) < 0 ? ('- ' + (((baseline.soundCost - entry.soundCost) / (baseline.soundCost || 1)) * 100 | number:'1.0-1') + '% 🔻') : ((entry.soundCost > baseline.soundCost) ? '🔺 +%' : '0%') }}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <!-- Margen -->
+                                <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between">
+                                  <div>
+                                    <span class="font-sans font-bold text-purple-300 block text-[10px]">• Margen Disquera:</span>
+                                    <span class="text-outline text-[9px]">{{ baseline.label }}: {{ baseline.marginPercent }}% — Ronda #{{ entry.round }}: {{ entry.marginPercent }}%</span>
+                                  </div>
+                                  <div class="text-right">
+                                    <strong class="text-purple-300 block">{{ entry.marginPercent }}%</strong>
+                                    <span [class]="entry.marginPercent < baseline.marginPercent ? 'text-emerald-400' : 'text-outline'" class="text-[9px] font-bold">
+                                      {{ entry.marginPercent < baseline.marginPercent ? ('- ' + (baseline.marginPercent - entry.marginPercent) + '% pts 🔻') : '0%' }}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <!-- Total Oferta Final -->
+                                <div class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-surface-container-high to-amber-500/20 border-2 border-amber-400/60 flex items-center justify-between mt-2 shadow-lg backdrop-blur-md">
+                                  <span class="font-sans font-black text-amber-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-amber-400">monetization_on</span>
+                                    OFERTA TOTAL EN RONDA #{{ entry.round }}:
+                                  </span>
+                                  <strong class="text-amber-300 font-mono font-black text-lg sm:text-xl drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]">
+                                    &#36;{{ entry.totalOffered | number:'1.0-0' }} MXN
+                                  </strong>
+                                </div>
+
+                                <!-- CONDICIONES DE PAGO ACORDADAS EN ESTA RONDA DEL HISTORIAL -->
+                                <div class="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/80 via-surface-container-high to-slate-900 border-2 border-cyan-400/60 space-y-3 font-sans shadow-xl backdrop-blur-xl">
+                                  <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2">
+                                    <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-2 font-sans">
+                                      <span class="material-symbols-outlined text-base text-cyan-400">payments</span>
+                                      CONDICIONES DE PAGO Y CUENTA RECEPTORA EN RONDA #{{ entry.round }}
+                                    </span>
+                                    <span class="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/40">
+                                      REGISTRO HISTÓRICO
+                                    </span>
+                                  </div>
+
+                                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[10px]">
+                                    <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-emerald-500/30 space-y-1 shadow-sm">
+                                      <span class="text-outline text-[8px] font-bold uppercase tracking-wider block font-sans">Monto Mínimo (Anticipo):</span>
+                                      <strong class="text-emerald-400 font-mono text-xs font-black block">&#36;{{ getAdvancePaymentAmount(entry) | number:'1.0-0' }} MXN</strong>
+                                      <span class="text-[8px] text-emerald-300 font-mono block">({{ getAdvancePaymentLabel(entry) }})</span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-amber-500/30 space-y-1 shadow-sm">
+                                      <span class="text-outline text-[8px] font-bold uppercase tracking-wider block font-sans">Fecha Límite Pago:</span>
+                                      <strong class="text-amber-300 font-mono text-xs font-bold block flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[10px] text-amber-400">event</span>
+                                        {{ getPaymentDueDate(entry) }}
+                                      </strong>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-purple-500/30 space-y-1 shadow-sm">
+                                      <span class="text-outline text-[8px] font-bold uppercase tracking-wider block font-sans">Cuenta Receptora:</span>
+                                      <strong class="text-purple-300 font-mono text-[9px] font-bold block truncate">{{ getReceivingCardLabel(entry) }}</strong>
+                                    </div>
+                                  </div>
+
+                                  <!-- HITOS DE PAGO DEFINIDOS EN ESTA RONDA DEL HISTORIAL -->
+                                  @if (getPaymentMilestones(entry).length > 0) {
+                                    <div class="pt-2.5 border-t border-cyan-500/30 space-y-2.5">
+                                      <span class="text-[10px] font-black text-cyan-300 uppercase tracking-wider block flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-xs text-cyan-400">calendar_month</span>
+                                        HITOS Y PROGRAMACIÓN DE PARCIALIDADES DE PAGO EN RONDA #{{ entry.round }}:
+                                      </span>
+                                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                        @for (m of getPaymentMilestones(entry); track m.id; let mIdx = $index) {
+                                          <div class="p-2.5 rounded-xl bg-surface-container/90 border border-cyan-500/40 flex flex-col justify-between text-[10px] space-y-1.5 shadow-md hover:border-cyan-400 hover:-translate-y-0.5 transition-all">
+                                            <div class="flex justify-between items-center font-extrabold text-on-surface border-b border-outline-variant/15 pb-1">
+                                              <span class="truncate flex items-center gap-1">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                                #{{ mIdx + 1 }}. {{ m.label }}
+                                              </span>
+                                              <span class="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                                {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0')) }}
+                                              </span>
+                                            </div>
+                                            <div class="flex justify-between items-baseline font-mono text-[9px]">
+                                              <span class="text-outline font-sans">Importe:</span>
+                                              <strong class="text-emerald-400 font-black">&#36;{{ getMilestoneCalculatedAmount(m, entry.totalOffered) | number:'1.0-0' }} MXN</strong>
+                                            </div>
+                                            <div class="flex justify-between items-baseline font-mono text-[9px] pt-1 border-t border-outline-variant/10">
+                                              <span class="text-outline font-sans flex items-center gap-0.5">
+                                                <span class="material-symbols-outlined text-[10px] text-amber-400">event</span>
+                                                Fecha:
+                                              </span>
+                                              <strong class="text-amber-300 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">{{ m.dueDateOrTimeframe }}</strong>
+                                            </div>
+                                          </div>
+                                        }
+                                      </div>
+                                    </div>
+                                  }
+                                </div>
+
+                                @if (entry.adminProposalNote) {
+                                  <div class="p-2 rounded-xl bg-surface-container-high border border-outline-variant/20 text-[10px] font-sans pt-1.5">
+                                    <span class="text-[9px] font-black text-amber-300 uppercase block mb-0.5">NOTA DE NEGOCIACIÓN DISQUERA:</span>
+                                    <p class="italic text-on-surface/80">&ldquo;{{ entry.adminProposalNote }}&rdquo;</p>
+                                  </div>
+                                }
+                              </div>
+                            </div>
+
+                          </div>
+
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+
+              </div>
+            }
+
+            <!-- WORKFLOW ESPECIALIZADO PARA FASE 5: 'Contrato firmado' -->
+            @if (selectedQuote()?.state === 'Contrato firmado') {
+              <div class="h-full flex flex-col min-h-0 space-y-4 font-sans">
+                
+                <!-- SUB-TABS NAVEGACIÓN DE FASE 5: CONTRATO FIRMADO -->
+                <div class="quote-modal-tabs flex items-center gap-1.5 p-1 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 shrink-0">
+                  <button 
+                    (click)="awaitingSignatureTab.set('seguimiento_contrato')"
+                    [class]="awaitingSignatureTab() === 'seguimiento_contrato' ? 'bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow-[0_0_15px_rgba(52,211,153,0.25)]' : 'text-outline hover:text-on-surface border-transparent'"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
+                  >
+                    <span class="material-symbols-outlined text-base text-emerald-400">verified</span>
+                    <span>Vista De Contrato Firmado & Seguimiento</span>
+                  </button>
+
+                  <button 
+                    (click)="awaitingSignatureTab.set('info_acuerdo')"
+                    [class]="awaitingSignatureTab() === 'info_acuerdo' ? 'bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow-[0_0_15px_rgba(52,211,153,0.25)]' : 'text-outline hover:text-emerald-300 border-transparent hover:bg-emerald-500/10'"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
+                  >
+                    <span class="material-symbols-outlined text-base text-emerald-400">verified_user</span>
+                    <span>Información Aceptada Del Acuerdo</span>
+                  </button>
+
+                  <button 
+                    (click)="awaitingSignatureTab.set('info_cliente')"
+                    [class]="awaitingSignatureTab() === 'info_cliente' ? 'bg-surface-bright text-on-surface border-outline-variant/40 shadow-sm' : 'text-outline hover:text-on-surface border-transparent'"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
+                  >
+                    <span class="material-symbols-outlined text-base">assignment_ind</span>
+                    <span>Información Original Del Cliente</span>
+                  </button>
+
+                  <button 
+                    (click)="awaitingSignatureTab.set('historial')"
+                    [class]="awaitingSignatureTab() === 'historial' ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.2)]' : 'text-outline hover:text-on-surface border-transparent'"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
+                  >
+                    <span class="material-symbols-outlined text-base">history</span>
+                    <span>Historial De Negociaciones ({{ negotiationHistory().length }})</span>
+                  </button>
+                </div>
+
+                <!-- SUB-TAB 1: VISTA DE CONTRATO FIRMADO & SEGUIMIENTO -->
+                @if (awaitingSignatureTab() === 'seguimiento_contrato') {
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4 font-sans">
+                    
+                    <!-- 1. BLOQUE SUPERIOR: INFORMACIÓN TEMPORAL Y TRAZABILIDAD DEL ACUERDO -->
+                    <div class="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-950/90 via-teal-950/80 to-slate-900 border-2 border-emerald-500/50 shadow-[0_0_35px_rgba(52,211,153,0.25)] space-y-3.5 relative overflow-hidden backdrop-blur-xl">
+                      <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 sm:gap-4">
+                          <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center font-black text-2xl shadow-[0_0_15px_rgba(52,211,153,0.3)]">
+                            <span class="material-symbols-outlined text-2xl">verified</span>
+                          </div>
+                          <div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                              <span class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 flex items-center gap-1.5 shadow-[0_0_15px_rgba(52,211,153,0.3)]">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> CONTRATO FIRMADO POR AMBAS PARTES ✔
+                              </span>
+                              <span class="px-2.5 py-0.5 rounded-lg bg-surface-container border border-outline-variant/30 text-outline text-[10px] font-mono">
+                                HASH SHA256: 0x8f7a...3b9e
+                              </span>
+                            </div>
+                            <h3 class="text-sm sm:text-base font-black text-on-surface mt-1">
+                              Acuerdo Legalmente Vinculante y Vigente
+                            </h3>
+                          </div>
+                        </div>
+
+                        <!-- TIMESTAMPS Y MARCAS DE TIEMPO EXACTAS -->
+                        <div class="flex flex-col sm:items-end gap-1.5 font-mono text-xs">
+                          <div class="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm text-emerald-400">history_edu</span>
+                            <span>Fecha y Hora de Firma Digital: <strong class="font-black text-emerald-200">{{ contractSignedTime() }}</strong></span>
+                          </div>
+                          <div class="px-3 py-1 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 text-outline text-[11px] flex items-center gap-2">
+                            <span class="material-symbols-outlined text-xs text-cyan-400">event</span>
+                            <span>Creación del Documento Original: <strong class="text-cyan-300 font-bold">{{ contractSentTime() }}</strong></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 2. RESUMEN DEL CONTRATO Y FIRMAS (100% FIRMADO) -->
+                    <div class="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl">
+                      <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
+                        <span class="text-[10px] font-black text-cyan-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
+                          <span class="material-symbols-outlined text-sm text-cyan-400">description</span>
+                          RESUMEN DEL CONTRATO Y FIRMAS REGISTRADAS
+                        </span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                          3 DE 3 FIRMAS COMPLETADAS (100%)
+                        </span>
+                      </div>
+
+                      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        <!-- INFORMACIÓN CLAVE DEL DOCUMENTO (7 COLS) -->
+                        <div class="lg:col-span-7 p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2.5 text-xs font-sans">
+                          <div class="flex justify-between items-center border-b border-outline-variant/10 pb-1.5">
+                            <span class="text-outline text-[10px]">Agrupación Musical:</span>
+                            <strong class="text-on-surface font-extrabold">{{ selectedQuote()?.groupName }}</strong>
+                          </div>
+                          <div class="flex justify-between items-center border-b border-outline-variant/10 pb-1.5">
+                            <span class="text-outline text-[10px]">Cliente / Contratante:</span>
+                            <strong class="text-on-surface font-extrabold">{{ selectedQuote()?.clientName }} ({{ selectedQuote()?.clientCompany }})</strong>
+                          </div>
+                          <div class="flex justify-between items-center border-b border-outline-variant/10 pb-1.5">
+                            <span class="text-outline text-[10px]">Fecha del Evento & Recinto:</span>
+                            <strong class="text-emerald-300 font-mono">{{ selectedQuote()?.proposedDate }} — {{ selectedQuote()?.venue }}</strong>
+                          </div>
+                          <div class="flex justify-between items-center pt-0.5">
+                            <span class="text-outline text-[10px]">Total Comercial Acordado:</span>
+                            <strong class="text-amber-300 font-mono font-black text-sm">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</strong>
+                          </div>
+
+                          <div class="pt-2">
+                            <button 
+                              (click)="showContractPreviewModal.set(true)"
+                              class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-teal-500/20 hover:from-cyan-500/30 hover:to-teal-500/30 text-cyan-300 border border-cyan-500/40 font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+                            >
+                              <span class="material-symbols-outlined text-base">picture_as_pdf</span>
+                              <span>Abrir Vista Previa del Contrato Firmado</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- ESTADO DETALLADO DE FIRMAS (5 COLS) -->
+                        <div class="lg:col-span-5 p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2.5 text-xs font-sans">
+                          <span class="text-[9px] font-black text-outline uppercase tracking-wider block font-sans">ESTATUS DE FIRMANTES LEGALES:</span>
+                          
+                          <!-- FIRMA 1: DISQUERA -->
+                          <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                              <span class="material-symbols-outlined text-emerald-400 text-base">verified</span>
+                              <div>
+                                <span class="text-[10px] font-bold text-on-surface block">Disquera Acordex</span>
+                                <span class="text-[8px] text-outline block font-mono">Firma del Representante</span>
+                              </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">FIRMADO ✔</span>
+                          </div>
+
+                          <!-- FIRMA 2: GRUPO MUSICAL -->
+                          <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                              <span class="material-symbols-outlined text-emerald-400 text-base">groups</span>
+                              <div>
+                                <span class="text-[10px] font-bold text-on-surface block">{{ selectedQuote()?.groupName }}</span>
+                                <span class="text-[8px] text-outline block font-mono">Representante Artístico</span>
+                              </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">FIRMADO ✔</span>
+                          </div>
+
+                          <!-- FIRMA 3: CLIENTE -->
+                          <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                              <span class="material-symbols-outlined text-emerald-400 text-base">draw</span>
+                              <div>
+                                <span class="text-[10px] font-bold text-on-surface block">{{ selectedQuote()?.clientName }}</span>
+                                <span class="text-[8px] text-outline block font-mono">Firma Digital Registrada</span>
+                              </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">FIRMADO ✔</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 3. SISTEMA DE AVISOS SIMPLIFICADO (EXCLUSIVAMENTE PARA EL GRUPO MUSICAL) -->
+                    <div class="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-amber-500/30 space-y-4 shadow-xl backdrop-blur-xl">
+                      <div class="border-b border-amber-500/20 pb-2 flex items-center justify-between">
+                        <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
+                          <span class="material-symbols-outlined text-sm text-amber-400">campaign</span>
+                          SISTEMA DE NOTIFICACIONES Y AVISOS A LA AGRUPACIÓN MUSICAL
+                        </span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                          EXCLUSIVO GRUPO MUSICAL
+                        </span>
+                      </div>
+
+                      <!-- PANEL DE ENVIAR AVISO AL GRUPO -->
+                      <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-3 font-sans">
+                        <div class="flex items-center justify-between border-b border-outline-variant/10 pb-2">
+                          <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-base text-amber-400">groups</span>
+                            Enviar Notificación de Evento Confirmado a {{ selectedQuote()?.groupName }}
+                          </span>
+                          <div class="flex items-center gap-1.5">
+                            <button 
+                              (click)="groupNoticeAcordex.set(!groupNoticeAcordex())" 
+                              [class]="groupNoticeAcordex() ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-surface-container-high text-outline border-outline-variant/20'"
+                              class="px-2 py-1 rounded-lg text-[9px] font-mono font-bold border transition-all"
+                            >
+                              Acordex {{ groupNoticeAcordex() ? '✔' : '' }}
+                            </button>
+                            <button 
+                              (click)="groupNoticeWhatsapp.set(!groupNoticeWhatsapp())" 
+                              [class]="groupNoticeWhatsapp() ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-surface-container-high text-outline border-outline-variant/20'"
+                              class="px-2 py-1 rounded-lg text-[9px] font-mono font-bold border transition-all"
+                            >
+                              WhatsApp {{ groupNoticeWhatsapp() ? '✔' : '' }}
+                            </button>
+                            <button 
+                              (click)="groupNoticeEmail.set(!groupNoticeEmail())" 
+                              [class]="groupNoticeEmail() ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' : 'bg-surface-container-high text-outline border-outline-variant/20'"
+                              class="px-2 py-1 rounded-lg text-[9px] font-mono font-bold border transition-all"
+                            >
+                              Correo {{ groupNoticeEmail() ? '✔' : '' }}
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- MENSAJE AUTOMÁTICO FIJO AL GRUPO CON FECHA Y RECINTO -->
+                        <div class="p-3 rounded-xl bg-surface-container-high border border-amber-500/30 text-xs space-y-1">
+                          <span class="text-[9px] font-bold text-amber-400 uppercase tracking-wider block font-sans">ASUNTO / CONTENIDO DEL AVISO:</span>
+                          <p class="font-extrabold text-on-surface font-sans">
+                            Aviso de Evento Confirmado & Contrato Firmado: Se agendó presentación para el día <span class="text-amber-300 font-mono">{{ selectedQuote()?.proposedDate }}</span> en el recinto <span class="text-amber-300 font-mono">{{ selectedQuote()?.venue }}</span>.
+                          </p>
+                        </div>
+
+                        <!-- CAMPO DE NOTA ADICIONAL PERSONALIZADA PARA EL GRUPO -->
+                        <div class="space-y-1">
+                          <label class="text-[9px] font-bold text-outline uppercase block font-sans">Instrucción / Nota Adicional para el Grupo (Opcional):</label>
+                          <input 
+                            type="text" 
+                            [value]="groupNoticeCustomText()" 
+                            (input)="groupNoticeCustomText.set($any($event.target).value)" 
+                            placeholder="Ej. Favor de preparar rider técnico y coordinar horario de soundcheck a las 16:00 hrs..." 
+                            class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-xs text-on-surface placeholder:text-outline/50 focus:outline-none focus:border-amber-400 font-sans"
+                          />
+                        </div>
+
+                        <div class="flex justify-end pt-1">
+                          <button 
+                            (click)="sendGroupNoticeAction()" 
+                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-black text-xs transition-all flex items-center gap-1.5 shadow-md"
+                          >
+                            <span class="material-symbols-outlined text-base">send</span>
+                            <span>Emitir Notificación al Grupo</span>
+                          </button>
+                        </div>
+
+                        <!-- BITÁCORA HISTÓRICA DE AVISOS AL GRUPO -->
+                        <div class="pt-3 border-t border-outline-variant/15 space-y-2">
+                          <span class="text-[9px] font-black text-outline uppercase tracking-wider block font-sans">
+                            BITÁCORA HISTÓRICA DE AVISOS ENVIADOS A LA AGRUPACIÓN:
+                          </span>
+                          
+                          @if (groupNoticesLog().length === 0) {
+                            <p class="text-xs text-outline italic">Sin avisos previos registrados para el grupo musical.</p>
+                          } @else {
+                            <div class="space-y-1.5">
+                              @for (log of groupNoticesLog(); track log.id) {
+                                <div class="p-2.5 rounded-xl bg-surface-container-high/80 border border-outline-variant/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                                  <div class="space-y-0.5">
+                                    <div class="flex items-center gap-2">
+                                      <span class="font-bold text-amber-300 font-mono text-[10px]">[{{ log.timestamp }}]</span>
+                                      <span class="text-outline text-[10px]">por {{ log.sender }}</span>
+                                    </div>
+                                    <p class="text-on-surface/90 text-xs font-sans">{{ log.message }}</p>
+                                  </div>
+                                  <div class="flex items-center gap-1 shrink-0">
+                                    @for (ch of log.channels; track ch) {
+                                      <span class="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase">
+                                        {{ ch }}
+                                      </span>
+                                    }
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 4. CONTROLES DE ACCIÓN DE CIERRE Y REVERSIÓN ADMINISTRATIVA -->
+                    <div class="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-3.5 shadow-xl backdrop-blur-xl">
+                      <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+                        <span class="text-[10px] font-black text-primary uppercase tracking-widest block flex items-center gap-1.5 font-sans">
+                          <span class="material-symbols-outlined text-sm text-primary">admin_panel_settings</span>
+                          ACCIONES DE CIERRE Y REVERSIÓN ADMINISTRATIVA DE FASE 5
+                        </span>
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- BOTÓN 1: CERRAR CONTRATO -->
+                        <div class="p-4 rounded-2xl bg-surface-container border border-emerald-500/30 space-y-2 flex flex-col justify-between">
+                          <div>
+                            <span class="text-[10px] font-black text-emerald-400 uppercase tracking-wider block font-sans">CIERRE FORMAL DE CONTRATO</span>
+                            <p class="text-xs text-outline leading-relaxed mt-1">
+                              Concluye y valida formalmente el ciclo del contrato firmado por ambas partes para proceder con los siguientes hitos de cobranza.
+                            </p>
+                          </div>
+                          <button 
+                            (click)="closeSignedContractAction()"
+                            class="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black text-xs transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:scale-[1.01]"
+                          >
+                            <span class="material-symbols-outlined text-lg">task_alt</span>
+                            <span>Cerrar Contrato & Concluir Ciclo</span>
+                          </button>
+                        </div>
+
+                        <!-- BOTÓN 2: REVERSIÓN ADMINISTRATIVA A FASE 3 -->
+                        <div class="p-4 rounded-2xl bg-surface-container border border-amber-500/30 space-y-2 flex flex-col justify-between">
+                          <div>
+                            <span class="text-[10px] font-black text-amber-400 uppercase tracking-wider block font-sans">CORRECCIÓN POSTERIOR A LA FIRMA</span>
+                            <p class="text-xs text-outline leading-relaxed mt-1">
+                              Permite regresar el expediente a la Fase 3 (Cotización Aceptada) si se detecta un error administrativo posterior a la firma.
+                            </p>
+                          </div>
+                          <button 
+                            (click)="handleSignedContractRollbackClick()"
+                            class="w-full mt-2 py-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/50 font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+                          >
+                            <span class="material-symbols-outlined text-lg text-amber-400">undo</span>
+                            <span>Regresar a Fase 3 - Cotización Aceptada</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                }
+
+                <!-- SUB-TAB 2: INFORMACIÓN ACEPTADA DEL ACUERDO -->
+                @if (awaitingSignatureTab() === 'info_acuerdo') {
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4 font-sans">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      
+                      <!-- BLOQUE 1: DURACIÓN & HORARIO DEL SHOW SOLICITADO -->
+                      <div class="md:col-span-3 p-4 sm:p-4.5 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 space-y-3 font-sans shadow-xl">
+                        <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+                          <span class="text-amber-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
+                            <span class="material-symbols-outlined text-base text-amber-400">schedule</span>
+                            1. DURACIÓN & HORARIOS SOLICITADOS (CONTRATO FIRMADO)
+                          </span>
+                          <span class="text-[10px] font-mono font-bold text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/40">
+                            {{ selectedQuote()?.durationHours || 3 }} Horas Totales
+                          </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                          <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">Formato de Presentación:</span>
+                            <strong class="text-on-surface font-mono text-xs block">
+                              {{ hasQuoteTandas(selectedQuote()) ? 'Tandas / Bloques Fragmentados' : 'Horario Continuo Sin Pausas' }}
+                            </strong>
+                          </div>
+
+                          <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">Fecha del Evento:</span>
+                            <strong class="text-emerald-300 font-mono text-xs font-bold block flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs text-emerald-400">calendar_today</span>
+                              {{ selectedQuote()?.proposedDate }}
+                            </strong>
+                          </div>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-2">
+                          <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">Desglose de Horarios por Set / Tanda:</span>
+                          @if (hasQuoteTandas(selectedQuote())) {
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono text-xs">
+                              @for (block of getQuoteShowBlocks(selectedQuote()); track block.id; let bIdx = $index) {
+                                <div class="p-2 rounded-lg bg-surface-container-high border border-outline-variant/20 flex items-center justify-between">
+                                  <span class="font-bold text-amber-300 font-sans">• Tanda #{{ bIdx + 1 }}: {{ block.label || 'Set Musical' }}</span>
+                                  <span class="text-on-surface font-extrabold">{{ block.startTime }} a {{ block.endTime }} hrs</span>
+                                </div>
+                              }
+                            </div>
+                          } @else {
+                            <div class="p-2.5 rounded-lg bg-surface-container-high border border-outline-variant/20 flex items-center justify-between font-mono text-xs">
+                              <span class="font-bold text-cyan-300 font-sans">• Show Continuo Sin Pausas</span>
+                              <span class="text-on-surface font-extrabold">21:00 a 00:00 hrs</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- BLOQUE 2: SERVICIO DE AUDIO & RECINTO DE PRESENTACIÓN -->
+                      <div class="md:col-span-3 p-4 sm:p-4.5 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 space-y-3 font-sans shadow-xl">
+                        <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+                          <span class="text-purple-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
+                            <span class="material-symbols-outlined text-base text-purple-400">speaker_group</span>
+                            2. SERVICIO DE AUDIO & UBICACIÓN DEL RECINTO
+                          </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                          <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">Opción de Equipo de Audio:</span>
+                            <strong class="text-purple-300 font-sans text-xs block font-bold">
+                              {{ selectedQuote()?.soundOption === 'proveedor' || (selectedQuote()?.soundCost && selectedQuote()!.soundCost! > 0) ? 'Incluye Sistema de Audio Profesional Disquera' : 'Proporcionado por el Cliente' }}
+                            </strong>
+                          </div>
+
+                          <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">Recinto & Ubicación:</span>
+                            <strong class="text-on-surface font-sans text-xs block font-bold flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs text-primary">location_on</span>
+                              {{ selectedQuote()?.venue }} — {{ selectedQuote()?.eventAddress || selectedQuote()?.city }}
+                            </strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- BLOQUE 3: DESGLOSE FINANCIERO ACEPTADO & TOTAL COMERCIAL -->
+                      <div class="md:col-span-3 p-4 sm:p-4.5 rounded-2xl bg-gradient-to-r from-surface-container-high via-surface-container to-surface-container-high border-2 border-amber-400/50 space-y-3 font-mono shadow-xl">
+                        <div class="flex items-center justify-between border-b border-amber-400/30 pb-2">
+                          <span class="text-amber-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
+                            <span class="material-symbols-outlined text-base text-amber-400">monetization_on</span>
+                            3. DESGLOSE FINANCIERO ACEPTADO (CONTRATO FIRMADO)
+                          </span>
+                          <span class="text-[9px] font-bold text-amber-400 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/40 font-sans">
+                            TARIFARIO OFICIAL
+                          </span>
+                        </div>
+
+                        <div class="space-y-2 text-xs pt-1">
                           <div class="flex justify-between text-outline">
-                            <span>• Honorarios del Grupo Musical:</span>
+                            <span>Honorarios del Grupo Musical:</span>
                             <strong class="text-on-surface">&#36;{{ (selectedQuote()?.artistFee || 35000) | number:'1.0-0' }} MXN</strong>
                           </div>
 
                           <div class="flex justify-between text-outline">
-                            <span>• Viáticos & Hospedaje:</span>
+                            <span>Viáticos & Hospedaje:</span>
                             <strong class="text-on-surface">&#36;{{ (selectedQuote()?.viaticosCost || 8500) | number:'1.0-0' }} MXN</strong>
                           </div>
 
                           <div class="flex justify-between text-outline">
-                            <span>• Equipo de Audio Profesional:</span>
+                            <span>Equipo de Audio Profesional:</span>
                             <strong class="text-purple-300">&#36;{{ (selectedQuote()?.soundCost || 0) | number:'1.0-0' }} MXN</strong>
                           </div>
 
                           <div class="flex justify-between text-purple-300">
-                            <span>• Margen Disquera / Agencia:</span>
+                            <span>Margen Disquera / Agencia:</span>
                             <strong>&#36;{{ (selectedQuote()?.marginAmount || 7000) | number:'1.0-0' }} MXN</strong>
                           </div>
 
                           <div class="flex justify-between text-cyan-400">
-                            <span>• Comisión Plataforma (5% Fijo):</span>
+                            <span>Comisión Plataforma (5% Fijo):</span>
                             <strong>&#36;{{ ((selectedQuote()?.totalAmount || 50000) * 0.05) | number:'1.0-0' }} MXN</strong>
                           </div>
 
                           @if (selectedQuote()?.includeIva) {
                             <div class="flex justify-between text-blue-300">
-                              <span>• Impuesto IVA (+16% Facturado):</span>
+                              <span>Impuesto IVA (+16% Facturado):</span>
                               <strong>&#36;{{ ((selectedQuote()?.totalAmount || 50000) * 0.16) | number:'1.0-0' }} MXN</strong>
                             </div>
                           }
 
-                          <div class="flex justify-between text-amber-400 font-black border-t-2 border-amber-400/40 pt-2 font-sans text-sm sm:text-base">
-                            <span class="uppercase tracking-wider">TOTAL FIRMABLE:</span>
-                            <span class="font-mono text-amber-300 font-black drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]">
+                          <div class="flex justify-between text-amber-400 font-bold border-t border-amber-400/30 pt-2 font-sans text-xs sm:text-sm">
+                            <span class="uppercase tracking-wider font-black">TOTAL COMERCIAL ACEPTADO:</span>
+                            <span class="font-mono font-black text-amber-300 text-sm sm:text-base drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]">
                               &#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN
                             </span>
                           </div>
                         </div>
                       </div>
+
+                      <!-- BLOQUE 4: CONDICIONES FINALES DE PAGO Y CUENTA RECEPTORA -->
+                      <div class="md:col-span-3 p-4 sm:p-4.5 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-surface-container-high to-surface-container border-2 border-emerald-500/60 space-y-3 font-sans shadow-xl">
+                        <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
+                          <span class="text-emerald-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
+                            <span class="material-symbols-outlined text-base text-emerald-400">verified_user</span>
+                            4. CONDICIONES FINALES DE PAGO Y CUENTA RECEPTORA
+                          </span>
+                          <span class="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/40 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> VIGENTE & REGISTRADO
+                          </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                          <div class="p-3 rounded-xl bg-surface-container/90 border border-emerald-500/30 space-y-1 shadow-sm">
+                            <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">1. Monto Mínimo (Anticipo):</span>
+                            <strong class="text-emerald-400 font-mono text-sm font-black block">&#36;{{ getAdvancePaymentAmount() | number:'1.0-0' }} MXN</strong>
+                            <span class="text-[10px] text-emerald-300 font-mono font-semibold">({{ getAdvancePaymentLabel() }})</span>
+                          </div>
+
+                          <div class="p-3 rounded-xl bg-surface-container/90 border border-amber-500/30 space-y-1 shadow-sm">
+                            <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">2. Fecha Límite de Pago Saldo:</span>
+                            <strong class="text-amber-300 font-mono text-sm font-black block flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs text-amber-400">event</span>
+                              {{ selectedQuote()?.paymentDueDate || '2026-08-25' }}
+                            </strong>
+                            <span class="text-[9px] text-outline block">Fecha límite final para liquidar saldo.</span>
+                          </div>
+
+                          <div class="p-3 rounded-xl bg-surface-container/90 border border-purple-500/30 space-y-1 shadow-sm">
+                            <span class="text-outline text-[9px] font-bold uppercase tracking-wider block font-sans">3. Cuenta / Tarjeta Receptora:</span>
+                            <strong class="text-purple-300 font-mono text-xs font-bold block flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs text-purple-400">credit_card</span>
+                              {{ getReceivingCardLabel() }}
+                            </strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- BLOQUE 5: HITOS Y PROGRAMACIÓN DE PARCIALIDADES DE PAGO -->
+                      @if (getPaymentMilestones().length > 0) {
+                        <div class="md:col-span-3 p-4 sm:p-4.5 rounded-2xl bg-gradient-to-r from-cyan-950/80 via-surface-container-high to-slate-900 border-2 border-cyan-500/60 space-y-3.5 font-sans shadow-2xl backdrop-blur-xl">
+                          <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2.5">
+                            <span class="text-cyan-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
+                              <span class="material-symbols-outlined text-base text-cyan-400 animate-bounce">calendar_month</span>
+                              5. HITOS Y PROGRAMACIÓN DE PARCIALIDADES DE PAGO ACEPTADAS (DEFINITIVAS)
+                            </span>
+                            <span class="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 shadow-sm">
+                              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                              {{ getPaymentMilestones().length }} Parcialidades Programadas
+                            </span>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+                            @for (m of getPaymentMilestones(); track m.id; let mIdx = $index) {
+                              <div class="p-3.5 rounded-xl bg-surface-container/90 border border-cyan-500/40 flex flex-col justify-between text-xs space-y-2.5 shadow-md hover:border-cyan-400 hover:-translate-y-0.5 transition-all">
+                                <div class="flex items-center justify-between border-b border-outline-variant/15 pb-2">
+                                  <span class="font-extrabold text-on-surface text-xs truncate flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                    #{{ mIdx + 1 }}. {{ m.label }}
+                                  </span>
+                                  <span class="px-2 py-0.5 rounded-lg text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                    {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0') + ' MXN') }}
+                                  </span>
+                                </div>
+
+                                <div class="space-y-1.5 font-mono">
+                                  <div class="flex justify-between items-baseline">
+                                    <span class="text-[10px] text-outline font-sans">Importe Neto:</span>
+                                    <strong class="text-emerald-400 font-black text-sm text-shadow-sm">&#36;{{ getMilestoneCalculatedAmount(m) | number:'1.0-0' }} MXN</strong>
+                                  </div>
+                                  <div class="flex justify-between items-baseline pt-1.5 border-t border-outline-variant/10">
+                                    <span class="text-[10px] text-outline font-sans flex items-center gap-1">
+                                      <span class="material-symbols-outlined text-xs text-amber-400">event</span>
+                                      Fecha / Límite:
+                                    </span>
+                                    <strong class="text-amber-300 font-bold text-xs bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">{{ m.dueDateOrTimeframe }}</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+
                     </div>
                   </div>
                 }
 
                 <!-- SUB-TAB 3: INFORMACIÓN ORIGINAL DEL CLIENTE -->
                 @if (awaitingSignatureTab() === 'info_cliente') {
-                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4">
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4 font-sans">
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      
+                      <!-- LEFT COLUMN: EXPEDIENTE Y CONTRATANTE (6 COLS) -->
                       <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl">
                         <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
                           <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
                             <span class="material-symbols-outlined text-sm text-blue-400">badge</span> EXPEDIENTE DEL CONTRATANTE
                           </span>
-                        </div>
-
-                        <div class="space-y-3 text-xs">
-                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-2">
-                            <div class="flex items-center gap-3">
-                              <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-black text-base">
-                                {{ selectedQuote()?.clientName?.charAt(0) || 'C' }}
-                              </div>
-                              <div>
-                                <strong class="text-on-surface font-black text-sm block">{{ selectedQuote()?.clientName }}</strong>
-                                <span class="text-outline text-[10px] block font-mono">{{ selectedQuote()?.clientCompany }}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1.5 font-mono text-[11px]">
-                            <div class="flex justify-between">
-                              <span class="text-outline">Teléfono:</span>
-                              <strong class="text-on-surface">{{ selectedQuote()?.representativePhone || 'N/A' }}</strong>
-                            </div>
-                            <div class="flex justify-between">
-                              <span class="text-outline">Email:</span>
-                              <strong class="text-on-surface">{{ selectedQuote()?.clientEmail || 'cliente@ejemplo.com' }}</strong>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl">
-                        <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
-                          <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
-                            <span class="material-symbols-outlined text-sm text-amber-400">event</span> REQUERIMIENTO ORIGINAL
+                          <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                            CLIENTE VERIFICADO
                           </span>
                         </div>
 
-                        <div class="space-y-2.5 text-xs">
-                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1 text-[11px]">
-                            <div class="flex justify-between">
-                              <span class="text-outline">• Recinto:</span>
-                              <strong class="text-on-surface">{{ selectedQuote()?.venue }}</strong>
+                        <div class="space-y-3 text-xs">
+                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold block uppercase font-sans">Nombre del Cliente / Representante:</span>
+                            <p class="font-extrabold text-on-surface text-sm flex items-center gap-2">
+                              <span class="material-symbols-outlined text-base text-primary">person</span> {{ selectedQuote()?.clientName }}
+                            </p>
+                          </div>
+
+                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold block uppercase font-sans">Empresa / Razón Social / Organización:</span>
+                            <p class="font-extrabold text-on-surface text-sm flex items-center gap-2">
+                              <span class="material-symbols-outlined text-base text-outline">domain</span> {{ selectedQuote()?.clientCompany }}
+                            </p>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                              <span class="text-outline text-[9px] font-bold block uppercase font-sans">Correo Electrónico:</span>
+                              <p class="font-bold text-primary text-xs truncate flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-primary">mail</span> {{ selectedQuote()?.clientEmail }}
+                              </p>
                             </div>
-                            <div class="flex justify-between">
-                              <span class="text-outline">• Fecha:</span>
-                              <strong class="text-emerald-400 font-mono font-bold">{{ selectedQuote()?.proposedDate }}</strong>
+
+                            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                              <span class="text-outline text-[9px] font-bold block uppercase font-sans">Teléfono Directo:</span>
+                              <p class="font-bold text-on-surface text-xs flex items-center gap-1 font-mono">
+                                <span class="material-symbols-outlined text-xs text-outline">call</span> {{ selectedQuote()?.representativePhone || '+52 81 1234 5678' }}
+                              </p>
                             </div>
+                          </div>
+
+                          <!-- NOTAS DEL CLIENTE -->
+                          <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold block uppercase font-sans">Notas Adicionales del Cliente:</span>
+                            <p class="text-xs text-on-surface/90 italic leading-relaxed pt-0.5 font-sans">
+                              "{{ selectedQuote()?.notes || 'Sin especificaciones adicionales enviadas al solicitar el presupuesto.' }}"
+                            </p>
                           </div>
                         </div>
                       </div>
+
+                      <!-- RIGHT COLUMN: AGRUPACIÓN & ESTRUCTURA DEL SHOW SOLICITADO (6 COLS) -->
+                      <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl">
+                        <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
+                          <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
+                            <span class="material-symbols-outlined text-sm text-amber-400">music_note</span> DETALLES DEL SHOW Y HORARIOS SOLICITADOS
+                          </span>
+                          <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            {{ selectedQuote()?.eventType || 'Evento Privado' }}
+                          </span>
+                        </div>
+
+                        <!-- COVER ARTIST CARD -->
+                        <div class="relative rounded-2xl overflow-hidden shadow-md border border-outline-variant/30 h-28 group">
+                          <img 
+                            [src]="selectedQuote()?.artistImage || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80'" 
+                            alt="Group Banner" 
+                            class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
+                          />
+                          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-end p-3 justify-between">
+                            <div>
+                              <span class="text-[8px] font-bold text-amber-300 uppercase tracking-widest block font-sans">AGRUPACIÓN MUSICAL</span>
+                              <h4 class="text-sm sm:text-base font-black text-white uppercase tracking-wider font-sans drop-shadow-md">
+                                {{ selectedQuote()?.groupName }}
+                              </h4>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-xl bg-black/60 text-amber-300 font-mono font-bold text-xs border border-amber-400/40 backdrop-blur-md">
+                              ⭐ {{ selectedQuote()?.rating || 4.8 }} Rating
+                            </span>
+                          </div>
+                        </div>
+
+                        <div class="space-y-2.5 text-xs font-sans">
+                          <!-- ESTRUCTURA DE FECHA Y HORAS -->
+                          <div class="grid grid-cols-2 gap-2">
+                            <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20">
+                              <span class="text-outline text-[9px] font-bold block uppercase font-sans">FECHA ORIGINAL SOLICITADA POR EL CLIENTE:</span>
+                              <span class="font-extrabold text-emerald-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)] font-mono text-xs flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-emerald-400">calendar_today</span> {{ selectedQuote()?.proposedDate }}
+                              </span>
+                            </div>
+
+                            <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20">
+                              <span class="text-outline text-[9px] font-bold block uppercase font-sans">Duración Contratada:</span>
+                              <span class="font-black text-amber-300 font-mono text-xs flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-amber-400">timer</span> {{ selectedQuote()?.durationHours || 3 }} Horas Totales
+                              </span>
+                            </div>
+                          </div>
+
+                          <!-- ESTRUCTURA DE HORARIOS (TANDAS VS CONTINUO) -->
+                          <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-2">
+                            <div class="flex items-center justify-between border-b border-outline-variant/10 pb-1.5">
+                              <span class="text-outline text-[9px] font-bold uppercase font-sans">Formato de Presentación:</span>
+                              <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                {{ hasQuoteTandas(selectedQuote()) ? 'Tandas / Bloques Fragmentados' : 'Horario Continuo' }}
+                              </span>
+                            </div>
+
+                            @if (hasQuoteTandas(selectedQuote())) {
+                              <div class="space-y-1.5">
+                                @for (block of getQuoteShowBlocks(selectedQuote()); track block.id; let bIdx = $index) {
+                                  <div class="p-2 rounded-lg bg-surface-container-high/80 border border-outline-variant/20 flex items-center justify-between text-[11px] font-mono">
+                                    <span class="font-bold text-amber-300 font-sans">• Tanda #{{ bIdx + 1 }}: {{ block.label || 'Set Musical' }}</span>
+                                    <span class="text-on-surface font-extrabold">{{ block.startTime }} a {{ block.endTime }} hrs</span>
+                                  </div>
+                                }
+                              </div>
+                            } @else {
+                              <div class="p-2 rounded-lg bg-surface-container-high/80 border border-outline-variant/20 flex items-center justify-between text-[11px] font-mono">
+                                <span class="font-bold text-cyan-300 font-sans">• Show Continuo Sin Pausas</span>
+                                <span class="text-on-surface font-extrabold">21:00 a 00:00 hrs</span>
+                              </div>
+                            }
+                          </div>
+
+                          <!-- RECINTO Y UBICACIÓN -->
+                          <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-1">
+                            <span class="text-outline text-[9px] font-bold block uppercase font-sans">Recinto & Dirección del Evento:</span>
+                            <p class="font-bold text-on-surface text-xs flex items-center gap-1">
+                              <span class="material-symbols-outlined text-xs text-primary">location_on</span> {{ selectedQuote()?.venue }} — {{ selectedQuote()?.eventAddress || selectedQuote()?.city }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
                 }
 
                 <!-- SUB-TAB 4: HISTORIAL DE NEGOCIACIONES -->
                 @if (awaitingSignatureTab() === 'historial') {
-                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-5">
+                  <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-5 font-sans">
                     <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
                       <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5 font-sans">
                         <span class="material-symbols-outlined text-sm text-amber-400">history</span>
-                        CRONOLOGÍA DE RONDAS NEGOCIADAS (FIRMABLE)
+                        AUDITORÍA Y CRONOLOGÍA DE NEGOCIACIÓN PREVIA A LA FIRMA
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold text-[9px] border border-amber-500/40">
+                        {{ negotiationHistory().length }} Rondas de Negociación Registradas
                       </span>
                     </div>
 
-                    @for (entry of negotiationHistory(); track entry.round; let idx = $index) {
-                      <div class="p-4 rounded-2xl bg-surface-container-high/90 border border-amber-400/30 space-y-2 text-xs">
-                        <div class="flex justify-between font-mono text-[10px]">
-                          <strong class="text-amber-300 font-bold">• Ronda #{{ entry.round }}</strong>
-                          <span class="text-outline">{{ entry.timestamp }}</span>
+                    @if (negotiationHistory().length === 0) {
+                      <div class="p-6 rounded-3xl bg-surface-container-high/90 border border-emerald-500/30 text-center space-y-2 shadow-xl backdrop-blur-xl">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto">
+                          <span class="material-symbols-outlined text-2xl">verified</span>
                         </div>
-                        <p class="text-[11px] text-on-surface/90 italic">&ldquo;{{ entry.clientRejectionMessage }}&rdquo;</p>
+                        <h4 class="text-sm font-black text-on-surface">ACEPTACIÓN DIRECTA EN PRIMERA PROPUESTA</h4>
+                        <p class="text-xs text-outline max-w-md mx-auto">
+                          Esta cotización fue aceptada directamente por el cliente en su primer envío, sin requerir rondas adicionales de contraoferta ni modificaciones comerciales.
+                        </p>
                       </div>
+                    } @else {
+                      @for (entry of negotiationHistory(); track entry.round; let idx = $index) {
+                        @let baseline = getPreviousRoundBaseline(idx);
+
+                        <!-- ROUND ITEM CONTAINER -->
+                        <div class="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border-2 border-amber-400/50 space-y-4 shadow-[0_0_30px_rgba(251,191,36,0.12)] backdrop-blur-xl">
+                          
+                          <!-- ROUND HEADER BANNER -->
+                          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-amber-400/30 pb-3">
+                            <div class="flex items-center gap-2">
+                              <span class="px-3 py-1 rounded-xl bg-amber-500/20 text-amber-300 font-mono font-black text-xs border border-amber-400/40 flex items-center gap-1 shadow-sm">
+                                <span class="material-symbols-outlined text-sm text-amber-400">event_repeat</span>
+                                RONDA #{{ entry.round }}
+                              </span>
+                              <span class="text-xs font-bold text-on-surface hidden sm:inline">| Auditoría Comercial de Acuerdo</span>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                              <span class="px-3 py-1 rounded-xl text-cyan-200 bg-surface-container-high/90 border border-cyan-500/30 font-mono text-xs font-bold flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-cyan-400">schedule</span>
+                                FECHA DE NEGOCIACIÓN: {{ entry.timestamp }}
+                              </span>
+                            </div>
+                          </div>
+
+                          <!-- MOTIVO DE RECHAZO DEL CLIENTE EN ESTA RONDA -->
+                          <div class="p-3.5 rounded-2xl bg-black/50 border border-amber-500/30 space-y-1.5 shadow-inner">
+                            <span class="text-[9px] font-black text-amber-400 uppercase tracking-wider block flex items-center gap-1 font-sans">
+                              <span class="material-symbols-outlined text-xs text-amber-400">feedback</span>
+                              MOTIVO DE RECHAZO / OBSERVACIÓN DEL CLIENTE EN RONDA #{{ entry.round }}:
+                            </span>
+                            <p class="text-xs text-on-surface/90 italic font-sans leading-relaxed">
+                              &ldquo;{{ entry.clientRejectionMessage }}&rdquo;
+                            </p>
+                          </div>
+
+                          <!-- 2-COLUMN SPLIT FOR ROUND #N DETAILS -->
+                          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            
+                            <!-- LEFT COLUMN: DETALLES DEL SHOW PROPUESTO EN RONDA #N (6 COLS) -->
+                            <div class="lg:col-span-6 p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-3.5">
+                              <span class="text-[10px] font-black text-emerald-400 uppercase tracking-wider block flex items-center gap-1 font-sans">
+                                <span class="material-symbols-outlined text-xs text-emerald-400">event</span>
+                                DETALLES DEL SHOW PROPUESTO EN RONDA #{{ entry.round }}
+                              </span>
+
+                              <div class="space-y-2 text-xs font-sans">
+                                <!-- FECHAS -->
+                                <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20 space-y-1">
+                                  <span class="text-outline text-[9px] font-bold block uppercase font-sans">FECHA ORIGINAL SOLICITADA POR EL CLIENTE:</span>
+                                  <span class="text-on-surface font-mono font-bold text-xs block">{{ selectedQuote()?.proposedDate }}</span>
+                                </div>
+
+                                <div class="p-2.5 rounded-xl bg-surface-container-high border border-emerald-500/40 space-y-1">
+                                  <span class="text-outline text-[9px] font-bold block uppercase font-sans">FECHA PROPUESTA (RONDA #{{ entry.round }}):</span>
+                                  <span class="text-emerald-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)] font-black font-mono text-xs block">
+                                    {{ entry.proposedDate || selectedQuote()?.proposedDate }}
+                                  </span>
+                                </div>
+
+                                <!-- DURACIÓN Y ESTRUCTURA -->
+                                <div class="p-2.5 rounded-xl bg-surface-container-high border border-outline-variant/20 space-y-2">
+                                  <div class="flex items-center justify-between">
+                                    <span class="text-outline text-[9px] font-bold uppercase font-sans">Estructura de Horarios:</span>
+                                    <span class="px-2 py-0.5 rounded text-[8px] font-mono font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                      {{ entry.scheduleMode === 'tandas' || (entry.showBlocks && entry.showBlocks.length > 0) ? 'Tandas / Bloques Fragmentados' : 'Horario Continuo' }}
+                                    </span>
+                                  </div>
+
+                                  @if (entry.showBlocks && entry.showBlocks.length > 0) {
+                                    <div class="space-y-1">
+                                      @for (block of entry.showBlocks; track block.id; let bIdx = $index) {
+                                        <div class="p-1.5 rounded-lg bg-surface-container border border-outline-variant/20 flex items-center justify-between text-[10px] font-mono">
+                                          <span class="font-bold text-amber-300 font-sans">• Tanda #{{ bIdx + 1 }}: {{ block.label || 'Set Musical' }}</span>
+                                          <span class="text-on-surface font-extrabold">{{ block.startTime }} a {{ block.endTime }} hrs</span>
+                                        </div>
+                                      }
+                                    </div>
+                                  } @else {
+                                    <div class="p-1.5 rounded-lg bg-surface-container border border-outline-variant/20 flex items-center justify-between text-[10px] font-mono">
+                                      <span class="font-bold text-cyan-300 font-sans">• Show Continuo Sin Pausas</span>
+                                      <span class="text-on-surface font-extrabold">{{ entry.startTime || '21:00' }} a {{ entry.endTime || '00:00' }} hrs</span>
+                                    </div>
+                                  }
+                                </div>
+
+                                <!-- SERVICIO DE AUDIO EN ESTA RONDA -->
+                                <div class="p-2.5 rounded-xl bg-surface-container-high border border-purple-500/30 space-y-1">
+                                  <span class="text-outline text-[9px] font-bold block uppercase font-sans">Servicio de Equipo de Audio (Ronda #{{ entry.round }}):</span>
+                                  <div class="flex items-center justify-between">
+                                    <span class="font-bold text-purple-300 font-sans text-xs flex items-center gap-1">
+                                      <span class="material-symbols-outlined text-xs text-purple-400">speaker_group</span>
+                                      {{ entry.soundOption === 'proveedor' || (entry.soundCost && entry.soundCost > 0) ? 'Incluye Sistema de Audio Profesional Disquera' : 'Proporcionado por el Cliente' }}
+                                    </span>
+                                    <span class="font-mono text-xs font-black text-on-surface">
+                                      &#36;{{ (entry.soundCost || 0) | number:'1.0-0' }} MXN
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- RIGHT COLUMN: DETALLES DE LA PROPUESTA DISQUERA EN RONDA #N (6 COLS) -->
+                            <div class="lg:col-span-6 p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-3.5">
+                              <div class="flex items-center justify-between border-b border-outline-variant/20 pb-2">
+                                <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider block flex items-center gap-1 font-sans">
+                                  <span class="material-symbols-outlined text-xs text-amber-400">payments</span>
+                                  DETALLES DE LA PROPUESTA DISQUERA EN RONDA #{{ entry.round }}
+                                </span>
+                                <span class="px-2 py-0.5 rounded text-[8px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                  {{ baseline.label }} vs Ronda #{{ entry.round }}
+                                </span>
+                              </div>
+
+                              <div class="space-y-1.5 text-[10px] font-mono">
+                                <!-- Honorarios -->
+                                <div class="p-2 rounded-xl bg-surface-container-high border border-outline-variant/20 flex items-center justify-between">
+                                  <div>
+                                    <span class="font-sans font-bold text-on-surface block text-[10px]">• Honorarios Grupo:</span>
+                                    <span class="text-outline text-[9px]">{{ baseline.label }}: &#36;{{ baseline.artistFee | number:'1.0-0' }} MXN</span>
+                                  </div>
+                                  <div class="text-right">
+                                    <strong class="text-amber-300 block">&#36;{{ entry.artistFee | number:'1.0-0' }} MXN</strong>
+                                    <span [class]="(entry.artistFee - baseline.artistFee) < 0 ? 'text-emerald-400' : ((entry.artistFee > baseline.artistFee) ? 'text-amber-400' : 'text-outline')" class="text-[9px] font-bold">
+                                      {{ (entry.artistFee - baseline.artistFee) < 0 ? ('- ' + (((baseline.artistFee - entry.artistFee) / (baseline.artistFee || 1)) * 100 | number:'1.0-1') + '% 🔻') : ((entry.artistFee > baseline.artistFee) ? '🔺 +%' : '0%') }}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <!-- Viáticos -->
+                                <div class="p-2 rounded-xl bg-surface-container-high border border-outline-variant/20 flex items-center justify-between">
+                                  <div>
+                                    <span class="font-sans font-bold text-on-surface block text-[10px]">• Viáticos & Hospedaje:</span>
+                                    <span class="text-outline text-[9px]">{{ baseline.label }}: &#36;{{ baseline.viaticosCost | number:'1.0-0' }} MXN</span>
+                                  </div>
+                                  <div class="text-right">
+                                    <strong class="text-amber-300 block">&#36;{{ entry.viaticosCost | number:'1.0-0' }} MXN</strong>
+                                    <span [class]="(entry.viaticosCost - baseline.viaticosCost) < 0 ? 'text-emerald-400' : ((entry.viaticosCost > baseline.viaticosCost) ? 'text-amber-400' : 'text-outline')" class="text-[9px] font-bold">
+                                      {{ (entry.viaticosCost - baseline.viaticosCost) < 0 ? ('- ' + (((baseline.viaticosCost - entry.viaticosCost) / (baseline.viaticosCost || 1)) * 100 | number:'1.0-1') + '% 🔻') : ((entry.viaticosCost > baseline.viaticosCost) ? '🔺 +%' : '0%') }}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <!-- Equipo de Audio Profesional -->
+                                <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between">
+                                  <div>
+                                    <span class="font-sans font-bold text-purple-300 block text-[10px]">• Equipo de Audio Profesional:</span>
+                                    <span class="text-outline text-[9px]">
+                                      {{ entry.soundOption === 'proveedor' || (entry.soundCost && entry.soundCost > 0) ? 'Proveedor Disquera' : 'Proporcionado por Cliente' }} — {{ baseline.label }}: &#36;{{ baseline.soundCost | number:'1.0-0' }} MXN
+                                    </span>
+                                  </div>
+                                  <div class="text-right">
+                                    <strong class="text-purple-300 block">&#36;{{ (entry.soundCost || 0) | number:'1.0-0' }} MXN</strong>
+                                    <span [class]="(entry.soundCost - baseline.soundCost) < 0 ? 'text-emerald-400' : ((entry.soundCost > baseline.soundCost) ? 'text-amber-400' : 'text-outline')" class="text-[9px] font-bold">
+                                      {{ (entry.soundCost - baseline.soundCost) < 0 ? ('- ' + (((baseline.soundCost - entry.soundCost) / (baseline.soundCost || 1)) * 100 | number:'1.0-1') + '% 🔻') : ((entry.soundCost > baseline.soundCost) ? '🔺 +%' : '0%') }}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <!-- Margen -->
+                                <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between">
+                                  <div>
+                                    <span class="font-sans font-bold text-purple-300 block text-[10px]">• Margen Disquera:</span>
+                                    <span class="text-outline text-[9px]">{{ baseline.label }}: {{ baseline.marginPercent }}% — Ronda #{{ entry.round }}: {{ entry.marginPercent }}%</span>
+                                  </div>
+                                  <div class="text-right">
+                                    <strong class="text-purple-300 block">{{ entry.marginPercent }}%</strong>
+                                    <span [class]="entry.marginPercent < baseline.marginPercent ? 'text-emerald-400' : 'text-outline'" class="text-[9px] font-bold">
+                                      {{ entry.marginPercent < baseline.marginPercent ? ('- ' + (baseline.marginPercent - entry.marginPercent) + '% pts 🔻') : '0%' }}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <!-- Total Oferta Final -->
+                                <div class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-surface-container-high to-amber-500/20 border-2 border-amber-400/60 flex items-center justify-between mt-2 shadow-lg backdrop-blur-md">
+                                  <span class="font-sans font-black text-amber-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-sm text-amber-400">monetization_on</span>
+                                    OFERTA TOTAL EN RONDA #{{ entry.round }}:
+                                  </span>
+                                  <strong class="text-amber-300 font-mono font-black text-lg sm:text-xl drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]">
+                                    &#36;{{ entry.totalOffered | number:'1.0-0' }} MXN
+                                  </strong>
+                                </div>
+
+                                <!-- CONDICIONES DE PAGO ACORDADAS EN ESTA RONDA DEL HISTORIAL -->
+                                <div class="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/80 via-surface-container-high to-slate-900 border-2 border-cyan-400/60 space-y-3 font-sans shadow-xl backdrop-blur-xl">
+                                  <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2">
+                                    <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-2 font-sans">
+                                      <span class="material-symbols-outlined text-base text-cyan-400">payments</span>
+                                      CONDICIONES DE PAGO Y CUENTA RECEPTORA EN RONDA #{{ entry.round }}
+                                    </span>
+                                    <span class="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/40">
+                                      REGISTRO HISTÓRICO
+                                    </span>
+                                  </div>
+
+                                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[10px]">
+                                    <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-emerald-500/30 space-y-1 shadow-sm">
+                                      <span class="text-outline text-[8px] font-bold uppercase tracking-wider block font-sans">Monto Mínimo (Anticipo):</span>
+                                      <strong class="text-emerald-400 font-mono text-xs font-black block">&#36;{{ getAdvancePaymentAmount(entry) | number:'1.0-0' }} MXN</strong>
+                                      <span class="text-[8px] text-emerald-300 font-mono block">({{ getAdvancePaymentLabel(entry) }})</span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-amber-500/30 space-y-1 shadow-sm">
+                                      <span class="text-outline text-[8px] font-bold uppercase tracking-wider block font-sans">Fecha Límite Pago:</span>
+                                      <strong class="text-amber-300 font-mono text-xs font-bold block flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[10px] text-amber-400">event</span>
+                                        {{ getPaymentDueDate(entry) }}
+                                      </strong>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-purple-500/30 space-y-1 shadow-sm">
+                                      <span class="text-outline text-[8px] font-bold uppercase tracking-wider block font-sans">Cuenta Receptora:</span>
+                                      <strong class="text-purple-300 font-mono text-[9px] font-bold block truncate">{{ getReceivingCardLabel(entry) }}</strong>
+                                    </div>
+                                  </div>
+
+                                  <!-- HITOS DE PAGO DEFINIDOS EN ESTA RONDA DEL HISTORIAL -->
+                                  @if (getPaymentMilestones(entry).length > 0) {
+                                    <div class="pt-2.5 border-t border-cyan-500/30 space-y-2.5">
+                                      <span class="text-[10px] font-black text-cyan-300 uppercase tracking-wider block flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-xs text-cyan-400">calendar_month</span>
+                                        HITOS Y PROGRAMACIÓN DE PARCIALIDADES DE PAGO EN RONDA #{{ entry.round }}:
+                                      </span>
+                                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                        @for (m of getPaymentMilestones(entry); track m.id; let mIdx = $index) {
+                                          <div class="p-2.5 rounded-xl bg-surface-container/90 border border-cyan-500/40 flex flex-col justify-between text-[10px] space-y-1.5 shadow-md hover:border-cyan-400 hover:-translate-y-0.5 transition-all">
+                                            <div class="flex justify-between items-center font-extrabold text-on-surface border-b border-outline-variant/15 pb-1">
+                                              <span class="truncate flex items-center gap-1">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                                #{{ mIdx + 1 }}. {{ m.label }}
+                                              </span>
+                                              <span class="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                                {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0')) }}
+                                              </span>
+                                            </div>
+                                            <div class="flex justify-between items-baseline font-mono text-[9px]">
+                                              <span class="text-outline font-sans">Importe:</span>
+                                              <strong class="text-emerald-400 font-black">&#36;{{ getMilestoneCalculatedAmount(m, entry.totalOffered) | number:'1.0-0' }} MXN</strong>
+                                            </div>
+                                            <div class="flex justify-between items-baseline font-mono text-[9px] pt-1 border-t border-outline-variant/10">
+                                              <span class="text-outline font-sans flex items-center gap-0.5">
+                                                <span class="material-symbols-outlined text-[10px] text-amber-400">event</span>
+                                                Fecha:
+                                              </span>
+                                              <strong class="text-amber-300 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">{{ m.dueDateOrTimeframe }}</strong>
+                                            </div>
+                                          </div>
+                                        }
+                                      </div>
+                                    </div>
+                                  }
+                                </div>
+
+                                @if (entry.adminProposalNote) {
+                                  <div class="p-2 rounded-xl bg-surface-container-high border border-outline-variant/20 text-[10px] font-sans pt-1.5">
+                                    <span class="text-[9px] font-black text-amber-300 uppercase block mb-0.5">NOTA DE NEGOCIACIÓN DISQUERA:</span>
+                                    <p class="italic text-on-surface/80">&ldquo;{{ entry.adminProposalNote }}&rdquo;</p>
+                                  </div>
+                                }
+                              </div>
+                            </div>
+
+                          </div>
+
+                        </div>
+                      }
                     }
                   </div>
                 }
@@ -4088,7 +5651,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
             }
 
             <!-- TAB: EXPEDIENTE DE FASE ACTUAL (FOR OTHER STATES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && modalTab() === 'estado_actual') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && modalTab() === 'estado_actual') {
               <div class="space-y-6">
                 @if (selectedQuote()?.state === 'Cancelada') {
                   <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-red-500/10 border border-red-500/30 space-y-3 text-center">
@@ -4105,7 +5668,7 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
             }
 
             <!-- TAB: SOLICITUD ORIGINAL DEL CLIENTE (FOR OTHER STATES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && modalTab() === 'solicitud') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && modalTab() === 'solicitud') {
               <div class="space-y-4">
                 <div class="p-4 sm:p-6 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-4">
                   <h4 class="text-sm font-bold text-on-surface flex items-center gap-2">
@@ -5153,6 +6716,92 @@ import { QuoteFinancialReceiptComponent } from './components/quote-financial-rec
             </div>
           </div>
         }
+
+        <!-- MODAL 5: REGRESAR DE FASE 5 (CONTRATO FIRMADO) A FASE 3 (COTIZACIÓN ACEPTADA) -->
+        @if (showSignedContractRollbackModal()) {
+          <div class="fixed inset-0 z-[99999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 font-sans">
+            <div class="bg-surface-container-high border border-amber-500/40 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4 p-6 animate-fadeIn">
+              
+              <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+                <div class="flex items-center gap-2.5">
+                  <div class="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                    <span class="material-symbols-outlined text-2xl">undo</span>
+                  </div>
+                  <div>
+                    <h3 class="text-base font-black text-on-surface">REGRESAR A FASE 3 (COTIZACIÓN ACEPTADA)</h3>
+                    <span class="text-[10px] font-mono text-outline block">Reversión de Fase 5 (Contrato Firmado) a Fase 3 por Corrección</span>
+                  </div>
+                </div>
+
+                <button 
+                  (click)="showSignedContractRollbackModal.set(false)"
+                  class="p-2 rounded-xl bg-surface-bright text-outline hover:text-on-surface transition-all"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <!-- ALERTA DE REVERSIÓN ADMINISTRATIVA DE CONTRATO FIRMADO -->
+              <div class="p-3.5 rounded-2xl bg-amber-500/15 border-2 border-amber-500/50 space-y-2 text-xs">
+                <div class="flex items-center gap-2 text-amber-400 font-black text-xs uppercase">
+                  <span class="material-symbols-outlined text-lg">warning</span>
+                  <span>⚠️ ALERTA: REVERSIÓN ADMINISTRATIVA DE CONTRATO FIRMADO</span>
+                </div>
+                <p class="text-amber-200/90 text-[11px] leading-relaxed">
+                  El contrato actual fue firmado digitalmente el <strong>{{ contractSignedTime() }}</strong>. Al regresar a Fase 3 para realizar correcciones posteriores a la firma:
+                </p>
+                <ul class="list-disc pl-4 text-[10px] text-amber-300 font-mono space-y-0.5">
+                  <li>El contrato firmado actual quedará marcado como <strong>ANULADO POR CORRECCIÓN ADMINISTRATIVA</strong>.</li>
+                  <li>Podrás realizar los ajustes comerciales o técnicos necesarios y volver a emitir el contrato.</li>
+                </ul>
+              </div>
+
+              <div class="space-y-3 text-xs">
+                <div>
+                  <span class="text-[10px] font-bold text-outline block mb-1">Motivo Principal de la Corrección Administrativa:</span>
+                  <select 
+                    [value]="signedContractRollbackReason()"
+                    (change)="signedContractRollbackReason.set($any($event.target).value)"
+                    class="w-full p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface font-bold"
+                  >
+                    <option value="Error Administrativo en Datos / Cláusulas Técnicas">Error Administrativo en Datos / Cláusulas Técnicas</option>
+                    <option value="Ajuste en Dirección / Ubicación del Recinto">Ajuste en Dirección / Ubicación del Recinto</option>
+                    <option value="Inconsistencia en Tarifas / Facturación">Inconsistencia en Tarifas / Facturación</option>
+                    <option value="Ajuste de Horarios / Duración del Show">Ajuste de Horarios / Duración del Show</option>
+                    <option value="Otro Motivo Administrativo">Otro Motivo Administrativo</option>
+                  </select>
+                </div>
+
+                <div>
+                  <span class="text-[10px] font-bold text-outline block mb-1">Explicación Obligatoria de la Corrección (Nota Interna):</span>
+                  <textarea 
+                    [value]="signedContractRollbackNote()"
+                    (input)="signedContractRollbackNote.set($any($event.target).value)"
+                    rows="3"
+                    placeholder="Describe detalladamente el motivo de la corrección posterior a la firma..."
+                    class="w-full p-2.5 rounded-xl bg-surface-container border border-outline-variant/30 text-xs text-on-surface"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="pt-3 border-t border-outline-variant/20 flex items-center justify-end gap-2">
+                <button 
+                  (click)="showSignedContractRollbackModal.set(false)"
+                  class="px-4 py-2 rounded-xl bg-surface-bright text-on-surface font-bold text-xs"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  (click)="confirmSignedContractRollbackToAccepted()"
+                  class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-xs shadow-lg transition-all hover:scale-105"
+                >
+                  CONFIRMAR REGRESO A FASE 3
+                </button>
+              </div>
+
+            </div>
+          </div>
+        }
       </div>
       </div>
     }
@@ -5258,6 +6907,7 @@ export class QuoteDetailModalComponent {
   // Client view tracking signal
   clientViewed = signal<boolean>(true);
   clientViewedTime = signal<string>('Hoy a las 11:42 AM (Portal Web)');
+  contractSentTime = signal<string>('Ayer a las 04:30 PM (Portal Acordex & Correo)');
 
   // ─── FASE 4: CONTRATO EN ESPERA DE FIRMA SIGNALS ─────────────────────────────
   awaitingSignatureTab = signal<'seguimiento_contrato' | 'info_acuerdo' | 'info_cliente' | 'historial'>('seguimiento_contrato');
@@ -5265,6 +6915,145 @@ export class QuoteDetailModalComponent {
   contractRollbackReason = signal<string>('Corrección de Datos Comerciales / Horarios');
   contractRollbackNote = signal<string>('');
   contractRollbackNotifyClient = signal<boolean>(true);
+
+  // ─── FASE 5: CONTRATO FIRMADO SIGNALS ─────────────────────────────────────────
+  contractSignedTime = signal<string>('Hoy a las 10:15 AM (Firma Digital SHA-256 Verificada por Cliente & Grupo)');
+  showSignedContractRollbackModal = signal<boolean>(false);
+  signedContractRollbackReason = signal<string>('Error Administrativo en Datos / Cláusulas Técnicas');
+  signedContractRollbackNote = signal<string>('');
+
+  // Sistema de Avisos y Bitácora Dual Signals
+  clientNoticeAcordex = signal<boolean>(true);
+  clientNoticeWhatsapp = signal<boolean>(true);
+  clientNoticeEmail = signal<boolean>(true);
+  clientNoticePreset = signal<string>('Recordatorio de Firma Digital Pendiente');
+  clientNoticeCustomText = signal<string>('');
+  clientNoticesLog = signal<{
+    id: string;
+    timestamp: string;
+    channels: ('acordex' | 'whatsapp' | 'email')[];
+    message: string;
+    sender: string;
+  }[]>([
+    {
+      id: 'CN-101',
+      timestamp: 'Ayer, 04:30 PM',
+      channels: ['acordex', 'whatsapp', 'email'],
+      message: 'Envío inicial del borrador de contrato para firma digital.',
+      sender: 'Disquera Acordex'
+    },
+    {
+      id: 'CN-102',
+      timestamp: 'Hoy, 09:15 AM',
+      channels: ['whatsapp', 'email'],
+      message: 'Recordatorio automático: Firma pendiente antes de la fecha límite.',
+      sender: 'Sistema Acordex'
+    }
+  ]);
+
+  groupNoticeAcordex = signal<boolean>(true);
+  groupNoticeWhatsapp = signal<boolean>(true);
+  groupNoticeEmail = signal<boolean>(true);
+  groupNoticePreset = signal<string>('Reserva Definitiva de Fecha en Agenda Máster');
+  groupNoticeCustomText = signal<string>('');
+  groupNoticesLog = signal<{
+    id: string;
+    timestamp: string;
+    channels: ('acordex' | 'whatsapp' | 'email')[];
+    message: string;
+    sender: string;
+  }[]>([
+    {
+      id: 'GN-201',
+      timestamp: 'Ayer, 04:32 PM',
+      channels: ['acordex', 'whatsapp'],
+      message: 'Alerta de contrato emitido al cliente. Bloquear fecha tentativamente.',
+      sender: 'Disquera Acordex'
+    }
+  ]);
+
+  sendClientNoticeAction(): void {
+    const q = this.selectedQuote();
+    const customNote = this.clientNoticeCustomText().trim();
+    const baseMsg = 'Recordatorio de Firma Digital de Contrato Pendiente';
+    const msg = customNote ? `${baseMsg} — Nota: ${customNote}` : baseMsg;
+
+    const channels: ('acordex' | 'whatsapp' | 'email')[] = [];
+    if (this.clientNoticeAcordex()) channels.push('acordex');
+    if (this.clientNoticeWhatsapp()) channels.push('whatsapp');
+    if (this.clientNoticeEmail()) channels.push('email');
+
+    if (channels.length === 0) {
+      alert('Por favor selecciona al menos un canal de envío (Acordex, WhatsApp o Email).');
+      return;
+    }
+
+    const newLog = {
+      id: `CN-${Date.now().toString().slice(-4)}`,
+      timestamp: 'Hace un momento',
+      channels,
+      message: msg,
+      sender: 'Administrador Disquera'
+    };
+
+    this.clientNoticesLog.update(prev => [newLog, ...prev]);
+    this.clientNoticeCustomText.set('');
+  }
+
+  sendGroupNoticeAction(): void {
+    const q = this.selectedQuote();
+    const fecha = q?.proposedDate || 'Fecha por definir';
+    const recinto = q?.venue || 'Ubicación por definir';
+    const customNote = this.groupNoticeCustomText().trim();
+    const baseMsg = `Aviso de Nuevo Evento: Se agendó presentación para el día ${fecha} en el recinto/lugar ${recinto}`;
+    const msg = customNote ? `${baseMsg} — Nota: ${customNote}` : baseMsg;
+
+    const channels: ('acordex' | 'whatsapp' | 'email')[] = [];
+    if (this.groupNoticeAcordex()) channels.push('acordex');
+    if (this.groupNoticeWhatsapp()) channels.push('whatsapp');
+    if (this.groupNoticeEmail()) channels.push('email');
+
+    if (channels.length === 0) {
+      alert('Por favor selecciona al menos un canal de envío (Acordex, WhatsApp o Email).');
+      return;
+    }
+
+    const newLog = {
+      id: `GN-${Date.now().toString().slice(-4)}`,
+      timestamp: 'Hace un momento',
+      channels,
+      message: msg,
+      sender: 'Administrador Disquera'
+    };
+
+    this.groupNoticesLog.update(prev => [newLog, ...prev]);
+    this.groupNoticeCustomText.set('');
+  }
+
+  handleContractRollbackClick(): void {
+    if (this.clientViewed()) {
+      this.showContractRollbackModal.set(true);
+    } else {
+      this.confirmContractRollbackToAcceptedDirect();
+    }
+  }
+
+  confirmContractRollbackToAcceptedDirect(): void {
+    const q = this.selectedQuote();
+    if (!q) return;
+
+    const updated = {
+      ...q,
+      state: 'Aceptada' as const,
+      contractStatus: 'Pendiente' as const
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.updateQuoteState(q.id, 'Aceptada');
+    this.mockData.addAudit('Regreso Directo a Cotización Aceptada (Fase 3)', 'Cotizaciones', `Se regresó la cotización ${q.id} de Fase 4 a Fase 3 ('Aceptada') de forma directa por no haber sido visualizada aún por el cliente.`);
+
+    this.layoutState.openQuoteModal(updated);
+  }
 
   confirmContractRollbackToAccepted(): void {
     const q = this.selectedQuote();
@@ -5287,6 +7076,51 @@ export class QuoteDetailModalComponent {
     this.mockData.addAudit('Regreso a Cotización Aceptada (Fase 3)', 'Cotizaciones', auditMsg);
 
     this.showContractRollbackModal.set(false);
+    this.layoutState.openQuoteModal(updated);
+  }
+
+  // ─── FASE 5: ACCIONES Y REVERSIÓN DE CONTRATO FIRMADO ────────────────────────
+  closeSignedContractAction(): void {
+    const q = this.selectedQuote();
+    if (!q) return;
+
+    this.mockData.addAudit(
+      'Cierre Formal de Contrato (Fase 5)',
+      'Cotizaciones',
+      `Se concluyó y validó formalmente el ciclo del contrato firmado para la cotización ${q.id} (${q.clientName} - ${q.groupName}). Expediente archivado e iniciado proceso de cobranza.`
+    );
+    alert(`El contrato para la cotización ${q.id} ha sido cerrado formalmente y archivado exitosamente.`);
+    this.closeModal();
+  }
+
+  handleSignedContractRollbackClick(): void {
+    this.showSignedContractRollbackModal.set(true);
+  }
+
+  confirmSignedContractRollbackToAccepted(): void {
+    const q = this.selectedQuote();
+    if (!q) return;
+
+    const reason = this.signedContractRollbackReason();
+    const note = this.signedContractRollbackNote().trim();
+    const fullReason = note ? `${reason} — Nota: ${note}` : reason;
+
+    const updated = {
+      ...q,
+      state: 'Aceptada' as const,
+      contractStatus: 'Pendiente' as const
+    };
+
+    this.mockData.updateQuoteDetails(q.id, updated);
+    this.mockData.updateQuoteState(q.id, 'Aceptada');
+
+    this.mockData.addAudit(
+      'Regreso de Contrato Firmado a Cotización Aceptada (Fase 3)',
+      'Cotizaciones',
+      `Se regresó la cotización ${q.id} de 'Contrato firmado' (Fase 5) a 'Aceptada' (Fase 3) por corrección administrativa posterior a la firma. Motivo: ${fullReason}. Se invalidó el documento firmado anterior.`
+    );
+
+    this.showSignedContractRollbackModal.set(false);
     this.layoutState.openQuoteModal(updated);
   }
 
@@ -5473,7 +7307,7 @@ export class QuoteDetailModalComponent {
     const current = this.proposalMilestones();
     const defaultDate = this.proposalPaymentDueDate() || '2026-08-15';
     const newMilestone: PaymentMilestone = {
-      id: `m-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+      id: `m-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       label: `Parcialidad #${current.length + 1}`,
       percentageOrAmount: 25,
       type: 'percentage',
@@ -5510,7 +7344,57 @@ export class QuoteDetailModalComponent {
       const current = this.selectedQuote();
       if (current) {
         this.negotiationRound.set(current.negotiationRound ?? 0);
-        this.negotiationHistory.set(current.negotiationHistory ?? []);
+
+        if (current.negotiationHistory && current.negotiationHistory.length > 0) {
+          this.negotiationHistory.set(current.negotiationHistory);
+        } else if (current.state === 'Contrato firmado' || current.state === 'Contrato en espera de firma') {
+          // Historial de negociaciones de demostración para visualización
+          this.negotiationHistory.set([
+            {
+              round: 1,
+              clientRejectionMessage: 'El presupuesto inicial excede el límite del comité. Solicitamos evaluar descuento promocional por pronto pago.',
+              adminProposalNote: 'Se redujo la tarifa de honorarios en un 10% y se optimizaron viáticos logísticos.',
+              totalOffered: Math.round((current.totalAmount || 100000) * 1.15),
+              artistFee: Math.round((current.artistFee || 35000) * 1.1),
+              viaticosCost: Math.round((current.viaticosCost || 8500) * 1.1),
+              soundCost: current.soundCost || 10000,
+              marginPercent: ((current as any).marginPercent || 20) + 2,
+              timestamp: '2026-07-12 11:30 AM',
+              proposedDate: current.proposedDate,
+              scheduleMode: 'continuo',
+              startTime: '21:00',
+              endTime: '00:00',
+              durationHours: current.durationHours || 3,
+              soundOption: 'proveedor',
+              advancePaymentType: 'percentage',
+              advancePaymentValue: 50,
+              paymentDueDate: '2026-08-01'
+            },
+            {
+              round: 2,
+              clientRejectionMessage: 'Requerimos un ajuste en la comisión de audio ya que la empresa cuenta con equipo complementario de sonorización.',
+              adminProposalNote: 'Acuerdo comercial definitivo alcanzado con 50% de anticipo y liquidación programada.',
+              totalOffered: current.totalAmount || 100000,
+              artistFee: current.artistFee || 35000,
+              viaticosCost: current.viaticosCost || 8500,
+              soundCost: current.soundCost || 0,
+              marginPercent: ((current as any).marginPercent || 20),
+              timestamp: '2026-07-15 04:45 PM',
+              proposedDate: current.proposedDate,
+              scheduleMode: 'continuo',
+              startTime: '21:00',
+              endTime: '00:00',
+              durationHours: current.durationHours || 3,
+              soundOption: 'proveedor',
+              advancePaymentType: 'percentage',
+              advancePaymentValue: 50,
+              paymentDueDate: current.paymentDueDate || '2026-08-15'
+            }
+          ]);
+        } else {
+          this.negotiationHistory.set([]);
+        }
+
         if (current.proposedDate) {
           this.proposalDate.set(current.proposedDate);
         }
@@ -6303,7 +8187,16 @@ export class QuoteDetailModalComponent {
 
   getPaymentMilestones(entry?: NegotiationEntry | null): PaymentMilestone[] {
     const q = this.selectedQuote();
-    return entry?.paymentMilestones || q?.paymentMilestones || [];
+    const milestones = entry?.paymentMilestones || q?.paymentMilestones;
+    if (milestones && milestones.length > 0) {
+      return milestones;
+    }
+    const dueDate = entry?.paymentDueDate || q?.paymentDueDate || '2026-08-25';
+    return [
+      { id: 'm1_def', label: '50% Anticipo de Reserva', percentageOrAmount: 50, type: 'percentage', dueDateOrTimeframe: '2026-08-01' },
+      { id: 'm2_def', label: '25% Segundo Pago Intermedio', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: '2026-08-15' },
+      { id: 'm3_def', label: '25% Finiquito Final', percentageOrAmount: 25, type: 'percentage', dueDateOrTimeframe: dueDate }
+    ];
   }
 
 
@@ -6319,8 +8212,8 @@ export class QuoteDetailModalComponent {
       }
       case 'Negociación': return 'Fase 2.5: Mesa de Negociación & Re-estructuración Comercial';
       case 'Aceptada': return 'Fase 3: Cotización Aceptada por el Cliente';
-      case 'Contrato en espera de firma': return 'Fase 2: Contrato Enviado en Espera de Firma Digital';
-      case 'Contrato firmado': return 'Fase 3: Contrato Privado Firmado Digitalmente';
+      case 'Contrato en espera de firma': return 'Fase 4: Contrato Enviado en Espera de Firma Digital';
+      case 'Contrato firmado': return 'Fase 4.5: Contrato Privado Firmado Digitalmente';
       case 'Pago pendiente': return 'Fase 3: Pago de Anticipo 50% Pendiente de Recepción';
       case 'Anticipo 50% recibido': return 'Fase 3: Recepción Registrada de Anticipo del 50%';
       case 'Logística & Soundcheck': return 'Fase 4: Preparación Logística, Rider Técnico & Soundcheck';

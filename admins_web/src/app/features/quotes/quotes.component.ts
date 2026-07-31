@@ -532,7 +532,7 @@ export class QuotesComponent {
       case 'Negociación': return 'Fase 2: Negociación Comercial & Ajuste de Cláusulas';
       case 'Aceptada': return 'Fase 2: Cotización Aceptada por el Cliente';
       case 'Contrato en espera de firma': return 'Fase 2: Contrato Enviado en Espera de Firma Digital del Cliente';
-      case 'Contrato firmado': return 'Fase 3: Contrato Privado Firmado Digitalmente';
+      case 'Contrato firmado': return 'Fase 4.5: Contrato Privado Firmado Digitalmente';
       case 'Pago pendiente': return 'Fase 3: Pago de Anticipo 50% Pendiente de Recepción';
       case 'Anticipo 50% recibido': return 'Fase 3: Recepción Registrada de Anticipo del 50%';
       case 'Logística & Soundcheck': return 'Fase 4: Preparación Logística, Rider Técnico & Soundcheck';
