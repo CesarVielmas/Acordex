@@ -9,11 +9,13 @@ export type ProgressBarColorVariant = 'primary' | 'success' | 'warning' | 'error
   imports: [CommonModule],
   template: `
     <div>
-      @if (label) {
+      @if (label || valueLabel) {
         <div class="flex justify-between items-center gap-2 font-semibold mb-1 text-xs">
-          <span class="text-on-surface-variant truncate min-w-0">{{ label }}</span>
+          @if (label) {
+            <span class="text-on-surface-variant truncate min-w-0">{{ label }}</span>
+          }
           @if (valueLabel) {
-            <span class="shrink-0" [ngClass]="getValueColorClass()">{{ valueLabel }}</span>
+            <span class="shrink-0 ml-auto" [ngClass]="getValueColorClass()">{{ valueLabel }}</span>
           }
         </div>
       }

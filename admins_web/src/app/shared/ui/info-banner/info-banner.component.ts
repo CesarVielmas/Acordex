@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export type InfoBannerVariant = 'info' | 'warning' | 'success' | 'neutral';
+export type InfoBannerVariant = 'info' | 'warning' | 'success' | 'neutral' | 'urgent';
 
 @Component({
   selector: 'app-info-banner',
@@ -46,6 +46,7 @@ export class InfoBannerComponent {
       case 'warning': return 'bg-amber-500/5 border-amber-500/30';
       case 'success': return 'bg-emerald-500/5 border-emerald-500/30';
       case 'neutral': return 'bg-surface-container border-outline-variant/30';
+      case 'urgent': return 'bg-purple-950/60 border-2 border-purple-500/50 animate-pulse';
       default: return 'bg-primary/5 border-primary/30';
     }
   }
@@ -55,6 +56,7 @@ export class InfoBannerComponent {
       case 'warning': return 'bg-amber-500/15 text-amber-400';
       case 'success': return 'bg-emerald-500/15 text-emerald-400';
       case 'neutral': return 'bg-surface-container-high text-outline';
+      case 'urgent': return 'bg-purple-500/20 text-purple-300';
       default: return 'bg-primary/15 text-primary';
     }
   }
