@@ -11,7 +11,7 @@ import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.com
   standalone: true,
   imports: [CommonModule, RouterModule, IconButtonComponent],
   template: `
-    <header class="bg-surface/95 backdrop-blur-2xl border-b border-white/10 px-4 sm:px-6 h-[72px] flex items-center justify-between shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-300 select-none">
+    <header class="bg-surface/95 backdrop-blur-2xl border-b border-white/10 px-2.5 sm:px-6 h-[72px] flex items-center justify-between gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-300 select-none overflow-hidden">
 
       <!-- Left Section: 2-Line Vertical Brand Identity -->
       <div class="flex items-center gap-3.5">
@@ -48,10 +48,10 @@ import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.com
       </div>
 
       <!-- Right Section: Role Switcher & User Profile -->
-      <div class="flex items-center gap-2 sm:gap-4">
+      <div class="flex items-center gap-1.5 sm:gap-4 shrink-0">
 
         <!-- Role Selector Pill Bar -->
-        <div class="flex items-center bg-surface-container-lowest p-1.5 rounded-2xl border border-white/10 shadow-inner">
+        <div class="flex items-center bg-surface-container-lowest p-1 sm:p-1.5 rounded-2xl border border-white/10 shadow-inner">
           <span class="text-[11px] font-extrabold text-primary px-2 hidden lg:flex items-center gap-1 uppercase tracking-wider font-['Epilogue']">
             <span class="material-symbols-outlined text-sm">badge</span> Rol:
           </span>
@@ -149,7 +149,7 @@ export class HeaderComponent {
 
   getRoleButtonClass(role: Role): string {
     const stateClass = this.roleService.activeRole() === role ? this.activeRoleButtonClass : this.inactiveRoleButtonClass;
-    return `px-2.5 sm:px-3.5 min-h-11 py-1.5 rounded-xl text-[11px] sm:text-xs transition-all duration-200 flex items-center gap-1 ${stateClass}`;
+    return `px-2 sm:px-3.5 min-h-11 py-1.5 rounded-xl text-[11px] sm:text-xs transition-all duration-200 flex items-center gap-1 ${stateClass}`;
   }
 
   setRole(role: Role): void {

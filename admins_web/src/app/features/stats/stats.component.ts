@@ -1,96 +1,56 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BadgeComponent } from '../../shared/ui/badge/badge.component';
+import { PanelComponent } from '../../shared/ui/panel/panel.component';
+import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.component';
 
 @Component({
   selector: 'app-stats',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BadgeComponent, PanelComponent, ProgressBarComponent],
   template: `
-    <div class="space-y-8 animate-fade-in">
-      
+    <div class="space-y-6 sm:space-y-8 animate-fade-in">
+
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="font-display-xl text-2xl font-black text-on-surface">Estadísticas & Audiencia</h1>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              Fan Demographics
-            </span>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="font-display-xl text-xl sm:text-2xl font-black text-on-surface">Estadísticas & Audiencia</h1>
+            <app-badge label="Fan Demographics" variant="secondary" />
           </div>
           <p class="text-xs text-outline mt-1">Interacción social, demografía del público e inteligencia de audiencia</p>
         </div>
       </div>
 
       <!-- DEMOGRAPHICS & SOCIAL CARDS -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        <div class="p-6 rounded-3xl bg-surface-container border border-outline-variant/30 shadow-xl space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-base font-bold text-on-surface">Rango de Edad Fanbase</h3>
-            <span class="material-symbols-outlined text-primary text-xl">bar_chart</span>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+
+        <app-panel title="Rango de Edad Fanbase" icon="bar_chart">
+          <div class="space-y-3.5">
+            <app-progress-bar label="18 - 24 Años (Tumbado / Sierreño)" [percent]="48" valueLabel="48%" colorVariant="primary" />
+            <app-progress-bar label="25 - 34 Años (Norteño / Banda)" [percent]="36" valueLabel="36%" colorVariant="secondary" />
+            <app-progress-bar label="35+ Años (Tradicional)" [percent]="16" valueLabel="16%" colorVariant="neutral" />
           </div>
+        </app-panel>
 
-          <div class="space-y-3 text-xs">
-            <div>
-              <div class="flex justify-between font-semibold mb-1">
-                <span>18 - 24 Años (Tumbado / Sierreño)</span>
-                <span class="text-primary font-bold">48%</span>
-              </div>
-              <div class="w-full h-2.5 rounded-full bg-surface-bright overflow-hidden">
-                <div class="h-full bg-primary rounded-full" style="width: 48%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between font-semibold mb-1">
-                <span>25 - 34 Años (Norteño / Banda)</span>
-                <span class="text-secondary font-bold">36%</span>
-              </div>
-              <div class="w-full h-2.5 rounded-full bg-surface-bright overflow-hidden">
-                <div class="h-full bg-secondary rounded-full" style="width: 36%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between font-semibold mb-1">
-                <span>35+ Años (Tradicional)</span>
-                <span class="text-outline font-bold">16%</span>
-              </div>
-              <div class="w-full h-2.5 rounded-full bg-surface-bright overflow-hidden">
-                <div class="h-full bg-outline rounded-full" style="width: 16%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-6 rounded-3xl bg-surface-container border border-outline-variant/30 shadow-xl space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-base font-bold text-on-surface">Principales Ciudades</h3>
-            <span class="material-symbols-outlined text-primary text-xl">location_city</span>
-          </div>
-
+        <app-panel title="Principales Ciudades" icon="location_city">
           <div class="space-y-2 text-xs">
-            <div class="p-2.5 rounded-xl bg-surface-container-high flex justify-between items-center">
-              <span class="font-bold text-on-surface">1. Monterrey, NL</span>
-              <span class="font-black text-emerald-400">42,500 Fans</span>
+            <div class="p-2.5 rounded-xl bg-surface-container-high flex justify-between items-center gap-2">
+              <span class="font-bold text-on-surface truncate">1. Monterrey, NL</span>
+              <span class="font-black text-emerald-400 shrink-0">42,500 Fans</span>
             </div>
-            <div class="p-2.5 rounded-xl bg-surface-container-high flex justify-between items-center">
-              <span class="font-bold text-on-surface">2. Guadalajara, JAL</span>
-              <span class="font-black text-emerald-400">31,200 Fans</span>
+            <div class="p-2.5 rounded-xl bg-surface-container-high flex justify-between items-center gap-2">
+              <span class="font-bold text-on-surface truncate">2. Guadalajara, JAL</span>
+              <span class="font-black text-emerald-400 shrink-0">31,200 Fans</span>
             </div>
-            <div class="p-2.5 rounded-xl bg-surface-container-high flex justify-between items-center">
-              <span class="font-bold text-on-surface">3. Aguascalientes, AGS</span>
-              <span class="font-black text-emerald-400">22,800 Fans</span>
+            <div class="p-2.5 rounded-xl bg-surface-container-high flex justify-between items-center gap-2">
+              <span class="font-bold text-on-surface truncate">3. Aguascalientes, AGS</span>
+              <span class="font-black text-emerald-400 shrink-0">22,800 Fans</span>
             </div>
           </div>
-        </div>
+        </app-panel>
 
-        <div class="p-6 rounded-3xl bg-surface-container border border-outline-variant/30 shadow-xl space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-base font-bold text-on-surface">Redes Sociales</h3>
-            <span class="material-symbols-outlined text-primary text-xl">share</span>
-          </div>
-
+        <app-panel title="Redes Sociales" icon="share">
           <div class="grid grid-cols-2 gap-3 text-xs">
             <div class="p-3 rounded-2xl bg-surface-container-high text-center">
               <span class="text-[10px] text-outline font-bold uppercase block">Seguidores TikTok</span>
@@ -109,13 +69,13 @@ import { CommonModule } from '@angular/common';
               <span class="text-lg font-black text-purple-300">8.4%</span>
             </div>
           </div>
-        </div>
+        </app-panel>
 
       </div>
 
       <!-- AUTOMATED ENGAGEMENT SUGGESTIONS -->
-      <div class="p-6 rounded-3xl bg-surface-container border border-primary/40 shadow-xl space-y-4">
-        <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
+      <div class="p-5 sm:p-6 rounded-3xl bg-surface-container border border-primary/40 shadow-xl space-y-4">
+        <h3 class="text-sm sm:text-base font-bold text-on-surface flex items-center gap-2">
           <span class="material-symbols-outlined text-primary">auto_awesome</span> Sugerencias de Engagement Automatizadas
         </h3>
 
