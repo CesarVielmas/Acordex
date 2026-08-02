@@ -4,29 +4,30 @@ import { RouterModule } from '@angular/router';
 import { RoleService } from '../../core/services/role.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
 import { Role } from '../../core/models/admin.models';
+import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.component';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IconButtonComponent],
   template: `
-    <header class="bg-[#121212]/95 backdrop-blur-2xl border-b border-white/10 px-4 sm:px-6 h-[72px] flex items-center justify-between shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-300 select-none">
-      
+    <header class="bg-surface/95 backdrop-blur-2xl border-b border-white/10 px-4 sm:px-6 h-[72px] flex items-center justify-between shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-300 select-none">
+
       <!-- Left Section: 2-Line Vertical Brand Identity -->
       <div class="flex items-center gap-3.5">
-        
+
         <!-- Mobile Menu Toggle Button (Opens Drawer) -->
-        <button 
-          (click)="layoutState.toggleMobileMenu()" 
-          class="md:hidden w-10 h-10 rounded-2xl bg-[#1A1A1A] text-primary hover:text-primary-container transition-all active:scale-95 border border-white/10 flex items-center justify-center shadow-md"
-          aria-label="Abrir menú de navegación"
-        >
-          <span class="material-symbols-outlined text-xl">menu</span>
-        </button>
+        <app-icon-button
+          class="md:hidden"
+          icon="menu"
+          ariaLabel="Abrir menú de navegación"
+          variant="default"
+          (pressed)="layoutState.toggleMobileMenu()"
+        />
 
         <!-- Official Executive Brand Identity (Clean 2-Line Vertical Layout) -->
         <a routerLink="/dashboard" class="flex items-center gap-3 group">
-          
+
           <!-- Logo Image -->
           <img src="acordex_without_bg.png" alt="Acordex Logo" class="w-10 h-10 sm:w-11 sm:h-11 object-contain transition-transform duration-300 group-hover:scale-105" />
 
@@ -36,7 +37,7 @@ import { Role } from '../../core/models/admin.models';
             <h1 class="font-['Epilogue'] font-black text-xl sm:text-2xl text-primary tracking-tighter leading-none">
               ACORDEX
             </h1>
-            
+
             <!-- Line 2: Panel de Administración Subtitle Below -->
             <span class="text-[10px] sm:text-[11px] font-bold text-outline tracking-wider uppercase font-['Epilogue'] mt-1 leading-none group-hover:text-primary transition-colors">
               Panel de Administración
@@ -48,44 +49,35 @@ import { Role } from '../../core/models/admin.models';
 
       <!-- Right Section: Role Switcher & User Profile -->
       <div class="flex items-center gap-2 sm:gap-4">
-        
+
         <!-- Role Selector Pill Bar -->
-        <div class="flex items-center bg-[#0A0A0A] p-1.5 rounded-2xl border border-white/10 shadow-inner">
+        <div class="flex items-center bg-surface-container-lowest p-1.5 rounded-2xl border border-white/10 shadow-inner">
           <span class="text-[11px] font-extrabold text-primary px-2 hidden lg:flex items-center gap-1 uppercase tracking-wider font-['Epilogue']">
             <span class="material-symbols-outlined text-sm">badge</span> Rol:
           </span>
 
           <div class="flex items-center gap-1">
-            <button 
+            <button
               (click)="setRole('encargado')"
-              [class]="roleService.activeRole() === 'encargado'
-                ? 'bg-gradient-to-r from-primary via-amber-400 to-primary text-on-primary font-black shadow-[0_0_15px_rgba(242,202,80,0.35)] border border-amber-300/50'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5 font-medium'"
-              class="px-2.5 sm:px-3.5 py-1 rounded-xl text-[11px] sm:text-xs transition-all duration-200 flex items-center gap-1"
+              [class]="getRoleButtonClass('encargado')"
               title="Acceso Total a Finanzas y Configuración"
             >
               <span class="material-symbols-outlined text-sm">shield_person</span>
               <span class="hidden sm:inline">Encargado</span>
             </button>
 
-            <button 
+            <button
               (click)="setRole('administrador')"
-              [class]="roleService.activeRole() === 'administrador'
-                ? 'bg-gradient-to-r from-primary via-amber-400 to-primary text-on-primary font-black shadow-[0_0_15px_rgba(242,202,80,0.35)] border border-amber-300/50'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5 font-medium'"
-              class="px-2.5 sm:px-3.5 py-1 rounded-xl text-[11px] sm:text-xs transition-all duration-200 flex items-center gap-1"
+              [class]="getRoleButtonClass('administrador')"
               title="Acceso Operativo Completo"
             >
               <span class="material-symbols-outlined text-sm">admin_panel_settings</span>
               <span class="hidden sm:inline">Admin</span>
             </button>
 
-            <button 
+            <button
               (click)="setRole('usuario')"
-              [class]="roleService.activeRole() === 'usuario'
-                ? 'bg-gradient-to-r from-primary via-amber-400 to-primary text-on-primary font-black shadow-[0_0_15px_rgba(242,202,80,0.35)] border border-amber-300/50'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5 font-medium'"
-              class="px-2.5 sm:px-3.5 py-1 rounded-xl text-[11px] sm:text-xs transition-all duration-200 flex items-center gap-1"
+              [class]="getRoleButtonClass('usuario')"
               title="Acceso de Campo"
             >
               <span class="material-symbols-outlined text-sm">person</span>
@@ -95,9 +87,9 @@ import { Role } from '../../core/models/admin.models';
         </div>
 
         <!-- Notifications Dropdown Button -->
-        <button 
+        <button
           (click)="showNotifications.set(!showNotifications())"
-          class="relative w-10 h-10 rounded-2xl bg-[#1A1A1A] hover:bg-surface-bright text-primary flex items-center justify-center transition-all border border-white/10 hover:border-primary/50 hover:scale-105 active:scale-95 shadow-md"
+          class="relative min-w-11 min-h-11 w-11 h-11 rounded-2xl bg-surface-container-low hover:bg-surface-bright text-primary flex items-center justify-center transition-all border border-white/10 hover:border-primary/50 hover:scale-105 active:scale-95 shadow-md"
           aria-label="Notificaciones"
         >
           <span class="material-symbols-outlined text-xl">notifications</span>
@@ -120,7 +112,7 @@ import { Role } from '../../core/models/admin.models';
 
       <!-- NOTIFICATIONS POPUP PANEL -->
       @if (showNotifications()) {
-        <div class="fixed top-16 right-4 sm:right-6 w-[calc(100%-2rem)] max-w-sm bg-[#1E1E1E] border border-white/10 rounded-2xl shadow-2xl z-50 p-4 space-y-3 animate-scale-up">
+        <div class="fixed top-16 right-4 sm:right-6 w-[calc(100%-2rem)] max-w-sm bg-surface-container-low border border-white/10 rounded-2xl shadow-2xl z-50 p-4 space-y-3 animate-scale-up">
           <div class="flex items-center justify-between border-b border-white/10 pb-2">
             <span class="font-['Epilogue'] font-bold text-sm text-on-surface flex items-center gap-1.5">
               <span class="material-symbols-outlined text-primary text-base">notifications</span> Notificaciones
@@ -149,6 +141,16 @@ export class HeaderComponent {
   layoutState = inject(LayoutStateService);
 
   showNotifications = signal(false);
+
+  private readonly activeRoleButtonClass =
+    'bg-gradient-to-r from-primary via-amber-400 to-primary text-on-primary font-black shadow-[0_0_15px_rgba(242,202,80,0.35)] border border-amber-300/50';
+  private readonly inactiveRoleButtonClass =
+    'text-on-surface-variant hover:text-on-surface hover:bg-white/5 font-medium';
+
+  getRoleButtonClass(role: Role): string {
+    const stateClass = this.roleService.activeRole() === role ? this.activeRoleButtonClass : this.inactiveRoleButtonClass;
+    return `px-2.5 sm:px-3.5 min-h-11 py-1.5 rounded-xl text-[11px] sm:text-xs transition-all duration-200 flex items-center gap-1 ${stateClass}`;
+  }
 
   setRole(role: Role): void {
     this.roleService.setRole(role);
