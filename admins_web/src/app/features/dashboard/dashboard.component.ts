@@ -3,11 +3,14 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
+import { BadgeComponent } from '../../shared/ui/badge/badge.component';
+import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
+import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, BadgeComponent, KpiCardComponent, ProgressBarComponent],
   template: `
     <div class="space-y-8 animate-fade-in">
       
@@ -60,107 +63,66 @@ import { MockDataService } from '../../core/services/mock-data.service';
       @if (roleService.isEncargado()) {
         <!-- ENCARGADO ROLE: FINANCIAL & HIGH LEVEL KPIS -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          
-          <div class="p-5 rounded-2xl bg-surface-container-high border border-outline-variant/30 relative overflow-hidden hover:border-primary/50 transition-all shadow-md group">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-outline uppercase tracking-wider">Ingresos Totales</span>
-              <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-2xl">attach_money</span>
-              </div>
-            </div>
-            <p class="text-2xl font-black text-on-surface mt-3">
-              &#36;{{ mockData.financialKpis().totalGrossRevenue | number:'1.0-0' }} <span class="text-xs font-medium text-outline">MXN</span>
-            </p>
-            <div class="flex items-center gap-1.5 text-xs text-emerald-400 mt-2 font-medium">
-              <span class="material-symbols-outlined text-sm">trending_up</span>
-              <span>+18.4% vs mes anterior</span>
-            </div>
-          </div>
-
-          <div class="p-5 rounded-2xl bg-surface-container-high border border-outline-variant/30 relative overflow-hidden hover:border-primary/50 transition-all shadow-md group">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-outline uppercase tracking-wider">Ganancias Totales</span>
-              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-2xl">savings</span>
-              </div>
-            </div>
-            <p class="text-2xl font-black text-emerald-400 mt-3">
-              &#36;{{ mockData.financialKpis().totalNetProfit | number:'1.0-0' }} <span class="text-xs font-medium text-outline">MXN</span>
-            </p>
-            <div class="flex items-center gap-1.5 text-xs text-outline mt-2 font-medium">
-              <span>Margen estimado 25% global</span>
-            </div>
-          </div>
-
-          <div class="p-5 rounded-2xl bg-surface-container-high border border-outline-variant/30 relative overflow-hidden hover:border-primary/50 transition-all shadow-md group">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-outline uppercase tracking-wider">Ingresos Totales por Cotizaciones</span>
-              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-2xl">pending_actions</span>
-              </div>
-            </div>
-            <p class="text-2xl font-black text-on-surface mt-3">
-              &#36;{{ mockData.financialKpis().pendingQuotesAmount | number:'1.0-0' }} <span class="text-xs font-medium text-outline">MXN</span>
-            </p>
-            <div class="flex items-center gap-1.5 text-xs text-amber-400 mt-2 font-medium">
-              <span class="material-symbols-outlined text-sm">info</span>
-              <span>{{ mockData.quotes().length }} cotizaciones activas</span>
-            </div>
-          </div>
-
-          <div class="p-5 rounded-2xl bg-surface-container-high border border-outline-variant/30 relative overflow-hidden hover:border-primary/50 transition-all shadow-md group">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-outline uppercase tracking-wider">Audiencia Estimada</span>
-              <div class="w-10 h-10 rounded-xl bg-secondary-container/40 text-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-2xl">family_history</span>
-              </div>
-            </div>
-            <p class="text-2xl font-black text-on-surface mt-3">
-              142,500 <span class="text-xs font-medium text-outline">Fans</span>
-            </p>
-            <div class="flex items-center gap-1.5 text-xs text-secondary mt-2 font-medium">
-              <span class="material-symbols-outlined text-sm">groups</span>
-              <span>4 Talentos activos</span>
-            </div>
-          </div>
-
+          <app-kpi-card
+            label="Ingresos Totales"
+            [value]="'$' + (mockData.financialKpis().totalGrossRevenue | number:'1.0-0')"
+            unit="MXN"
+            icon="attach_money"
+            trend="+18.4% vs mes anterior"
+            trendIcon="trending_up"
+            colorVariant="primary"
+          />
+          <app-kpi-card
+            label="Ganancias Totales"
+            [value]="'$' + (mockData.financialKpis().totalNetProfit | number:'1.0-0')"
+            unit="MXN"
+            icon="savings"
+            trend="Margen estimado 25% global"
+            colorVariant="success"
+          />
+          <app-kpi-card
+            label="Ingresos Totales por Cotizaciones"
+            [value]="'$' + (mockData.financialKpis().pendingQuotesAmount | number:'1.0-0')"
+            unit="MXN"
+            icon="pending_actions"
+            [trend]="mockData.quotes().length + ' cotizaciones activas'"
+            trendIcon="info"
+            colorVariant="warning"
+          />
+          <app-kpi-card
+            label="Audiencia Estimada"
+            value="142,500"
+            unit="Fans"
+            icon="family_history"
+            trend="4 Talentos activos"
+            trendIcon="groups"
+            colorVariant="secondary"
+          />
         </div>
       } @else if (roleService.isAdminOrEncargado()) {
         <!-- ADMINISTRADOR ROLE: OPERATIONAL KPIS (NO FINANCES) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          
-          <div class="p-5 rounded-2xl bg-surface-container-high border border-outline-variant/30 relative overflow-hidden hover:border-primary/50 transition-all shadow-md group">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-outline uppercase tracking-wider">Eventos Próximos</span>
-              <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-2xl">event_available</span>
-              </div>
-            </div>
-            <p class="text-2xl font-black text-on-surface mt-3">
-              {{ mockData.events().length }} <span class="text-xs font-medium text-outline">Fechas</span>
-            </p>
-            <p class="text-xs text-amber-400 mt-2 font-medium">2 Eventos No Publicados</p>
-          </div>
+          <app-kpi-card
+            label="Eventos Próximos"
+            [value]="mockData.events().length.toString()"
+            unit="Fechas"
+            icon="event_available"
+            trend="2 Eventos No Publicados"
+            colorVariant="primary"
+          />
+          <app-kpi-card
+            label="Cotizaciones Pendientes"
+            [value]="getPendingQuotesCount().toString()"
+            unit="Pendientes"
+            icon="pending_actions"
+            [trend]="getUnrevisedQuotesCount() + ' Sin Revisar / ' + getRevisedQuotesCount() + ' Revisadas'"
+            colorVariant="warning"
+          />
 
-          <div class="p-5 rounded-2xl bg-surface-container-high border border-outline-variant/30 relative overflow-hidden hover:border-primary/50 transition-all shadow-md group">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-outline uppercase tracking-wider">Cotizaciones Pendientes</span>
-              <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-2xl">pending_actions</span>
-              </div>
-            </div>
-            <p class="text-2xl font-black text-on-surface mt-3">
-              {{ getPendingQuotesCount() }} <span class="text-xs font-medium text-outline">Pendientes</span>
-            </p>
-            <p class="text-xs text-amber-400 mt-2 font-medium">
-              {{ getUnrevisedQuotesCount() }} Sin Revisar / {{ getRevisedQuotesCount() }} Revisadas
-            </p>
-          </div>
-
-          <div class="p-5 rounded-2xl bg-surface-container-high border border-outline-variant/30 relative overflow-hidden hover:border-primary/50 transition-all shadow-md group">
+          <div class="p-4 sm:p-5 rounded-2xl bg-surface-container-high border border-outline-variant/30 relative overflow-hidden hover:border-primary/50 transition-all shadow-md group">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-outline uppercase tracking-wider">Grupo Popular del Momento</span>
-              <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
                 <span class="material-symbols-outlined text-2xl">trending_up</span>
               </div>
             </div>
@@ -180,19 +142,14 @@ import { MockDataService } from '../../core/services/mock-data.service';
             </div>
           </div>
 
-          <div class="p-5 rounded-2xl bg-surface-container-high border border-outline-variant/30 relative overflow-hidden hover:border-primary/50 transition-all shadow-md group">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-outline uppercase tracking-wider">Tareas Pendientes</span>
-              <div class="w-10 h-10 rounded-xl bg-secondary-container/40 text-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-2xl">checklist</span>
-              </div>
-            </div>
-            <p class="text-2xl font-black text-on-surface mt-3">
-              {{ mockData.filteredTasks().length }} <span class="text-xs font-medium text-outline">Asignadas</span>
-            </p>
-            <p class="text-xs text-secondary mt-2 font-medium">Operación sin datos privados</p>
-          </div>
-
+          <app-kpi-card
+            label="Tareas Pendientes"
+            [value]="mockData.filteredTasks().length.toString()"
+            unit="Asignadas"
+            icon="checklist"
+            trend="Operación sin datos privados"
+            colorVariant="secondary"
+          />
         </div>
       } @else {
         <!-- USUARIO ROLE: COMPACT TASK ASSIGNMENT, TASK VELOCITY ANALYTICS & RECENT EVIDENCE -->
