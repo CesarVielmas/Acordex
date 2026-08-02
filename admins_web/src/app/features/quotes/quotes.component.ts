@@ -6,51 +6,47 @@ import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
 import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models';
+import { AccessRestrictedComponent } from '../../shared/ui/access-restricted/access-restricted.component';
+import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
+import { TabPillsComponent, TabPillItem } from '../../shared/ui/tab-pills/tab-pills.component';
+import { TableShellComponent } from '../../shared/ui/table-shell/table-shell.component';
+import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.component';
+import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 
 @Component({
   selector: 'app-quotes',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    AccessRestrictedComponent,
+    KpiCardComponent,
+    TabPillsComponent,
+    TableShellComponent,
+    ProgressBarComponent,
+    BadgeComponent
+  ],
   template: `
     <div class="space-y-6 max-w-full">
-      
+
       @if (roleService.activeRole() === 'usuario') {
         <!-- NEUTRAL ACCESS RESTRICTED SCREEN (NO ROLE EXPLANATIONS OR CAUSES) -->
-        <div class="min-h-[500px] flex items-center justify-center p-6">
-          <div class="max-w-md w-full p-8 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 text-center space-y-5 shadow-2xl">
-            <div class="w-16 h-16 rounded-full bg-surface-container-high border border-outline-variant/30 text-outline flex items-center justify-center mx-auto shadow-inner">
-              <span class="material-symbols-outlined text-3xl">lock</span>
-            </div>
-            
-            <div class="space-y-1">
-              <h2 class="text-xl font-black text-on-surface">Acceso Restringido</h2>
-              <p class="text-xs text-outline">Sección no disponible.</p>
-            </div>
-
-            <div class="pt-2">
-              <a 
-                routerLink="/dashboard" 
-                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-surface-bright hover:bg-surface-container-highest text-on-surface font-bold text-xs transition-all shadow-md"
-              >
-                <span class="material-symbols-outlined text-base">arrow_back</span> Volver al inicio
-              </a>
-            </div>
-          </div>
-        </div>
+        <app-access-restricted icon="lock" title="Acceso Restringido" message="Sección no disponible." [showBackLink]="true" />
       } @else {
         <!-- FULL COTIZACIONES MODULE FOR AUTHORIZED MANAGERS & ADMINISTRATORS -->
 
         <!-- TOP HEADER & VIEW TOGGLE (ULTRA MODERN GLASSMORPHISM) -->
-        <div class="p-6 rounded-3xl bg-gradient-to-r from-surface-container-high/90 via-surface-container/80 to-surface-container-high/90 backdrop-blur-xl border border-outline-variant/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div class="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-surface-container-high/90 via-surface-container/80 to-surface-container-high/90 backdrop-blur-xl border border-outline-variant/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
           <div class="absolute -right-10 -top-10 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div class="relative z-10">
             <div class="flex items-center gap-3 flex-wrap">
-              <div class="p-2.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-inner">
+              <div class="p-2.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-inner shrink-0">
                 <span class="material-symbols-outlined text-2xl">request_quote</span>
               </div>
               <div>
-                <h1 class="font-display-xl text-2xl sm:text-3xl font-black text-on-surface tracking-tight">Panel de Cotizaciones & Contrataciones Individuales</h1>
+                <h1 class="font-display-xl text-xl sm:text-2xl lg:text-3xl font-black text-on-surface tracking-tight">Panel de Cotizaciones & Contrataciones Individuales</h1>
                 <p class="text-xs text-outline mt-0.5">Gestión de contratación 1 a 1 por cliente y grupo musical, reserva de agenda y control de 14 estados comerciales</p>
               </div>
             </div>
@@ -59,17 +55,17 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
           <!-- View Mode Switcher: Kanban Vertical vs Tabla -->
           <div class="flex items-center gap-3 self-start md:self-auto relative z-10">
             <div class="p-1.5 rounded-2xl bg-surface-container-highest/60 border border-outline-variant/40 flex items-center gap-1.5 shadow-lg backdrop-blur-md">
-              <button 
+              <button
                 (click)="viewMode.set('kanban')"
                 [class]="viewMode() === 'kanban' ? 'bg-primary text-on-primary font-bold shadow-lg shadow-primary/20' : 'text-on-surface-variant hover:text-on-surface'"
-                class="px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-all duration-300"
+                class="px-4 py-2 min-h-11 rounded-xl text-xs flex items-center gap-2 transition-all duration-300"
               >
                 <span class="material-symbols-outlined text-base">view_kanban</span> Kanban Vertical
               </button>
-              <button 
+              <button
                 (click)="viewMode.set('table')"
                 [class]="viewMode() === 'table' ? 'bg-primary text-on-primary font-bold shadow-lg shadow-primary/20' : 'text-on-surface-variant hover:text-on-surface'"
-                class="px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-all duration-300"
+                class="px-4 py-2 min-h-11 rounded-xl text-xs flex items-center gap-2 transition-all duration-300"
               >
                 <span class="material-symbols-outlined text-base">table_rows</span> Vista Tabla
               </button>
@@ -78,100 +74,47 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
         </div>
 
         <!-- KPI SUMMARY METRIC STRIP -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="p-4 rounded-3xl bg-surface-container/70 backdrop-blur-md border border-outline-variant/30 shadow-md hover:shadow-xl hover:border-primary/40 transition-all duration-300 space-y-1.5 group">
-            <span class="text-[10px] font-bold text-outline uppercase tracking-wider block">Tiempo Promedio Cierre</span>
-            <div class="flex items-center justify-between">
-              <span class="text-xl font-black text-on-surface group-hover:text-primary transition-colors">3.8 Días</span>
-              <div class="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-lg">speed</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="p-4 rounded-3xl bg-surface-container/70 backdrop-blur-md border border-outline-variant/30 shadow-md hover:shadow-xl hover:border-emerald-500/40 transition-all duration-300 space-y-1.5 group">
-            <span class="text-[10px] font-bold text-outline uppercase tracking-wider block">Tasa de Conversión</span>
-            <div class="flex items-center justify-between">
-              <span class="text-xl font-black text-emerald-400">78.5%</span>
-              <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-lg">trending_up</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="p-4 rounded-3xl bg-surface-container/70 backdrop-blur-md border border-outline-variant/30 shadow-md hover:shadow-xl hover:border-blue-500/40 transition-all duration-300 space-y-1.5 group">
-            <span class="text-[10px] font-bold text-outline uppercase tracking-wider block">Riders Auditados</span>
-            <div class="flex items-center justify-between">
-              <span class="text-xl font-black text-blue-400">100% OK</span>
-              <div class="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 group-hover:scale-110 transition-transform">
-                <span class="material-symbols-outlined text-lg">fact_check</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="p-4 rounded-3xl bg-surface-container/70 backdrop-blur-md border border-outline-variant/30 shadow-md hover:shadow-xl hover:border-purple-500/40 transition-all duration-300 space-y-1.5 group">
-            <span class="text-[10px] font-bold text-outline uppercase tracking-wider block">
-              @if (roleService.canViewFinances()) { Valuación Pipeline } @else { Aforo Acumulado }
-            </span>
-            <div class="flex items-center justify-between">
-              @if (roleService.canViewFinances()) {
-                <span class="text-xl font-black text-purple-400">&#36;{{ getTotalPipelineAmount() | number:'1.0-0' }}</span>
-                <div class="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 group-hover:scale-110 transition-transform">
-                  <span class="material-symbols-outlined text-lg">payments</span>
-                </div>
-              } @else {
-                <span class="text-xl font-black text-purple-300">48,500 Asist.</span>
-                <div class="p-2 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/20 group-hover:scale-110 transition-transform">
-                  <span class="material-symbols-outlined text-lg">groups</span>
-                </div>
-              }
-            </div>
-          </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <app-kpi-card label="Tiempo Promedio Cierre" value="3.8 Días" icon="speed" colorVariant="primary" />
+          <app-kpi-card label="Tasa de Conversión" value="78.5%" icon="trending_up" colorVariant="success" />
+          <app-kpi-card label="Riders Auditados" value="100% OK" icon="fact_check" colorVariant="info" />
+          @if (roleService.canViewFinances()) {
+            <app-kpi-card
+              label="Valuación Pipeline"
+              [value]="'$' + (getTotalPipelineAmount() | number:'1.0-0')"
+              icon="payments"
+              colorVariant="secondary"
+            />
+          } @else {
+            <app-kpi-card label="Aforo Acumulado" value="48,500 Asist." icon="groups" colorVariant="secondary" />
+          }
         </div>
 
         <!-- QUICK FILTER PILLS & SEARCH BAR -->
-        <div class="p-5 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-lg space-y-3">
-          
-          <!-- State Filter Pills (14 States) -->
-          <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
-            <button 
-              (click)="stateFilter.set('Todos')"
-              [class]="stateFilter() === 'Todos' ? 'bg-primary text-on-primary font-bold shadow-md' : 'bg-surface-container-high text-on-surface-variant hover:text-on-surface'"
-              class="px-3.5 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all"
-            >
-              Todas las 14 Etapas ({{ mockData.quotes().length }})
-            </button>
+        <div class="p-4 sm:p-5 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-lg space-y-3">
 
-            @for (st of allStates; track st) {
-              <button 
-                (click)="stateFilter.set(st)"
-                [class]="stateFilter() === st ? 'bg-primary text-on-primary font-bold shadow-md' : 'bg-surface-container-high text-on-surface-variant hover:text-on-surface'"
-                class="px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all"
-              >
-                {{ st }}
-              </button>
-            }
-          </div>
+          <!-- State Filter Pills (14 States) -->
+          <app-tab-pills [tabs]="stateFilterTabs()" [active]="stateFilter()" (change)="stateFilter.set($event)" />
 
           <!-- Search Input & Dropdowns -->
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1 border-t border-outline-variant/20">
             <div class="relative flex-1">
-              <span class="material-symbols-outlined absolute left-3.5 top-2.5 text-outline text-lg">search</span>
-              <input 
-                [(ngModel)]="searchTerm" 
-                type="text" 
+              <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
+              <input
+                [(ngModel)]="searchTerm"
+                type="text"
                 placeholder="Buscar por folio, cliente, empresa, grupo musical o ciudad..."
-                class="w-full bg-surface-container-high/90 border border-outline-variant/30 rounded-2xl pl-10 pr-4 py-2 text-xs text-on-surface focus:outline-none focus:border-primary/60 transition-all shadow-inner"
+                class="w-full bg-surface-container-high/90 border border-outline-variant/30 rounded-2xl pl-10 pr-4 py-2.5 min-h-11 text-xs text-on-surface focus:outline-none focus:border-primary/60 transition-all shadow-inner"
               />
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
               <!-- Payment Filter Dropdown -->
               <div class="flex items-center gap-2 text-xs">
-                <span class="text-outline font-semibold">Estatus Pago:</span>
-                <select 
+                <span class="text-outline font-semibold shrink-0">Estatus Pago:</span>
+                <select
                   [(ngModel)]="paymentFilter"
-                  class="bg-surface-container-high/90 border border-outline-variant/30 rounded-xl px-3.5 py-2 text-xs text-on-surface focus:outline-none focus:border-primary/60"
+                  class="bg-surface-container-high/90 border border-outline-variant/30 rounded-xl px-3.5 py-2 min-h-11 text-xs text-on-surface focus:outline-none focus:border-primary/60"
                 >
                   <option value="Todos">Todos los Pagos</option>
                   <option value="Pendiente">Pendiente</option>
@@ -187,13 +130,13 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
         @if (viewMode() === 'kanban') {
           <div class="space-y-6">
             @for (state of getFilteredStates(); track state) {
-              <div class="p-6 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-xl space-y-5">
-                
+              <div class="p-4 sm:p-6 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-xl space-y-5">
+
                 <!-- State Header Banner -->
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline-variant/20">
-                  <div class="flex items-center gap-3">
-                    <span class="w-3.5 h-3.5 rounded-full bg-primary ring-4 ring-primary/20 shadow-sm"></span>
-                    <h3 class="text-sm font-extrabold text-on-surface flex items-center gap-2">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <span class="w-3.5 h-3.5 rounded-full bg-primary ring-4 ring-primary/20 shadow-sm shrink-0"></span>
+                    <h3 class="text-sm font-extrabold text-on-surface flex items-center gap-2 min-w-0 flex-wrap">
                       <span class="material-symbols-outlined text-primary text-base">{{ getStateIcon(state) }}</span>
                       {{ state }}
                       <span class="text-xs font-bold px-3 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shadow-sm">
@@ -203,11 +146,11 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
                   </div>
 
                   @if (roleService.canViewFinances()) {
-                    <span class="text-xs font-semibold text-outline">
+                    <span class="text-xs font-semibold text-outline shrink-0">
                       Subtotal del Estado: <strong class="text-emerald-400 font-black">&#36;{{ getStateSubtotal(state) | number:'1.0-0' }} MXN</strong>
                     </span>
                   } @else {
-                    <span class="text-xs font-semibold text-purple-300 flex items-center gap-1">
+                    <span class="text-xs font-semibold text-purple-300 flex items-center gap-1 shrink-0">
                       <span class="material-symbols-outlined text-sm">groups</span> Aforo Acumulado: <strong class="text-purple-200 font-black">{{ getFilteredQuotesByState(state).length * 8500 | number:'1.0-0' }} Asistentes</strong>
                     </span>
                   }
@@ -218,10 +161,10 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     @for (q of getFilteredQuotesByState(state); track q.id) {
                       <div class="p-5 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 hover:border-primary/50 hover:shadow-xl transition-all duration-300 space-y-4 group relative border-l-4 border-l-primary">
-                        
+
                         <!-- Top Badge Bar -->
-                        <div class="flex items-center justify-between text-xs">
-                          <button 
+                        <div class="flex items-center justify-between gap-1.5 text-xs flex-wrap">
+                          <button
                             (click)="copyFolio(q.id)"
                             class="font-black text-primary px-2.5 py-0.5 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all flex items-center gap-1"
                             title="Copiar folio"
@@ -269,25 +212,24 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
                           </div>
 
                           <!-- Venue & Date -->
-                          <p class="text-[11px] text-outline pt-1 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-xs text-primary">location_on</span> {{ q.venue }}, {{ q.city }} ({{ q.proposedDate }})
+                          <p class="text-[11px] text-outline pt-1 flex items-center gap-1 min-w-0">
+                            <span class="material-symbols-outlined text-xs text-primary shrink-0">location_on</span> <span class="truncate">{{ q.venue }}, {{ q.city }} ({{ q.proposedDate }})</span>
                           </p>
                         </div>
 
                         <!-- State Progress Stepper (14 States) -->
-                        <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20 space-y-1">
-                          <div class="flex items-center justify-between text-[10px] font-bold">
-                            <span class="text-outline uppercase">Avance de Estado</span>
-                            <span class="text-primary">Paso {{ getStateIndex(q.state) + 1 }} de {{ allStates.length }}</span>
-                          </div>
-                          <div class="w-full h-1.5 rounded-full bg-surface-bright overflow-hidden">
-                            <div class="h-full bg-gradient-to-r from-primary to-purple-400 rounded-full transition-all" [style.width.%]="((getStateIndex(q.state) + 1) / allStates.length) * 100"></div>
-                          </div>
+                        <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20">
+                          <app-progress-bar
+                            label="Avance de Estado"
+                            [valueLabel]="'Paso ' + (getStateIndex(q.state) + 1) + ' de ' + allStates.length"
+                            [percent]="((getStateIndex(q.state) + 1) / allStates.length) * 100"
+                            colorVariant="primary"
+                          />
                         </div>
 
                         <!-- Proposal Amount (Financial) vs Operational Specs (Non-financial) -->
-                        <div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between text-xs">
-                          <div>
+                        <div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between gap-2 text-xs">
+                          <div class="min-w-0">
                             @if (roleService.canViewFinances()) {
                               <span class="text-[10px] text-outline uppercase font-bold block">Monto Propuesto</span>
                               <span class="font-black text-on-surface text-base">&#36;{{ q.totalAmount | number:'1.0-0' }} MXN</span>
@@ -299,9 +241,9 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
                             }
                           </div>
 
-                          <button 
+                          <button
                             (click)="openDetailModal(q)"
-                            class="px-3.5 py-1.5 rounded-xl bg-surface-bright hover:bg-primary hover:text-on-primary text-on-surface text-xs font-bold transition-all flex items-center gap-1 shadow-sm hover:scale-105"
+                            class="px-3.5 py-1.5 min-h-11 rounded-xl bg-surface-bright hover:bg-primary hover:text-on-primary text-on-surface text-xs font-bold transition-all flex items-center gap-1 shadow-sm hover:scale-105 shrink-0"
                           >
                             <span class="material-symbols-outlined text-xs">visibility</span> Abrir Solicitud
                           </button>
@@ -309,21 +251,21 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
 
                         <!-- BIDIRECTIONAL STATE CONTROLS -->
                         <div class="flex items-center justify-between bg-surface-container/90 p-2 rounded-xl border border-outline-variant/20 text-xs">
-                          <button 
+                          <button
                             [disabled]="isFirstState(q.state)"
                             (click)="moveState(q, -1)"
-                            class="px-3 py-1 rounded-lg bg-surface-bright hover:bg-primary/20 text-on-surface disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 font-bold text-[11px]"
+                            class="px-3 py-1 min-h-11 rounded-lg bg-surface-bright hover:bg-primary/20 text-on-surface disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 font-bold text-[11px]"
                             title="Retroceder estado"
                           >
                             <span class="material-symbols-outlined text-xs">arrow_back</span> Retroceder
                           </button>
 
-                          <span class="font-semibold text-outline text-[10px] uppercase tracking-wider">Mover Estado</span>
+                          <span class="font-semibold text-outline text-[10px] uppercase tracking-wider hidden sm:inline">Mover Estado</span>
 
-                          <button 
+                          <button
                             [disabled]="isLastState(q.state)"
                             (click)="moveState(q, 1)"
-                            class="px-3 py-1 rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-on-primary disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 font-bold text-[11px]"
+                            class="px-3 py-1 min-h-11 rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-on-primary disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 font-bold text-[11px]"
                             title="Avanzar estado"
                           >
                             Avanzar <span class="material-symbols-outlined text-xs">arrow_forward</span>
@@ -344,80 +286,109 @@ import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models
           </div>
         } @else {
           <!-- TABLE VIEW -->
-          <div class="p-6 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-xl overflow-hidden">
-            <div class="overflow-x-auto custom-scrollbar">
-              <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr class="border-b border-outline-variant/30 text-[11px] font-bold text-outline uppercase tracking-wider">
-                    <th class="pb-3 px-3">Folio</th>
-                    <th class="pb-3 px-3">Cliente Contratante</th>
-                    <th class="pb-3 px-3">Talento Solicitado</th>
-                    <th class="pb-3 px-3">Fecha & Recinto</th>
-                    <th class="pb-3 px-3">
-                      @if (roleService.canViewFinances()) { Monto Propuesto } @else { Aforo / Rider }
-                    </th>
-                    <th class="pb-3 px-3">Estado Pipeline</th>
-                    <th class="pb-3 px-3">Estatus de Pago</th>
-                    <th class="pb-3 px-3 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-outline-variant/20">
-                  @for (q of getFilteredQuotes(); track q.id) {
-                    <tr class="hover:bg-surface-container-high/50 transition-colors">
-                      <td class="py-3.5 px-3 font-bold text-primary whitespace-nowrap">{{ q.id }}</td>
-                      <td class="py-3.5 px-3 font-semibold text-on-surface">
-                        {{ q.clientName }}
-                        <span class="text-[10px] text-outline block font-normal">{{ q.clientCompany }}</span>
-                      </td>
-                      <td class="py-3.5 px-3 text-on-surface font-bold whitespace-nowrap">
-                        <span class="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-extrabold">
-                          {{ q.groupName }}
-                        </span>
-                      </td>
-                      <td class="py-3.5 px-3 text-outline text-xs">
-                        {{ q.proposedDate }}
-                        <span class="text-[10px] text-on-surface font-medium block">{{ q.venue }} ({{ q.city }})</span>
-                      </td>
-                      <td class="py-3.5 px-3 font-bold text-on-surface whitespace-nowrap">
-                        @if (roleService.canViewFinances()) {
-                          &#36;{{ q.totalAmount | number:'1.0-0' }} MXN
-                        } @else {
-                          <span class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 text-[10px] font-bold">12.5k Aforo • Rider OK</span>
+          <app-table-shell [isEmpty]="getFilteredQuotes().length === 0" emptyIcon="search_off" emptyMessage="No se encontraron cotizaciones con los filtros seleccionados.">
+
+            <table desktop-table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-outline-variant/30 text-[11px] font-bold text-outline uppercase tracking-wider">
+                  <th class="pb-3 px-3">Folio</th>
+                  <th class="pb-3 px-3">Cliente Contratante</th>
+                  <th class="pb-3 px-3">Talento Solicitado</th>
+                  <th class="pb-3 px-3">Fecha & Recinto</th>
+                  <th class="pb-3 px-3">
+                    @if (roleService.canViewFinances()) { Monto Propuesto } @else { Aforo / Rider }
+                  </th>
+                  <th class="pb-3 px-3">Estado Pipeline</th>
+                  <th class="pb-3 px-3">Estatus de Pago</th>
+                  <th class="pb-3 px-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant/20">
+                @for (q of getFilteredQuotes(); track q.id) {
+                  <tr class="hover:bg-surface-container-high/50 transition-colors">
+                    <td class="py-3.5 px-3 font-bold text-primary whitespace-nowrap">{{ q.id }}</td>
+                    <td class="py-3.5 px-3 font-semibold text-on-surface">
+                      {{ q.clientName }}
+                      <span class="text-[10px] text-outline block font-normal">{{ q.clientCompany }}</span>
+                    </td>
+                    <td class="py-3.5 px-3 text-on-surface font-bold whitespace-nowrap">
+                      <span class="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-extrabold">
+                        {{ q.groupName }}
+                      </span>
+                    </td>
+                    <td class="py-3.5 px-3 text-outline text-xs">
+                      {{ q.proposedDate }}
+                      <span class="text-[10px] text-on-surface font-medium block">{{ q.venue }} ({{ q.city }})</span>
+                    </td>
+                    <td class="py-3.5 px-3 font-bold text-on-surface whitespace-nowrap">
+                      @if (roleService.canViewFinances()) {
+                        &#36;{{ q.totalAmount | number:'1.0-0' }} MXN
+                      } @else {
+                        <span class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 text-[10px] font-bold">12.5k Aforo • Rider OK</span>
+                      }
+                    </td>
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      <app-badge [label]="q.state" variant="primary" />
+                    </td>
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      <span [class]="getPaymentStatusBadgeClass(q.paymentStatus, q)" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1 inline-flex">
+                        @if (q.state === 'Propuesta enviada' && (q.negotiationRound ?? 0) > 0) {
+                          <span class="material-symbols-outlined text-xs text-amber-400">handshake</span>
                         }
-                      </td>
-                      <td class="py-3.5 px-3 whitespace-nowrap">
-                        <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
-                          {{ q.state }}
-                        </span>
-                      </td>
-                      <td class="py-3.5 px-3 whitespace-nowrap">
-                        <span [class]="getPaymentStatusBadgeClass(q.paymentStatus, q)" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1 inline-flex">
-                          @if (q.state === 'Propuesta enviada' && (q.negotiationRound ?? 0) > 0) {
-                            <span class="material-symbols-outlined text-xs text-amber-400">handshake</span>
-                          }
-                          {{ getPaymentStatusLabel(q) }}
-                        </span>
-                      </td>
-                      <td class="py-3.5 px-3 text-right whitespace-nowrap">
-                        <button 
-                          (click)="openDetailModal(q)"
-                          class="px-3 py-1.5 rounded-xl bg-primary/20 text-primary hover:bg-primary hover:text-on-primary font-bold text-xs transition-all flex items-center gap-1 ml-auto"
-                        >
-                          <span class="material-symbols-outlined text-sm">visibility</span> Abrir Solicitud
-                        </button>
-                      </td>
-                    </tr>
-                  } @empty {
-                    <tr>
-                      <td colspan="8" class="text-center py-8 text-xs text-outline">
-                        No se encontraron cotizaciones con los filtros seleccionados.
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+                        {{ getPaymentStatusLabel(q) }}
+                      </span>
+                    </td>
+                    <td class="py-3.5 px-3 text-right whitespace-nowrap">
+                      <button
+                        (click)="openDetailModal(q)"
+                        class="px-3 py-1.5 min-h-11 rounded-xl bg-primary/20 text-primary hover:bg-primary hover:text-on-primary font-bold text-xs transition-all flex items-center gap-1 ml-auto"
+                      >
+                        <span class="material-symbols-outlined text-sm">visibility</span> Abrir Solicitud
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+
+            <div mobile-cards>
+              @for (q of getFilteredQuotes(); track q.id) {
+                <div class="p-4 space-y-3">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-bold text-primary text-sm">{{ q.id }}</span>
+                    <app-badge [label]="q.state" variant="primary" />
+                  </div>
+
+                  <div class="text-xs">
+                    <p class="font-semibold text-on-surface">{{ q.clientName }} <span class="text-outline font-normal">— {{ q.clientCompany }}</span></p>
+                    <p class="text-primary font-bold mt-1">{{ q.groupName }}</p>
+                    <p class="text-outline mt-1">{{ q.proposedDate }} &middot; {{ q.venue }} ({{ q.city }})</p>
+                  </div>
+
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <span class="font-bold text-on-surface text-sm">
+                      @if (roleService.canViewFinances()) {
+                        &#36;{{ q.totalAmount | number:'1.0-0' }} MXN
+                      } @else {
+                        12.5k Aforo &middot; Rider OK
+                      }
+                    </span>
+                    <span [class]="getPaymentStatusBadgeClass(q.paymentStatus, q)" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1">
+                      {{ getPaymentStatusLabel(q) }}
+                    </span>
+                  </div>
+
+                  <button
+                    (click)="openDetailModal(q)"
+                    class="w-full py-2.5 min-h-11 rounded-xl bg-primary/20 text-primary hover:bg-primary hover:text-on-primary font-bold text-xs transition-all flex items-center justify-center gap-1"
+                  >
+                    <span class="material-symbols-outlined text-sm">visibility</span> Abrir Solicitud
+                  </button>
+                </div>
+              }
             </div>
-          </div>
+
+          </app-table-shell>
         }
 
       }
@@ -506,6 +477,13 @@ export class QuotesComponent {
     'Cancelada con Imprevisto',
     'Cancelada'
   ];
+
+  stateFilterTabs(): TabPillItem[] {
+    return [
+      { value: 'Todos', label: `Todas las 14 Etapas (${this.mockData.quotes().length})` },
+      ...this.allStates.map(st => ({ value: st, label: st }))
+    ];
+  }
 
   getStateIcon(state: QuoteState): string {
     switch (state) {
@@ -641,7 +619,7 @@ export class QuotesComponent {
 
   getFilteredQuotes(): Quote[] {
     return this.mockData.quotes().filter(q => {
-      const matchSearch = !this.searchTerm() || 
+      const matchSearch = !this.searchTerm() ||
         q.id.toLowerCase().includes(this.searchTerm().toLowerCase()) ||
         q.clientName.toLowerCase().includes(this.searchTerm().toLowerCase()) ||
         q.clientCompany.toLowerCase().includes(this.searchTerm().toLowerCase()) ||
