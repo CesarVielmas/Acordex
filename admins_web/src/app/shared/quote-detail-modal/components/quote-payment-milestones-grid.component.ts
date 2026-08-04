@@ -6,44 +6,49 @@ import { PaymentMilestone } from '../../../core/models/admin.models';
   selector: 'app-quote-payment-milestones-grid',
   standalone: true,
   imports: [CommonModule],
+  // Sin esto, este componente (insertado como item directo de un grid de 3 columnas en sus
+  // usos actuales) se convierte el mismo en UN solo item del grid del padre, y el
+  // "md:col-span-3" de su div raiz no tiene ningun efecto porque no es hijo directo de ese
+  // grid. "contents" saca el host del arbol de caja para que sus hijos hereden la posicion
+  // de grid del padre como si estuvieran ahi directamente.
+  host: { class: 'contents' },
   template: `
     @if (milestones.length > 0) {
-      <div class="md:col-span-3 p-4 sm:p-4.5 rounded-2xl bg-gradient-to-r from-cyan-950/80 via-surface-container-high to-slate-900 border-2 border-cyan-500/60 space-y-3.5 font-sans shadow-2xl backdrop-blur-xl">
-        <div class="flex items-center justify-between border-b border-cyan-500/30 pb-2.5">
-          <span class="text-cyan-300 text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
-            <span class="material-symbols-outlined text-base text-cyan-400 animate-bounce">calendar_month</span>
+      <div class="md:col-span-3 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-cyan-500/40 space-y-4 font-sans shadow-xl">
+        <div class="flex items-center justify-between gap-3 border-b border-cyan-500/20 pb-3">
+          <span class="text-cyan-300 text-[11px] sm:text-xs font-black uppercase tracking-wider flex items-center gap-2 font-sans">
+            <span class="material-symbols-outlined text-base text-cyan-400">calendar_month</span>
             {{ title }}
           </span>
-          <span class="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5 shadow-sm">
-            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-            {{ milestones.length }} Parcialidades Programadas
+          <span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shrink-0">
+            {{ milestones.length }} Parcialidades
           </span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           @for (m of milestones; track m.id; let mIdx = $index) {
-            <div class="p-3.5 rounded-xl bg-surface-container/90 border border-cyan-500/40 flex flex-col justify-between text-xs space-y-2.5 shadow-md hover:border-cyan-400 hover:-translate-y-0.5 transition-all">
-              <div class="flex items-center justify-between border-b border-outline-variant/15 pb-2">
-                <span class="font-extrabold text-on-surface text-xs truncate flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                  #{{ mIdx + 1 }}. {{ m.label }}
+            <div class="p-3.5 rounded-xl bg-surface-container border border-outline-variant/30 space-y-2.5 shadow-sm hover:border-cyan-400/60 transition-all">
+              <div class="flex items-start justify-between gap-2">
+                <span class="font-bold text-on-surface text-xs leading-snug flex items-start gap-1.5 min-w-0">
+                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1 shrink-0"></span>
+                  <span class="min-w-0">#{{ mIdx + 1 }}. {{ m.label }}</span>
                 </span>
-                <span class="px-2 py-0.5 rounded-lg text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                  {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0') + ' MXN') }}
+                <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shrink-0">
+                  {{ m.type === 'percentage' ? (m.percentageOrAmount + '%') : ('$' + (m.percentageOrAmount | number:'1.0-0')) }}
                 </span>
               </div>
 
-              <div class="space-y-1.5 font-mono">
-                <div class="flex justify-between items-baseline">
-                  <span class="text-[10px] text-outline font-sans">Importe Neto:</span>
-                  <strong class="text-emerald-400 font-black text-sm text-shadow-sm">&#36;{{ calculatedAmount(m) | number:'1.0-0' }} MXN</strong>
+              <div class="space-y-1.5 pt-2 border-t border-outline-variant/15 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-outline">Importe Neto:</span>
+                  <strong class="text-emerald-400 font-black font-mono">&#36;{{ calculatedAmount(m) | number:'1.0-0' }} MXN</strong>
                 </div>
-                <div class="flex justify-between items-baseline pt-1.5 border-t border-outline-variant/10">
-                  <span class="text-[10px] text-outline font-sans flex items-center gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-outline flex items-center gap-1">
                     <span class="material-symbols-outlined text-xs text-amber-400">event</span>
                     Fecha / Límite:
                   </span>
-                  <strong class="text-amber-300 font-bold text-xs bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">{{ m.dueDateOrTimeframe }}</strong>
+                  <strong class="text-amber-300 font-mono font-bold">{{ m.dueDateOrTimeframe }}</strong>
                 </div>
               </div>
             </div>
