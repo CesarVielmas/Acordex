@@ -29,7 +29,7 @@ import { LayoutStateService } from '../../../core/services/layout_state.service'
             <span class="material-symbols-outlined text-amber-400 text-sm">tune</span>
             Configuración de Límite de Retrasos / Aplazados Tesorería
           </span>
-          <p class="text-[11px] text-outline mt-0.5">Definición administrativa de tolerancia. Ingresa el campo numérico flexible de hitos permitidos vencidos antes de migrar a "Cotización con Pagos Aplazados".</p>
+          <p class="text-[11px] text-outline mt-0.5">Definición administrativa de tolerancia. Ingresa el número de hitos vencidos o en mora permitidos antes de que el expediente se marque con el aviso de "Pago Atrasado" en el panel de Cotizaciones.</p>
         </div>
 
         <div class="flex items-center gap-2">

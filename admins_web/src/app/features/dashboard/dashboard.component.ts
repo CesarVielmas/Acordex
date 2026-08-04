@@ -1376,7 +1376,7 @@ export class DashboardComponent {
   }
 
   getPendingQuotesCount(): number {
-    return this.mockData.quotes().filter(q => q.state === 'En revisión' || q.state === 'Pago pendiente' || q.state === 'Propuesta enviada' || q.state === 'Negociación').length;
+    return this.mockData.quotes().filter(q => q.state === 'En revisión' || q.state === 'Propuesta enviada' || q.state === 'Negociación').length;
   }
 
   getUnrevisedQuotesCount(): number {

@@ -1,19 +1,13 @@
 export type Role = 'encargado' | 'administrador' | 'usuario';
 
-export type QuoteState = 
-  | 'En revisión' 
-  | 'Propuesta enviada' 
-  | 'Negociación' 
-  | 'Aceptada' 
+export type QuoteState =
+  | 'En revisión'
+  | 'Propuesta enviada'
+  | 'Negociación'
+  | 'Aceptada'
   | 'Contrato en espera de firma'
-  | 'Contrato firmado' 
-  | 'Cotización con Pagos Aplazados'
-  | 'Pago pendiente' 
-  | 'Anticipo 50% recibido'
-  | 'Logística & Soundcheck'
-  | 'Pago confirmado' 
-  | 'En presentación'
-  | 'Evento realizado' 
+  | 'Contrato firmado'
+  | 'Pago confirmado'
   | 'Finalizada'
   | 'Cancelada con Imprevisto'
   | 'Imprevisto Enviado'

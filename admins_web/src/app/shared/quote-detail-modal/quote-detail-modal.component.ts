@@ -182,7 +182,7 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
             }
 
             <!-- STATE SPECIFIC STEP NAVIGATION TABS (FOR OTHER STATES OTHER THAN INITIAL, SIGNATURE & PHASE 6 PHASES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cotización con Pagos Aplazados' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada') {
               <div class="quote-modal-tabs p-1 sm:p-1.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-between gap-2 text-xs shadow-inner">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <button 
@@ -2655,7 +2655,7 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
             }
 
             <!-- DYNAMIC WORKFLOW ACTION CONTROL BAR (FOR OTHER STATES OTHER THAN INITIAL PHASES & PHASE 6) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cotización con Pagos Aplazados' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada') {
               <div class="quote-modal-workflow-bar p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 shadow-lg">
                 <div class="space-y-0.5">
                   <span class="text-xs font-extrabold text-primary uppercase tracking-wider block">Acción Operativa para el Estado Actual</span>
@@ -4100,8 +4100,8 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
               </div>
             }
 
-            <!-- WORKFLOW ESPECIALIZADO PARA FASE 6: 'Finalizada', 'Cotización con Pagos Aplazados' -->
-            @if (effectiveQuoteState() === 'Finalizada' || effectiveQuoteState() === 'Cotización con Pagos Aplazados') {
+            <!-- WORKFLOW ESPECIALIZADO PARA FASE 6: 'Finalizada' -->
+            @if (effectiveQuoteState() === 'Finalizada') {
               <div class="h-full flex flex-col min-h-0 space-y-4 font-sans">
 
                 <!-- SUB-TABS NAVEGACIÓN FASE 6 -->
@@ -4201,18 +4201,49 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
               <app-quote-cancelled-final-view [quote]="selectedQuote()" (openSnapshot)="openTimelineSnapshot($event)" />
             }
 
-            <!-- TAB: EXPEDIENTE DE FASE ACTUAL (FOR OTHER STATES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'estado_actual') {
-              <div class="space-y-6">
-                <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-high border border-outline-variant/30 space-y-3 text-center">
-                  <span class="text-xs font-black text-primary uppercase tracking-wider block">Expediente en Seguimiento</span>
-                  <p class="text-xs text-outline max-w-xl mx-auto">Fase comercial activa en el pipeline disquera para {{ selectedQuote()?.groupName }}.</p>
+            <!-- TAB: EXPEDIENTE DE FASE ACTUAL (SOLO PARA ESTADOS SIN WORKFLOW ESPECIALIZADO PROPIO) -->
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'estado_actual') {
+              <div class="space-y-4">
+                <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-surface-container-high/90 via-surface-container to-surface-container-high/70 border border-outline-variant/30 space-y-4">
+                  <div class="flex items-center gap-3">
+                    <div [class]="getStateBadgeIconBg(selectedQuote()!.state)" class="p-3 rounded-2xl border shadow-sm flex items-center justify-center shrink-0">
+                      <span class="material-symbols-outlined text-2xl">{{ getStateIcon(selectedQuote()!.state) }}</span>
+                    </div>
+                    <div class="min-w-0">
+                      <span class="text-xs font-black text-on-surface uppercase tracking-wider block">Expediente en Seguimiento</span>
+                      <p [class]="getStateTextColor(selectedQuote()!.state)" class="text-[11px] font-bold truncate">{{ getStatePhaseTitle(selectedQuote()!.state) }}</p>
+                    </div>
+                  </div>
+
+                  <p class="text-xs text-outline leading-relaxed">
+                    Fase comercial activa en el pipeline disquera para <strong class="text-on-surface font-bold">{{ selectedQuote()?.groupName }}</strong>.
+                    Consulta la solicitud original y la cobranza en las pestañas superiores mientras este expediente avanza de etapa.
+                  </p>
+
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-1">
+                    <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-0.5 min-w-0">
+                      <span class="text-[9px] font-bold text-outline uppercase tracking-wider block">Grupo / Talento</span>
+                      <p class="text-xs font-black text-on-surface truncate">{{ selectedQuote()?.groupName }}</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-0.5 min-w-0">
+                      <span class="text-[9px] font-bold text-outline uppercase tracking-wider block">Cliente</span>
+                      <p class="text-xs font-black text-on-surface truncate">{{ selectedQuote()?.clientName }}</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-0.5 min-w-0">
+                      <span class="text-[9px] font-bold text-outline uppercase tracking-wider block">Sede / Fecha</span>
+                      <p class="text-xs font-black text-on-surface truncate">{{ selectedQuote()?.venue }} · {{ selectedQuote()?.proposedDate }}</p>
+                    </div>
+                    <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-0.5 min-w-0">
+                      <span class="text-[9px] font-bold text-outline uppercase tracking-wider block">Monto Pactado</span>
+                      <p class="text-xs font-black text-amber-400">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             }
 
             <!-- TAB: SOLICITUD ORIGINAL DEL CLIENTE (FOR OTHER STATES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'solicitud') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'solicitud') {
               <div class="space-y-4">
                 <div class="p-4 sm:p-6 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-4">
                   <h4 class="text-sm font-bold text-on-surface flex items-center gap-2">
@@ -4238,7 +4269,7 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
             }
 
             <!-- TAB: CONTROL DE COBRANZA & PAGOS -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'cobranza') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'cobranza') {
               <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-5 sm:space-y-6">
                 <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
                   <div>
@@ -4298,7 +4329,7 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
             }
 
             <!-- TAB: GENERADOR DE CONTRATO PDF -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'contrato') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'contrato') {
               <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-5 sm:space-y-6">
                 <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
                   <div>
@@ -6386,15 +6417,13 @@ export class QuoteDetailModalComponent {
     const delayedCount = updatedMilestones.filter(item => item.status === 'Vencido' || item.status === 'Moratorio').length;
     const maxAllowed = q.maxAllowedDelays ?? this.maxAllowedDelaysInput();
 
-    let newState = q.state;
     let isDeferred = q.isDeferred;
     let deferredReason = q.deferredReason;
     let deferredAt = q.deferredAt;
 
     if (delayedCount > maxAllowed) {
-      newState = 'Cotización con Pagos Aplazados';
       isDeferred = true;
-      deferredReason = 'Se superó el límite máximo configurado de ' + (maxAllowed) + ' hitos con retraso/mora. Expediente migrado a Pagos Aplazados.';
+      deferredReason = 'Se superó el límite máximo configurado de ' + (maxAllowed) + ' hitos con retraso/mora. Expediente marcado con aviso de Pago Atrasado.';
       deferredAt = new Date().toLocaleString();
     }
 
@@ -6402,16 +6431,12 @@ export class QuoteDetailModalComponent {
       ...q,
       totalAmount: q.totalAmount + moratorioAmount,
       paymentMilestones: updatedMilestones,
-      state: newState,
       isDeferred,
       deferredReason,
       deferredAt
     };
 
     this.mockData.updateQuoteDetails(q.id, updated);
-    if (newState !== q.state) {
-      this.mockData.updateQuoteState(q.id, newState);
-    }
 
     this.mockData.addAudit(
       'Aplicación de Cargo Moratorio',
@@ -7345,12 +7370,7 @@ export class QuoteDetailModalComponent {
     'Aceptada',
     'Contrato en espera de firma',
     'Contrato firmado',
-    'Pago pendiente',
-    'Anticipo 50% recibido',
-    'Logística & Soundcheck',
     'Pago confirmado',
-    'En presentación',
-    'Evento realizado',
     'Finalizada',
     'Cancelada'
   ];
@@ -7688,12 +7708,7 @@ export class QuoteDetailModalComponent {
       case 'Aceptada': return 'check_circle';
       case 'Contrato en espera de firma': return 'edit_note';
       case 'Contrato firmado': return 'draw';
-      case 'Pago pendiente': return 'hourglass_empty';
-      case 'Anticipo 50% recibido': return 'savings';
-      case 'Logística & Soundcheck': return 'equalizer';
       case 'Pago confirmado': return 'verified';
-      case 'En presentación': return 'graphic_eq';
-      case 'Evento realizado': return 'theater_comedy';
       case 'Finalizada': return 'task_alt';
       case 'Cancelada con Imprevisto': return 'report_problem';
       case 'Imprevisto Enviado': return 'hourglass_top';
@@ -7758,12 +7773,7 @@ export class QuoteDetailModalComponent {
       case 'Aceptada': return 'Fase 3: Cotización Aceptada por el Cliente';
       case 'Contrato en espera de firma': return 'Fase 4: Contrato Enviado en Espera de Firma Digital';
       case 'Contrato firmado': return 'Fase 4.5: Contrato Privado Firmado Digitalmente';
-      case 'Pago pendiente': return 'Fase 3: Pago de Anticipo 50% Pendiente de Recepción';
-      case 'Anticipo 50% recibido': return 'Fase 3: Recepción Registrada de Anticipo del 50%';
-      case 'Logística & Soundcheck': return 'Fase 4: Preparación Logística, Rider Técnico & Soundcheck';
       case 'Pago confirmado': return 'Fase 4: Verificación Financiera 100% & Reservas VIP';
-      case 'En presentación': return 'Fase 4: Presentación Artística En Vivo En Escenario';
-      case 'Evento realizado': return 'Fase 5: Presentación Artística Concluida en Recinto';
       case 'Finalizada': return 'Fase 5: Contratación Finalizada y Archivada en Histórico';
       case 'Cancelada con Imprevisto': return 'Imprevisto Activo: En Espera de Propuesta de Resolución';
       case 'Imprevisto Enviado': return 'Imprevisto: Propuesta de Resolución Enviada al Cliente';
@@ -7780,12 +7790,7 @@ export class QuoteDetailModalComponent {
       case 'Aceptada': return 'border-emerald-500/50 shadow-emerald-500/10';
       case 'Contrato en espera de firma': return 'border-purple-400/50 shadow-purple-400/10';
       case 'Contrato firmado': return 'border-purple-500/50 shadow-purple-500/10';
-      case 'Pago pendiente': return 'border-yellow-500/50 shadow-yellow-500/10';
-      case 'Anticipo 50% recibido': return 'border-teal-500/50 shadow-teal-500/10';
-      case 'Logística & Soundcheck': return 'border-orange-500/50 shadow-orange-500/10';
       case 'Pago confirmado': return 'border-emerald-400 shadow-emerald-500/20';
-      case 'En presentación': return 'border-rose-500/50 shadow-rose-500/10';
-      case 'Evento realizado': return 'border-indigo-500/50 shadow-indigo-500/10';
       case 'Finalizada': return 'border-slate-500/50 shadow-slate-500/10';
       case 'Cancelada con Imprevisto': return 'border-rose-500/50 shadow-rose-500/10';
       case 'Imprevisto Enviado': return 'border-cyan-500/50 shadow-cyan-500/10';
@@ -7802,12 +7807,7 @@ export class QuoteDetailModalComponent {
       case 'Aceptada': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
       case 'Contrato en espera de firma': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
       case 'Contrato firmado': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-      case 'Pago pendiente': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'Anticipo 50% recibido': return 'bg-teal-500/20 text-teal-300 border-teal-500/30';
-      case 'Logística & Soundcheck': return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
       case 'Pago confirmado': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-      case 'En presentación': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-      case 'Evento realizado': return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
       case 'Finalizada': return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
       case 'Cancelada con Imprevisto': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
       case 'Imprevisto Enviado': return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
@@ -7824,12 +7824,7 @@ export class QuoteDetailModalComponent {
       case 'Aceptada': return 'text-emerald-400';
       case 'Contrato en espera de firma': return 'text-purple-300';
       case 'Contrato firmado': return 'text-purple-300';
-      case 'Pago pendiente': return 'text-yellow-400';
-      case 'Anticipo 50% recibido': return 'text-teal-300';
-      case 'Logística & Soundcheck': return 'text-orange-300';
       case 'Pago confirmado': return 'text-emerald-300';
-      case 'En presentación': return 'text-rose-300';
-      case 'Evento realizado': return 'text-indigo-300';
       case 'Finalizada': return 'text-slate-300';
       case 'Cancelada con Imprevisto': return 'text-rose-300';
       case 'Imprevisto Enviado': return 'text-cyan-300';
@@ -7846,12 +7841,7 @@ export class QuoteDetailModalComponent {
       case 'Aceptada': return 'Confirmar aceptación y redactar borrador preliminar de contrato';
       case 'Contrato en espera de firma': return 'Revisar cláusulas legales y solicitar firma digital de las partes';
       case 'Contrato firmado': return 'Verificar firma de ambas partes y solicitar comprobante de anticipo';
-      case 'Pago pendiente': return 'Validar transferencia de depósito del 50% enviada por el cliente';
-      case 'Anticipo 50% recibido': return 'Acreditar anticipo en tesorería e iniciar logística técnica';
-      case 'Logística & Soundcheck': return 'Coordinar prueba de sonido (16:00 hrs), rider de audio y pases VIP';
       case 'Pago confirmado': return 'Validar 100% de liquidación y preparar llamada a escenario';
-      case 'En presentación': return 'Supervisar ejecución en vivo del concierto y seguridad en escenario';
-      case 'Evento realizado': return 'Verificar cumplimiento de horas de show y registrar aforo real';
       case 'Finalizada': return 'Expediente histórico archivado y encuesta de satisfacción concluida';
       case 'Cancelada': return 'Liberar fecha en el calendario disquera y verificar reembolsos';
       default: return 'Transicionar la cotización al siguiente paso del flujo comercial';

@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
-import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models';
+import { Quote, QuoteState, PaymentStatus, PaymentMilestone } from '../../core/models/admin.models';
 import { AccessRestrictedComponent } from '../../shared/ui/access-restricted/access-restricted.component';
 import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
 import { TabPillsComponent, TabPillItem } from '../../shared/ui/tab-pills/tab-pills.component';
@@ -47,7 +47,7 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
               </div>
               <div>
                 <h1 class="font-display-xl text-xl sm:text-2xl lg:text-3xl font-black text-on-surface tracking-tight">Panel de Cotizaciones & Contrataciones Individuales</h1>
-                <p class="text-xs text-outline mt-0.5">Gestión de contratación 1 a 1 por cliente y grupo musical, reserva de agenda y control de 14 estados comerciales</p>
+                <p class="text-xs text-outline mt-0.5">Gestión de contratación 1 a 1 por cliente y grupo musical, reserva de agenda y control de {{ allStates.length }} estados comerciales</p>
               </div>
             </div>
           </div>
@@ -156,6 +156,43 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
                   }
                 </div>
 
+                <!-- MINI-FILTRO DE COBRANZA (SOLO ESTADO 'FINALIZADA') -->
+                @if (state === 'Finalizada') {
+                  <div class="flex flex-wrap items-center gap-2 -mt-1">
+                    <span class="text-[10px] font-bold text-outline uppercase tracking-wider flex items-center gap-1 mr-1">
+                      <span class="material-symbols-outlined text-sm">filter_alt</span> Filtrar por Cobranza:
+                    </span>
+                    <button
+                      (click)="finalizadaPaymentFilter.set('todas')"
+                      [class]="finalizadaPaymentFilter() === 'todas' ? 'bg-primary text-on-primary border-primary shadow-sm' : 'bg-surface-container-high text-outline border-outline-variant/30 hover:text-on-surface'"
+                      class="px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5"
+                    >
+                      Todas <span class="opacity-70">({{ getFinalizadaQuotes().length }})</span>
+                    </button>
+                    <button
+                      (click)="finalizadaPaymentFilter.set('finalizada')"
+                      [class]="finalizadaPaymentFilter() === 'finalizada' ? 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm' : 'bg-surface-container-high text-outline border-outline-variant/30 hover:text-on-surface'"
+                      class="px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5"
+                    >
+                      <span class="material-symbols-outlined text-xs">task_alt</span> Totalmente Finalizada <span class="opacity-70">({{ getFinalizadaFinalizedCount() }})</span>
+                    </button>
+                    <button
+                      (click)="finalizadaPaymentFilter.set('pendiente')"
+                      [class]="finalizadaPaymentFilter() === 'pendiente' ? 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm' : 'bg-surface-container-high text-outline border-outline-variant/30 hover:text-on-surface'"
+                      class="px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5"
+                    >
+                      <span class="material-symbols-outlined text-xs">hourglass_top</span> Pago Pendiente <span class="opacity-70">({{ getFinalizadaPendingCount() }})</span>
+                    </button>
+                    <button
+                      (click)="finalizadaPaymentFilter.set('atrasada')"
+                      [class]="finalizadaPaymentFilter() === 'atrasada' ? 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm' : 'bg-surface-container-high text-outline border-outline-variant/30 hover:text-on-surface'"
+                      class="px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5"
+                    >
+                      <span class="material-symbols-outlined text-xs">warning</span> Pago Atrasado <span class="opacity-70">({{ getFinalizadaOverdueCount() }})</span>
+                    </button>
+                  </div>
+                }
+
                 <!-- Quote Cards Grid -->
                 @if (getFilteredQuotesByState(state).length > 0) {
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -183,6 +220,26 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
                             {{ getPaymentStatusLabel(q) }}
                           </span>
                         </div>
+
+                        <!-- COBRANZA: PROGRESO DE HITOS DE PAGO Y AVISO DE ATRASO (SOLO ESTADO 'FINALIZADA') -->
+                        @if (q.state === 'Finalizada') {
+                          <div class="space-y-1.5">
+                            <div [class]="isQuoteFullyPaid(q) ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : (hasOverdueMilestone(q) ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300')" class="px-3 py-2 rounded-xl border flex items-center justify-between gap-2 text-[10px] font-black">
+                              <span class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-xs">{{ isQuoteFullyPaid(q) ? 'task_alt' : (hasOverdueMilestone(q) ? 'error' : 'hourglass_top') }}</span>
+                                {{ getPaidMilestonesCount(q) }}/{{ getTotalMilestonesCount(q) }} Hitos Pagados
+                              </span>
+                              <span>{{ isQuoteFullyPaid(q) ? 'Totalmente Finalizada' : (getPaidAmountPercent(q) | number:'1.0-0') + '% Cobrado' }}</span>
+                            </div>
+
+                            @if (hasOverdueMilestone(q)) {
+                              <div class="px-3 py-1.5 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-300 text-[10px] font-bold flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-xs">warning</span>
+                                Pago Atrasado &mdash; {{ getOverdueMilestonesCount(q) }} hito(s) vencido(s) o en mora
+                              </div>
+                            }
+                          </div>
+                        }
 
                         <!-- COUPLED 1-TO-1 ARTIST & CLIENT CONTRACT INFORMATION -->
                         <div class="space-y-2">
@@ -409,6 +466,7 @@ export class QuotesComponent {
   searchTerm = signal('');
   stateFilter = signal('Todos');
   paymentFilter = signal('Todos');
+  finalizadaPaymentFilter = signal<'todas' | 'finalizada' | 'pendiente' | 'atrasada'>('todas');
 
   proposalSoundOption = signal<'cliente' | 'proveedor'>('proveedor');
   proposalSoundCost = signal<number>(15000);
@@ -466,13 +524,7 @@ export class QuotesComponent {
     'Aceptada',
     'Contrato en espera de firma',
     'Contrato firmado',
-    'Cotización con Pagos Aplazados',
-    'Pago pendiente',
-    'Anticipo 50% recibido',
-    'Logística & Soundcheck',
     'Pago confirmado',
-    'En presentación',
-    'Evento realizado',
     'Finalizada',
     'Cancelada con Imprevisto',
     'Imprevisto Enviado',
@@ -481,7 +533,7 @@ export class QuotesComponent {
 
   stateFilterTabs(): TabPillItem[] {
     return [
-      { value: 'Todos', label: `Todas las 14 Etapas (${this.mockData.quotes().length})` },
+      { value: 'Todos', label: `Todas las ${this.allStates.length} Etapas (${this.mockData.quotes().length})` },
       ...this.allStates.map(st => ({ value: st, label: st }))
     ];
   }
@@ -494,13 +546,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'check_circle';
       case 'Contrato en espera de firma': return 'edit_note';
       case 'Contrato firmado': return 'draw';
-      case 'Cotización con Pagos Aplazados': return 'update';
-      case 'Pago pendiente': return 'hourglass_empty';
-      case 'Anticipo 50% recibido': return 'savings';
-      case 'Logística & Soundcheck': return 'equalizer';
       case 'Pago confirmado': return 'verified';
-      case 'En presentación': return 'graphic_eq';
-      case 'Evento realizado': return 'theater_comedy';
       case 'Finalizada': return 'task_alt';
       case 'Cancelada con Imprevisto': return 'report_problem';
       case 'Imprevisto Enviado': return 'hourglass_top';
@@ -517,13 +563,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'Fase 2: Cotización Aceptada por el Cliente';
       case 'Contrato en espera de firma': return 'Fase 2: Contrato Enviado en Espera de Firma Digital del Cliente';
       case 'Contrato firmado': return 'Fase 4.5: Contrato Privado Firmado Digitalmente';
-      case 'Cotización con Pagos Aplazados': return 'Fase 5.5: Cotización con Pagos Aplazados (En Reestructuración)';
-      case 'Pago pendiente': return 'Fase 3: Pago de Anticipo 50% Pendiente de Recepción';
-      case 'Anticipo 50% recibido': return 'Fase 3: Recepción Registrada de Anticipo del 50%';
-      case 'Logística & Soundcheck': return 'Fase 4: Preparación Logística, Rider Técnico & Soundcheck';
       case 'Pago confirmado': return 'Fase 4: Verificación Financiera 100% & Reservas VIP';
-      case 'En presentación': return 'Fase 4: Presentación Artística En Vivo En Escenario';
-      case 'Evento realizado': return 'Fase 5: Conclusión de Show & Cierre Comercial de Evento';
       case 'Finalizada': return 'Fase 6: Cierre Definitivo de Cotización & Archivo Histórico';
       case 'Cancelada con Imprevisto': return 'Fase Excepcional: Cancelación por Imprevisto Grave';
       case 'Imprevisto Enviado': return 'Imprevisto: Propuesta de Resolución Enviada al Cliente';
@@ -540,13 +580,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'border-emerald-500/50 shadow-emerald-500/10';
       case 'Contrato en espera de firma': return 'border-purple-400/50 shadow-purple-400/10';
       case 'Contrato firmado': return 'border-purple-500/50 shadow-purple-500/10';
-      case 'Cotización con Pagos Aplazados': return 'border-orange-500/50 shadow-orange-500/10';
-      case 'Pago pendiente': return 'border-yellow-500/50 shadow-yellow-500/10';
-      case 'Anticipo 50% recibido': return 'border-teal-500/50 shadow-teal-500/10';
-      case 'Logística & Soundcheck': return 'border-orange-500/50 shadow-orange-500/10';
       case 'Pago confirmado': return 'border-emerald-400 shadow-emerald-500/20';
-      case 'En presentación': return 'border-rose-500/50 shadow-rose-500/10';
-      case 'Evento realizado': return 'border-indigo-500/50 shadow-indigo-500/10';
       case 'Finalizada': return 'border-slate-500/50 shadow-slate-500/10';
       case 'Cancelada con Imprevisto': return 'border-rose-600/50 shadow-rose-600/10';
       case 'Imprevisto Enviado': return 'border-cyan-500/50 shadow-cyan-500/10';
@@ -563,13 +597,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
       case 'Contrato en espera de firma': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
       case 'Contrato firmado': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-      case 'Cotización con Pagos Aplazados': return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
-      case 'Pago pendiente': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'Anticipo 50% recibido': return 'bg-teal-500/20 text-teal-300 border-teal-500/30';
-      case 'Logística & Soundcheck': return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
       case 'Pago confirmado': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-      case 'En presentación': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-      case 'Evento realizado': return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
       case 'Finalizada': return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
       case 'Cancelada con Imprevisto': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
       case 'Imprevisto Enviado': return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
@@ -586,13 +614,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'text-emerald-400';
       case 'Contrato en espera de firma': return 'text-purple-300';
       case 'Contrato firmado': return 'text-purple-300';
-      case 'Cotización con Pagos Aplazados': return 'text-orange-400';
-      case 'Pago pendiente': return 'text-yellow-400';
-      case 'Anticipo 50% recibido': return 'text-teal-300';
-      case 'Logística & Soundcheck': return 'text-orange-300';
       case 'Pago confirmado': return 'text-emerald-300';
-      case 'En presentación': return 'text-rose-300';
-      case 'Evento realizado': return 'text-indigo-300';
       case 'Finalizada': return 'text-slate-300';
       case 'Cancelada con Imprevisto': return 'text-rose-400';
       case 'Imprevisto Enviado': return 'text-cyan-400';
@@ -609,13 +631,7 @@ export class QuotesComponent {
       case 'Aceptada': return 'Confirmar aceptación y redactar borrador preliminar de contrato';
       case 'Contrato en espera de firma': return 'Revisar cláusulas legales y solicitar firma digital de las partes';
       case 'Contrato firmado': return 'Verificar firma de ambas partes y solicitar comprobante de anticipo';
-      case 'Cotización con Pagos Aplazados': return 'Gestionar reestructuración de hitos y acuerdos de mora con la administración';
-      case 'Pago pendiente': return 'Validar transferencia de depósito del 50% enviada por el cliente';
-      case 'Anticipo 50% recibido': return 'Acreditar anticipo en tesorería e iniciar logística técnica';
-      case 'Logística & Soundcheck': return 'Coordinar prueba de sonido (16:00 hrs), rider de audio y pases VIP';
       case 'Pago confirmado': return 'Validar 100% de liquidación y preparar llamada a escenario';
-      case 'En presentación': return 'Supervisar ejecución en vivo del concierto y seguridad en escenario';
-      case 'Evento realizado': return 'Verificar cumplimiento de horas de show y registrar aforo real';
       case 'Finalizada': return 'Expediente histórico archivado y encuesta de satisfacción concluida';
       case 'Cancelada con Imprevisto': return 'Expediente cerrado con protocolo de imprevisto grave u opción de reembolso';
       case 'Imprevisto Enviado': return 'Dar seguimiento a la propuesta de resolución enviada, en espera de la decisión del cliente';
@@ -648,7 +664,73 @@ export class QuotesComponent {
   }
 
   getFilteredQuotesByState(state: QuoteState): Quote[] {
-    return this.getFilteredQuotes().filter(q => q.state === state);
+    const list = this.getFilteredQuotes().filter(q => q.state === state);
+    if (state !== 'Finalizada' || this.finalizadaPaymentFilter() === 'todas') {
+      return list;
+    }
+    switch (this.finalizadaPaymentFilter()) {
+      case 'finalizada': return list.filter(q => this.isQuoteFullyPaid(q));
+      case 'atrasada': return list.filter(q => this.hasOverdueMilestone(q));
+      case 'pendiente': return list.filter(q => !this.isQuoteFullyPaid(q) && !this.hasOverdueMilestone(q));
+      default: return list;
+    }
+  }
+
+  // --- Cobranza por hitos de pago (usado en el mini-filtro y las cards del estado 'Finalizada') ---
+
+  getFinalizadaQuotes(): Quote[] {
+    return this.getFilteredQuotes().filter(q => q.state === 'Finalizada');
+  }
+
+  getFinalizadaFinalizedCount(): number {
+    return this.getFinalizadaQuotes().filter(q => this.isQuoteFullyPaid(q)).length;
+  }
+
+  getFinalizadaOverdueCount(): number {
+    return this.getFinalizadaQuotes().filter(q => this.hasOverdueMilestone(q)).length;
+  }
+
+  getFinalizadaPendingCount(): number {
+    return this.getFinalizadaQuotes().filter(q => !this.isQuoteFullyPaid(q) && !this.hasOverdueMilestone(q)).length;
+  }
+
+  private getQuoteMilestones(q: Quote): PaymentMilestone[] {
+    return q.paymentMilestones || [];
+  }
+
+  getPaidMilestonesCount(q: Quote): number {
+    return this.getQuoteMilestones(q).filter(m => m.status === 'Pagado').length;
+  }
+
+  getTotalMilestonesCount(q: Quote): number {
+    return this.getQuoteMilestones(q).length;
+  }
+
+  getPaidAmountPercent(q: Quote): number {
+    const milestones = this.getQuoteMilestones(q);
+    if (!q.totalAmount || milestones.length === 0) {
+      return q.paymentStatus === 'Pago Confirmado 100%' ? 100 : 0;
+    }
+    const paidAmount = milestones
+      .filter(m => m.status === 'Pagado')
+      .reduce((sum, m) => sum + (m.paidAmount ?? m.amountCalculated ?? 0), 0);
+    return Math.min(100, (paidAmount / q.totalAmount) * 100);
+  }
+
+  isQuoteFullyPaid(q: Quote): boolean {
+    const milestones = this.getQuoteMilestones(q);
+    if (milestones.length === 0) {
+      return q.paymentStatus === 'Pago Confirmado 100%';
+    }
+    return milestones.every(m => m.status === 'Pagado');
+  }
+
+  hasOverdueMilestone(q: Quote): boolean {
+    return this.getQuoteMilestones(q).some(m => m.status === 'Vencido' || m.status === 'Moratorio') || !!q.isDeferred;
+  }
+
+  getOverdueMilestonesCount(q: Quote): number {
+    return this.getQuoteMilestones(q).filter(m => m.status === 'Vencido' || m.status === 'Moratorio').length;
   }
 
   getStateIndex(state: QuoteState): number {
