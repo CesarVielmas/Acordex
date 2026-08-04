@@ -1,7 +1,6 @@
 import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
@@ -12,6 +11,16 @@ import { TabPillsComponent, TabPillItem } from '../../shared/ui/tab-pills/tab-pi
 import { TableShellComponent } from '../../shared/ui/table-shell/table-shell.component';
 import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.component';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
+import { QuoteStateFilterBarComponent, StateFilterChip } from './quote-state-filter-bar.component';
+
+/** Definición de una opción de filtro contextual: etiqueta + predicado sobre la cotización. */
+interface StateFilterOption {
+  value: string;
+  label: string;
+  icon: string;
+  activeClass: string;
+  match: (q: Quote) => boolean;
+}
 
 @Component({
   selector: 'app-quotes',
@@ -19,13 +28,13 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     AccessRestrictedComponent,
     KpiCardComponent,
     TabPillsComponent,
     TableShellComponent,
     ProgressBarComponent,
-    BadgeComponent
+    BadgeComponent,
+    QuoteStateFilterBarComponent
   ],
   template: `
     <div class="space-y-6 max-w-full">
@@ -93,8 +102,23 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
         <!-- QUICK FILTER PILLS & SEARCH BAR -->
         <div class="p-4 sm:p-5 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-lg space-y-3">
 
-          <!-- State Filter Pills (14 States) -->
+          <!-- State Filter Pills -->
           <app-tab-pills [tabs]="stateFilterTabs()" [active]="stateFilter()" (change)="stateFilter.set($event)" />
+
+          <!-- FILTROS CONTEXTUALES DE LA FASE EN VISTA TABLA.
+               En Kanban cada columna lleva su propia barra, por eso aquí solo aplica a la tabla
+               y únicamente cuando hay un estado concreto seleccionado. -->
+          @if (viewMode() === 'table' && stateFilter() !== 'Todos') {
+            <div class="pt-1 border-t border-outline-variant/20">
+              <app-quote-state-filter-bar
+                class="block pt-2"
+                [chips]="getStateFilterChips(selectedState())"
+                [active]="getActiveStateFilter(selectedState())"
+                [label]="getStateFilterLabel(selectedState())"
+                (select)="setStateContextFilter(selectedState(), $event)"
+              />
+            </div>
+          }
 
           <!-- Search Input & Dropdowns -->
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1 border-t border-outline-variant/20">
@@ -140,7 +164,11 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
                       <span class="material-symbols-outlined text-primary text-base">{{ getStateIcon(state) }}</span>
                       {{ state }}
                       <span class="text-xs font-bold px-3 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shadow-sm">
-                        {{ getFilteredQuotesByState(state).length }} Cotizaciones
+                        @if (hasActiveContextFilter(state)) {
+                          {{ getFilteredQuotesByState(state).length }} de {{ getQuotesByStateRaw(state).length }} Cotizaciones
+                        } @else {
+                          {{ getFilteredQuotesByState(state).length }} Cotizaciones
+                        }
                       </span>
                     </h3>
                   </div>
@@ -156,41 +184,15 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
                   }
                 </div>
 
-                <!-- MINI-FILTRO DE COBRANZA (SOLO ESTADO 'FINALIZADA') -->
-                @if (state === 'Finalizada') {
-                  <div class="flex flex-wrap items-center gap-2 -mt-1">
-                    <span class="text-[10px] font-bold text-outline uppercase tracking-wider flex items-center gap-1 mr-1">
-                      <span class="material-symbols-outlined text-sm">filter_alt</span> Filtrar por Cobranza:
-                    </span>
-                    <button
-                      (click)="finalizadaPaymentFilter.set('todas')"
-                      [class]="finalizadaPaymentFilter() === 'todas' ? 'bg-primary text-on-primary border-primary shadow-sm' : 'bg-surface-container-high text-outline border-outline-variant/30 hover:text-on-surface'"
-                      class="px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5"
-                    >
-                      Todas <span class="opacity-70">({{ getFinalizadaQuotes().length }})</span>
-                    </button>
-                    <button
-                      (click)="finalizadaPaymentFilter.set('finalizada')"
-                      [class]="finalizadaPaymentFilter() === 'finalizada' ? 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm' : 'bg-surface-container-high text-outline border-outline-variant/30 hover:text-on-surface'"
-                      class="px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5"
-                    >
-                      <span class="material-symbols-outlined text-xs">task_alt</span> Totalmente Finalizada <span class="opacity-70">({{ getFinalizadaFinalizedCount() }})</span>
-                    </button>
-                    <button
-                      (click)="finalizadaPaymentFilter.set('pendiente')"
-                      [class]="finalizadaPaymentFilter() === 'pendiente' ? 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm' : 'bg-surface-container-high text-outline border-outline-variant/30 hover:text-on-surface'"
-                      class="px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5"
-                    >
-                      <span class="material-symbols-outlined text-xs">hourglass_top</span> Pago Pendiente <span class="opacity-70">({{ getFinalizadaPendingCount() }})</span>
-                    </button>
-                    <button
-                      (click)="finalizadaPaymentFilter.set('atrasada')"
-                      [class]="finalizadaPaymentFilter() === 'atrasada' ? 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm' : 'bg-surface-container-high text-outline border-outline-variant/30 hover:text-on-surface'"
-                      class="px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5"
-                    >
-                      <span class="material-symbols-outlined text-xs">warning</span> Pago Atrasado <span class="opacity-70">({{ getFinalizadaOverdueCount() }})</span>
-                    </button>
-                  </div>
+                <!-- FILTROS CONTEXTUALES DE LA FASE (se ocultan si el estado no tiene cotizaciones) -->
+                @if (getQuotesByStateRaw(state).length > 0) {
+                  <app-quote-state-filter-bar
+                    class="block -mt-1"
+                    [chips]="getStateFilterChips(state)"
+                    [active]="getActiveStateFilter(state)"
+                    [label]="getStateFilterLabel(state)"
+                    (select)="setStateContextFilter(state, $event)"
+                  />
                 }
 
                 <!-- Quote Cards Grid -->
@@ -332,6 +334,18 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
                       </div>
                     }
                   </div>
+                } @else if (hasActiveContextFilter(state) && getQuotesByStateRaw(state).length > 0) {
+                  <div class="py-5 px-4 text-center bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/20 space-y-2">
+                    <p class="text-xs text-outline font-medium italic">
+                      Ninguna cotización de "{{ state }}" coincide con el filtro <strong class="text-on-surface not-italic">{{ getActiveContextFilterLabel(state) }}</strong>.
+                    </p>
+                    <button
+                      (click)="setStateContextFilter(state, 'todas')"
+                      class="px-3.5 py-1.5 min-h-9 rounded-xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-on-primary text-[11px] font-bold transition-all inline-flex items-center gap-1.5"
+                    >
+                      <span class="material-symbols-outlined text-xs">filter_alt_off</span> Quitar filtro
+                    </button>
+                  </div>
                 } @else {
                   <div class="py-5 text-center text-xs text-outline font-medium italic bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/20">
                     Sin cotizaciones en el estado "{{ state }}"
@@ -343,7 +357,7 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
           </div>
         } @else {
           <!-- TABLE VIEW -->
-          <app-table-shell [isEmpty]="getFilteredQuotes().length === 0" emptyIcon="search_off" emptyMessage="No se encontraron cotizaciones con los filtros seleccionados.">
+          <app-table-shell [isEmpty]="getTableQuotes().length === 0" emptyIcon="search_off" emptyMessage="No se encontraron cotizaciones con los filtros seleccionados.">
 
             <table desktop-table class="w-full text-left border-collapse text-xs">
               <thead>
@@ -361,7 +375,7 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant/20">
-                @for (q of getFilteredQuotes(); track q.id) {
+                @for (q of getTableQuotes(); track q.id) {
                   <tr class="hover:bg-surface-container-high/50 transition-colors">
                     <td class="py-3.5 px-3 font-bold text-primary whitespace-nowrap">{{ q.id }}</td>
                     <td class="py-3.5 px-3 font-semibold text-on-surface">
@@ -409,7 +423,7 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
             </table>
 
             <div mobile-cards>
-              @for (q of getFilteredQuotes(); track q.id) {
+              @for (q of getTableQuotes(); track q.id) {
                 <div class="p-4 space-y-3">
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-bold text-primary text-sm">{{ q.id }}</span>
@@ -466,7 +480,8 @@ export class QuotesComponent {
   searchTerm = signal('');
   stateFilter = signal('Todos');
   paymentFilter = signal('Todos');
-  finalizadaPaymentFilter = signal<'todas' | 'finalizada' | 'pendiente' | 'atrasada'>('todas');
+  /** Filtro contextual activo por estado ({ 'Finalizada': 'atrasada', ... }). Default: 'todas'. */
+  stateContextFilter = signal<Record<string, string>>({});
 
   proposalSoundOption = signal<'cliente' | 'proveedor'>('proveedor');
   proposalSoundCost = signal<number>(15000);
@@ -663,36 +678,221 @@ export class QuotesComponent {
     return this.allStates;
   }
 
+  /** Cotizaciones de un estado con su filtro contextual aplicado (vista Kanban). */
   getFilteredQuotesByState(state: QuoteState): Quote[] {
-    const list = this.getFilteredQuotes().filter(q => q.state === state);
-    if (state !== 'Finalizada' || this.finalizadaPaymentFilter() === 'todas') {
-      return list;
+    return this.applyContextFilter(this.getQuotesByStateRaw(state), state);
+  }
+
+  /** Cotizaciones de un estado SIN filtro contextual (base para calcular los conteos de cada chip). */
+  getQuotesByStateRaw(state: QuoteState): Quote[] {
+    return this.getFilteredQuotes().filter(q => q.state === state);
+  }
+
+  /** Lista que alimenta la Vista Tabla: aplica el filtro contextual del estado seleccionado. */
+  getTableQuotes(): Quote[] {
+    const list = this.getFilteredQuotes();
+    if (this.stateFilter() === 'Todos') return list;
+    return this.applyContextFilter(list, this.stateFilter() as QuoteState);
+  }
+
+  private applyContextFilter(list: Quote[], state: QuoteState): Quote[] {
+    const active = this.getActiveStateFilter(state);
+    if (active === 'todas') return list;
+    const option = this.getStateFilterOptions(state).find(o => o.value === active);
+    return option ? list.filter(q => option.match(q)) : list;
+  }
+
+  // --- Filtros contextuales por estado ---
+
+  /** Estado actualmente seleccionado en las píldoras (solo válido cuando no es 'Todos'). */
+  selectedState(): QuoteState {
+    return this.stateFilter() as QuoteState;
+  }
+
+  getActiveStateFilter(state: QuoteState): string {
+    return this.stateContextFilter()[state] ?? 'todas';
+  }
+
+  setStateContextFilter(state: QuoteState, value: string): void {
+    this.stateContextFilter.update(map => ({ ...map, [state]: value }));
+  }
+
+  /** True si el estado tiene un filtro distinto de "Todas" activo (para avisar en el estado vacío). */
+  hasActiveContextFilter(state: QuoteState): boolean {
+    return this.getActiveStateFilter(state) !== 'todas';
+  }
+
+  /** Etiqueta legible del filtro contextual activo, usada en los mensajes de estado vacío. */
+  getActiveContextFilterLabel(state: QuoteState): string {
+    const active = this.getActiveStateFilter(state);
+    return this.getStateFilterOptions(state).find(o => o.value === active)?.label ?? '';
+  }
+
+  /** Título de la barra de filtros, nombrando la dimensión que se filtra en esa fase. */
+  getStateFilterLabel(state: QuoteState): string {
+    switch (state) {
+      case 'En revisión': return 'Filtrar por Urgencia:';
+      case 'Propuesta enviada': return 'Filtrar por Respuesta:';
+      case 'Negociación': return 'Filtrar por Ronda:';
+      case 'Aceptada': return 'Filtrar por Contrato:';
+      case 'Contrato en espera de firma': return 'Filtrar por Firma:';
+      case 'Contrato firmado': return 'Filtrar por Anticipo:';
+      case 'Pago confirmado': return 'Filtrar por Liquidación:';
+      case 'Finalizada': return 'Filtrar por Cobranza:';
+      case 'Cancelada con Imprevisto': return 'Filtrar por Imprevisto:';
+      case 'Imprevisto Enviado': return 'Filtrar por Resolución:';
+      case 'Cancelada': return 'Filtrar por Reembolso:';
+      default: return 'Filtrar por:';
     }
-    switch (this.finalizadaPaymentFilter()) {
-      case 'finalizada': return list.filter(q => this.isQuoteFullyPaid(q));
-      case 'atrasada': return list.filter(q => this.hasOverdueMilestone(q));
-      case 'pendiente': return list.filter(q => !this.isQuoteFullyPaid(q) && !this.hasOverdueMilestone(q));
-      default: return list;
+  }
+
+  /** Opciones + conteos ya resueltos para renderizar la barra de filtros de un estado. */
+  getStateFilterChips(state: QuoteState): StateFilterChip[] {
+    const base = this.getQuotesByStateRaw(state);
+    return this.getStateFilterOptions(state).map(o => ({
+      value: o.value,
+      label: o.label,
+      icon: o.icon,
+      activeClass: o.activeClass,
+      count: base.filter(q => o.match(q)).length
+    }));
+  }
+
+  /**
+   * Define, por estado, los filtros que de verdad importan en esa fase del pipeline.
+   * La primera opción siempre es "Todas" (sin filtrar).
+   */
+  getStateFilterOptions(state: QuoteState): StateFilterOption[] {
+    const todas: StateFilterOption = {
+      value: 'todas',
+      label: 'Todas',
+      icon: 'apps',
+      activeClass: 'bg-primary text-on-primary border-primary shadow-sm',
+      match: () => true
+    };
+
+    switch (state) {
+      case 'En revisión':
+        return [todas,
+          { value: 'urgente', label: 'Fecha Urgente (≤30 días)', icon: 'bolt', activeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm', match: q => this.daysUntilEvent(q) <= 30 },
+          { value: 'holgura', label: 'Con Holgura', icon: 'event_available', activeClass: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-sm', match: q => this.daysUntilEvent(q) > 30 }
+        ];
+
+      case 'Propuesta enviada':
+        return [todas,
+          { value: 'sin_respuesta', label: 'Sin Respuesta del Cliente', icon: 'schedule_send', activeClass: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-sm', match: q => (q.negotiationRound ?? 0) === 0 },
+          { value: 'negociando', label: 'En Negociación', icon: 'handshake', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => (q.negotiationRound ?? 0) > 0 }
+        ];
+
+      case 'Negociación':
+        return [todas,
+          { value: 'inicial', label: 'Ronda Inicial (≤2)', icon: 'handshake', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => (q.negotiationRound ?? 0) <= 2 },
+          { value: 'extendida', label: 'Negociación Extendida (≥3)', icon: 'warning', activeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm', match: q => (q.negotiationRound ?? 0) >= 3 }
+        ];
+
+      case 'Aceptada':
+        return [todas,
+          { value: 'contrato_listo', label: 'Contrato Generado', icon: 'description', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => this.hasContractDocument(q) },
+          { value: 'contrato_pendiente', label: 'Contrato Pendiente', icon: 'pending', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => !this.hasContractDocument(q) },
+          { value: 'grupo_sin_avisar', label: 'Grupo Sin Notificar', icon: 'notifications_off', activeClass: 'bg-orange-500/25 text-orange-300 border-orange-400/60 shadow-sm', match: q => !q.artistNotified }
+        ];
+
+      case 'Contrato en espera de firma':
+        return [todas,
+          { value: 'firmado', label: 'Firmado por el Cliente', icon: 'draw', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => q.contractStatus === 'Firmado' },
+          { value: 'sin_firmar', label: 'En Espera de Firma', icon: 'hourglass_top', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => q.contractStatus !== 'Firmado' }
+        ];
+
+      case 'Contrato firmado':
+        return [todas,
+          { value: 'anticipo_ok', label: 'Anticipo Recibido', icon: 'savings', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => this.hasAdvancePaid(q) },
+          { value: 'anticipo_pendiente', label: 'Anticipo Pendiente', icon: 'hourglass_empty', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => !this.hasAdvancePaid(q) }
+        ];
+
+      case 'Pago confirmado':
+        return [todas,
+          { value: 'liquidado', label: 'Liquidado al 100%', icon: 'verified', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => this.isQuoteFullyPaid(q) },
+          { value: 'saldo', label: 'Con Saldo Pendiente', icon: 'hourglass_top', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => !this.isQuoteFullyPaid(q) },
+          { value: 'evento_proximo', label: 'Evento Próximo (≤30 días)', icon: 'event_upcoming', activeClass: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-sm', match: q => this.daysUntilEvent(q) <= 30 }
+        ];
+
+      case 'Finalizada':
+        return [todas,
+          { value: 'finalizada', label: 'Totalmente Finalizada', icon: 'task_alt', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => this.isQuoteFullyPaid(q) },
+          { value: 'pendiente', label: 'Pago Pendiente', icon: 'hourglass_top', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => !this.isQuoteFullyPaid(q) && !this.hasOverdueMilestone(q) },
+          { value: 'atrasada', label: 'Pago Atrasado', icon: 'warning', activeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm', match: q => this.hasOverdueMilestone(q) }
+        ];
+
+      case 'Cancelada con Imprevisto':
+        return [todas,
+          { value: 'grave', label: 'Imprevisto Grave', icon: 'report_problem', activeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm', match: q => this.isSevereIncident(q) },
+          { value: 'sin_propuesta', label: 'Sin Propuesta Enviada', icon: 'outgoing_mail', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => (q.incidentNegotiations?.length ?? 0) === 0 },
+          { value: 'por_grupo', label: 'Originado por el Grupo', icon: 'music_note', activeClass: 'bg-purple-500/25 text-purple-300 border-purple-400/60 shadow-sm', match: q => this.lastIncident(q)?.initiatedBy === 'Grupo Musical' }
+        ];
+
+      case 'Imprevisto Enviado':
+        return [todas,
+          { value: 'esperando', label: 'Esperando Respuesta', icon: 'hourglass_top', activeClass: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-sm', match: q => this.isAwaitingIncidentReply(q) },
+          { value: 'con_rechazo', label: 'Con Rechazo Previo', icon: 'thumb_down', activeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm', match: q => (q.incidentNegotiations || []).some(n => n.status === 'Rechazada') }
+        ];
+
+      case 'Cancelada':
+        return [todas,
+          { value: 'reembolso', label: 'Con Reembolso Pendiente', icon: 'currency_exchange', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => this.getRefundDue(q) > 0 },
+          { value: 'sin_reembolso', label: 'Sin Saldo a Favor', icon: 'money_off', activeClass: 'bg-slate-500/30 text-slate-200 border-slate-400/60 shadow-sm', match: q => this.getRefundDue(q) <= 0 },
+          { value: 'sellada', label: 'Expediente Sellado', icon: 'lock', activeClass: 'bg-purple-500/25 text-purple-300 border-purple-400/60 shadow-sm', match: q => !!q.isCycleSealed }
+        ];
+
+      default:
+        return [todas];
     }
   }
 
-  // --- Cobranza por hitos de pago (usado en el mini-filtro y las cards del estado 'Finalizada') ---
+  // --- Predicados de apoyo para los filtros contextuales ---
 
-  getFinalizadaQuotes(): Quote[] {
-    return this.getFilteredQuotes().filter(q => q.state === 'Finalizada');
+  /** Días entre hoy y la fecha del evento (negativo si ya pasó). */
+  private daysUntilEvent(q: Quote): number {
+    const target = new Date(q.proposedDate + 'T00:00:00');
+    if (isNaN(target.getTime())) return Number.POSITIVE_INFINITY;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.round((target.getTime() - today.getTime()) / 86400000);
   }
 
-  getFinalizadaFinalizedCount(): number {
-    return this.getFinalizadaQuotes().filter(q => this.isQuoteFullyPaid(q)).length;
+  private hasContractDocument(q: Quote): boolean {
+    return q.contractStatus === 'Generado' || q.contractStatus === 'Subido' || q.contractStatus === 'Firmado' || !!q.contractFileUrl || !!q.contractPdfUrl;
   }
 
-  getFinalizadaOverdueCount(): number {
-    return this.getFinalizadaQuotes().filter(q => this.hasOverdueMilestone(q)).length;
+  private hasAdvancePaid(q: Quote): boolean {
+    return q.paymentStatus !== 'Pendiente' || this.getPaidMilestonesCount(q) > 0;
   }
 
-  getFinalizadaPendingCount(): number {
-    return this.getFinalizadaQuotes().filter(q => !this.isQuoteFullyPaid(q) && !this.hasOverdueMilestone(q)).length;
+  private lastIncident(q: Quote) {
+    const list = q.incidents || [];
+    return list[list.length - 1] || null;
   }
+
+  private isSevereIncident(q: Quote): boolean {
+    return this.lastIncident(q)?.status === 'Imprevisto Grave';
+  }
+
+  private isAwaitingIncidentReply(q: Quote): boolean {
+    const list = q.incidentNegotiations || [];
+    return list[list.length - 1]?.status === 'Enviada';
+  }
+
+  /** Monto que quedaría por reembolsar al cliente (pagado menos el anticipo de separación retenido). */
+  private getRefundDue(q: Quote): number {
+    const paid = this.getQuoteMilestones(q)
+      .filter(m => m.status === 'Pagado')
+      .reduce((sum, m) => sum + (m.paidAmount ?? m.amountCalculated ?? 0), 0);
+    const type = q.advancePaymentType || 'percentage';
+    const val = q.advancePaymentValue ?? 50;
+    const retained = type === 'percentage' ? (q.totalAmount || 0) * (val / 100) : val;
+    return Math.max(0, paid - retained);
+  }
+
+  // --- Cobranza por hitos de pago (usado en las cards del estado 'Finalizada') ---
 
   private getQuoteMilestones(q: Quote): PaymentMilestone[] {
     return q.paymentMilestones || [];

@@ -4,13 +4,13 @@
     {
       "name": "admins_web",
       "runtimeExecutable": "bun",
-      "runtimeArgs": ["--cwd", "admins_web", "run", "start"],
+      "runtimeArgs": ["--cwd=admins_web", "run", "start"],
       "port": 4201
     },
     {
       "name": "clients_web",
       "runtimeExecutable": "bun",
-      "runtimeArgs": ["--cwd", "clients_web", "run", "start"],
+      "runtimeArgs": ["--cwd=clients_web", "run", "start"],
       "port": 4200
     }
   ]
