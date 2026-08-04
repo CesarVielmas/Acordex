@@ -11,6 +11,12 @@ import { LayoutStateService } from '../../../core/services/layout_state.service'
   imports: [CommonModule, FormsModule],
   template: `
     <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4">
+      @if (incidentBanner) {
+        <div class="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/40 flex items-start gap-2.5 text-xs shadow-md">
+          <span class="material-symbols-outlined text-lg text-rose-400 shrink-0">report_problem</span>
+          <p class="text-rose-200/90 leading-relaxed">{{ incidentBanner }}</p>
+        </div>
+      }
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         <!-- SECCIÓN IZQUIERDA: BITÁCORA DE AVISOS INDEPENDIENTES -->
@@ -181,6 +187,7 @@ export class QuoteCommunicationTabComponent {
 
   @Input() quote: Quote | null = null;
   @Input() isHistoricalPreview: boolean = false;
+  @Input() incidentBanner: string = '';
 
   noticeTarget = signal<'Cliente' | 'Grupo Musical'>('Cliente');
   noticeTitleValue = '';

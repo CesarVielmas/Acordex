@@ -731,6 +731,404 @@ export class MockDataService {
       genre: 'Banda Sinaloense',
       rating: 4.9,
       artistImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80'
+    },
+    {
+      id: 'COT-8907',
+      clientName: 'Alejandra Ríos',
+      clientCompany: 'Grupo Empresarial Bajío',
+      clientEmail: 'arios@empresarialbajio.com',
+      groupName: 'Grupo Dinastía Real',
+      disqueraId: ACTIVE_DISQUERA_ID,
+      proposedDate: '2026-09-10',
+      venue: 'Centro de Convenciones',
+      city: 'Celaya, GTO',
+      totalAmount: 340000,
+      marginAmount: 61200,
+      state: 'Cancelada con Imprevisto',
+      paymentStatus: 'Anticipo 50%',
+      terms: 'Presentación de 3 horas con tarima estándar e iluminación de la disquera.',
+      contractPdfUrl: 'contrato_COT-8907_firmado.pdf',
+      dateCreated: '2026-07-14',
+      eventType: 'Fiesta',
+      durationHours: 3,
+      eventAddress: 'Blvd. Adolfo López Mateos #1200, Celaya, GTO.',
+      representativeName: 'Ing. Luis Donaldo',
+      representativePhone: '+52 81 1234 5678',
+      genre: 'Corridos Tumbados / Sierreño',
+      rating: 4.8,
+      artistImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80',
+      advancePaymentType: 'percentage',
+      advancePaymentValue: 50,
+      paymentDueDate: '2026-09-05',
+      receivingCardId: 'card-bbva-01',
+      maxAllowedDelays: 2,
+      paymentMilestones: [
+        {
+          id: 'm1_8907',
+          label: '50% Anticipo de Reserva al Firmar',
+          percentageOrAmount: 50,
+          type: 'percentage',
+          dueDateOrTimeframe: '2026-07-20',
+          status: 'Pagado',
+          amountCalculated: 170000,
+          paidAmount: 170000,
+          paidAt: '2026-07-20 12:10 PM',
+          receiptReference: 'SPEI-70012384'
+        },
+        {
+          id: 'm2_8907',
+          label: '50% Finiquito Final Día del Evento',
+          percentageOrAmount: 50,
+          type: 'percentage',
+          dueDateOrTimeframe: '2026-09-10',
+          status: 'Pendiente'
+        }
+      ],
+      clientNotices: [
+        {
+          id: 'n_cli_8907_1',
+          target: 'Cliente',
+          title: 'Notificación Oficial de Imprevisto de la Agrupación Musical',
+          message: 'Estimada Alejandra, le informamos que el vocalista principal de Grupo Dinastía Real sufrió una lesión de voz que le impide presentarse en la fecha pactada. Estamos preparando alternativas comerciales para resolver su evento.',
+          sentBy: 'Lic. Sofía Ramírez (Administración Disquera)',
+          sentRole: 'administrador',
+          sentAt: '2026-07-30 09:20 AM',
+          channels: ['Email', 'WhatsApp', 'Platform'],
+          priority: 'Urgente'
+        }
+      ],
+      incidents: [
+        {
+          id: 'inc_8907_1',
+          type: 'group_cancel',
+          initiatedBy: 'Grupo Musical',
+          reason: 'El vocalista principal presentó una lesión de cuerdas vocales diagnosticada por especialista, con reposo absoluto indicado por al menos 3 semanas, lo que imposibilita la presentación en la fecha pactada.',
+          resolutionNotes: 'Pendiente de definir con administración: reprogramación, grupo sustituto o reembolso.',
+          clientMessage: 'Estimada Alejandra, le informamos que el vocalista principal de Grupo Dinastía Real sufrió una lesión de voz que le impide presentarse en la fecha pactada. Estamos preparando alternativas comerciales para resolver su evento.',
+          status: 'Imprevisto Grave',
+          registeredAt: '2026-07-30 09:15 AM'
+        }
+      ],
+      incidentNegotiations: [],
+      incidentStatus: 'Imprevisto',
+      negotiationRound: 1,
+      negotiationHistory: [
+        {
+          round: 1,
+          clientRejectionMessage: 'El monto inicial de $390,000 MXN excede el presupuesto autorizado por el comité empresarial.',
+          adminProposalNote: 'Se ajustaron honorarios y logística para cerrar en $340,000 MXN con anticipo del 50%.',
+          totalOffered: 340000,
+          artistFee: 220000,
+          viaticosCost: 45000,
+          soundCost: 40000,
+          marginPercent: 18,
+          timestamp: '2026-07-13 05:00 PM',
+          proposedDate: '2026-09-10',
+          scheduleMode: 'continuo',
+          startTime: '21:00',
+          endTime: '00:00',
+          durationHours: 3,
+          soundOption: 'proveedor',
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-09-05'
+        }
+      ]
+    },
+    {
+      id: 'COT-8908',
+      clientName: 'Fernando Castillo',
+      clientCompany: 'Salón Los Pinos Eventos',
+      clientEmail: 'fcastillo@salonlospinos.com',
+      groupName: 'Los Elegantes del Norte',
+      disqueraId: ACTIVE_DISQUERA_ID,
+      proposedDate: '2026-09-18',
+      venue: 'Salón Los Pinos',
+      city: 'Saltillo, COAH',
+      totalAmount: 300000,
+      marginAmount: 54000,
+      state: 'Imprevisto Enviado',
+      paymentStatus: 'Anticipo 50%',
+      terms: 'Presentación de 3 horas para XV años, incluye equipo de audio de la disquera.',
+      contractPdfUrl: 'contrato_COT-8908_firmado.pdf',
+      dateCreated: '2026-07-08',
+      eventType: 'XV Años',
+      durationHours: 3,
+      eventAddress: 'Calz. Fundadores #880, Saltillo, COAH.',
+      representativeName: 'Ing. Luis Donaldo',
+      representativePhone: '+52 81 1234 5678',
+      genre: 'Norteño Sax',
+      rating: 4.8,
+      artistImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=80',
+      advancePaymentType: 'percentage',
+      advancePaymentValue: 50,
+      paymentDueDate: '2026-09-12',
+      receivingCardId: 'card-bbva-01',
+      maxAllowedDelays: 2,
+      paymentMilestones: [
+        {
+          id: 'm1_8908',
+          label: '50% Anticipo de Reserva al Firmar',
+          percentageOrAmount: 50,
+          type: 'percentage',
+          dueDateOrTimeframe: '2026-07-14',
+          status: 'Pagado',
+          amountCalculated: 150000,
+          paidAmount: 150000,
+          paidAt: '2026-07-14 01:40 PM',
+          receiptReference: 'SPEI-61129045'
+        },
+        {
+          id: 'm2_8908',
+          label: '50% Finiquito Final Día del Evento',
+          percentageOrAmount: 50,
+          type: 'percentage',
+          dueDateOrTimeframe: '2026-09-18',
+          status: 'Pendiente'
+        }
+      ],
+      clientNotices: [
+        {
+          id: 'n_cli_8908_1',
+          target: 'Cliente',
+          title: 'Propuesta de Resolución para Imprevisto — Ronda #1',
+          message: 'Estimado Fernando, ante el imprevisto con Los Elegantes del Norte, le proponemos como solución la reasignación de Banda La Imperial para su evento del 18 de septiembre, manteniendo las mismas condiciones económicas y el horario pactado.',
+          sentBy: 'Lic. Sofía Ramírez (Administración Disquera)',
+          sentRole: 'administrador',
+          sentAt: '2026-07-26 11:00 AM',
+          channels: ['Email', 'WhatsApp', 'Platform'],
+          priority: 'Urgente'
+        }
+      ],
+      incidents: [
+        {
+          id: 'inc_8908_1',
+          type: 'group_cancel',
+          initiatedBy: 'Grupo Musical',
+          reason: 'Dos integrantes clave de Los Elegantes del Norte presentaron un accidente de tránsito en carretera camino a un evento previo, con incapacidad médica de 15 días.',
+          resolutionNotes: 'Propuesta enviada al cliente: reasignación de grupo sustituto (Banda La Imperial).',
+          clientMessage: 'Estimado Fernando, ante el imprevisto con Los Elegantes del Norte, le proponemos como solución la reasignación de Banda La Imperial para su evento del 18 de septiembre, manteniendo las mismas condiciones económicas y el horario pactado.',
+          status: 'Imprevisto Grave',
+          registeredAt: '2026-07-25 08:40 AM'
+        }
+      ],
+      incidentNegotiations: [
+        {
+          id: 'inc_neg_8908_1',
+          round: 1,
+          resolutionType: 'substitute_group',
+          newGroupName: 'Banda La Imperial',
+          adminMessage: 'Estimado Fernando, ante el imprevisto con Los Elegantes del Norte, le proponemos como solución la reasignación de Banda La Imperial para su evento del 18 de septiembre, manteniendo las mismas condiciones económicas y el horario pactado.',
+          sentAt: '2026-07-26 11:00 AM',
+          sentBy: 'Lic. Sofía Ramírez (Administración Disquera)',
+          status: 'Enviada'
+        }
+      ],
+      incidentStatus: 'Imprevisto',
+      negotiationRound: 1,
+      negotiationHistory: [
+        {
+          round: 1,
+          clientRejectionMessage: 'El monto de $340,000 MXN es superior a lo cotizado por otros proveedores para el mismo formato de evento.',
+          adminProposalNote: 'Se ajustó a $300,000 MXN con equipo de audio incluido y anticipo del 50%.',
+          totalOffered: 300000,
+          artistFee: 190000,
+          viaticosCost: 35000,
+          soundCost: 38000,
+          marginPercent: 18,
+          timestamp: '2026-07-07 06:15 PM',
+          proposedDate: '2026-09-18',
+          scheduleMode: 'continuo',
+          startTime: '20:00',
+          endTime: '23:00',
+          durationHours: 3,
+          soundOption: 'proveedor',
+          advancePaymentType: 'percentage',
+          advancePaymentValue: 50,
+          paymentDueDate: '2026-09-12'
+        }
+      ]
+    },
+    {
+      id: 'COT-8909',
+      clientName: 'Marco Villagómez',
+      clientCompany: 'Rancho Eventos Villagómez',
+      clientEmail: 'mvillagomez@ranchoeventos.mx',
+      groupName: 'Valentina & Los De La Sierra',
+      disqueraId: ACTIVE_DISQUERA_ID,
+      proposedDate: '2026-08-22',
+      venue: 'Rancho Eventos Villagómez',
+      city: 'Zapopan, JAL',
+      totalAmount: 400000,
+      marginAmount: 72000,
+      state: 'Cancelada',
+      paymentStatus: 'Anticipo 50%',
+      terms: 'Presentación acústica de 2.5 horas para evento privado familiar.',
+      contractPdfUrl: 'contrato_COT-8909_firmado.pdf',
+      dateCreated: '2026-06-20',
+      eventType: 'Fiesta',
+      durationHours: 2.5,
+      eventAddress: 'Camino a Nextipac Km 4.5, Zapopan, JAL.',
+      representativeName: 'Ing. Luis Donaldo',
+      representativePhone: '+52 81 1234 5678',
+      genre: 'Campirano / Acústico',
+      rating: 4.7,
+      artistImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80',
+      advancePaymentType: 'percentage',
+      advancePaymentValue: 50,
+      paymentDueDate: '2026-08-15',
+      receivingCardId: 'card-bbva-01',
+      maxAllowedDelays: 2,
+      isCycleSealed: true,
+      sealedAt: '2026-07-29 17:40',
+      sealedBy: 'Lic. Sofía Ramírez (Admin)',
+      finalClosureSummary: 'Expediente COT-8909 cerrado definitivamente tras el rechazo de dos propuestas de resolución del imprevisto. Se procesó reembolso parcial de $100,000 MXN al cliente; el anticipo de separación ($200,000 MXN) se retuvo conforme a términos y condiciones.',
+      paymentMilestones: [
+        {
+          id: 'm1_8909',
+          label: '50% Anticipo de Reserva al Firmar',
+          percentageOrAmount: 50,
+          type: 'percentage',
+          dueDateOrTimeframe: '2026-06-26',
+          status: 'Pagado',
+          amountCalculated: 200000,
+          paidAmount: 200000,
+          paidAt: '2026-06-26 10:00 AM',
+          receiptReference: 'SPEI-30219876'
+        },
+        {
+          id: 'm2_8909',
+          label: '25% Segundo Pago Intermedio',
+          percentageOrAmount: 25,
+          type: 'percentage',
+          dueDateOrTimeframe: '2026-07-25',
+          status: 'Pagado',
+          amountCalculated: 100000,
+          paidAmount: 100000,
+          paidAt: '2026-07-25 09:30 AM',
+          receiptReference: 'SPEI-30298214'
+        },
+        {
+          id: 'm3_8909',
+          label: '25% Finiquito Final Día del Evento',
+          percentageOrAmount: 25,
+          type: 'percentage',
+          dueDateOrTimeframe: '2026-08-22',
+          status: 'Pendiente'
+        }
+      ],
+      incidents: [
+        {
+          id: 'inc_8909_1',
+          type: 'group_cancel',
+          initiatedBy: 'Grupo Musical',
+          reason: 'El integrante principal de Valentina & Los De La Sierra sufrió una lesión que impide su presentación, sin posibilidad de recuperación antes de la fecha del evento.',
+          resolutionNotes: 'Dos propuestas de resolución fueron rechazadas por el cliente; se procedió a la cancelación definitiva con reembolso parcial.',
+          clientMessage: 'Estimado Marco, lamentamos informarle que, tras evaluar las alternativas propuestas, procedemos con la cancelación definitiva de su evento y el reembolso correspondiente conforme a los términos y condiciones.',
+          status: 'Resuelto',
+          registeredAt: '2026-07-10 10:00 AM',
+          resolvedAt: '2026-07-29 17:40'
+        }
+      ],
+      incidentNegotiations: [
+        {
+          id: 'inc_neg_8909_1',
+          round: 1,
+          resolutionType: 'reschedule',
+          proposedDate: '2026-10-15',
+          adminMessage: 'Estimado Marco, le proponemos reprogramar su evento para el 15 de octubre de 2026 con el mismo grupo, una vez concluida su recuperación.',
+          sentAt: '2026-07-14 12:00 PM',
+          sentBy: 'Lic. Sofía Ramírez (Administración Disquera)',
+          status: 'Rechazada',
+          clientRespondedAt: '2026-07-16 09:00 AM',
+          clientRejectionReason: 'La fecha de octubre no es viable para nuestra familia por compromisos previos ya agendados.'
+        },
+        {
+          id: 'inc_neg_8909_2',
+          round: 2,
+          resolutionType: 'substitute_group',
+          newGroupName: 'Banda La Imperial',
+          adminMessage: 'Como segunda alternativa, le proponemos la reasignación de Banda La Imperial para conservar la fecha original del 22 de agosto.',
+          sentAt: '2026-07-20 10:30 AM',
+          sentBy: 'Lic. Sofía Ramírez (Administración Disquera)',
+          status: 'Rechazada',
+          clientRespondedAt: '2026-07-22 08:15 AM',
+          clientRejectionReason: 'La familia solicitó específicamente el estilo campirano/acústico del grupo original; no aceptamos un cambio de género musical.'
+        }
+      ],
+      incidentStatus: 'Imprevisto',
+      traceabilityTimeline: [
+        {
+          id: 'ts_8909_1',
+          phaseNumber: 1,
+          phaseName: 'Revisión Solicitud',
+          state: 'En revisión',
+          completedAt: '2026-06-20 09:00 AM',
+          actorName: 'Marco Villagómez (Cliente)',
+          summaryNote: 'Solicitud recibida para evento privado familiar en Zapopan, JAL.',
+          snapshotData: { totalAmount: 400000, clientEmail: 'mvillagomez@ranchoeventos.mx', venue: 'Rancho Eventos Villagómez' }
+        },
+        {
+          id: 'ts_8909_2',
+          phaseNumber: 3,
+          phaseName: 'Cotización Aceptada',
+          state: 'Aceptada',
+          completedAt: '2026-06-24 06:00 PM',
+          actorName: 'Marco Villagómez (Cliente)',
+          summaryNote: 'Aceptación comercial confirmada por $400,000 MXN.',
+          snapshotData: { totalAmount: 400000 }
+        },
+        {
+          id: 'ts_8909_3',
+          phaseNumber: 5,
+          phaseName: 'Contrato Firmado por Ambas Partes',
+          state: 'Contrato firmado',
+          completedAt: '2026-06-26 10:00 AM',
+          actorName: 'Marco Villagómez & Disquera Acordex',
+          summaryNote: 'Firma digital completada y primer anticipo del 50% recibido.',
+          snapshotData: { signedByClientAt: '2026-06-26 10:00 AM', totalAmount: 400000 }
+        },
+        {
+          id: 'ts_8909_4',
+          phaseNumber: 6,
+          phaseName: 'Imprevisto Registrado por el Grupo Musical',
+          state: 'Cancelada con Imprevisto',
+          completedAt: '2026-07-10 10:00 AM',
+          actorName: 'Administración Disquera',
+          summaryNote: 'Se registró imprevisto grave: lesión del integrante principal de Valentina & Los De La Sierra.',
+          snapshotData: { totalAmount: 400000 }
+        },
+        {
+          id: 'ts_8909_5',
+          phaseNumber: 6,
+          phaseName: 'Propuesta de Resolución Rechazada — Ronda #1',
+          state: 'Imprevisto Enviado',
+          completedAt: '2026-07-16 09:00 AM',
+          actorName: 'Marco Villagómez (Cliente)',
+          summaryNote: 'El cliente rechazó la propuesta de reprogramación de fecha.',
+          snapshotData: { totalAmount: 400000 }
+        },
+        {
+          id: 'ts_8909_6',
+          phaseNumber: 6,
+          phaseName: 'Propuesta de Resolución Rechazada — Ronda #2',
+          state: 'Imprevisto Enviado',
+          completedAt: '2026-07-22 08:15 AM',
+          actorName: 'Marco Villagómez (Cliente)',
+          summaryNote: 'El cliente rechazó la propuesta de reasignación de grupo sustituto. Se procede a evaluar cancelación definitiva.',
+          snapshotData: { totalAmount: 400000 }
+        },
+        {
+          id: 'ts_8909_7',
+          phaseNumber: 7,
+          phaseName: 'Cancelación Definitiva y Reembolso Parcial',
+          state: 'Cancelada',
+          completedAt: '2026-07-29 17:40',
+          actorName: 'Lic. Sofía Ramírez (Admin Tesorería)',
+          summaryNote: 'Expediente cancelado definitivamente. Reembolso parcial de $100,000 MXN procesado; anticipo de separación de $200,000 MXN retenido conforme a términos y condiciones.',
+          snapshotData: { totalAmount: 400000 }
+        }
+      ]
     }
   ];
 

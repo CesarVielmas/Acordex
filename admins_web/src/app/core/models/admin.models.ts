@@ -14,8 +14,9 @@ export type QuoteState =
   | 'Pago confirmado' 
   | 'En presentación'
   | 'Evento realizado' 
-  | 'Finalizada' 
+  | 'Finalizada'
   | 'Cancelada con Imprevisto'
+  | 'Imprevisto Enviado'
   | 'Cancelada';
 
 export type PaymentStatus = 'Pendiente' | 'Anticipo 50%' | 'Pago Confirmado 100%';
@@ -161,6 +162,24 @@ export interface QuoteIncident {
   canClientRevert?: boolean;
 }
 
+// Ronda de propuesta de resolución para un imprevisto (analogo a NegotiationEntry pero
+// para el flujo de Cancelada con Imprevisto -> Imprevisto Enviado)
+export interface IncidentNegotiationEntry {
+  id: string;
+  round: number;
+  resolutionType: 'reschedule' | 'group_change' | 'refund' | 'apology_discount' | 'substitute_group';
+  proposedDate?: string;             // Si resolutionType === 'reschedule'
+  newGroupName?: string;             // Si resolutionType === 'group_change' | 'substitute_group'
+  refundAmount?: number;             // Si resolutionType === 'refund'
+  discountApplied?: number;          // Si resolutionType === 'apology_discount'
+  adminMessage: string;              // Mensaje formal enviado al cliente con la propuesta
+  sentAt: string;
+  sentBy: string;
+  status: 'Enviada' | 'Aceptada' | 'Rechazada';
+  clientRespondedAt?: string;
+  clientRejectionReason?: string;
+}
+
 // Hito de Trazabilidad Histórica de Auditoría (Solo Lectura)
 export interface TimelineStep {
   id: string;
@@ -282,6 +301,7 @@ export interface Quote {
   groupNotices?: NoticeItem[];                // Bitácora de avisos independientes al grupo musical
   chatHistory?: ChatMessage[];               // Chat interactivo cruzado (Cliente <-> Grupo <-> Admin)
   incidents?: QuoteIncident[];               // Módulo de excepciones e imprevistos
+  incidentNegotiations?: IncidentNegotiationEntry[]; // Rondas de propuesta de resolución del imprevisto
   incidentStatus?: 'Ninguno' | 'En Proceso' | 'Resuelto' | 'Imprevisto';
   traceabilityTimeline?: TimelineStep[];      // Línea de tiempo de auditoría histórica inmutable
   isCycleSealed?: boolean;                    // Cierre definitivo de ciclo (sellado inmutable)

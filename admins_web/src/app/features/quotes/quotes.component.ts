@@ -475,6 +475,7 @@ export class QuotesComponent {
     'Evento realizado',
     'Finalizada',
     'Cancelada con Imprevisto',
+    'Imprevisto Enviado',
     'Cancelada'
   ];
 
@@ -502,6 +503,7 @@ export class QuotesComponent {
       case 'Evento realizado': return 'theater_comedy';
       case 'Finalizada': return 'task_alt';
       case 'Cancelada con Imprevisto': return 'report_problem';
+      case 'Imprevisto Enviado': return 'hourglass_top';
       case 'Cancelada': return 'cancel';
       default: return 'bookmark';
     }
@@ -524,6 +526,7 @@ export class QuotesComponent {
       case 'Evento realizado': return 'Fase 5: Conclusión de Show & Cierre Comercial de Evento';
       case 'Finalizada': return 'Fase 6: Cierre Definitivo de Cotización & Archivo Histórico';
       case 'Cancelada con Imprevisto': return 'Fase Excepcional: Cancelación por Imprevisto Grave';
+      case 'Imprevisto Enviado': return 'Imprevisto: Propuesta de Resolución Enviada al Cliente';
       case 'Cancelada': return 'Cotización Cancelada o Inactiva';
       default: return 'Detalles de Cotización';
     }
@@ -546,6 +549,7 @@ export class QuotesComponent {
       case 'Evento realizado': return 'border-indigo-500/50 shadow-indigo-500/10';
       case 'Finalizada': return 'border-slate-500/50 shadow-slate-500/10';
       case 'Cancelada con Imprevisto': return 'border-rose-600/50 shadow-rose-600/10';
+      case 'Imprevisto Enviado': return 'border-cyan-500/50 shadow-cyan-500/10';
       case 'Cancelada': return 'border-red-500/50 shadow-red-500/10';
       default: return 'border-outline-variant/40';
     }
@@ -568,6 +572,7 @@ export class QuotesComponent {
       case 'Evento realizado': return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
       case 'Finalizada': return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
       case 'Cancelada con Imprevisto': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+      case 'Imprevisto Enviado': return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
       case 'Cancelada': return 'bg-red-500/20 text-red-400 border-red-500/30';
       default: return 'bg-primary/20 text-primary border-primary/30';
     }
@@ -590,6 +595,7 @@ export class QuotesComponent {
       case 'Evento realizado': return 'text-indigo-300';
       case 'Finalizada': return 'text-slate-300';
       case 'Cancelada con Imprevisto': return 'text-rose-400';
+      case 'Imprevisto Enviado': return 'text-cyan-400';
       case 'Cancelada': return 'text-red-400';
       default: return 'text-primary';
     }
@@ -612,6 +618,7 @@ export class QuotesComponent {
       case 'Evento realizado': return 'Verificar cumplimiento de horas de show y registrar aforo real';
       case 'Finalizada': return 'Expediente histórico archivado y encuesta de satisfacción concluida';
       case 'Cancelada con Imprevisto': return 'Expediente cerrado con protocolo de imprevisto grave u opción de reembolso';
+      case 'Imprevisto Enviado': return 'Dar seguimiento a la propuesta de resolución enviada, en espera de la decisión del cliente';
       case 'Cancelada': return 'Liberar fecha en el calendario disquera y verificar reembolsos';
       default: return 'Transicionar la cotización al siguiente paso del flujo comercial';
     }
@@ -660,12 +667,19 @@ export class QuotesComponent {
     return this.mockData.quotes().reduce((sum, q) => sum + q.totalAmount, 0);
   }
 
+  // 'Cancelada con Imprevisto' / 'Imprevisto Enviado' / 'Cancelada' no son parte de un pipeline
+  // lineal (pueden ir y volver entre si segun la decision del cliente); la transicion real se
+  // hace desde las acciones dedicadas dentro del modal, no con Avanzar/Retroceder del kanban.
+  isNonLinearState(state: QuoteState): boolean {
+    return state === 'Cancelada con Imprevisto' || state === 'Imprevisto Enviado' || state === 'Cancelada';
+  }
+
   isFirstState(state: QuoteState): boolean {
-    return this.allStates.indexOf(state) === 0;
+    return this.allStates.indexOf(state) === 0 || this.isNonLinearState(state);
   }
 
   isLastState(state: QuoteState): boolean {
-    return this.allStates.indexOf(state) === this.allStates.length - 1;
+    return this.allStates.indexOf(state) === this.allStates.length - 1 || this.isNonLinearState(state);
   }
 
   moveState(quote: Quote, delta: number): void {

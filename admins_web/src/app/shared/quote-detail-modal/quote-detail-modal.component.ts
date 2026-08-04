@@ -38,6 +38,8 @@ import { QuoteClosureTabComponent } from './components/quote-closure-tab.compone
 import { QuoteCommunicationTabComponent } from './components/quote-communication-tab.component';
 import { QuoteIncidentsTabComponent } from './components/quote-incidents-tab.component';
 import { QuoteTreasuryTabComponent } from './components/quote-treasury-tab.component';
+import { QuoteIncidentStateViewComponent } from './components/quote-incident-state-view.component';
+import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-final-view.component';
 
 @Component({
   selector: 'app-quote-detail-modal',
@@ -56,7 +58,9 @@ import { QuoteTreasuryTabComponent } from './components/quote-treasury-tab.compo
     QuoteClosureTabComponent,
     QuoteCommunicationTabComponent,
     QuoteIncidentsTabComponent,
-    QuoteTreasuryTabComponent
+    QuoteTreasuryTabComponent,
+    QuoteIncidentStateViewComponent,
+    QuoteCancelledFinalViewComponent
   ],
   template: `
     <!-- MAIN QUOTE DETAIL MODAL PORTAL CONTAINER -->
@@ -109,8 +113,8 @@ import { QuoteTreasuryTabComponent } from './components/quote-treasury-tab.compo
 
               <!-- TOP RIGHT ACTION BUTTONS: REJECT BUTTON + MODAL CLOSE BUTTON (ALWAYS FIXED & VISIBLE) -->
               <div class="quote-modal-actions flex items-center gap-2 sm:gap-3 shrink-0 self-end sm:self-auto">
-                @if (selectedQuote()?.state !== 'Aceptada' && !isHistoricalPreview()) {
-                  <button 
+                @if (selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Cancelada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && !isHistoricalPreview()) {
+                  <button
                     (click)="openRejectionDialog()"
                     class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/40 font-extrabold text-[10px] sm:text-xs transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.25)] hover:scale-105"
                     title="Rechazar o cancelar esta cotización"
@@ -178,7 +182,7 @@ import { QuoteTreasuryTabComponent } from './components/quote-treasury-tab.compo
             }
 
             <!-- STATE SPECIFIC STEP NAVIGATION TABS (FOR OTHER STATES OTHER THAN INITIAL, SIGNATURE & PHASE 6 PHASES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cotización con Pagos Aplazados' && selectedQuote()?.state !== 'Cancelada con Imprevisto') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cotización con Pagos Aplazados' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada') {
               <div class="quote-modal-tabs p-1 sm:p-1.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-between gap-2 text-xs shadow-inner">
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <button 
@@ -2651,7 +2655,7 @@ import { QuoteTreasuryTabComponent } from './components/quote-treasury-tab.compo
             }
 
             <!-- DYNAMIC WORKFLOW ACTION CONTROL BAR (FOR OTHER STATES OTHER THAN INITIAL PHASES & PHASE 6) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cotización con Pagos Aplazados' && selectedQuote()?.state !== 'Cancelada con Imprevisto') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cotización con Pagos Aplazados' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada') {
               <div class="quote-modal-workflow-bar p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 shadow-lg">
                 <div class="space-y-0.5">
                   <span class="text-xs font-extrabold text-primary uppercase tracking-wider block">Acción Operativa para el Estado Actual</span>
@@ -4096,8 +4100,8 @@ import { QuoteTreasuryTabComponent } from './components/quote-treasury-tab.compo
               </div>
             }
 
-            <!-- WORKFLOW ESPECIALIZADO PARA FASE 6: 'Finalizada', 'Cotización con Pagos Aplazados', 'Cancelada con Imprevisto' -->
-            @if (effectiveQuoteState() === 'Finalizada' || effectiveQuoteState() === 'Cotización con Pagos Aplazados' || effectiveQuoteState() === 'Cancelada con Imprevisto') {
+            <!-- WORKFLOW ESPECIALIZADO PARA FASE 6: 'Finalizada', 'Cotización con Pagos Aplazados' -->
+            @if (effectiveQuoteState() === 'Finalizada' || effectiveQuoteState() === 'Cotización con Pagos Aplazados') {
               <div class="h-full flex flex-col min-h-0 space-y-4 font-sans">
 
                 <!-- SUB-TABS NAVEGACIÓN FASE 6 -->
@@ -4187,25 +4191,28 @@ import { QuoteTreasuryTabComponent } from './components/quote-treasury-tab.compo
               </div>
             }
 
+            <!-- WORKFLOW ESPECIALIZADO: 'Cancelada con Imprevisto' / 'Imprevisto Enviado' -->
+            @if (effectiveQuoteState() === 'Cancelada con Imprevisto' || effectiveQuoteState() === 'Imprevisto Enviado') {
+              <app-quote-incident-state-view [quote]="selectedQuote()" />
+            }
+
+            <!-- WORKFLOW ESPECIALIZADO: 'Cancelada' (RECHAZO DEFINITIVO, SOLO LECTURA) -->
+            @if (effectiveQuoteState() === 'Cancelada') {
+              <app-quote-cancelled-final-view [quote]="selectedQuote()" (openSnapshot)="openTimelineSnapshot($event)" />
+            }
+
             <!-- TAB: EXPEDIENTE DE FASE ACTUAL (FOR OTHER STATES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && modalTab() === 'estado_actual') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'estado_actual') {
               <div class="space-y-6">
-                @if (selectedQuote()?.state === 'Cancelada') {
-                  <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-red-500/10 border border-red-500/30 space-y-3 text-center">
-                    <span class="text-xs font-black text-red-400 uppercase tracking-wider block">Cotización Cancelada / Rechazada</span>
-                    <p class="text-xs text-outline max-w-xl mx-auto">{{ selectedQuote()?.notes || 'Esta fecha ha sido liberada en la agenda del grupo.' }}</p>
-                  </div>
-                } @else {
-                  <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-high border border-outline-variant/30 space-y-3 text-center">
-                    <span class="text-xs font-black text-primary uppercase tracking-wider block">Expediente en Seguimiento</span>
-                    <p class="text-xs text-outline max-w-xl mx-auto">Fase comercial activa en el pipeline disquera para {{ selectedQuote()?.groupName }}.</p>
-                  </div>
-                }
+                <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-high border border-outline-variant/30 space-y-3 text-center">
+                  <span class="text-xs font-black text-primary uppercase tracking-wider block">Expediente en Seguimiento</span>
+                  <p class="text-xs text-outline max-w-xl mx-auto">Fase comercial activa en el pipeline disquera para {{ selectedQuote()?.groupName }}.</p>
+                </div>
               </div>
             }
 
             <!-- TAB: SOLICITUD ORIGINAL DEL CLIENTE (FOR OTHER STATES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && modalTab() === 'solicitud') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'solicitud') {
               <div class="space-y-4">
                 <div class="p-4 sm:p-6 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-4">
                   <h4 class="text-sm font-bold text-on-surface flex items-center gap-2">
@@ -4231,7 +4238,7 @@ import { QuoteTreasuryTabComponent } from './components/quote-treasury-tab.compo
             }
 
             <!-- TAB: CONTROL DE COBRANZA & PAGOS -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && modalTab() === 'cobranza') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'cobranza') {
               <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-5 sm:space-y-6">
                 <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
                   <div>
@@ -4291,7 +4298,7 @@ import { QuoteTreasuryTabComponent } from './components/quote-treasury-tab.compo
             }
 
             <!-- TAB: GENERADOR DE CONTRATO PDF -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && modalTab() === 'contrato') {
+            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'contrato') {
               <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-5 sm:space-y-6">
                 <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
                   <div>
@@ -7688,6 +7695,8 @@ export class QuoteDetailModalComponent {
       case 'En presentación': return 'graphic_eq';
       case 'Evento realizado': return 'theater_comedy';
       case 'Finalizada': return 'task_alt';
+      case 'Cancelada con Imprevisto': return 'report_problem';
+      case 'Imprevisto Enviado': return 'hourglass_top';
       case 'Cancelada': return 'cancel';
       default: return 'bookmark';
     }
@@ -7756,6 +7765,8 @@ export class QuoteDetailModalComponent {
       case 'En presentación': return 'Fase 4: Presentación Artística En Vivo En Escenario';
       case 'Evento realizado': return 'Fase 5: Presentación Artística Concluida en Recinto';
       case 'Finalizada': return 'Fase 5: Contratación Finalizada y Archivada en Histórico';
+      case 'Cancelada con Imprevisto': return 'Imprevisto Activo: En Espera de Propuesta de Resolución';
+      case 'Imprevisto Enviado': return 'Imprevisto: Propuesta de Resolución Enviada al Cliente';
       case 'Cancelada': return 'Expediente Cancelado: Fecha Liberada en Calendario';
       default: return 'Expediente de Cotización';
     }
@@ -7776,6 +7787,8 @@ export class QuoteDetailModalComponent {
       case 'En presentación': return 'border-rose-500/50 shadow-rose-500/10';
       case 'Evento realizado': return 'border-indigo-500/50 shadow-indigo-500/10';
       case 'Finalizada': return 'border-slate-500/50 shadow-slate-500/10';
+      case 'Cancelada con Imprevisto': return 'border-rose-500/50 shadow-rose-500/10';
+      case 'Imprevisto Enviado': return 'border-cyan-500/50 shadow-cyan-500/10';
       case 'Cancelada': return 'border-red-500/50 shadow-red-500/10';
       default: return 'border-outline-variant/40';
     }
@@ -7796,6 +7809,8 @@ export class QuoteDetailModalComponent {
       case 'En presentación': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
       case 'Evento realizado': return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
       case 'Finalizada': return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+      case 'Cancelada con Imprevisto': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+      case 'Imprevisto Enviado': return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
       case 'Cancelada': return 'bg-red-500/20 text-red-400 border-red-500/30';
       default: return 'bg-primary/20 text-primary border-primary/30';
     }
@@ -7816,6 +7831,8 @@ export class QuoteDetailModalComponent {
       case 'En presentación': return 'text-rose-300';
       case 'Evento realizado': return 'text-indigo-300';
       case 'Finalizada': return 'text-slate-300';
+      case 'Cancelada con Imprevisto': return 'text-rose-300';
+      case 'Imprevisto Enviado': return 'text-cyan-300';
       case 'Cancelada': return 'text-red-400';
       default: return 'text-primary';
     }
