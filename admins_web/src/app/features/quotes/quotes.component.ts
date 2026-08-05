@@ -11,7 +11,7 @@ import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
 import { TableShellComponent } from '../../shared/ui/table-shell/table-shell.component';
 import { QuoteStateBadgeComponent } from '../../shared/ui/quote-state-badge/quote-state-badge.component';
 import { QuoteStateFilterBarComponent, StateFilterChip } from './quote-state-filter-bar.component';
-import { QuoteFiltersToolbarComponent, QuoteStateChip, QuoteSortMode } from './quote-filters-toolbar.component';
+import { QuoteFiltersToolbarComponent, QuoteStateChip, QuoteSortMode, ActiveFilterChip } from './quote-filters-toolbar.component';
 import { QuoteKanbanCardComponent } from './quote-kanban-card.component';
 import { stateSummary } from './quote-card-insights';
 import {
@@ -109,7 +109,7 @@ import {
           [hideEmptyStates]="hideEmptyStates()"
           [resultCount]="getTableQuotes().length"
           [totalCount]="mockData.quotes().length"
-          [hasActiveFilters]="hasActiveFilters()"
+          [activeFilterChips]="activeFilterChips()"
           [contextChips]="activeContextChips()"
           [contextActive]="activeContextValue()"
           [contextLabel]="activeContextLabel()"
@@ -119,6 +119,7 @@ import {
           (hideEmptyStatesChange)="hideEmptyStates.set($event)"
           (contextFilterChange)="setActiveContextFilter($event)"
           (clearFilters)="clearAllFilters()"
+          (removeFilter)="removeFilter($event)"
         />
 
         <!-- KANBAN BOARD VIEW -->
@@ -580,11 +581,43 @@ export class QuotesComponent {
     }
   }
 
-  hasActiveFilters(): boolean {
-    return !!this.searchTerm()
-      || this.stateFilter() !== 'Todos'
-      || this.transversalFilter() !== 'todas'
-      || Object.values(this.stateContextFilter()).some(v => v !== 'todas');
+  /**
+   * Filtros aplicados, como chips removibles. Se muestran incluso con el panel
+   * colapsado para que nunca se filtre la lista sin que se note.
+   */
+  activeFilterChips(): ActiveFilterChip[] {
+    const chips: ActiveFilterChip[] = [];
+
+    if (this.searchTerm()) {
+      chips.push({ key: 'search', label: '"' + this.searchTerm() + '"', icon: 'search' });
+    }
+
+    if (this.stateFilter() !== 'Todos') {
+      chips.push({ key: 'state', label: this.stateFilter(), icon: quoteStateMeta(this.selectedState()).icon });
+    }
+
+    const context = this.activeContextValue();
+    if (context !== 'todas') {
+      const label = this.activeContextChips().find(c => c.value === context)?.label;
+      if (label) chips.push({ key: 'context', label, icon: 'filter_alt' });
+    }
+
+    return chips;
+  }
+
+  /** Quita un solo filtro desde su chip, sin borrar los demás. */
+  removeFilter(key: ActiveFilterChip['key']): void {
+    switch (key) {
+      case 'search':
+        this.searchTerm.set('');
+        break;
+      case 'state':
+        this.stateFilter.set('Todos');
+        break;
+      case 'context':
+        this.setActiveContextFilter('todas');
+        break;
+    }
   }
 
   clearAllFilters(): void {
