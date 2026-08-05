@@ -5,6 +5,7 @@ import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
 import { Quote, QuoteState, PaymentStatus, NegotiationEntry, PaymentMilestone, TimelineStep, NoticeItem, ChatMessage, QuoteIncident } from '../../core/models/admin.models';
+import { quoteStateMeta } from '../../core/models/quote-state.meta';
 
 export interface GroupEventSchedule {
   id: string;
@@ -181,44 +182,6 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
               </div>
             }
 
-            <!-- STATE SPECIFIC STEP NAVIGATION TABS (FOR OTHER STATES OTHER THAN INITIAL, SIGNATURE & PHASE 6 PHASES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada') {
-              <div class="quote-modal-tabs p-1 sm:p-1.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-between gap-2 text-xs shadow-inner">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <button 
-                    (click)="modalTab.set('estado_actual')"
-                    [class]="modalTab() === 'estado_actual' ? 'bg-primary text-on-primary font-black shadow-lg shadow-primary/20 scale-[1.02]' : 'text-outline hover:text-on-surface'"
-                    class="px-3 sm:px-4 py-1.5 rounded-xl transition-all flex items-center gap-1.5 text-[10px] sm:text-xs"
-                  >
-                    <span class="material-symbols-outlined text-sm">bolt</span> Expediente
-                  </button>
-
-                  <button 
-                    (click)="modalTab.set('solicitud')"
-                    [class]="modalTab() === 'solicitud' ? 'bg-primary text-on-primary font-black shadow-lg shadow-primary/20 scale-[1.02]' : 'text-outline hover:text-on-surface'"
-                    class="px-3 sm:px-4 py-1.5 rounded-xl transition-all flex items-center gap-1.5 text-[10px] sm:text-xs"
-                  >
-                    <span class="material-symbols-outlined text-sm">assignment</span> Solicitud Original
-                  </button>
-
-                  <button 
-                    (click)="modalTab.set('cobranza')"
-                    [class]="modalTab() === 'cobranza' ? 'bg-primary text-on-primary font-black shadow-lg shadow-primary/20 scale-[1.02]' : 'text-outline hover:text-on-surface'"
-                    class="px-3 sm:px-4 py-1.5 rounded-xl transition-all flex items-center gap-1.5 text-[10px] sm:text-xs"
-                  >
-                    <span class="material-symbols-outlined text-sm">credit_card</span> Cobranza & Pagos
-                  </button>
-
-                  <button 
-                    (click)="modalTab.set('contrato')"
-                    [class]="modalTab() === 'contrato' ? 'bg-primary text-on-primary font-black shadow-lg shadow-primary/20 scale-[1.02]' : 'text-outline hover:text-on-surface'"
-                    class="px-3 sm:px-4 py-1.5 rounded-xl transition-all flex items-center gap-1.5 text-[10px] sm:text-xs"
-                  >
-                    <span class="material-symbols-outlined text-sm">description</span> Contrato PDF
-                  </button>
-                </div>
-              </div>
-            }
 
           </div>
 
@@ -2654,34 +2617,6 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
               </div>
             }
 
-            <!-- DYNAMIC WORKFLOW ACTION CONTROL BAR (FOR OTHER STATES OTHER THAN INITIAL PHASES & PHASE 6) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada') {
-              <div class="quote-modal-workflow-bar p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 shadow-lg">
-                <div class="space-y-0.5">
-                  <span class="text-xs font-extrabold text-primary uppercase tracking-wider block">Acción Operativa para el Estado Actual</span>
-                  <p class="text-xs text-outline">{{ getStateActionDescription(selectedQuote()!.state) }}</p>
-                </div>
-
-                <div class="flex items-center gap-2 flex-wrap">
-                  <button 
-                    [disabled]="isFirstState(selectedQuote()!.state) || isHistoricalPreview()"
-                    (click)="moveState(selectedQuote()!, -1)"
-                    class="px-3.5 sm:px-4 py-2 rounded-xl bg-surface-bright hover:bg-primary/20 text-on-surface font-bold text-xs disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 shadow-sm"
-                  >
-                    <span class="material-symbols-outlined text-sm">arrow_back</span> Retroceder
-                  </button>
-
-                  <button 
-                    [disabled]="isLastState(selectedQuote()!.state) || isHistoricalPreview()"
-                    (click)="moveState(selectedQuote()!, 1)"
-                    class="px-4 sm:px-5 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary-hover font-extrabold text-xs shadow-lg shadow-primary/20 disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1.5 sm:gap-2"
-                  >
-                    Avanzar de Estado <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                  </button>
-                </div>
-              </div>
-            }
-
             <!-- SPECIALIZED WORKFLOW FOR STATE: 'Aceptada' -->
             @if (effectiveQuoteState() === 'Aceptada') {
               <div class="h-full flex flex-col min-h-0 space-y-4">
@@ -4199,164 +4134,6 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
             <!-- WORKFLOW ESPECIALIZADO: 'Cancelada' (RECHAZO DEFINITIVO, SOLO LECTURA) -->
             @if (effectiveQuoteState() === 'Cancelada') {
               <app-quote-cancelled-final-view [quote]="selectedQuote()" (openSnapshot)="openTimelineSnapshot($event)" />
-            }
-
-            <!-- TAB: EXPEDIENTE DE FASE ACTUAL (SOLO PARA ESTADOS SIN WORKFLOW ESPECIALIZADO PROPIO) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'estado_actual') {
-              <div class="space-y-4">
-                <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-surface-container-high/90 via-surface-container to-surface-container-high/70 border border-outline-variant/30 space-y-4">
-                  <div class="flex items-center gap-3">
-                    <div [class]="getStateBadgeIconBg(selectedQuote()!.state)" class="p-3 rounded-2xl border shadow-sm flex items-center justify-center shrink-0">
-                      <span class="material-symbols-outlined text-2xl">{{ getStateIcon(selectedQuote()!.state) }}</span>
-                    </div>
-                    <div class="min-w-0">
-                      <span class="text-xs font-black text-on-surface uppercase tracking-wider block">Expediente en Seguimiento</span>
-                      <p [class]="getStateTextColor(selectedQuote()!.state)" class="text-[11px] font-bold truncate">{{ getStatePhaseTitle(selectedQuote()!.state) }}</p>
-                    </div>
-                  </div>
-
-                  <p class="text-xs text-outline leading-relaxed">
-                    Fase comercial activa en el pipeline disquera para <strong class="text-on-surface font-bold">{{ selectedQuote()?.groupName }}</strong>.
-                    Consulta la solicitud original y la cobranza en las pestañas superiores mientras este expediente avanza de etapa.
-                  </p>
-
-                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-1">
-                    <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-0.5 min-w-0">
-                      <span class="text-[9px] font-bold text-outline uppercase tracking-wider block">Grupo / Talento</span>
-                      <p class="text-xs font-black text-on-surface truncate">{{ selectedQuote()?.groupName }}</p>
-                    </div>
-                    <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-0.5 min-w-0">
-                      <span class="text-[9px] font-bold text-outline uppercase tracking-wider block">Cliente</span>
-                      <p class="text-xs font-black text-on-surface truncate">{{ selectedQuote()?.clientName }}</p>
-                    </div>
-                    <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-0.5 min-w-0">
-                      <span class="text-[9px] font-bold text-outline uppercase tracking-wider block">Sede / Fecha</span>
-                      <p class="text-xs font-black text-on-surface truncate">{{ selectedQuote()?.venue }} · {{ selectedQuote()?.proposedDate }}</p>
-                    </div>
-                    <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-0.5 min-w-0">
-                      <span class="text-[9px] font-bold text-outline uppercase tracking-wider block">Monto Pactado</span>
-                      <p class="text-xs font-black text-amber-400">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-
-            <!-- TAB: SOLICITUD ORIGINAL DEL CLIENTE (FOR OTHER STATES) -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Contrato en espera de firma' && selectedQuote()?.state !== 'Contrato firmado' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'solicitud') {
-              <div class="space-y-4">
-                <div class="p-4 sm:p-6 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-4">
-                  <h4 class="text-sm font-bold text-on-surface flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary text-base">person</span>
-                    Datos del Cliente Contratante
-                  </h4>
-
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <span class="text-outline block">Nombre:</span>
-                      <p class="font-bold text-on-surface text-sm">{{ selectedQuote()?.clientName }}</p>
-                      <p class="text-outline">{{ selectedQuote()?.clientCompany }}</p>
-                    </div>
-
-                    <div>
-                      <span class="text-outline block">Contacto:</span>
-                      <p class="font-bold text-on-surface">{{ selectedQuote()?.clientEmail }}</p>
-                      <p class="text-outline">{{ selectedQuote()?.representativePhone || '+52 81 1234 5678' }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-
-            <!-- TAB: CONTROL DE COBRANZA & PAGOS -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'cobranza') {
-              <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-5 sm:space-y-6">
-                <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
-                  <div>
-                    <h4 class="text-sm font-black text-on-surface">Estatus de Cobranza Tesorería</h4>
-                    <p class="text-xs text-outline">Gestión del 50% de anticipo y 50% de finiquito previo a concierto.</p>
-                  </div>
-                  <span [class]="getPaymentStatusBadgeClass(selectedQuote()!.paymentStatus)" class="px-3.5 py-1 rounded-xl text-xs font-black border shadow-sm">
-                    {{ selectedQuote()?.paymentStatus }}
-                  </span>
-                </div>
-
-                @if (roleService.canViewFinances()) {
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                    <div class="p-3.5 sm:p-4 rounded-2xl bg-surface-container border border-outline-variant/20 text-center space-y-1">
-                      <span class="text-[10px] font-bold text-outline uppercase tracking-wider block">Monto Total Pactado</span>
-                      <span class="text-lg sm:text-xl font-black text-on-surface">&#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN</span>
-                    </div>
-
-                    <div class="p-3.5 sm:p-4 rounded-2xl bg-surface-container border border-outline-variant/20 text-center space-y-1">
-                      <span class="text-[10px] font-bold text-outline uppercase tracking-wider block">Anticipo 50% (Reserva)</span>
-                      <span class="text-lg sm:text-xl font-black text-amber-400">&#36;{{ (selectedQuote()?.totalAmount || 0) * 0.5 | number:'1.0-0' }} MXN</span>
-                    </div>
-
-                    <div class="p-3.5 sm:p-4 rounded-2xl bg-surface-container border border-outline-variant/20 text-center space-y-1">
-                      <span class="text-[10px] font-bold text-outline uppercase tracking-wider block">Liquidación 50% (Finiquito)</span>
-                      <span class="text-lg sm:text-xl font-black text-emerald-400">&#36;{{ (selectedQuote()?.totalAmount || 0) * 0.5 | number:'1.0-0' }} MXN</span>
-                    </div>
-                  </div>
-                }
-
-                <div class="space-y-3 pt-2">
-                  <span class="text-xs font-extrabold text-on-surface uppercase tracking-wider block">Cambiar Estatus de Pago Manualmente</span>
-                  <div class="flex items-center gap-2.5 sm:gap-3 flex-wrap">
-                    <button 
-                      (click)="updatePaymentStatus('Pendiente')"
-                      class="px-3.5 sm:px-4 py-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 text-xs font-bold transition-all"
-                    >
-                      Marcar Pendiente
-                    </button>
-
-                    <button 
-                      (click)="updatePaymentStatus('Anticipo 50%')"
-                      class="px-3.5 sm:px-4 py-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 text-xs font-bold transition-all"
-                    >
-                      Marcar Anticipo 50% Recibido
-                    </button>
-
-                    <button 
-                      (click)="updatePaymentStatus('Pago Confirmado 100%')"
-                      class="px-3.5 sm:px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 text-xs font-bold transition-all"
-                    >
-                      Marcar Pago Confirmado 100%
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
-
-            <!-- TAB: GENERADOR DE CONTRATO PDF -->
-            @if (selectedQuote()?.state !== 'En revisión' && selectedQuote()?.state !== 'Propuesta enviada' && selectedQuote()?.state !== 'Negociación' && selectedQuote()?.state !== 'Aceptada' && selectedQuote()?.state !== 'Finalizada' && selectedQuote()?.state !== 'Cancelada con Imprevisto' && selectedQuote()?.state !== 'Imprevisto Enviado' && selectedQuote()?.state !== 'Cancelada' && modalTab() === 'contrato') {
-              <div class="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-5 sm:space-y-6">
-                <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
-                  <div>
-                    <h4 class="text-sm font-black text-on-surface flex items-center gap-2">
-                      <span class="material-symbols-outlined text-primary text-base">description</span>
-                      Generación de Documento Legal Privado
-                    </h4>
-                    <p class="text-xs text-outline">Contrato formal 1 a 1 de prestación de servicios artísticos musicales.</p>
-                  </div>
-
-                  <button 
-                    (click)="downloadMockPdf()"
-                    class="px-3.5 sm:px-4 py-2 rounded-xl bg-primary text-on-primary font-black text-xs hover:bg-primary-hover transition-all flex items-center gap-1.5 shadow-md shrink-0"
-                  >
-                    <span class="material-symbols-outlined text-base">download</span> Descargar PDF
-                  </button>
-                </div>
-
-                <div class="p-4 sm:p-6 rounded-2xl bg-surface-container border border-outline-variant/20 text-xs space-y-4 font-mono leading-relaxed max-h-60 overflow-y-auto custom-scrollbar text-outline">
-                  <p class="font-bold text-on-surface text-center uppercase tracking-widest text-xs sm:text-sm">CONTRATO PRIVADO DE PRESTACIÓN DE SERVICIOS ARTÍSTICOS</p>
-                  <p>En la ciudad de {{ selectedQuote()?.city }}, con fecha {{ selectedQuote()?.proposedDate }}, celebran el presente contrato por una parte <strong>ACORDEX MUSIC S.A. DE C.V.</strong> en representación del grupo musical <strong>{{ selectedQuote()?.groupName }}</strong>, y por la otra parte el contratante <strong>{{ selectedQuote()?.clientName }}</strong> ({{ selectedQuote()?.clientCompany }})...</p>
-                  <p>CLÁUSULA PRIMERA: El grupo musical se compromete a presentar un show en vivo de 2 horas y 30 minutos en el recinto {{ selectedQuote()?.venue }}.</p>
-                  @if (roleService.canViewFinances()) {
-                    <p>CLÁUSULA SEGUNDA: El monto total pactado es de &#36;{{ selectedQuote()?.totalAmount | number:'1.0-0' }} MXN, pagadero en 2 exhibiciones del 50% cada una.</p>
-                  }
-                </div>
-              </div>
             }
 
           </div>
@@ -5975,7 +5752,6 @@ export class QuoteDetailModalComponent {
 
   isHistoricalPreview = computed(() => this.historicalPreviewState() !== null);
 
-  modalTab = signal<'estado_actual' | 'solicitud' | 'cobranza' | 'contrato'>('estado_actual');
 
   // Phase 2 tab navigation signal
   phase2Tab = signal<'cotizacion_enviada' | 'informacion_cliente'>('cotizacion_enviada');
@@ -7363,18 +7139,6 @@ export class QuoteDetailModalComponent {
     return origMarginAmt - newMarginAmt; // Positive value means label gave up / conceded this amount of money
   });
 
-  readonly allStates: QuoteState[] = [
-    'En revisión',
-    'Propuesta enviada',
-    'Negociación',
-    'Aceptada',
-    'Contrato en espera de firma',
-    'Contrato firmado',
-    'Pago confirmado',
-    'Finalizada',
-    'Cancelada'
-  ];
-
   openFullCalendarModal(): void {
     this.showFullCalendarModal.set(true);
   }
@@ -7701,20 +7465,7 @@ export class QuoteDetailModalComponent {
   }
 
   getStateIcon(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'history_edu';
-      case 'Propuesta enviada': return 'send';
-      case 'Negociación': return 'handshake';
-      case 'Aceptada': return 'check_circle';
-      case 'Contrato en espera de firma': return 'edit_note';
-      case 'Contrato firmado': return 'draw';
-      case 'Pago confirmado': return 'verified';
-      case 'Finalizada': return 'task_alt';
-      case 'Cancelada con Imprevisto': return 'report_problem';
-      case 'Imprevisto Enviado': return 'hourglass_top';
-      case 'Cancelada': return 'cancel';
-      default: return 'bookmark';
-    }
+    return quoteStateMeta(state).icon;
   }
 
   getAdvancePaymentAmount(entry?: NegotiationEntry | null): number {
@@ -7760,114 +7511,24 @@ export class QuoteDetailModalComponent {
 
 
   getStatePhaseTitle(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'Fase 1: Evaluación Inicial & Revisión de Solicitud';
-      case 'Propuesta enviada': {
-        // Diferencia el título si hay rondas de negociación activas
-        if (this.isInNegotiationRound()) {
-          return 'Fase 2: Negociación Comercial Enviada — ' + (this.negotiationRoundLabel());
-        }
-        return 'Fase 2: Propuesta Comercial Enviada al Cliente';
-      }
-      case 'Negociación': return 'Fase 2.5: Mesa de Negociación & Re-estructuración Comercial';
-      case 'Aceptada': return 'Fase 3: Cotización Aceptada por el Cliente';
-      case 'Contrato en espera de firma': return 'Fase 4: Contrato Enviado en Espera de Firma Digital';
-      case 'Contrato firmado': return 'Fase 4.5: Contrato Privado Firmado Digitalmente';
-      case 'Pago confirmado': return 'Fase 4: Verificación Financiera 100% & Reservas VIP';
-      case 'Finalizada': return 'Fase 5: Contratación Finalizada y Archivada en Histórico';
-      case 'Cancelada con Imprevisto': return 'Imprevisto Activo: En Espera de Propuesta de Resolución';
-      case 'Imprevisto Enviado': return 'Imprevisto: Propuesta de Resolución Enviada al Cliente';
-      case 'Cancelada': return 'Expediente Cancelado: Fecha Liberada en Calendario';
-      default: return 'Expediente de Cotización';
+    // 'Propuesta enviada' es el único estado con título dinámico: cambia cuando
+    // hay rondas de negociación activas.
+    if (state === 'Propuesta enviada' && this.isInNegotiationRound()) {
+      return 'Fase 2: Negociación Comercial Enviada — ' + this.negotiationRoundLabel();
     }
+    return quoteStateMeta(state).modalPhaseTitle;
   }
 
   getStateModalBorderClass(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'border-blue-500/50 shadow-blue-500/10';
-      case 'Propuesta enviada': return 'border-cyan-500/50 shadow-cyan-500/10';
-      case 'Negociación': return 'border-amber-500/50 shadow-amber-500/10';
-      case 'Aceptada': return 'border-emerald-500/50 shadow-emerald-500/10';
-      case 'Contrato en espera de firma': return 'border-purple-400/50 shadow-purple-400/10';
-      case 'Contrato firmado': return 'border-purple-500/50 shadow-purple-500/10';
-      case 'Pago confirmado': return 'border-emerald-400 shadow-emerald-500/20';
-      case 'Finalizada': return 'border-slate-500/50 shadow-slate-500/10';
-      case 'Cancelada con Imprevisto': return 'border-rose-500/50 shadow-rose-500/10';
-      case 'Imprevisto Enviado': return 'border-cyan-500/50 shadow-cyan-500/10';
-      case 'Cancelada': return 'border-red-500/50 shadow-red-500/10';
-      default: return 'border-outline-variant/40';
-    }
+    return quoteStateMeta(state).modalBorderClass;
   }
 
   getStateBadgeIconBg(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'Propuesta enviada': return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30';
-      case 'Negociación': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      case 'Aceptada': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      case 'Contrato en espera de firma': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-      case 'Contrato firmado': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-      case 'Pago confirmado': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-      case 'Finalizada': return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
-      case 'Cancelada con Imprevisto': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-      case 'Imprevisto Enviado': return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
-      case 'Cancelada': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-primary/20 text-primary border-primary/30';
-    }
+    return quoteStateMeta(state).badgeClass;
   }
 
   getStateTextColor(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'text-blue-400';
-      case 'Propuesta enviada': return 'text-cyan-400';
-      case 'Negociación': return 'text-amber-400';
-      case 'Aceptada': return 'text-emerald-400';
-      case 'Contrato en espera de firma': return 'text-purple-300';
-      case 'Contrato firmado': return 'text-purple-300';
-      case 'Pago confirmado': return 'text-emerald-300';
-      case 'Finalizada': return 'text-slate-300';
-      case 'Cancelada con Imprevisto': return 'text-rose-300';
-      case 'Imprevisto Enviado': return 'text-cyan-300';
-      case 'Cancelada': return 'text-red-400';
-      default: return 'text-primary';
-    }
-  }
-
-  getStateActionDescription(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'Revisar datos de solicitud y verificar fecha en la agenda exclusiva del artista';
-      case 'Propuesta enviada': return 'Hacer seguimiento a la lectura del correo con la propuesta comercial';
-      case 'Negociación': return 'Evaluar la contrapropuesta del cliente, aplicar descuento y re-enviar propuesta';
-      case 'Aceptada': return 'Confirmar aceptación y redactar borrador preliminar de contrato';
-      case 'Contrato en espera de firma': return 'Revisar cláusulas legales y solicitar firma digital de las partes';
-      case 'Contrato firmado': return 'Verificar firma de ambas partes y solicitar comprobante de anticipo';
-      case 'Pago confirmado': return 'Validar 100% de liquidación y preparar llamada a escenario';
-      case 'Finalizada': return 'Expediente histórico archivado y encuesta de satisfacción concluida';
-      case 'Cancelada': return 'Liberar fecha en el calendario disquera y verificar reembolsos';
-      default: return 'Transicionar la cotización al siguiente paso del flujo comercial';
-    }
-  }
-
-  getStateIndex(state: QuoteState): number {
-    return this.allStates.indexOf(state);
-  }
-
-  isFirstState(state: QuoteState): boolean {
-    return this.allStates.indexOf(state) === 0;
-  }
-
-  isLastState(state: QuoteState): boolean {
-    return this.allStates.indexOf(state) === this.allStates.length - 1;
-  }
-
-  moveState(quote: Quote, delta: number): void {
-    const currentIndex = this.allStates.indexOf(quote.state);
-    const newIndex = currentIndex + delta;
-    if (newIndex >= 0 && newIndex < this.allStates.length) {
-      const newState = this.allStates[newIndex];
-      this.mockData.updateQuoteState(quote.id, newState);
-      this.layoutState.openQuoteModal({ ...quote, state: newState });
-    }
+    return quoteStateMeta(state).textColor;
   }
 
   updatePaymentStatus(newStatus: PaymentStatus): void {

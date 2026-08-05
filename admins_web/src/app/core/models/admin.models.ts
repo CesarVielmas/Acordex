@@ -7,7 +7,6 @@ export type QuoteState =
   | 'Aceptada'
   | 'Contrato en espera de firma'
   | 'Contrato firmado'
-  | 'Pago confirmado'
   | 'Finalizada'
   | 'Cancelada con Imprevisto'
   | 'Imprevisto Enviado'

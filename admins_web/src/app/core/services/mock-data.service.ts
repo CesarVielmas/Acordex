@@ -621,8 +621,9 @@ export class MockDataService {
       city: 'Ciudad de México',
       totalAmount: 110000,
       marginAmount: 27500,
-      state: 'Pago confirmado',
+      state: 'Contrato firmado',
       paymentStatus: 'Pago Confirmado 100%',
+      contractStatus: 'Firmado',
       terms: 'Boda privada. 3 tandas de 45 minutos. Equipo de sonido propio.',
       dateCreated: '2026-07-01',
       eventType: 'Boda',
@@ -1497,7 +1498,9 @@ export class MockDataService {
   );
 
   private loadQuotesWithFreshMocks(): Quote[] {
-    const list = this.storage.getItem<Quote[]>('acordex_quotes_v7', this.INITIAL_QUOTES);
+    const list = this.normalizeLegacyStates(
+      this.storage.getItem<Quote[]>('acordex_quotes_v7', this.INITIAL_QUOTES)
+    );
     for (const qId of ['COT-8901', 'COT-8902', 'COT-8903', 'COT-8905']) {
       const fresh = this.INITIAL_QUOTES.find(q => q.id === qId);
       if (fresh) {
@@ -1510,6 +1513,20 @@ export class MockDataService {
       }
     }
     return list;
+  }
+
+  /**
+   * 'Pago confirmado' se eliminó del pipeline porque la confirmación de pago ya
+   * vive en `paymentStatus` y en los hitos de `paymentMilestones`. Las cotizaciones
+   * que quedaron persistidas en localStorage con ese estado se reubican en
+   * 'Contrato firmado', que es la fase real en la que se encuentran.
+   */
+  private normalizeLegacyStates(list: Quote[]): Quote[] {
+    return list.map(q =>
+      (q.state as string) === 'Pago confirmado'
+        ? { ...q, state: 'Contrato firmado' as QuoteState }
+        : q
+    );
   }
 
   readonly events = signal<EventItem[]>(

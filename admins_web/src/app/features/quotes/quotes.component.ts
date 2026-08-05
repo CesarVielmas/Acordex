@@ -4,23 +4,28 @@ import { FormsModule } from '@angular/forms';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
-import { Quote, QuoteState, PaymentStatus, PaymentMilestone } from '../../core/models/admin.models';
+import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models';
+import { QUOTE_ALL_STATES, quoteStateMeta, isNonLinearQuoteState } from '../../core/models/quote-state.meta';
 import { AccessRestrictedComponent } from '../../shared/ui/access-restricted/access-restricted.component';
 import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
-import { TabPillsComponent, TabPillItem } from '../../shared/ui/tab-pills/tab-pills.component';
 import { TableShellComponent } from '../../shared/ui/table-shell/table-shell.component';
 import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.component';
-import { BadgeComponent } from '../../shared/ui/badge/badge.component';
+import { QuoteStateBadgeComponent } from '../../shared/ui/quote-state-badge/quote-state-badge.component';
 import { QuoteStateFilterBarComponent, StateFilterChip } from './quote-state-filter-bar.component';
-
-/** Definición de una opción de filtro contextual: etiqueta + predicado sobre la cotización. */
-interface StateFilterOption {
-  value: string;
-  label: string;
-  icon: string;
-  activeClass: string;
-  match: (q: Quote) => boolean;
-}
+import { QuoteFiltersToolbarComponent, QuoteStateChip, QuoteSortMode } from './quote-filters-toolbar.component';
+import {
+  QuoteFilterOption,
+  stateFilterOptions,
+  stateFilterLabel,
+  transversalFilterOptions,
+  TRANSVERSAL_FILTER_LABEL,
+  paidMilestonesCount,
+  totalMilestonesCount,
+  paidAmountPercent,
+  isQuoteFullyPaid as isFullyPaid,
+  hasOverdueMilestone as hasOverdue,
+  overdueMilestonesCount
+} from './quote-filter-catalog';
 
 @Component({
   selector: 'app-quotes',
@@ -30,11 +35,11 @@ interface StateFilterOption {
     FormsModule,
     AccessRestrictedComponent,
     KpiCardComponent,
-    TabPillsComponent,
     TableShellComponent,
     ProgressBarComponent,
-    BadgeComponent,
-    QuoteStateFilterBarComponent
+    QuoteStateBadgeComponent,
+    QuoteStateFilterBarComponent,
+    QuoteFiltersToolbarComponent
   ],
   template: `
     <div class="space-y-6 max-w-full">
@@ -99,56 +104,29 @@ interface StateFilterOption {
           }
         </div>
 
-        <!-- QUICK FILTER PILLS & SEARCH BAR -->
-        <div class="p-4 sm:p-5 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-lg space-y-3">
-
-          <!-- State Filter Pills -->
-          <app-tab-pills [tabs]="stateFilterTabs()" [active]="stateFilter()" (change)="stateFilter.set($event)" />
-
-          <!-- FILTROS CONTEXTUALES DE LA FASE EN VISTA TABLA.
-               En Kanban cada columna lleva su propia barra, por eso aquí solo aplica a la tabla
-               y únicamente cuando hay un estado concreto seleccionado. -->
-          @if (viewMode() === 'table' && stateFilter() !== 'Todos') {
-            <div class="pt-1 border-t border-outline-variant/20">
-              <app-quote-state-filter-bar
-                class="block pt-2"
-                [chips]="getStateFilterChips(selectedState())"
-                [active]="getActiveStateFilter(selectedState())"
-                [label]="getStateFilterLabel(selectedState())"
-                (select)="setStateContextFilter(selectedState(), $event)"
-              />
-            </div>
-          }
-
-          <!-- Search Input & Dropdowns -->
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1 border-t border-outline-variant/20">
-            <div class="relative flex-1">
-              <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
-              <input
-                [(ngModel)]="searchTerm"
-                type="text"
-                placeholder="Buscar por folio, cliente, empresa, grupo musical o ciudad..."
-                class="w-full bg-surface-container-high/90 border border-outline-variant/30 rounded-2xl pl-10 pr-4 py-2.5 min-h-11 text-xs text-on-surface focus:outline-none focus:border-primary/60 transition-all shadow-inner"
-              />
-            </div>
-
-            <div class="flex flex-wrap items-center gap-3">
-              <!-- Payment Filter Dropdown -->
-              <div class="flex items-center gap-2 text-xs">
-                <span class="text-outline font-semibold shrink-0">Estatus Pago:</span>
-                <select
-                  [(ngModel)]="paymentFilter"
-                  class="bg-surface-container-high/90 border border-outline-variant/30 rounded-xl px-3.5 py-2 min-h-11 text-xs text-on-surface focus:outline-none focus:border-primary/60"
-                >
-                  <option value="Todos">Todos los Pagos</option>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Anticipo 50%">Anticipo 50%</option>
-                  <option value="Pago Confirmado 100%">Pago Confirmado 100%</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- BARRA DE FILTROS (se adapta segun la vista activa) -->
+        <app-quote-filters-toolbar
+          [viewMode]="viewMode()"
+          [stateChips]="stateChips()"
+          [stateFilter]="stateFilter()"
+          [searchTerm]="searchTerm()"
+          [paymentFilter]="paymentFilter()"
+          [sortMode]="sortMode()"
+          [hideEmptyStates]="hideEmptyStates()"
+          [resultCount]="getTableQuotes().length"
+          [totalCount]="mockData.quotes().length"
+          [hasActiveFilters]="hasActiveFilters()"
+          [contextChips]="activeContextChips()"
+          [contextActive]="activeContextValue()"
+          [contextLabel]="activeContextLabel()"
+          (stateFilterChange)="stateFilter.set($event)"
+          (searchTermChange)="searchTerm.set($event)"
+          (paymentFilterChange)="paymentFilter.set($event)"
+          (sortModeChange)="sortMode.set($event)"
+          (hideEmptyStatesChange)="hideEmptyStates.set($event)"
+          (contextFilterChange)="setActiveContextFilter($event)"
+          (clearFilters)="clearAllFilters()"
+        />
 
         <!-- KANBAN BOARD VIEW -->
         @if (viewMode() === 'kanban') {
@@ -375,8 +353,24 @@ interface StateFilterOption {
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant/20">
-                @for (q of getTableQuotes(); track q.id) {
-                  <tr class="hover:bg-surface-container-high/50 transition-colors">
+                @for (group of getTableGroups(); track group.key) {
+
+                  <!-- ENCABEZADO DE GRUPO: da al listado plano la legibilidad por
+                       estado que antes solo tenia el Kanban. -->
+                  @if (group.state) {
+                    <tr class="bg-surface-container-high/60">
+                      <td colspan="8" class="py-2 px-3 border-l-4" [class]="stateBorderClass(group.state)">
+                        <span class="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider" [class]="getStateTextColor(group.state)">
+                          <span class="material-symbols-outlined text-base">{{ getStateIcon(group.state) }}</span>
+                          {{ group.state }}
+                          <span class="px-2 py-0.5 rounded-md bg-black/25 font-mono text-[10px] text-outline">{{ group.quotes.length }}</span>
+                        </span>
+                      </td>
+                    </tr>
+                  }
+
+                  @for (q of group.quotes; track q.id) {
+                  <tr class="hover:bg-surface-container-high/50 transition-colors border-l-4" [class]="stateBorderClass(q.state)">
                     <td class="py-3.5 px-3 font-bold text-primary whitespace-nowrap">{{ q.id }}</td>
                     <td class="py-3.5 px-3 font-semibold text-on-surface">
                       {{ q.clientName }}
@@ -399,7 +393,7 @@ interface StateFilterOption {
                       }
                     </td>
                     <td class="py-3.5 px-3 whitespace-nowrap">
-                      <app-badge [label]="q.state" variant="primary" />
+                      <app-quote-state-badge [state]="q.state" />
                     </td>
                     <td class="py-3.5 px-3 whitespace-nowrap">
                       <span [class]="getPaymentStatusBadgeClass(q.paymentStatus, q)" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1 inline-flex">
@@ -418,16 +412,29 @@ interface StateFilterOption {
                       </button>
                     </td>
                   </tr>
+                  }
                 }
               </tbody>
             </table>
 
             <div mobile-cards>
-              @for (q of getTableQuotes(); track q.id) {
-                <div class="p-4 space-y-3">
-                  <div class="flex items-center justify-between gap-2">
+              @for (group of getTableGroups(); track group.key) {
+
+                @if (group.state) {
+                  <div class="px-4 py-2 bg-surface-container-high/60 border-l-4" [class]="stateBorderClass(group.state)">
+                    <span class="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider" [class]="getStateTextColor(group.state)">
+                      <span class="material-symbols-outlined text-base">{{ getStateIcon(group.state) }}</span>
+                      {{ group.state }}
+                      <span class="px-2 py-0.5 rounded-md bg-black/25 font-mono text-[10px] text-outline">{{ group.quotes.length }}</span>
+                    </span>
+                  </div>
+                }
+
+                @for (q of group.quotes; track q.id) {
+                <div class="p-4 space-y-3 border-l-4" [class]="stateBorderClass(q.state)">
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
                     <span class="font-bold text-primary text-sm">{{ q.id }}</span>
-                    <app-badge [label]="q.state" variant="primary" />
+                    <app-quote-state-badge [state]="q.state" />
                   </div>
 
                   <div class="text-xs">
@@ -456,6 +463,7 @@ interface StateFilterOption {
                     <span class="material-symbols-outlined text-sm">visibility</span> Abrir Solicitud
                   </button>
                 </div>
+                }
               }
             </div>
 
@@ -482,6 +490,12 @@ export class QuotesComponent {
   paymentFilter = signal('Todos');
   /** Filtro contextual activo por estado ({ 'Finalizada': 'atrasada', ... }). Default: 'todas'. */
   stateContextFilter = signal<Record<string, string>>({});
+  /** Orden de la Vista Tabla. El Kanban no lo necesita: ya ordena por columna. */
+  sortMode = signal<QuoteSortMode>('estado');
+  /** Colapsa las columnas del Kanban sin cotizaciones. */
+  hideEmptyStates = signal(false);
+  /** Filtro transversal activo cuando la Tabla muestra todos los estados juntos. */
+  transversalFilter = signal('todas');
 
   proposalSoundOption = signal<'cliente' | 'proveedor'>('proveedor');
   proposalSoundCost = signal<number>(15000);
@@ -532,127 +546,31 @@ export class QuotesComponent {
     });
   }
 
-  readonly allStates: QuoteState[] = [
-    'En revisión',
-    'Propuesta enviada',
-    'Negociación',
-    'Aceptada',
-    'Contrato en espera de firma',
-    'Contrato firmado',
-    'Pago confirmado',
-    'Finalizada',
-    'Cancelada con Imprevisto',
-    'Imprevisto Enviado',
-    'Cancelada'
-  ];
-
-  stateFilterTabs(): TabPillItem[] {
-    return [
-      { value: 'Todos', label: `Todas las ${this.allStates.length} Etapas (${this.mockData.quotes().length})` },
-      ...this.allStates.map(st => ({ value: st, label: st }))
-    ];
-  }
+  /** Orden de estados del tablero. Fuente única: `core/models/quote-state.meta.ts`. */
+  readonly allStates: readonly QuoteState[] = QUOTE_ALL_STATES;
 
   getStateIcon(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'history_edu';
-      case 'Propuesta enviada': return 'send';
-      case 'Negociación': return 'handshake';
-      case 'Aceptada': return 'check_circle';
-      case 'Contrato en espera de firma': return 'edit_note';
-      case 'Contrato firmado': return 'draw';
-      case 'Pago confirmado': return 'verified';
-      case 'Finalizada': return 'task_alt';
-      case 'Cancelada con Imprevisto': return 'report_problem';
-      case 'Imprevisto Enviado': return 'hourglass_top';
-      case 'Cancelada': return 'cancel';
-      default: return 'bookmark';
-    }
+    return quoteStateMeta(state).icon;
   }
 
   getStatePhaseTitle(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'Fase 1: Evaluación Inicial & Revisión de Solicitud Pública';
-      case 'Propuesta enviada': return 'Fase 1: Propuesta Comercial Enviada al Cliente';
-      case 'Negociación': return 'Fase 2: Negociación Comercial & Ajuste de Cláusulas';
-      case 'Aceptada': return 'Fase 2: Cotización Aceptada por el Cliente';
-      case 'Contrato en espera de firma': return 'Fase 2: Contrato Enviado en Espera de Firma Digital del Cliente';
-      case 'Contrato firmado': return 'Fase 4.5: Contrato Privado Firmado Digitalmente';
-      case 'Pago confirmado': return 'Fase 4: Verificación Financiera 100% & Reservas VIP';
-      case 'Finalizada': return 'Fase 6: Cierre Definitivo de Cotización & Archivo Histórico';
-      case 'Cancelada con Imprevisto': return 'Fase Excepcional: Cancelación por Imprevisto Grave';
-      case 'Imprevisto Enviado': return 'Imprevisto: Propuesta de Resolución Enviada al Cliente';
-      case 'Cancelada': return 'Cotización Cancelada o Inactiva';
-      default: return 'Detalles de Cotización';
-    }
+    return quoteStateMeta(state).phaseTitle;
   }
 
   getStateModalBorderClass(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'border-blue-500/50 shadow-blue-500/10';
-      case 'Propuesta enviada': return 'border-cyan-500/50 shadow-cyan-500/10';
-      case 'Negociación': return 'border-amber-500/50 shadow-amber-500/10';
-      case 'Aceptada': return 'border-emerald-500/50 shadow-emerald-500/10';
-      case 'Contrato en espera de firma': return 'border-purple-400/50 shadow-purple-400/10';
-      case 'Contrato firmado': return 'border-purple-500/50 shadow-purple-500/10';
-      case 'Pago confirmado': return 'border-emerald-400 shadow-emerald-500/20';
-      case 'Finalizada': return 'border-slate-500/50 shadow-slate-500/10';
-      case 'Cancelada con Imprevisto': return 'border-rose-600/50 shadow-rose-600/10';
-      case 'Imprevisto Enviado': return 'border-cyan-500/50 shadow-cyan-500/10';
-      case 'Cancelada': return 'border-red-500/50 shadow-red-500/10';
-      default: return 'border-outline-variant/40';
-    }
+    return quoteStateMeta(state).modalBorderClass;
   }
 
   getStateBadgeIconBg(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'Propuesta enviada': return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30';
-      case 'Negociación': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      case 'Aceptada': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      case 'Contrato en espera de firma': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-      case 'Contrato firmado': return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
-      case 'Pago confirmado': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-      case 'Finalizada': return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
-      case 'Cancelada con Imprevisto': return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-      case 'Imprevisto Enviado': return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
-      case 'Cancelada': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-primary/20 text-primary border-primary/30';
-    }
+    return quoteStateMeta(state).badgeClass;
   }
 
   getStateTextColor(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'text-blue-400';
-      case 'Propuesta enviada': return 'text-cyan-400';
-      case 'Negociación': return 'text-amber-400';
-      case 'Aceptada': return 'text-emerald-400';
-      case 'Contrato en espera de firma': return 'text-purple-300';
-      case 'Contrato firmado': return 'text-purple-300';
-      case 'Pago confirmado': return 'text-emerald-300';
-      case 'Finalizada': return 'text-slate-300';
-      case 'Cancelada con Imprevisto': return 'text-rose-400';
-      case 'Imprevisto Enviado': return 'text-cyan-400';
-      case 'Cancelada': return 'text-red-400';
-      default: return 'text-primary';
-    }
+    return quoteStateMeta(state).textColor;
   }
 
   getStateActionDescription(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'Revisar datos de solicitud y verificar fecha en la agenda exclusiva del artista';
-      case 'Propuesta enviada': return 'Hacer seguimiento a la lectura del correo con la propuesta comercial';
-      case 'Negociación': return 'Ajustar cláusulas u honorarios según los acuerdos comercialmente pactados';
-      case 'Aceptada': return 'Confirmar aceptación y redactar borrador preliminar de contrato';
-      case 'Contrato en espera de firma': return 'Revisar cláusulas legales y solicitar firma digital de las partes';
-      case 'Contrato firmado': return 'Verificar firma de ambas partes y solicitar comprobante de anticipo';
-      case 'Pago confirmado': return 'Validar 100% de liquidación y preparar llamada a escenario';
-      case 'Finalizada': return 'Expediente histórico archivado y encuesta de satisfacción concluida';
-      case 'Cancelada con Imprevisto': return 'Expediente cerrado con protocolo de imprevisto grave u opción de reembolso';
-      case 'Imprevisto Enviado': return 'Dar seguimiento a la propuesta de resolución enviada, en espera de la decisión del cliente';
-      case 'Cancelada': return 'Liberar fecha en el calendario disquera y verificar reembolsos';
-      default: return 'Transicionar la cotización al siguiente paso del flujo comercial';
-    }
+    return quoteStateMeta(state).actionDescription;
   }
 
   getFilteredQuotes(): Quote[] {
@@ -675,7 +593,18 @@ export class QuotesComponent {
     if (this.stateFilter() !== 'Todos') {
       return [this.stateFilter() as QuoteState];
     }
-    return this.allStates;
+    if (this.hideEmptyStates()) {
+      return this.allStates.filter(st => this.getQuotesByStateRaw(st).length > 0);
+    }
+    return [...this.allStates];
+  }
+
+  /** Estados con su conteo, para la rejilla de la barra de filtros. */
+  stateChips(): QuoteStateChip[] {
+    return this.allStates.map(state => ({
+      state,
+      count: this.mockData.quotes().filter(q => q.state === state).length
+    }));
   }
 
   /** Cotizaciones de un estado con su filtro contextual aplicado (vista Kanban). */
@@ -688,11 +617,51 @@ export class QuotesComponent {
     return this.getFilteredQuotes().filter(q => q.state === state);
   }
 
-  /** Lista que alimenta la Vista Tabla: aplica el filtro contextual del estado seleccionado. */
+  /**
+   * Lista que alimenta la Vista Tabla. Cuando hay un estado seleccionado aplica
+   * el filtro contextual de esa fase; cuando se ven todos juntos, aplica el
+   * filtro transversal, que es el que tiene sentido sobre una lista plana.
+   */
   getTableQuotes(): Quote[] {
     const list = this.getFilteredQuotes();
-    if (this.stateFilter() === 'Todos') return list;
+    if (this.stateFilter() === 'Todos') {
+      return this.applyTransversalFilter(list);
+    }
     return this.applyContextFilter(list, this.stateFilter() as QuoteState);
+  }
+
+  /**
+   * Agrupa las filas de la tabla por estado cuando se ordena por etapa, para
+   * darle al listado plano la legibilidad que antes solo tenía el Kanban.
+   * Con cualquier otro orden devuelve un único grupo sin encabezado.
+   */
+  getTableGroups(): { key: string; state: QuoteState | null; quotes: Quote[] }[] {
+    const list = this.getSortedTableQuotes();
+    if (this.sortMode() !== 'estado') {
+      return [{ key: 'all', state: null, quotes: list }];
+    }
+    return this.allStates
+      .map(state => ({ key: state, state, quotes: list.filter(q => q.state === state) }))
+      .filter(g => g.quotes.length > 0);
+  }
+
+  private getSortedTableQuotes(): Quote[] {
+    const list = [...this.getTableQuotes()];
+    switch (this.sortMode()) {
+      case 'fecha':
+        return list.sort((a, b) => a.proposedDate.localeCompare(b.proposedDate));
+      case 'monto':
+        return list.sort((a, b) => (b.totalAmount || 0) - (a.totalAmount || 0));
+      case 'cliente':
+        return list.sort((a, b) => a.clientName.localeCompare(b.clientName, 'es'));
+      default:
+        return list.sort((a, b) => this.getStateIndex(a.state) - this.getStateIndex(b.state));
+    }
+  }
+
+  /** Color del borde izquierdo de cada fila/tarjeta, según el estado. */
+  stateBorderClass(state: QuoteState): string {
+    return quoteStateMeta(state).borderLeftClass;
   }
 
   private applyContextFilter(list: Quote[], state: QuoteState): Quote[] {
@@ -700,6 +669,70 @@ export class QuotesComponent {
     if (active === 'todas') return list;
     const option = this.getStateFilterOptions(state).find(o => o.value === active);
     return option ? list.filter(q => option.match(q)) : list;
+  }
+
+  private applyTransversalFilter(list: Quote[]): Quote[] {
+    const active = this.transversalFilter();
+    if (active === 'todas') return list;
+    const option = transversalFilterOptions().find(o => o.value === active);
+    return option ? list.filter(q => option.match(q)) : list;
+  }
+
+  // --- Puente entre la barra de filtros y los dos juegos de chips ---
+
+  /** True cuando la Tabla muestra todos los estados y por lo tanto usa los transversales. */
+  private usesTransversalFilters(): boolean {
+    return this.stateFilter() === 'Todos';
+  }
+
+  activeContextChips(): StateFilterChip[] {
+    if (this.usesTransversalFilters()) {
+      const base = this.getFilteredQuotes();
+      return transversalFilterOptions().map(o => ({
+        value: o.value,
+        label: o.label,
+        icon: o.icon,
+        activeClass: o.activeClass,
+        count: base.filter(q => o.match(q)).length
+      }));
+    }
+    return this.getStateFilterChips(this.selectedState());
+  }
+
+  activeContextValue(): string {
+    return this.usesTransversalFilters()
+      ? this.transversalFilter()
+      : this.getActiveStateFilter(this.selectedState());
+  }
+
+  activeContextLabel(): string {
+    return this.usesTransversalFilters()
+      ? TRANSVERSAL_FILTER_LABEL
+      : this.getStateFilterLabel(this.selectedState());
+  }
+
+  setActiveContextFilter(value: string): void {
+    if (this.usesTransversalFilters()) {
+      this.transversalFilter.set(value);
+    } else {
+      this.setStateContextFilter(this.selectedState(), value);
+    }
+  }
+
+  hasActiveFilters(): boolean {
+    return !!this.searchTerm()
+      || this.stateFilter() !== 'Todos'
+      || this.paymentFilter() !== 'Todos'
+      || this.transversalFilter() !== 'todas'
+      || Object.values(this.stateContextFilter()).some(v => v !== 'todas');
+  }
+
+  clearAllFilters(): void {
+    this.searchTerm.set('');
+    this.stateFilter.set('Todos');
+    this.paymentFilter.set('Todos');
+    this.transversalFilter.set('todas');
+    this.stateContextFilter.set({});
   }
 
   // --- Filtros contextuales por estado ---
@@ -730,20 +763,7 @@ export class QuotesComponent {
 
   /** Título de la barra de filtros, nombrando la dimensión que se filtra en esa fase. */
   getStateFilterLabel(state: QuoteState): string {
-    switch (state) {
-      case 'En revisión': return 'Filtrar por Urgencia:';
-      case 'Propuesta enviada': return 'Filtrar por Respuesta:';
-      case 'Negociación': return 'Filtrar por Ronda:';
-      case 'Aceptada': return 'Filtrar por Contrato:';
-      case 'Contrato en espera de firma': return 'Filtrar por Firma:';
-      case 'Contrato firmado': return 'Filtrar por Anticipo:';
-      case 'Pago confirmado': return 'Filtrar por Liquidación:';
-      case 'Finalizada': return 'Filtrar por Cobranza:';
-      case 'Cancelada con Imprevisto': return 'Filtrar por Imprevisto:';
-      case 'Imprevisto Enviado': return 'Filtrar por Resolución:';
-      case 'Cancelada': return 'Filtrar por Reembolso:';
-      default: return 'Filtrar por:';
-    }
+    return stateFilterLabel(state);
   }
 
   /** Opciones + conteos ya resueltos para renderizar la barra de filtros de un estado. */
@@ -758,179 +778,35 @@ export class QuotesComponent {
     }));
   }
 
-  /**
-   * Define, por estado, los filtros que de verdad importan en esa fase del pipeline.
-   * La primera opción siempre es "Todas" (sin filtrar).
-   */
-  getStateFilterOptions(state: QuoteState): StateFilterOption[] {
-    const todas: StateFilterOption = {
-      value: 'todas',
-      label: 'Todas',
-      icon: 'apps',
-      activeClass: 'bg-primary text-on-primary border-primary shadow-sm',
-      match: () => true
-    };
-
-    switch (state) {
-      case 'En revisión':
-        return [todas,
-          { value: 'urgente', label: 'Fecha Urgente (≤30 días)', icon: 'bolt', activeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm', match: q => this.daysUntilEvent(q) <= 30 },
-          { value: 'holgura', label: 'Con Holgura', icon: 'event_available', activeClass: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-sm', match: q => this.daysUntilEvent(q) > 30 }
-        ];
-
-      case 'Propuesta enviada':
-        return [todas,
-          { value: 'sin_respuesta', label: 'Sin Respuesta del Cliente', icon: 'schedule_send', activeClass: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-sm', match: q => (q.negotiationRound ?? 0) === 0 },
-          { value: 'negociando', label: 'En Negociación', icon: 'handshake', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => (q.negotiationRound ?? 0) > 0 }
-        ];
-
-      case 'Negociación':
-        return [todas,
-          { value: 'inicial', label: 'Ronda Inicial (≤2)', icon: 'handshake', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => (q.negotiationRound ?? 0) <= 2 },
-          { value: 'extendida', label: 'Negociación Extendida (≥3)', icon: 'warning', activeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm', match: q => (q.negotiationRound ?? 0) >= 3 }
-        ];
-
-      case 'Aceptada':
-        return [todas,
-          { value: 'contrato_listo', label: 'Contrato Generado', icon: 'description', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => this.hasContractDocument(q) },
-          { value: 'contrato_pendiente', label: 'Contrato Pendiente', icon: 'pending', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => !this.hasContractDocument(q) },
-          { value: 'grupo_sin_avisar', label: 'Grupo Sin Notificar', icon: 'notifications_off', activeClass: 'bg-orange-500/25 text-orange-300 border-orange-400/60 shadow-sm', match: q => !q.artistNotified }
-        ];
-
-      case 'Contrato en espera de firma':
-        return [todas,
-          { value: 'firmado', label: 'Firmado por el Cliente', icon: 'draw', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => q.contractStatus === 'Firmado' },
-          { value: 'sin_firmar', label: 'En Espera de Firma', icon: 'hourglass_top', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => q.contractStatus !== 'Firmado' }
-        ];
-
-      case 'Contrato firmado':
-        return [todas,
-          { value: 'anticipo_ok', label: 'Anticipo Recibido', icon: 'savings', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => this.hasAdvancePaid(q) },
-          { value: 'anticipo_pendiente', label: 'Anticipo Pendiente', icon: 'hourglass_empty', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => !this.hasAdvancePaid(q) }
-        ];
-
-      case 'Pago confirmado':
-        return [todas,
-          { value: 'liquidado', label: 'Liquidado al 100%', icon: 'verified', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => this.isQuoteFullyPaid(q) },
-          { value: 'saldo', label: 'Con Saldo Pendiente', icon: 'hourglass_top', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => !this.isQuoteFullyPaid(q) },
-          { value: 'evento_proximo', label: 'Evento Próximo (≤30 días)', icon: 'event_upcoming', activeClass: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-sm', match: q => this.daysUntilEvent(q) <= 30 }
-        ];
-
-      case 'Finalizada':
-        return [todas,
-          { value: 'finalizada', label: 'Totalmente Finalizada', icon: 'task_alt', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => this.isQuoteFullyPaid(q) },
-          { value: 'pendiente', label: 'Pago Pendiente', icon: 'hourglass_top', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => !this.isQuoteFullyPaid(q) && !this.hasOverdueMilestone(q) },
-          { value: 'atrasada', label: 'Pago Atrasado', icon: 'warning', activeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm', match: q => this.hasOverdueMilestone(q) }
-        ];
-
-      case 'Cancelada con Imprevisto':
-        return [todas,
-          { value: 'grave', label: 'Imprevisto Grave', icon: 'report_problem', activeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm', match: q => this.isSevereIncident(q) },
-          { value: 'sin_propuesta', label: 'Sin Propuesta Enviada', icon: 'outgoing_mail', activeClass: 'bg-amber-500/25 text-amber-300 border-amber-400/60 shadow-sm', match: q => (q.incidentNegotiations?.length ?? 0) === 0 },
-          { value: 'por_grupo', label: 'Originado por el Grupo', icon: 'music_note', activeClass: 'bg-purple-500/25 text-purple-300 border-purple-400/60 shadow-sm', match: q => this.lastIncident(q)?.initiatedBy === 'Grupo Musical' }
-        ];
-
-      case 'Imprevisto Enviado':
-        return [todas,
-          { value: 'esperando', label: 'Esperando Respuesta', icon: 'hourglass_top', activeClass: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60 shadow-sm', match: q => this.isAwaitingIncidentReply(q) },
-          { value: 'con_rechazo', label: 'Con Rechazo Previo', icon: 'thumb_down', activeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60 shadow-sm', match: q => (q.incidentNegotiations || []).some(n => n.status === 'Rechazada') }
-        ];
-
-      case 'Cancelada':
-        return [todas,
-          { value: 'reembolso', label: 'Con Reembolso Pendiente', icon: 'currency_exchange', activeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60 shadow-sm', match: q => this.getRefundDue(q) > 0 },
-          { value: 'sin_reembolso', label: 'Sin Saldo a Favor', icon: 'money_off', activeClass: 'bg-slate-500/30 text-slate-200 border-slate-400/60 shadow-sm', match: q => this.getRefundDue(q) <= 0 },
-          { value: 'sellada', label: 'Expediente Sellado', icon: 'lock', activeClass: 'bg-purple-500/25 text-purple-300 border-purple-400/60 shadow-sm', match: q => !!q.isCycleSealed }
-        ];
-
-      default:
-        return [todas];
-    }
-  }
-
-  // --- Predicados de apoyo para los filtros contextuales ---
-
-  /** Días entre hoy y la fecha del evento (negativo si ya pasó). */
-  private daysUntilEvent(q: Quote): number {
-    const target = new Date(q.proposedDate + 'T00:00:00');
-    if (isNaN(target.getTime())) return Number.POSITIVE_INFINITY;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return Math.round((target.getTime() - today.getTime()) / 86400000);
-  }
-
-  private hasContractDocument(q: Quote): boolean {
-    return q.contractStatus === 'Generado' || q.contractStatus === 'Subido' || q.contractStatus === 'Firmado' || !!q.contractFileUrl || !!q.contractPdfUrl;
-  }
-
-  private hasAdvancePaid(q: Quote): boolean {
-    return q.paymentStatus !== 'Pendiente' || this.getPaidMilestonesCount(q) > 0;
-  }
-
-  private lastIncident(q: Quote) {
-    const list = q.incidents || [];
-    return list[list.length - 1] || null;
-  }
-
-  private isSevereIncident(q: Quote): boolean {
-    return this.lastIncident(q)?.status === 'Imprevisto Grave';
-  }
-
-  private isAwaitingIncidentReply(q: Quote): boolean {
-    const list = q.incidentNegotiations || [];
-    return list[list.length - 1]?.status === 'Enviada';
-  }
-
-  /** Monto que quedaría por reembolsar al cliente (pagado menos el anticipo de separación retenido). */
-  private getRefundDue(q: Quote): number {
-    const paid = this.getQuoteMilestones(q)
-      .filter(m => m.status === 'Pagado')
-      .reduce((sum, m) => sum + (m.paidAmount ?? m.amountCalculated ?? 0), 0);
-    const type = q.advancePaymentType || 'percentage';
-    const val = q.advancePaymentValue ?? 50;
-    const retained = type === 'percentage' ? (q.totalAmount || 0) * (val / 100) : val;
-    return Math.max(0, paid - retained);
+  /** Definiciones de filtros por fase. Viven en `quote-filter-catalog.ts`. */
+  getStateFilterOptions(state: QuoteState): QuoteFilterOption[] {
+    return stateFilterOptions(state);
   }
 
   // --- Cobranza por hitos de pago (usado en las cards del estado 'Finalizada') ---
 
-  private getQuoteMilestones(q: Quote): PaymentMilestone[] {
-    return q.paymentMilestones || [];
-  }
-
   getPaidMilestonesCount(q: Quote): number {
-    return this.getQuoteMilestones(q).filter(m => m.status === 'Pagado').length;
+    return paidMilestonesCount(q);
   }
 
   getTotalMilestonesCount(q: Quote): number {
-    return this.getQuoteMilestones(q).length;
+    return totalMilestonesCount(q);
   }
 
   getPaidAmountPercent(q: Quote): number {
-    const milestones = this.getQuoteMilestones(q);
-    if (!q.totalAmount || milestones.length === 0) {
-      return q.paymentStatus === 'Pago Confirmado 100%' ? 100 : 0;
-    }
-    const paidAmount = milestones
-      .filter(m => m.status === 'Pagado')
-      .reduce((sum, m) => sum + (m.paidAmount ?? m.amountCalculated ?? 0), 0);
-    return Math.min(100, (paidAmount / q.totalAmount) * 100);
+    return paidAmountPercent(q);
   }
 
   isQuoteFullyPaid(q: Quote): boolean {
-    const milestones = this.getQuoteMilestones(q);
-    if (milestones.length === 0) {
-      return q.paymentStatus === 'Pago Confirmado 100%';
-    }
-    return milestones.every(m => m.status === 'Pagado');
+    return isFullyPaid(q);
   }
 
   hasOverdueMilestone(q: Quote): boolean {
-    return this.getQuoteMilestones(q).some(m => m.status === 'Vencido' || m.status === 'Moratorio') || !!q.isDeferred;
+    return hasOverdue(q);
   }
 
   getOverdueMilestonesCount(q: Quote): number {
-    return this.getQuoteMilestones(q).filter(m => m.status === 'Vencido' || m.status === 'Moratorio').length;
+    return overdueMilestonesCount(q);
   }
 
   getStateIndex(state: QuoteState): number {
@@ -953,7 +829,7 @@ export class QuotesComponent {
   // lineal (pueden ir y volver entre si segun la decision del cliente); la transicion real se
   // hace desde las acciones dedicadas dentro del modal, no con Avanzar/Retroceder del kanban.
   isNonLinearState(state: QuoteState): boolean {
-    return state === 'Cancelada con Imprevisto' || state === 'Imprevisto Enviado' || state === 'Cancelada';
+    return isNonLinearQuoteState(state);
   }
 
   isFirstState(state: QuoteState): boolean {
