@@ -157,21 +157,6 @@ export type QuoteSortMode = 'estado' | 'fecha' | 'monto' | 'cliente';
               </select>
             </div>
           }
-
-          <div class="flex items-center gap-2 text-xs">
-            <label for="quote-payment" class="text-outline font-semibold shrink-0">Estatus Pago:</label>
-            <select
-              id="quote-payment"
-              [ngModel]="paymentFilter"
-              (ngModelChange)="paymentFilterChange.emit($event)"
-              class="bg-surface-container-high/90 border border-outline-variant/30 rounded-xl px-3.5 py-2 min-h-11 text-xs text-on-surface focus:outline-none focus:border-primary/60"
-            >
-              <option value="Todos">Todos los Pagos</option>
-              <option value="Pendiente">Pendiente</option>
-              <option value="Anticipo 50%">Anticipo 50%</option>
-              <option value="Pago Confirmado 100%">Pago Confirmado 100%</option>
-            </select>
-          </div>
         </div>
       </div>
     </div>
@@ -182,7 +167,6 @@ export class QuoteFiltersToolbarComponent {
   @Input() stateChips: QuoteStateChip[] = [];
   @Input() stateFilter = 'Todos';
   @Input() searchTerm = '';
-  @Input() paymentFilter = 'Todos';
   @Input() sortMode: QuoteSortMode = 'estado';
   @Input() hideEmptyStates = false;
   @Input() resultCount = 0;
@@ -196,7 +180,6 @@ export class QuoteFiltersToolbarComponent {
 
   @Output() stateFilterChange = new EventEmitter<string>();
   @Output() searchTermChange = new EventEmitter<string>();
-  @Output() paymentFilterChange = new EventEmitter<string>();
   @Output() sortModeChange = new EventEmitter<QuoteSortMode>();
   @Output() hideEmptyStatesChange = new EventEmitter<boolean>();
   @Output() contextFilterChange = new EventEmitter<string>();

@@ -110,7 +110,6 @@ import {
           [stateChips]="stateChips()"
           [stateFilter]="stateFilter()"
           [searchTerm]="searchTerm()"
-          [paymentFilter]="paymentFilter()"
           [sortMode]="sortMode()"
           [hideEmptyStates]="hideEmptyStates()"
           [resultCount]="getTableQuotes().length"
@@ -121,7 +120,6 @@ import {
           [contextLabel]="activeContextLabel()"
           (stateFilterChange)="stateFilter.set($event)"
           (searchTermChange)="searchTerm.set($event)"
-          (paymentFilterChange)="paymentFilter.set($event)"
           (sortModeChange)="sortMode.set($event)"
           (hideEmptyStatesChange)="hideEmptyStates.set($event)"
           (contextFilterChange)="setActiveContextFilter($event)"
@@ -487,7 +485,6 @@ export class QuotesComponent {
 
   searchTerm = signal('');
   stateFilter = signal('Todos');
-  paymentFilter = signal('Todos');
   /** Filtro contextual activo por estado ({ 'Finalizada': 'atrasada', ... }). Default: 'todas'. */
   stateContextFilter = signal<Record<string, string>>({});
   /** Orden de la Vista Tabla. El Kanban no lo necesita: ya ordena por columna. */
@@ -583,9 +580,8 @@ export class QuotesComponent {
         q.city.toLowerCase().includes(this.searchTerm().toLowerCase());
 
       const matchState = this.stateFilter() === 'Todos' || q.state === this.stateFilter();
-      const matchPayment = this.paymentFilter() === 'Todos' || q.paymentStatus === this.paymentFilter();
 
-      return matchSearch && matchState && matchPayment;
+      return matchSearch && matchState;
     });
   }
 
@@ -722,7 +718,6 @@ export class QuotesComponent {
   hasActiveFilters(): boolean {
     return !!this.searchTerm()
       || this.stateFilter() !== 'Todos'
-      || this.paymentFilter() !== 'Todos'
       || this.transversalFilter() !== 'todas'
       || Object.values(this.stateContextFilter()).some(v => v !== 'todas');
   }
@@ -730,7 +725,6 @@ export class QuotesComponent {
   clearAllFilters(): void {
     this.searchTerm.set('');
     this.stateFilter.set('Todos');
-    this.paymentFilter.set('Todos');
     this.transversalFilter.set('todas');
     this.stateContextFilter.set({});
   }
@@ -815,10 +809,6 @@ export class QuotesComponent {
 
   getStateSubtotal(state: QuoteState): number {
     return this.getFilteredQuotesByState(state).reduce((sum, q) => sum + q.totalAmount, 0);
-  }
-
-  getQuotesCountByPayment(paymentStatus: PaymentStatus): number {
-    return this.mockData.quotes().filter(q => q.paymentStatus === paymentStatus).length;
   }
 
   getTotalPipelineAmount(): number {
