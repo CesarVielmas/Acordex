@@ -39,10 +39,15 @@ export type QuoteSortMode = 'estado' | 'fecha' | 'monto' | 'cliente';
  * los datos; recibe valores y emite intenciones. La única excepción es
  * `expanded`, que es estado puramente visual y por eso vive aquí.
  */
+import { CustomSelectComponent, SelectOption } from '../../shared/ui/custom-select/custom-select.component';
+
 @Component({
   selector: 'app-quote-filters-toolbar',
   standalone: true,
-  imports: [CommonModule, FormsModule, QuoteStateFilterBarComponent],
+  imports: [CommonModule, FormsModule, QuoteStateFilterBarComponent, CustomSelectComponent],
+  // Sin esto el host es `display: inline` y los margenes verticales que le
+  // aplica el contenedor (space-y-*) no surten efecto.
+  host: { class: 'block' },
   template: `
     <div class="rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-lg overflow-hidden">
 
@@ -189,19 +194,14 @@ export type QuoteSortMode = 'estado' | 'fecha' | 'monto' | 'cliente';
                   Ocultar estados vacíos
                 </button>
               } @else {
-                <div class="flex items-center gap-2 text-xs">
-                  <label for="quote-sort" class="text-outline font-semibold shrink-0">Ordenar por:</label>
-                  <select
-                    id="quote-sort"
-                    [ngModel]="sortMode"
-                    (ngModelChange)="sortModeChange.emit($event)"
-                    class="bg-surface-container-high/90 border border-outline-variant/30 rounded-xl px-3.5 py-2 min-h-11 text-xs text-on-surface focus:outline-none focus:border-primary/60"
-                  >
-                    <option value="estado">Etapa del pipeline</option>
-                    <option value="fecha">Fecha del evento</option>
-                    <option value="monto">Monto (mayor a menor)</option>
-                    <option value="cliente">Cliente (A-Z)</option>
-                  </select>
+                <div class="w-56 text-xs">
+                  <app-custom-select
+                    label="Ordenar por:"
+                    placeholder="Modo de orden"
+                    [options]="sortOptions"
+                    [value]="sortMode"
+                    (valueChange)="sortModeChange.emit($any($event))"
+                  />
                 </div>
               }
             </div>
@@ -217,6 +217,13 @@ export class QuoteFiltersToolbarComponent {
   @Input() stateFilter = 'Todos';
   @Input() searchTerm = '';
   @Input() sortMode: QuoteSortMode = 'estado';
+  
+  sortOptions: SelectOption[] = [
+    { value: 'estado', label: 'Etapa del pipeline', icon: 'segment' },
+    { value: 'fecha', label: 'Fecha del evento', icon: 'event' },
+    { value: 'monto', label: 'Monto (mayor a menor)', icon: 'payments' },
+    { value: 'cliente', label: 'Cliente (A-Z)', icon: 'person' }
+  ];
   @Input() hideEmptyStates = false;
   @Input() resultCount = 0;
   @Input() totalCount = 0;

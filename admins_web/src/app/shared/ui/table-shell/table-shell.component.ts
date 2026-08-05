@@ -5,14 +5,15 @@ import { CommonModule } from '@angular/common';
   selector: 'app-table-shell',
   standalone: true,
   imports: [CommonModule],
+  host: { class: 'block' },
   template: `
-    <div class="rounded-2xl sm:rounded-3xl border border-outline-variant/30 bg-surface-container overflow-hidden shadow-xl">
+    <div class="rounded-2xl sm:rounded-3xl border border-outline-variant/30 bg-surface-container shadow-xl">
       @if (!isEmpty) {
-        <!-- Desktop: full table, horizontal scroll only if truly needed -->
-        <div class="hidden md:block overflow-x-auto custom-scrollbar">
+        <!-- Desktop: full table -->
+        <div class="hidden md:block">
           <ng-content select="[desktop-table]"></ng-content>
         </div>
-        <!-- Mobile/tablet: stacked card rows, no horizontal scroll required -->
+        <!-- Mobile/tablet: stacked card rows -->
         <div class="md:hidden divide-y divide-outline-variant/10">
           <ng-content select="[mobile-cards]"></ng-content>
         </div>

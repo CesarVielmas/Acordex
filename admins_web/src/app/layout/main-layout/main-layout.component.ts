@@ -5,12 +5,13 @@ import { HeaderComponent } from '../header/header.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { BottomNavComponent } from '../bottom-nav/bottom-nav.component';
 import { QuoteDetailModalComponent } from '../../shared/quote-detail-modal/quote-detail-modal.component';
+import { GroupDetailModalHostComponent } from '../../features/groups/components/group-detail-modal-host.component';
 import { LayoutStateService } from '../../core/services/layout_state.service';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent, BottomNavComponent, QuoteDetailModalComponent],
+  imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent, BottomNavComponent, QuoteDetailModalComponent, GroupDetailModalHostComponent],
   template: `
     <!-- Root Container: Fixed full viewport height, no global body scroll -->
     <div class="h-screen w-screen bg-[#131313] text-on-surface flex flex-col font-body-md relative">
@@ -61,6 +62,9 @@ import { LayoutStateService } from '../../core/services/layout_state.service';
 
       <!-- Global Quote Detail Modal (Rendered at Root Level, overlays Header & Sidebar 100%) -->
       <app-quote-detail-modal />
+
+      <!-- Expediente de grupo, montado aquí por el mismo motivo que el anterior. -->
+      <app-group-detail-modal-host />
 
     </div>
   `

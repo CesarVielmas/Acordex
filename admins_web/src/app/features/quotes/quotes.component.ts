@@ -14,6 +14,7 @@ import { QuoteStateFilterBarComponent, StateFilterChip } from './quote-state-fil
 import { QuoteFiltersToolbarComponent, QuoteStateChip, QuoteSortMode, ActiveFilterChip } from './quote-filters-toolbar.component';
 import { QuoteKanbanCardComponent } from './quote-kanban-card.component';
 import { stateSummary } from './quote-card-insights';
+import { PanelMetric, panelMetrics as resolvePanelMetrics } from './quote-panel-metrics';
 import {
   QuoteFilterOption,
   stateFilterOptions,
@@ -82,21 +83,31 @@ import {
           </div>
         </div>
 
-        <!-- KPI SUMMARY METRIC STRIP -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <app-kpi-card label="Tiempo Promedio Cierre" value="3.8 Días" icon="speed" colorVariant="primary" />
-          <app-kpi-card label="Tasa de Conversión" value="78.5%" icon="trending_up" colorVariant="success" />
-          <app-kpi-card label="Riders Auditados" value="100% OK" icon="fact_check" colorVariant="info" />
-          @if (roleService.canViewFinances()) {
-            <app-kpi-card
-              label="Valuación Pipeline"
-              [value]="'$' + (getTotalPipelineAmount() | number:'1.0-0')"
-              icon="payments"
-              colorVariant="secondary"
-            />
-          } @else {
-            <app-kpi-card label="Aforo Acumulado" value="48,500 Asist." icon="groups" colorVariant="secondary" />
-          }
+        <!-- TIRA DE MÉTRICAS. El contenido cambia por rol a propósito: al Encargado
+             le importa el dinero; al Administrador, la demanda y la carga operativa. -->
+        <div class="space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-x-2.5 gap-y-0.5">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="material-symbols-outlined text-base text-primary shrink-0">insights</span>
+              <h2 class="text-xs font-black text-on-surface uppercase tracking-wider">{{ metricsTitle() }}</h2>
+            </div>
+            <span class="text-[11px] text-outline">{{ metricsSubtitle() }}</span>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            @for (m of panelMetrics(); track m.label) {
+              <app-kpi-card
+                [label]="m.label"
+                [value]="m.value"
+                [unit]="m.unit || ''"
+                [icon]="m.icon"
+                [trend]="m.trend || ''"
+                [trendIcon]="m.trendIcon || ''"
+                [colorVariant]="m.colorVariant"
+                [dense]="!!m.dense"
+              />
+            }
+          </div>
         </div>
 
         <!-- BARRA DE FILTROS (se adapta segun la vista activa) -->
@@ -155,7 +166,7 @@ import {
                 <!-- FILTROS CONTEXTUALES DE LA FASE (se ocultan si el estado no tiene cotizaciones) -->
                 @if (getQuotesByStateRaw(state).length > 0) {
                   <app-quote-state-filter-bar
-                    class="block -mt-1"
+                    class="-mt-1"
                     [chips]="getStateFilterChips(state)"
                     [active]="getActiveStateFilter(state)"
                     [label]="getStateFilterLabel(state)"
@@ -204,16 +215,18 @@ import {
             <table desktop-table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="border-b border-outline-variant/30 text-[11px] font-bold text-outline uppercase tracking-wider">
-                  <th class="pb-3 px-3">Folio</th>
-                  <th class="pb-3 px-3">Cliente Contratante</th>
-                  <th class="pb-3 px-3">Talento Solicitado</th>
-                  <th class="pb-3 px-3">Fecha & Recinto</th>
-                  <th class="pb-3 px-3">
-                    @if (roleService.canViewFinances()) { Monto Propuesto } @else { Aforo / Rider }
-                  </th>
-                  <th class="pb-3 px-3">Estado Pipeline</th>
-                  <th class="pb-3 px-3">Estatus de Pago</th>
-                  <th class="pb-3 px-3 text-right">Acciones</th>
+                  <th class="pt-5 pb-3 px-3">Folio</th>
+                  <th class="pt-5 pb-3 px-3">Cliente Contratante</th>
+                  <th class="pt-5 pb-3 px-3">Talento Solicitado</th>
+                  <th class="pt-5 pb-3 px-3">Fecha &amp; Recinto</th>
+                  @if (roleService.canViewFinances()) {
+                    <th class="pt-5 pb-3 px-3">Resumen Comercial</th>
+                  } @else {
+                    <th class="pt-5 pb-3 px-3">Logística Operativa</th>
+                  }
+                  <th class="pt-5 pb-3 px-3">Estado Pipeline</th>
+                  <th class="pt-5 pb-3 px-3">Estatus de Pago</th>
+                  <th class="pt-5 pb-3 px-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant/20">
@@ -249,11 +262,24 @@ import {
                       {{ q.proposedDate }}
                       <span class="text-[10px] text-on-surface font-medium block">{{ q.venue }} ({{ q.city }})</span>
                     </td>
-                    <td class="py-3.5 px-3 font-bold text-on-surface whitespace-nowrap">
+                    <td class="py-3.5 px-3 whitespace-nowrap">
                       @if (roleService.canViewFinances()) {
-                        &#36;{{ q.totalAmount | number:'1.0-0' }} MXN
+                        <span class="font-bold text-xs text-emerald-500 block">
+                          {{ q.totalAmount ? ('$' + (q.totalAmount | number:'1.0-0') + ' MXN') : 'Por definir' }}
+                        </span>
+                        <span class="text-[10px] text-outline block font-medium mt-0.5">
+                          {{ q.state === 'En revisión' || q.state === 'Propuesta enviada' ? 'Valor proyectado' : 'Valor de contrato' }}
+                        </span>
                       } @else {
-                        <span class="px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 text-[10px] font-bold">12.5k Aforo • Rider OK</span>
+                        <span class="font-bold text-xs text-on-surface block">
+                          {{ q.eventType || 'Evento' }} &middot; {{ q.durationHours || 3 }} hrs
+                        </span>
+                        <span class="text-[10px] text-outline block font-medium mt-0.5">
+                          {{ q.soundOption === 'cliente' ? 'Audio Cliente' : 'Audio Disquera' }}
+                          @if (q.scheduleMode) {
+                            &middot; {{ q.scheduleMode === 'tandas' ? 'Tandas' : 'Continuo' }}
+                          }
+                        </span>
                       }
                     </td>
                     <td class="py-3.5 px-3 whitespace-nowrap">
@@ -308,13 +334,24 @@ import {
                   </div>
 
                   <div class="flex items-center justify-between gap-2 flex-wrap">
-                    <span class="font-bold text-on-surface text-sm">
+                    <div class="text-xs">
                       @if (roleService.canViewFinances()) {
-                        &#36;{{ q.totalAmount | number:'1.0-0' }} MXN
+                        <span class="font-bold text-emerald-500 block">
+                          {{ q.totalAmount ? ('$' + (q.totalAmount | number:'1.0-0') + ' MXN') : 'Por definir' }}
+                        </span>
+                        <span class="text-[10px] text-outline block font-medium mt-0.5">
+                          {{ q.state === 'En revisión' || q.state === 'Propuesta enviada' ? 'Valor proyectado' : 'Valor de contrato' }}
+                        </span>
                       } @else {
-                        12.5k Aforo &middot; Rider OK
+                        <span class="font-bold text-on-surface block">{{ q.eventType || 'Evento' }} &middot; {{ q.durationHours || 3 }} hrs</span>
+                        <span class="text-[10px] text-outline block font-medium mt-0.5">
+                          {{ q.soundOption === 'cliente' ? 'Audio Cliente' : 'Audio Disquera' }}
+                          @if (q.scheduleMode) {
+                            &middot; {{ q.scheduleMode === 'tandas' ? 'Tandas' : 'Continuo' }}
+                          }
+                        </span>
                       }
-                    </span>
+                    </div>
                     <span [class]="getPaymentStatusBadgeClass(q.paymentStatus, q)" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1">
                       {{ getPaymentStatusLabel(q) }}
                     </span>
@@ -692,8 +729,23 @@ export class QuotesComponent {
     return quoteStateMeta(state).badgeClass;
   }
 
-  getTotalPipelineAmount(): number {
-    return this.mockData.quotes().reduce((sum, q) => sum + q.totalAmount, 0);
+  // --- Tira de métricas del panel (distinta por rol) ---
+
+  /** Métricas ya resueltas para el rol activo. */
+  panelMetrics(): PanelMetric[] {
+    return resolvePanelMetrics(this.mockData.quotes(), this.roleService.canViewFinances());
+  }
+
+  metricsTitle(): string {
+    return this.roleService.canViewFinances()
+      ? 'Inteligencia Comercial & Facturación'
+      : 'Demanda de Talento & Carga Operativa';
+  }
+
+  metricsSubtitle(): string {
+    return this.roleService.canViewFinances()
+      ? 'Valor del pipeline y quién sostiene la facturación'
+      : 'Qué talento piden más, quién repite y dónde hay tracción';
   }
 
   updatePaymentStatus(newStatus: PaymentStatus): void {

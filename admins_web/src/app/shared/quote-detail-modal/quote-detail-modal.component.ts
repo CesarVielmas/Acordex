@@ -71,18 +71,20 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
         [attr.data-modal-state]="selectedQuote()!.state"
         (wheel)="$event.stopPropagation()"
         (touchmove)="$event.stopPropagation()"
-        class="quote-modal-backdrop fixed inset-0 w-screen h-screen z-[99999999] bg-black/95 backdrop-blur-3xl p-2 sm:p-4 md:p-6 flex items-center justify-center font-['Be_Vietnam_Pro'] overflow-hidden"
+        (click)="closeModal()"
+        class="quote-modal-backdrop fixed inset-0 w-screen h-screen z-[99999999] bg-slate-950/85 backdrop-blur-md p-2 sm:p-4 md:p-6 flex items-center justify-center font-['Be_Vietnam_Pro'] overflow-hidden"
       >
         
         <!-- AMBIENT NEON GLOW LIGHT ORBS IN BACKGROUND -->
-        <div class="quote-modal-orb quote-modal-orb-cyan absolute top-5 left-5 w-64 sm:w-96 h-64 sm:h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="quote-modal-orb quote-modal-orb-amber absolute bottom-5 right-5 w-64 sm:w-96 h-64 sm:h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="quote-modal-orb quote-modal-orb-purple absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] bg-purple-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="quote-modal-orb quote-modal-orb-cyan absolute top-5 left-5 w-64 sm:w-96 h-64 sm:h-96 bg-cyan-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+        <div class="quote-modal-orb quote-modal-orb-amber absolute bottom-5 right-5 w-64 sm:w-96 h-64 sm:h-96 bg-amber-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+        <div class="quote-modal-orb quote-modal-orb-purple absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] bg-purple-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
         <!-- MAIN MODAL CONTAINER (FIXED HEIGHT CONTAINER, PERFECTLY RESPONSIVE TO SCREEN HEIGHT) -->
         <div 
+          (click)="$event.stopPropagation()"
           [class]="getStateModalBorderClass(selectedQuote()!.state)"
-          class="quote-modal-shell relative w-full max-w-7xl mx-auto bg-surface-container/95 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 md:p-6 shadow-[0_0_70px_rgba(0,0,0,0.95)] border-2 h-[min(92vh,980px)] max-h-[calc(100dvh-1rem)] flex flex-col backdrop-blur-2xl transition-all duration-300 overflow-hidden"
+          class="quote-modal-shell relative w-full max-w-7xl mx-auto bg-slate-900/80 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 md:p-6 shadow-[0_0_50px_rgba(0,0,0,0.6)] border-2 border-slate-700/50 h-[min(92vh,980px)] max-h-[calc(100dvh-1rem)] flex flex-col backdrop-blur-3xl transition-all duration-300 overflow-hidden"
         >
           
           <!-- FIXED TOP HEADER ROW (NEVER SCROLLS) -->
@@ -272,16 +274,16 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
                           <span class="material-symbols-outlined text-xs text-outline">domain</span> {{ selectedQuote()?.clientCompany }}
                         </p>
                       </div>
-                      <div>
+                      <div class="min-w-0">
                         <span class="text-outline text-[9px] block">Correo Electrónico:</span>
-                        <p class="font-bold text-primary text-xs sm:text-sm truncate flex items-center gap-1">
-                          <span class="material-symbols-outlined text-xs text-primary">mail</span> {{ selectedQuote()?.clientEmail }}
+                        <p class="font-bold text-primary text-xs sm:text-sm break-all flex items-center gap-1">
+                          <span class="material-symbols-outlined text-xs text-primary shrink-0">mail</span> {{ selectedQuote()?.clientEmail }}
                         </p>
                       </div>
-                      <div>
+                      <div class="min-w-0">
                         <span class="text-outline text-[9px] block">Teléfono / Celular:</span>
                         <p class="font-bold text-on-surface text-xs sm:text-sm truncate flex items-center gap-1">
-                          <span class="material-symbols-outlined text-xs text-outline">call</span> {{ selectedQuote()?.representativePhone || '+52 81 1234 5678' }}
+                          <span class="material-symbols-outlined text-xs text-outline shrink-0">call</span> {{ selectedQuote()?.representativePhone || '+52 81 1234 5678' }}
                         </p>
                       </div>
                     </div>
@@ -327,16 +329,16 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
                         </span>
                       </div>
 
-                      <div class="col-span-1 sm:col-span-2 border-t border-outline-variant/10 pt-1.5">
+                      <div class="col-span-1 sm:col-span-2 border-t border-outline-variant/10 pt-1.5 min-w-0">
                         <span class="text-outline text-[9px] block">Ubicación / Recinto:</span>
-                        <p class="font-bold text-on-surface text-xs sm:text-sm truncate flex items-center gap-1">
-                          <span class="material-symbols-outlined text-xs text-primary">location_on</span> {{ selectedQuote()?.eventAddress || (selectedQuote()?.venue + ', ' + selectedQuote()?.city) }}
+                        <p class="font-bold text-on-surface text-xs sm:text-sm break-words whitespace-normal flex items-center gap-1">
+                          <span class="material-symbols-outlined text-xs text-primary shrink-0">location_on</span> {{ selectedQuote()?.eventAddress || (selectedQuote()?.venue + ', ' + selectedQuote()?.city) }}
                         </p>
                       </div>
 
                       <div class="col-span-1 sm:col-span-2 pt-1 border-t border-outline-variant/10">
                         <span class="text-outline text-[9px] block">Notas Especiales / Repertorio:</span>
-                        <p class="text-xs text-on-surface/90 italic bg-surface-container-high/60 p-2 sm:p-2.5 rounded-xl border border-outline-variant/20 shadow-inner">
+                        <p class="text-xs text-on-surface/90 italic bg-surface-container-high/60 p-2 sm:p-2.5 rounded-xl border border-outline-variant/20 shadow-inner break-words whitespace-normal">
                           "{{ selectedQuote()?.notes || 'Sin especificaciones adicionales enviadas por el cliente' }}"
                         </p>
                       </div>
@@ -346,7 +348,7 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
                   <button 
                     [disabled]="isHistoricalPreview()"
                     (click)="contactWhatsApp()"
-                    class="w-full py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] shrink-0 disabled:!from-slate-800 disabled:!to-slate-900 disabled:!text-slate-500 disabled:!shadow-none disabled:cursor-not-allowed"
                   >
                     <span class="material-symbols-outlined text-base sm:text-lg">chat</span> CONTACTAR AL CLIENTE POR WHATSAPP
                   </button>
@@ -1263,16 +1265,16 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
                           <span class="material-symbols-outlined text-xs text-outline">domain</span> {{ selectedQuote()?.clientCompany }}
                         </p>
                       </div>
-                      <div>
+                      <div class="min-w-0">
                         <span class="text-outline text-[9px] block">Correo Electrónico:</span>
-                        <p class="font-bold text-primary text-xs sm:text-sm truncate flex items-center gap-1">
-                          <span class="material-symbols-outlined text-xs text-primary">mail</span> {{ selectedQuote()?.clientEmail }}
+                        <p class="font-bold text-primary text-xs sm:text-sm break-all flex items-center gap-1">
+                          <span class="material-symbols-outlined text-xs text-primary shrink-0">mail</span> {{ selectedQuote()?.clientEmail }}
                         </p>
                       </div>
-                      <div>
+                      <div class="min-w-0">
                         <span class="text-outline text-[9px] block">Teléfono / Celular:</span>
                         <p class="font-bold text-on-surface text-xs sm:text-sm truncate flex items-center gap-1">
-                          <span class="material-symbols-outlined text-xs text-outline">call</span> {{ selectedQuote()?.representativePhone || '+52 81 1234 5678' }}
+                          <span class="material-symbols-outlined text-xs text-outline shrink-0">call</span> {{ selectedQuote()?.representativePhone || '+52 81 1234 5678' }}
                         </p>
                       </div>
                     </div>
@@ -1319,16 +1321,16 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
                         </span>
                       </div>
 
-                      <div class="col-span-1 sm:col-span-2 border-t border-outline-variant/10 pt-1.5">
+                      <div class="col-span-1 sm:col-span-2 border-t border-outline-variant/10 pt-1.5 min-w-0">
                         <span class="text-outline text-[9px] block">Ubicación / Recinto:</span>
-                        <p class="font-bold text-on-surface text-xs sm:text-sm truncate flex items-center gap-1">
-                          <span class="material-symbols-outlined text-xs text-primary">location_on</span> {{ selectedQuote()?.eventAddress || (selectedQuote()?.venue + ', ' + selectedQuote()?.city) }}
+                        <p class="font-bold text-on-surface text-xs sm:text-sm break-words whitespace-normal flex items-center gap-1">
+                          <span class="material-symbols-outlined text-xs text-primary shrink-0">location_on</span> {{ selectedQuote()?.eventAddress || (selectedQuote()?.venue + ', ' + selectedQuote()?.city) }}
                         </p>
                       </div>
 
                       <div class="col-span-1 sm:col-span-2 pt-1 border-t border-outline-variant/10">
                         <span class="text-outline text-[9px] block">Notas Especiales del Cliente:</span>
-                        <p class="text-xs text-on-surface/90 italic bg-surface-container-high/60 p-2 sm:p-2.5 rounded-xl border border-outline-variant/20 shadow-inner">
+                        <p class="text-xs text-on-surface/90 italic bg-surface-container-high/60 p-2 sm:p-2.5 rounded-xl border border-outline-variant/20 shadow-inner break-words whitespace-normal">
                           "{{ selectedQuote()?.notes || 'Sin especificaciones adicionales enviadas por el cliente' }}"
                         </p>
                       </div>
@@ -1338,7 +1340,7 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
                   <button 
                     [disabled]="isHistoricalPreview()"
                     (click)="contactWhatsApp()"
-                    class="w-full py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] shrink-0 disabled:!from-slate-800 disabled:!to-slate-900 disabled:!text-slate-500 disabled:!shadow-none disabled:cursor-not-allowed"
                   >
                     <span class="material-symbols-outlined text-base sm:text-lg">chat</span> NEGOCIAR DIRECTAMENTE POR WHATSAPP
                   </button>
@@ -2565,7 +2567,7 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
                         <button 
                           [disabled]="isHistoricalPreview()"
                           (click)="contactWhatsApp()"
-                          class="w-full py-3 sm:py-3.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="w-full py-3 sm:py-3.5 px-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 flex items-center justify-center gap-2 hover:scale-[1.02] mt-3 disabled:!from-slate-800 disabled:!to-slate-900 disabled:!text-slate-500 disabled:!shadow-none disabled:cursor-not-allowed"
                         >
                           <span class="material-symbols-outlined text-lg sm:text-xl">chat</span> CONTACTAR AL CLIENTE POR WHATSAPP
                         </button>
@@ -2974,11 +2976,11 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
               <div class="h-full flex flex-col min-h-0 space-y-4 font-sans">
                 
                 <!-- SUB-TABS NAVEGACIÓN DE FASE 4 -->
-                <div class="quote-modal-tabs flex items-center gap-1.5 p-1 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 shrink-0">
+                <div class="quote-modal-tabs flex items-center gap-1.5 p-1 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 shrink-0 overflow-x-auto custom-scrollbar">
                   <button 
                     (click)="awaitingSignatureTab.set('seguimiento_contrato')"
                     [class]="awaitingSignatureTab() === 'seguimiento_contrato' ? 'bg-gradient-to-r from-purple-500/20 via-indigo-500/20 to-purple-500/20 text-purple-300 border-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.25)]' : 'text-outline hover:text-on-surface border-transparent'"
-                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center shrink-0 min-w-max"
                   >
                     <span class="material-symbols-outlined text-base">draw</span>
                     <span>Vista De Contrato Enviado & Seguimiento</span>
@@ -2987,7 +2989,7 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
                   <button 
                     (click)="awaitingSignatureTab.set('info_acuerdo')"
                     [class]="awaitingSignatureTab() === 'info_acuerdo' ? 'bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow-[0_0_15px_rgba(52,211,153,0.25)]' : 'text-outline hover:text-emerald-300 border-transparent hover:bg-emerald-500/10'"
-                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center shrink-0 min-w-max"
                   >
                     <span class="material-symbols-outlined text-base text-emerald-400">verified</span>
                     <span>Información Aceptada Del Acuerdo</span>
@@ -2996,7 +2998,7 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
                   <button 
                     (click)="awaitingSignatureTab.set('info_cliente')"
                     [class]="awaitingSignatureTab() === 'info_cliente' ? 'bg-surface-bright text-on-surface border-outline-variant/40 shadow-sm' : 'text-outline hover:text-on-surface border-transparent'"
-                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center shrink-0 min-w-max"
                   >
                     <span class="material-symbols-outlined text-base">assignment_ind</span>
                     <span>Información Original Del Cliente</span>
@@ -3005,7 +3007,7 @@ import { QuoteCancelledFinalViewComponent } from './components/quote-cancelled-f
                   <button 
                     (click)="awaitingSignatureTab.set('historial')"
                     [class]="awaitingSignatureTab() === 'historial' ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.2)]' : 'text-outline hover:text-on-surface border-transparent'"
-                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 flex-1 justify-center shrink-0 min-w-max"
                   >
                     <span class="material-symbols-outlined text-base">history</span>
                     <span>Historial De Negociaciones ({{ negotiationHistory().length }})</span>

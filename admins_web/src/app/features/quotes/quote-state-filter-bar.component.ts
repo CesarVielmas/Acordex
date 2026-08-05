@@ -20,6 +20,9 @@ export interface StateFilterChip {
   selector: 'app-quote-state-filter-bar',
   standalone: true,
   imports: [CommonModule],
+  // Sin esto el host es `display: inline` y los margenes verticales que le
+  // aplica el contenedor (space-y-*) no surten efecto.
+  host: { class: 'block' },
   template: `
     <!-- En móvil se desliza en una sola fila; desde sm hace wrap normal. -->
     <div class="flex items-center gap-2 overflow-x-auto no-scrollbar sm:flex-wrap sm:overflow-visible">

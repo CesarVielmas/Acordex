@@ -5,10 +5,12 @@ import { Quote, QuoteIncident, NoticeItem } from '../../../core/models/admin.mod
 import { MockDataService } from '../../../core/services/mock-data.service';
 import { LayoutStateService } from '../../../core/services/layout_state.service';
 
+import { CustomSelectComponent, SelectOption } from '../../ui/custom-select/custom-select.component';
+
 @Component({
   selector: 'app-quote-incidents-tab',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CustomSelectComponent],
   template: `
     <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-4 font-sans">
 
@@ -52,21 +54,13 @@ import { LayoutStateService } from '../../../core/services/layout_state.service'
               ></textarea>
             </div>
 
-            <div>
-              <label class="text-[11px] font-bold text-outline block mb-1 uppercase font-mono">
-                Propuesta de Solución:
-              </label>
-              <select
-                [disabled]="!!quote?.isCycleSealed"
-                [(ngModel)]="groupIncidentSolutionType"
-                class="w-full bg-surface-container border border-outline-variant/40 rounded-xl px-3 py-2 text-xs text-on-surface font-bold focus:border-rose-400 outline-none disabled:opacity-40"
-              >
-                <option value="reschedule">Reprogramación de Fecha de Evento</option>
-                <option value="substitute_group">Reasignación de Grupo Sustituto Disquera</option>
-                <option value="apology_discount">Carta de Disculpa Formal + Bonificación de Descuento</option>
-                <option value="refund">Cancelación con Reembolso Directo al Cliente</option>
-              </select>
-            </div>
+            <app-custom-select
+              label="Propuesta de Solución:"
+              placeholder="Seleccionar solución..."
+              [options]="incidentSolutionOptions"
+              [value]="groupIncidentSolutionType"
+              (valueChange)="groupIncidentSolutionType = $event"
+            />
 
             <div>
               <label class="text-[11px] font-bold text-outline block mb-1 uppercase font-mono">
@@ -172,7 +166,13 @@ export class QuoteIncidentsTabComponent {
   @Input() countdown: string = '47:58:30';
 
   groupIncidentReason = '';
-  groupIncidentSolutionType: 'reschedule' | 'substitute_group' | 'apology_discount' | 'refund' = 'reschedule';
+  groupIncidentSolutionType = 'reschedule';
+  incidentSolutionOptions: SelectOption[] = [
+    { value: 'reschedule', label: 'Reprogramación de Fecha de Evento', icon: 'event_repeat' },
+    { value: 'substitute_group', label: 'Reasignación de Grupo Sustituto Disquera', icon: 'groups' },
+    { value: 'apology_discount', label: 'Carta de Disculpa Formal + Bonificación de Descuento', icon: 'card_giftcard' },
+    { value: 'refund', label: 'Cancelación con Reembolso Directo al Cliente', icon: 'currency_exchange' }
+  ];
   groupIncidentClientMessage = '';
 
   revertClientIncident(incident?: QuoteIncident): void {

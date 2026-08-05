@@ -69,13 +69,42 @@ export class MockDataService {
       disqueraName: 'Acordex Records',
       genre: 'Norteño Sax',
       rating: 4.9,
+      publicApprovalPercent: 98,
       image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
       membersCount: 5,
       labelQuotesCount: 14,
+      pendingQuotesCount: 4,
+      completedQuotesCount: 10,
       labelActiveEventsCount: 5,
+      monthlyEventsCount: 8,
+      monthlyQuotesCount: 12,
       labelRevenueAcordex: 450000,
+      artistFeeBase: 320000,
+      estimatedMonthlyEarnings: 680000,
+      agendaStatus: 'Parcialmente Ocupado',
+      followersCount: '1.4M',
+      isPlatformRegistered: true,
+      isExclusive: true,
+      pendingLabelContract: false,
+      groupLeaderName: 'Don Raúl Treviño',
+      groupLeaderRole: 'Director Musical & Vocalista',
+      groupLeaderPhone: '+52 81 9928 1120',
+      groupLeaderEmail: 'raul.trevino@elegantes.com',
+      lastActivityText: 'Publicó nuevo video de ensayo en la Arena Monterrey',
+      lastActivityTime: 'Hace 35 min',
+      isOnline: true,
+      lastConnectionText: 'En línea ahora',
       globalTotalEventsCount: 28,
-      description: 'Banda estelar en exclusiva con Acordex Records. Máximos exponentes del género Norteño Sax.'
+      description: 'Banda estelar en exclusiva con Acordex Records. Máximos exponentes del género Norteño Sax.',
+      dailyMetrics: [
+        { date: '2026-07-30', dayLabel: 'Jue', quotes: 2, events: 1, revenue: 85000 },
+        { date: '2026-07-31', dayLabel: 'Vie', quotes: 4, events: 2, revenue: 160000 },
+        { date: '2026-08-01', dayLabel: 'Sáb', quotes: 5, events: 3, revenue: 240000 },
+        { date: '2026-08-02', dayLabel: 'Dom', quotes: 3, events: 1, revenue: 90000 },
+        { date: '2026-08-03', dayLabel: 'Lun', quotes: 1, events: 0, revenue: 0 },
+        { date: '2026-08-04', dayLabel: 'Mar', quotes: 2, events: 0, revenue: 0 },
+        { date: '2026-08-05', dayLabel: 'Mié', quotes: 3, events: 1, revenue: 105000 }
+      ]
     },
     {
       id: 'grp-2',
@@ -85,13 +114,42 @@ export class MockDataService {
       disqueraName: 'Acordex Records / Fonovisa',
       genre: 'Corridos Tumbados / Sierreño',
       rating: 4.8,
+      publicApprovalPercent: 94,
       image: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=600&auto=format&fit=crop&q=80',
       membersCount: 4,
       labelQuotesCount: 8,
+      pendingQuotesCount: 3,
+      completedQuotesCount: 5,
       labelActiveEventsCount: 3,
-      labelRevenueAcordex: 280000, // Isolated revenue for Acordex
-      globalTotalEventsCount: 45, // Includes other label events
-      description: 'Grupo en alianza estratégica entre Acordex Records y disqueras afiliadas. Los datos mostrados corresponden a la participación de Acordex.'
+      monthlyEventsCount: 6,
+      monthlyQuotesCount: 9,
+      labelRevenueAcordex: 280000,
+      artistFeeBase: 210000,
+      estimatedMonthlyEarnings: 420000,
+      agendaStatus: 'Agenda Llena',
+      followersCount: '2.8M',
+      isPlatformRegistered: true,
+      isExclusive: false,
+      pendingLabelContract: false,
+      groupLeaderName: 'Mateo "El Güero" Rivas',
+      groupLeaderRole: 'Primera Guitarra & Representante',
+      groupLeaderPhone: '+52 33 1044 8839',
+      groupLeaderEmail: 'mrivas@dinastiareal.com',
+      lastActivityText: 'Actualizó su rider técnico de sonido para palenques',
+      lastActivityTime: 'Hace 2 horas',
+      isOnline: true,
+      lastConnectionText: 'En línea ahora',
+      globalTotalEventsCount: 45,
+      description: 'Grupo en alianza estratégica entre Acordex Records y disqueras afiliadas. Los datos mostrados corresponden a la participación de Acordex.',
+      dailyMetrics: [
+        { date: '2026-07-30', dayLabel: 'Jue', quotes: 1, events: 0, revenue: 0 },
+        { date: '2026-07-31', dayLabel: 'Vie', quotes: 3, events: 1, revenue: 110000 },
+        { date: '2026-08-01', dayLabel: 'Sáb', quotes: 4, events: 2, revenue: 220000 },
+        { date: '2026-08-02', dayLabel: 'Dom', quotes: 2, events: 1, revenue: 95000 },
+        { date: '2026-08-03', dayLabel: 'Lun', quotes: 0, events: 0, revenue: 0 },
+        { date: '2026-08-04', dayLabel: 'Mar', quotes: 1, events: 1, revenue: 80000 },
+        { date: '2026-08-05', dayLabel: 'Mié', quotes: 2, events: 1, revenue: 120000 }
+      ]
     },
     {
       id: 'grp-3',
@@ -101,13 +159,42 @@ export class MockDataService {
       disqueraName: 'Acordex Records',
       genre: 'Banda Sinaloense',
       rating: 4.95,
+      publicApprovalPercent: 99,
       image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80',
       membersCount: 16,
       labelQuotesCount: 22,
+      pendingQuotesCount: 6,
+      completedQuotesCount: 16,
       labelActiveEventsCount: 8,
+      monthlyEventsCount: 14,
+      monthlyQuotesCount: 18,
       labelRevenueAcordex: 920000,
+      artistFeeBase: 650000,
+      estimatedMonthlyEarnings: 1350000,
+      agendaStatus: 'Agenda Llena',
+      followersCount: '4.1M',
+      isPlatformRegistered: true,
+      isExclusive: true,
+      pendingLabelContract: false,
+      groupLeaderName: 'Maestro Fernando Castillo',
+      groupLeaderRole: 'Director General & Tubero',
+      groupLeaderPhone: '+52 66 7182 9901',
+      groupLeaderEmail: 'fcastillo@laimperial.mx',
+      lastActivityText: 'Publicó comunicado oficial de gira 2026 en Acordex Feed',
+      lastActivityTime: 'Hace 5 horas',
+      isOnline: false,
+      lastConnectionText: 'Hace 45 min',
       globalTotalEventsCount: 32,
-      description: 'Orquesta de banda sinaloense con presencia estelar en palenques y ferias nacionales.'
+      description: 'Orquesta de banda sinaloense con presencia estelar en palenques y ferias nacionales.',
+      dailyMetrics: [
+        { date: '2026-07-30', dayLabel: 'Jue', quotes: 3, events: 1, revenue: 180000 },
+        { date: '2026-07-31', dayLabel: 'Vie', quotes: 5, events: 3, revenue: 450000 },
+        { date: '2026-08-01', dayLabel: 'Sáb', quotes: 6, events: 4, revenue: 600000 },
+        { date: '2026-08-02', dayLabel: 'Dom', quotes: 4, events: 2, revenue: 300000 },
+        { date: '2026-08-03', dayLabel: 'Lun', quotes: 2, events: 1, revenue: 150000 },
+        { date: '2026-08-04', dayLabel: 'Mar', quotes: 3, events: 1, revenue: 150000 },
+        { date: '2026-08-05', dayLabel: 'Mié', quotes: 4, events: 2, revenue: 280000 }
+      ]
     },
     {
       id: 'grp-4',
@@ -117,13 +204,132 @@ export class MockDataService {
       disqueraName: 'Independiente (Representado por Acordex)',
       genre: 'Campirano / Acústico',
       rating: 4.7,
+      publicApprovalPercent: 91,
       image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop&q=80',
       membersCount: 3,
       labelQuotesCount: 5,
+      pendingQuotesCount: 2,
+      completedQuotesCount: 3,
       labelActiveEventsCount: 2,
-      labelRevenueAcordex: 110000, // Only Acordex contract revenue
+      monthlyEventsCount: 4,
+      monthlyQuotesCount: 5,
+      labelRevenueAcordex: 110000,
+      artistFeeBase: 85000,
+      estimatedMonthlyEarnings: 180000,
+      agendaStatus: 'Totalmente Libre',
+      followersCount: '620K',
+      isPlatformRegistered: false,
+      isExclusive: false,
+      pendingLabelContract: false,
+      groupLeaderName: 'Valentina Morales',
+      groupLeaderRole: 'Cantautora & Guitarra Quinta',
+      groupLeaderPhone: '+52 81 2293 4011',
+      groupLeaderEmail: 'valen@delasierra.com',
+      lastActivityText: 'Confirmó disponibilidad para evento privado en CDMX',
+      lastActivityTime: 'Ayer',
+      isOnline: false,
+      lastConnectionText: 'Hace 3 horas',
       globalTotalEventsCount: 19,
-      description: 'Talento independiente con acuerdos de representación y booking por fecha a través de Acordex.'
+      description: 'Talento independiente con acuerdos de representación y booking por fecha a través de Acordex.',
+      dailyMetrics: [
+        { date: '2026-07-30', dayLabel: 'Jue', quotes: 0, events: 0, revenue: 0 },
+        { date: '2026-07-31', dayLabel: 'Vie', quotes: 1, events: 1, revenue: 45000 },
+        { date: '2026-08-01', dayLabel: 'Sáb', quotes: 2, events: 1, revenue: 55000 },
+        { date: '2026-08-02', dayLabel: 'Dom', quotes: 1, events: 0, revenue: 0 },
+        { date: '2026-08-03', dayLabel: 'Lun', quotes: 0, events: 0, revenue: 0 },
+        { date: '2026-08-04', dayLabel: 'Mar', quotes: 1, events: 0, revenue: 0 },
+        { date: '2026-08-05', dayLabel: 'Mié', quotes: 1, events: 1, revenue: 40000 }
+      ]
+    },
+    {
+      id: 'grp-5',
+      name: 'Los Herederos del Regio',
+      disqueraType: 'Pendiente de Firma',
+      disqueraId: ACTIVE_DISQUERA_ID,
+      disqueraName: 'Acordex Records (En Negociación)',
+      genre: 'Norteño Clásico / Acordeón',
+      rating: 4.6,
+      publicApprovalPercent: 88,
+      image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&auto=format&fit=crop&q=80',
+      membersCount: 4,
+      labelQuotesCount: 3,
+      pendingQuotesCount: 3,
+      completedQuotesCount: 0,
+      labelActiveEventsCount: 1,
+      monthlyEventsCount: 2,
+      monthlyQuotesCount: 4,
+      labelRevenueAcordex: 60000,
+      artistFeeBase: 50000,
+      estimatedMonthlyEarnings: 120000,
+      agendaStatus: 'Totalmente Libre',
+      followersCount: '340K',
+      isPlatformRegistered: false,
+      isExclusive: false,
+      pendingLabelContract: true,
+      groupLeaderName: 'Lic. Gonzalo Garza',
+      groupLeaderRole: 'Manager & Acordeonista',
+      groupLeaderPhone: '+52 81 4402 1199',
+      groupLeaderEmail: 'gonzalo@herederosregio.com',
+      lastActivityText: 'Cargó borrador de contrato para revisión legal',
+      lastActivityTime: 'Hace 1 día',
+      isOnline: false,
+      lastConnectionText: 'Hace 1 día',
+      globalTotalEventsCount: 12,
+      description: 'Grupo emergente con propuesta de contrato en revisión para unirse al catálogo exclusivo de Acordex Records.',
+      dailyMetrics: [
+        { date: '2026-07-30', dayLabel: 'Jue', quotes: 1, events: 0, revenue: 0 },
+        { date: '2026-07-31', dayLabel: 'Vie', quotes: 1, events: 0, revenue: 0 },
+        { date: '2026-08-01', dayLabel: 'Sáb', quotes: 1, events: 1, revenue: 35000 },
+        { date: '2026-08-02', dayLabel: 'Dom', quotes: 0, events: 0, revenue: 0 },
+        { date: '2026-08-03', dayLabel: 'Lun', quotes: 0, events: 0, revenue: 0 },
+        { date: '2026-08-04', dayLabel: 'Mar', quotes: 1, events: 0, revenue: 0 },
+        { date: '2026-08-05', dayLabel: 'Mié', quotes: 0, events: 0, revenue: 0 }
+      ]
+    },
+    {
+      id: 'grp-6',
+      name: 'Sonido Dinamita Urbano',
+      disqueraType: 'Co-gestionado',
+      disqueraId: ACTIVE_DISQUERA_ID,
+      disqueraName: 'Acordex Records / Discos América',
+      genre: 'Cumbia Sonidera / Fusión',
+      rating: 4.85,
+      publicApprovalPercent: 96,
+      image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80',
+      membersCount: 8,
+      labelQuotesCount: 11,
+      pendingQuotesCount: 3,
+      completedQuotesCount: 8,
+      labelActiveEventsCount: 4,
+      monthlyEventsCount: 9,
+      monthlyQuotesCount: 14,
+      labelRevenueAcordex: 390000,
+      artistFeeBase: 280000,
+      estimatedMonthlyEarnings: 560000,
+      agendaStatus: 'Parcialmente Ocupado',
+      followersCount: '1.9M',
+      isPlatformRegistered: true,
+      isExclusive: false,
+      pendingLabelContract: false,
+      groupLeaderName: 'DJ & Mtro. Samuel Vargas',
+      groupLeaderRole: 'Líder & Percusionista',
+      groupLeaderPhone: '+52 55 8190 4422',
+      groupLeaderEmail: 'samuel@sonidodinamita.com',
+      lastActivityText: 'Publicó nueva muestra de audio de cumbia sonidera en Acordex Feed',
+      lastActivityTime: 'Hace 10 min',
+      isOnline: true,
+      lastConnectionText: 'En línea ahora',
+      globalTotalEventsCount: 38,
+      description: 'Orquesta tropical urbana co-gestionada para eventos masivos, festivales y fiestas privadas en todo el país.',
+      dailyMetrics: [
+        { date: '2026-07-30', dayLabel: 'Jue', quotes: 2, events: 1, revenue: 60000 },
+        { date: '2026-07-31', dayLabel: 'Vie', quotes: 3, events: 2, revenue: 130000 },
+        { date: '2026-08-01', dayLabel: 'Sáb', quotes: 4, events: 2, revenue: 140000 },
+        { date: '2026-08-02', dayLabel: 'Dom', quotes: 2, events: 1, revenue: 60000 },
+        { date: '2026-08-03', dayLabel: 'Lun', quotes: 1, events: 0, revenue: 0 },
+        { date: '2026-08-04', dayLabel: 'Mar', quotes: 1, events: 0, revenue: 0 },
+        { date: '2026-08-05', dayLabel: 'Mié', quotes: 2, events: 1, revenue: 70000 }
+      ]
     }
   ];
 
@@ -1590,6 +1796,47 @@ export class MockDataService {
       }
       return g;
     });
+  });
+
+  // KPI Card 1: Grupo con mayor aprobación
+  readonly topApprovedGroup = computed(() => {
+    const list = this.groups();
+    if (!list.length) return null;
+    return [...list].sort((a, b) => b.rating - a.rating)[0];
+  });
+
+  // KPI Card 2: Cantidad de grupos pendientes por firmar con la disquera
+  readonly pendingContractGroupsCount = computed(() => {
+    return this.groups().filter(g => g.pendingLabelContract || g.disqueraType === 'Pendiente de Firma').length;
+  });
+
+  // KPI Card 3: Cantidad de grupos que no son exclusivamente de la disquera / por fuera de plataforma
+  readonly externalOrNonExclusiveCount = computed(() => {
+    return this.groups().filter(g => !g.isExclusive || !g.isPlatformRegistered || g.disqueraType !== 'Firmado Exclusivo').length;
+  });
+
+  // KPI Card 4: Eventos totales efectuados mensualmente de todos los grupos y grupo que más efectuó
+  readonly monthlyEventsStats = computed(() => {
+    const list = this.groups();
+    const totalEvents = list.reduce((sum, g) => sum + (g.monthlyEventsCount || 0), 0);
+    const sorted = [...list].sort((a, b) => (b.monthlyEventsCount || 0) - (a.monthlyEventsCount || 0));
+    const topGroup = sorted.length ? sorted[0] : null;
+    return {
+      totalEvents,
+      topGroup
+    };
+  });
+
+  // KPI Card 5: Cotizaciones totales efectuadas mensualmente de todos los grupos y grupo que más efectuó
+  readonly monthlyQuotesStats = computed(() => {
+    const list = this.groups();
+    const totalQuotes = list.reduce((sum, g) => sum + (g.monthlyQuotesCount || 0), 0);
+    const sorted = [...list].sort((a, b) => (b.monthlyQuotesCount || 0) - (a.monthlyQuotesCount || 0));
+    const topGroup = sorted.length ? sorted[0] : null;
+    return {
+      totalQuotes,
+      topGroup
+    };
   });
 
   // Financial KPIs (Exclusive for Encargado)

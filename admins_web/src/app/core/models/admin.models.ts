@@ -51,6 +51,7 @@ export interface EventItem {
   location: string;
   venue: string;
   groupName: string;
+  artistName?: string;
   disqueraId: string; // Active label ID e.g. 'acordex-records'
   status: 'Publicado' | 'Borrador' | 'Próximo' | 'Pasado';
   flyerUrl: string;
@@ -290,8 +291,10 @@ export interface Quote {
   isDeferred?: boolean;                       // Cotización en estado de pagos aplazados
   deferredReason?: string;
   deferredAt?: string;
+  artistName?: string;                        // Alias para el nombre de la agrupación
   clientNotices?: NoticeItem[];               // Bitácora de avisos independientes al cliente
   groupNotices?: NoticeItem[];                // Bitácora de avisos independientes al grupo musical
+  notices?: NoticeItem[];                     // Bitácora general de avisos
   chatHistory?: ChatMessage[];               // Chat interactivo cruzado (Cliente <-> Grupo <-> Admin)
   incidents?: QuoteIncident[];               // Módulo de excepciones e imprevistos
   incidentNegotiations?: IncidentNegotiationEntry[]; // Rondas de propuesta de resolución del imprevisto
@@ -303,23 +306,57 @@ export interface Quote {
   finalClosureSummary?: string;
 }
 
+export type GroupAgendaStatus = 'Totalmente Libre' | 'Parcialmente Ocupado' | 'Agenda Llena';
+
+export interface GroupDailyMetric {
+  date: string;
+  dayLabel: string;
+  quotes: number;
+  events: number;
+  revenue: number;
+}
+
 export interface GroupItem {
   id: string;
   name: string;
-  disqueraType: DisqueraContractType;
+  disqueraType: DisqueraContractType | 'Pendiente de Firma';
   disqueraId: string; // 'acordex-records'
   disqueraName: string;
   genre: string;
   rating: number;
+  publicApprovalPercent: number; // e.g. 98%
   image: string;
   membersCount: number;
   // Metrics isolated for current label:
   labelQuotesCount: number;
+  pendingQuotesCount: number;
+  completedQuotesCount: number;
   labelActiveEventsCount: number;
+  monthlyEventsCount: number;
+  monthlyQuotesCount: number;
   labelRevenueAcordex: number;
-  // Global metrics for display reference:
+  artistFeeBase: number; // Cobro directo del grupo (honorarios sin comisión)
+  estimatedMonthlyEarnings: number; // Proyección de ganancias para rol Encargado
+  agendaStatus: GroupAgendaStatus;
+  followersCount: string; // e.g. '1.4M'
+  isPlatformRegistered: boolean; // true = Alta en plataforma, false = Viene de fuera
+  isExclusive: boolean; // true = Solo esta disquera, false = Varias / Co-gestionado
+  pendingLabelContract: boolean; // true = Pendiente por firmar
+  // Encargado del Grupo / Líder (Diferente a la disquera)
+  groupLeaderName: string;
+  groupLeaderRole: string;
+  groupLeaderPhone?: string;
+  groupLeaderEmail?: string;
+
+  // Última Actividad en Acordex & Conexión en Línea
+  lastActivityText?: string;
+  lastActivityTime?: string;
+  isOnline?: boolean;
+  lastConnectionText?: string;
+
   globalTotalEventsCount: number;
   description: string;
+  dailyMetrics?: GroupDailyMetric[];
 }
 
 export interface PressEvent {

@@ -20,7 +20,12 @@ export type KpiColorVariant = 'primary' | 'success' | 'warning' | 'info' | 'seco
           </div>
         }
       </div>
-      <p class="text-xl sm:text-2xl font-black mt-3" [ngClass]="getValueClass()">
+      <p
+        class="font-black mt-3 break-words"
+        [class]="dense ? 'text-sm sm:text-base leading-snug' : 'text-xl sm:text-2xl'"
+        [ngClass]="getValueClass()"
+        [title]="value"
+      >
         {{ value }}
         @if (unit) {
           <span class="text-xs font-medium text-outline">{{ unit }}</span>
@@ -45,6 +50,8 @@ export class KpiCardComponent {
   @Input() trend: string = '';
   @Input() trendIcon: string = '';
   @Input() colorVariant: KpiColorVariant = 'primary';
+  /** Para valores que son nombres propios (grupo, cliente, ciudad) en vez de cifras. */
+  @Input() dense: boolean = false;
 
   getIconBoxClass(): string {
     switch (this.colorVariant) {

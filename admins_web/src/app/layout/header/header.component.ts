@@ -11,7 +11,7 @@ import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.com
   standalone: true,
   imports: [CommonModule, RouterModule, IconButtonComponent],
   template: `
-    <header class="bg-surface/95 backdrop-blur-2xl border-b border-white/10 px-2.5 sm:px-6 h-[72px] flex items-center justify-between gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-300 select-none overflow-hidden">
+    <header class="bg-surface/95 backdrop-blur-2xl border-b border-white/10 px-2.5 sm:px-6 h-[72px] flex items-center justify-between gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-300 select-none relative z-[99999]">
 
       <!-- Left Section: 2-Line Vertical Brand Identity -->
       <div class="flex items-center gap-3.5">
@@ -43,38 +43,39 @@ import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.com
               Panel de Administración
             </span>
           </div>
-
         </a>
+
       </div>
 
       <!-- Right Section: Role Switcher & User Profile -->
-      <div class="flex items-center gap-1.5 sm:gap-4 shrink-0">
+      <div class="flex items-center gap-2 sm:gap-4">
 
-        <!-- Role Selector Pill Bar -->
-        <div class="flex items-center bg-surface-container-lowest p-1 sm:p-1.5 rounded-2xl border border-white/10 shadow-inner">
-          <span class="text-[11px] font-extrabold text-primary px-2 hidden lg:flex items-center gap-1 uppercase tracking-wider font-['Epilogue']">
-            <span class="material-symbols-outlined text-sm">badge</span> Rol:
-          </span>
+        <!-- Role Switcher Pills Bar -->
+        <div class="flex items-center gap-1 p-1 rounded-2xl bg-surface-container-low/80 border border-white/10 shadow-inner">
+          <span class="text-[10px] font-bold text-outline uppercase px-2 hidden lg:inline">Rol:</span>
 
           <div class="flex items-center gap-1">
+            <!-- Role 1: Encargado -->
             <button
               (click)="setRole('encargado')"
               [class]="getRoleButtonClass('encargado')"
-              title="Acceso Total a Finanzas y Configuración"
+              title="Acceso Encargado Global"
             >
               <span class="material-symbols-outlined text-sm">shield_person</span>
               <span class="hidden sm:inline">Encargado</span>
             </button>
 
+            <!-- Role 2: Administrador -->
             <button
               (click)="setRole('administrador')"
               [class]="getRoleButtonClass('administrador')"
-              title="Acceso Operativo Completo"
+              title="Acceso Administración Disquera"
             >
-              <span class="material-symbols-outlined text-sm">admin_panel_settings</span>
+              <span class="material-symbols-outlined text-sm">manage_accounts</span>
               <span class="hidden sm:inline">Admin</span>
             </button>
 
+            <!-- Role 3: Usuario -->
             <button
               (click)="setRole('usuario')"
               [class]="getRoleButtonClass('usuario')"
@@ -110,9 +111,9 @@ import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.com
 
       </div>
 
-      <!-- NOTIFICATIONS POPUP PANEL -->
+      <!-- 100% SOLID OPAQUE NOTIFICATIONS POPUP PANEL (NO TRANSPARENCY/BLUR) -->
       @if (showNotifications()) {
-        <div class="fixed top-16 right-4 sm:right-6 w-[calc(100%-2rem)] max-w-sm bg-surface-container-low border border-white/10 rounded-2xl shadow-2xl z-50 p-4 space-y-3 animate-scale-up">
+        <div class="fixed top-16 right-4 sm:right-6 w-[calc(100%-2rem)] max-w-sm bg-[#18152a] border border-outline-variant/60 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.95)] z-[999999] p-4 space-y-3 animate-scale-up opacity-100">
           <div class="flex items-center justify-between border-b border-white/10 pb-2">
             <span class="font-['Epilogue'] font-bold text-sm text-on-surface flex items-center gap-1.5">
               <span class="material-symbols-outlined text-primary text-base">notifications</span> Notificaciones
@@ -121,11 +122,11 @@ import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.com
           </div>
 
           <div class="space-y-2 text-xs">
-            <div class="p-2.5 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
+            <div class="p-3 rounded-xl bg-surface-container-highest border border-white/10 space-y-0.5">
               <span class="font-bold text-primary block">Nuevo Aviso de Co-producción</span>
               <p class="text-on-surface-variant text-[11px]">Fonovisa solicitó cambio de fecha en Festival Tumbado Zapopan.</p>
             </div>
-            <div class="p-2.5 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
+            <div class="p-3 rounded-xl bg-surface-container-highest border border-white/10 space-y-0.5">
               <span class="font-bold text-emerald-400 block">Pago Confirmado</span>
               <p class="text-on-surface-variant text-[11px]">Cotización COT-8904 liquidada al 100%.</p>
             </div>
@@ -158,15 +159,25 @@ export class HeaderComponent {
 
   getUserName(): string {
     const role = this.roleService.activeRole();
-    if (role === 'encargado') return 'Lic. Claudia Morales';
-    if (role === 'administrador') return 'Ing. Mateo Rivas';
-    return 'Jorge Staff Ruiz';
+    switch (role) {
+      case 'encargado':
+        return 'Don Raúl Treviño';
+      case 'administrador':
+        return 'Lic. Sofía Ramírez';
+      case 'usuario':
+        return 'Carlos Mendoza';
+    }
   }
 
   getUserAvatar(): string {
     const role = this.roleService.activeRole();
-    if (role === 'encargado') return 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80';
-    if (role === 'administrador') return 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80';
-    return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    switch (role) {
+      case 'encargado':
+        return 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150';
+      case 'administrador':
+        return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+      case 'usuario':
+        return 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150';
+    }
   }
 }

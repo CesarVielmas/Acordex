@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Quote } from '../models/admin.models';
+import { Quote, GroupItem } from '../models/admin.models';
 
 @Injectable({
   providedIn: 'root'
@@ -22,6 +22,30 @@ export class LayoutStateService {
 
   closeQuoteModal(): void {
     this.activeQuote.set(null);
+    this.fullScreenModalActive.set(false);
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+    }
+  }
+
+  /**
+   * Expediente de grupo. Igual que el de cotización, se renderiza desde
+   * `main-layout` y no desde la pantalla que lo abre: dentro de `<main>` el
+   * modal queda por debajo del sidebar aunque lleve un z-index altísimo, porque
+   * compite dentro del contexto de apilamiento de esa columna.
+   */
+  activeGroup = signal<GroupItem | null>(null);
+
+  openGroupModal(group: GroupItem): void {
+    this.activeGroup.set(group);
+    this.fullScreenModalActive.set(true);
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  closeGroupModal(): void {
+    this.activeGroup.set(null);
     this.fullScreenModalActive.set(false);
     if (typeof document !== 'undefined') {
       document.body.style.overflow = '';

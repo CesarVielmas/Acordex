@@ -59,15 +59,15 @@ import { QuotePaymentMilestonesGridComponent } from './quote-payment-milestones-
               {{ quote?.soundOption === 'proveedor' || (quote?.soundCost && quote!.soundCost! > 0) ? 'Incluye Audio Disquera' : 'Trae el Cliente' }}
             </strong>
           </div>
-          <div class="flex justify-between text-[11px]">
-            <span class="text-outline">Recinto / Lugar:</span>
-            <strong class="text-on-surface truncate max-w-[140px] font-sans">{{ quote?.venue }}</strong>
+          <div class="flex justify-between text-[11px] min-w-0">
+            <span class="text-outline shrink-0">Recinto / Lugar:</span>
+            <strong class="text-on-surface font-sans font-bold text-right break-words">{{ quote?.venue }}</strong>
           </div>
         </div>
 
         <div class="p-2.5 rounded-xl bg-surface-container-high/90 border border-outline-variant/20 space-y-1 font-sans text-[10px]">
           <span class="text-outline block text-[9px] uppercase font-bold">Dirección Completa:</span>
-          <p class="font-bold text-on-surface truncate">{{ quote?.eventAddress || (quote?.venue + ', ' + quote?.city) }}</p>
+          <p class="font-bold text-on-surface break-words whitespace-normal">{{ quote?.eventAddress || (quote?.venue + ', ' + quote?.city) }}</p>
         </div>
       </div>
 

@@ -36,17 +36,17 @@ import { Quote } from '../../../core/models/admin.models';
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1 min-w-0">
               <span class="text-outline text-[9px] font-bold block uppercase font-sans">Correo Electrónico:</span>
-              <p class="font-bold text-primary text-xs truncate flex items-center gap-1">
-                <span class="material-symbols-outlined text-xs text-primary">mail</span> {{ quote?.clientEmail }}
+              <p class="font-bold text-primary text-xs break-all flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs text-primary shrink-0">mail</span> {{ quote?.clientEmail }}
               </p>
             </div>
 
-            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+            <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1 min-w-0">
               <span class="text-outline text-[9px] font-bold block uppercase font-sans">Teléfono Directo:</span>
               <p class="font-bold text-on-surface text-xs flex items-center gap-1 font-mono">
-                <span class="material-symbols-outlined text-xs text-outline">call</span> {{ quote?.representativePhone || '+52 81 1234 5678' }}
+                <span class="material-symbols-outlined text-xs text-outline shrink-0">call</span> {{ quote?.representativePhone || '+52 81 1234 5678' }}
               </p>
             </div>
           </div>
@@ -54,7 +54,7 @@ import { Quote } from '../../../core/models/admin.models';
           <!-- NOTAS DEL CLIENTE -->
           <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
             <span class="text-outline text-[9px] font-bold block uppercase font-sans">Notas Adicionales del Cliente:</span>
-            <p class="text-xs text-on-surface/90 italic leading-relaxed pt-0.5 font-sans">
+            <p class="text-xs text-on-surface/90 italic leading-relaxed pt-0.5 font-sans break-words whitespace-normal">
               "{{ quote?.notes || 'Sin especificaciones adicionales enviadas al solicitar el presupuesto.' }}"
             </p>
           </div>
@@ -63,7 +63,7 @@ import { Quote } from '../../../core/models/admin.models';
 
       <!-- RIGHT COLUMN: AGRUPACIÓN & ESTRUCTURA DEL SHOW SOLICITADO (6 COLS) -->
       <div class="lg:col-span-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 space-y-4 shadow-xl backdrop-blur-xl">
-        <div class="border-b border-outline-variant/20 pb-2 flex items-center justify-between">
+        <div class="border-b border-outline-variant/20 pb-2 flex flex-wrap items-center justify-between gap-2">
           <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest block flex items-center gap-1.5 font-sans">
             <span class="material-symbols-outlined text-sm text-amber-400">music_note</span> DETALLES DEL SHOW Y HORARIOS SOLICITADOS
           </span>
@@ -94,7 +94,7 @@ import { Quote } from '../../../core/models/admin.models';
 
         <div class="space-y-2.5 text-xs font-sans">
           <!-- ESTRUCTURA DE FECHA Y HORAS -->
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20">
               <span class="text-outline text-[9px] font-bold block uppercase font-sans">FECHA ORIGINAL SOLICITADA POR EL CLIENTE:</span>
               <span class="font-extrabold text-emerald-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)] font-mono text-xs flex items-center gap-1">
@@ -139,8 +139,8 @@ import { Quote } from '../../../core/models/admin.models';
           <!-- RECINTO Y UBICACIÓN -->
           <div class="p-3 rounded-xl bg-surface-container border border-outline-variant/20 space-y-1">
             <span class="text-outline text-[9px] font-bold block uppercase font-sans">Recinto & Dirección del Evento:</span>
-            <p class="font-bold text-on-surface text-xs flex items-center gap-1">
-              <span class="material-symbols-outlined text-xs text-primary">location_on</span> {{ quote?.venue }} — {{ quote?.eventAddress || quote?.city }}
+            <p class="font-bold text-on-surface text-xs flex items-center gap-1 break-words whitespace-normal">
+              <span class="material-symbols-outlined text-xs text-primary shrink-0">location_on</span> {{ quote?.venue }} — {{ quote?.eventAddress || quote?.city }}
             </p>
           </div>
         </div>
