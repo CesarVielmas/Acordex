@@ -48,8 +48,20 @@ export function totalMilestonesCount(q: Quote): number {
   return milestones(q).length;
 }
 
+/**
+ * Monto ya cobrado. Cuando la cotización no tiene hitos itemizados se recurre a
+ * `paymentStatus`, igual que hacen `paidAmountPercent` e `isQuoteFullyPaid`: sin
+ * ese respaldo, una cotización marcada como liquidada al 100% pero sin hitos
+ * (por ejemplo COT-8904) reportaría cero cobrado y contradiría al resto de la UI.
+ */
 export function paidAmount(q: Quote): number {
-  return milestones(q)
+  const list = milestones(q);
+  if (list.length === 0) {
+    if (q.paymentStatus === 'Pago Confirmado 100%') return q.totalAmount || 0;
+    if (q.paymentStatus === 'Anticipo 50%') return (q.totalAmount || 0) * 0.5;
+    return 0;
+  }
+  return list
     .filter(m => m.status === 'Pagado')
     .reduce((sum, m) => sum + (m.paidAmount ?? m.amountCalculated ?? 0), 0);
 }

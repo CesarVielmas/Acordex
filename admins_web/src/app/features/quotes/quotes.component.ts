@@ -5,26 +5,21 @@ import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
 import { Quote, QuoteState, PaymentStatus } from '../../core/models/admin.models';
-import { QUOTE_ALL_STATES, quoteStateMeta, isNonLinearQuoteState } from '../../core/models/quote-state.meta';
+import { QUOTE_ALL_STATES, quoteStateMeta } from '../../core/models/quote-state.meta';
 import { AccessRestrictedComponent } from '../../shared/ui/access-restricted/access-restricted.component';
 import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
 import { TableShellComponent } from '../../shared/ui/table-shell/table-shell.component';
-import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.component';
 import { QuoteStateBadgeComponent } from '../../shared/ui/quote-state-badge/quote-state-badge.component';
 import { QuoteStateFilterBarComponent, StateFilterChip } from './quote-state-filter-bar.component';
 import { QuoteFiltersToolbarComponent, QuoteStateChip, QuoteSortMode } from './quote-filters-toolbar.component';
+import { QuoteKanbanCardComponent } from './quote-kanban-card.component';
+import { stateSummary } from './quote-card-insights';
 import {
   QuoteFilterOption,
   stateFilterOptions,
   stateFilterLabel,
   transversalFilterOptions,
-  TRANSVERSAL_FILTER_LABEL,
-  paidMilestonesCount,
-  totalMilestonesCount,
-  paidAmountPercent,
-  isQuoteFullyPaid as isFullyPaid,
-  hasOverdueMilestone as hasOverdue,
-  overdueMilestonesCount
+  TRANSVERSAL_FILTER_LABEL
 } from './quote-filter-catalog';
 
 @Component({
@@ -36,10 +31,10 @@ import {
     AccessRestrictedComponent,
     KpiCardComponent,
     TableShellComponent,
-    ProgressBarComponent,
     QuoteStateBadgeComponent,
     QuoteStateFilterBarComponent,
-    QuoteFiltersToolbarComponent
+    QuoteFiltersToolbarComponent,
+    QuoteKanbanCardComponent
   ],
   template: `
     <div class="space-y-6 max-w-full">
@@ -132,32 +127,28 @@ import {
             @for (state of getFilteredStates(); track state) {
               <div class="p-4 sm:p-6 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-xl space-y-5">
 
-                <!-- State Header Banner -->
+                <!-- ENCABEZADO DE LA FASE -->
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline-variant/20">
                   <div class="flex items-center gap-3 min-w-0">
-                    <span class="w-3.5 h-3.5 rounded-full bg-primary ring-4 ring-primary/20 shadow-sm shrink-0"></span>
+                    <span [class]="stateDotClass(state)" class="w-3.5 h-3.5 rounded-full shadow-sm shrink-0"></span>
                     <h3 class="text-sm font-extrabold text-on-surface flex items-center gap-2 min-w-0 flex-wrap">
-                      <span class="material-symbols-outlined text-primary text-base">{{ getStateIcon(state) }}</span>
+                      <span [class]="getStateTextColor(state)" class="material-symbols-outlined text-base">{{ getStateIcon(state) }}</span>
                       {{ state }}
-                      <span class="text-xs font-bold px-3 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shadow-sm">
+                      <span [class]="getStateBadgeIconBg(state)" class="text-xs font-bold px-3 py-0.5 rounded-full border shadow-sm">
                         @if (hasActiveContextFilter(state)) {
-                          {{ getFilteredQuotesByState(state).length }} de {{ getQuotesByStateRaw(state).length }} Cotizaciones
+                          {{ getFilteredQuotesByState(state).length }} de {{ getQuotesByStateRaw(state).length }}
                         } @else {
-                          {{ getFilteredQuotesByState(state).length }} Cotizaciones
+                          {{ getFilteredQuotesByState(state).length }}
                         }
                       </span>
                     </h3>
                   </div>
 
-                  @if (roleService.canViewFinances()) {
-                    <span class="text-xs font-semibold text-outline shrink-0">
-                      Subtotal del Estado: <strong class="text-emerald-400 font-black">&#36;{{ getStateSubtotal(state) | number:'1.0-0' }} MXN</strong>
-                    </span>
-                  } @else {
-                    <span class="text-xs font-semibold text-purple-300 flex items-center gap-1 shrink-0">
-                      <span class="material-symbols-outlined text-sm">groups</span> Aforo Acumulado: <strong class="text-purple-200 font-black">{{ getFilteredQuotesByState(state).length * 8500 | number:'1.0-0' }} Asistentes</strong>
-                    </span>
-                  }
+                  <!-- Resumen propio de la fase: el monto solo se agrega donde ya es firme. -->
+                  <span class="text-xs font-semibold text-outline shrink-0 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-outline">insights</span>
+                    {{ getStateSummary(state) }}
+                  </span>
                 </div>
 
                 <!-- FILTROS CONTEXTUALES DE LA FASE (se ocultan si el estado no tiene cotizaciones) -->
@@ -175,139 +166,13 @@ import {
                 @if (getFilteredQuotesByState(state).length > 0) {
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     @for (q of getFilteredQuotesByState(state); track q.id) {
-                      <div class="p-5 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 hover:border-primary/50 hover:shadow-xl transition-all duration-300 space-y-4 group relative border-l-4 border-l-primary">
-
-                        <!-- Top Badge Bar -->
-                        <div class="flex items-center justify-between gap-1.5 text-xs flex-wrap">
-                          <button
-                            (click)="copyFolio(q.id)"
-                            class="font-black text-primary px-2.5 py-0.5 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all flex items-center gap-1"
-                            title="Copiar folio"
-                          >
-                            {{ q.id }} <span class="material-symbols-outlined text-[10px]">content_copy</span>
-                          </button>
-
-                          <span class="px-2 py-0.5 rounded-md bg-surface-bright text-[10px] font-bold text-outline border border-outline-variant/20 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-xs text-primary">person</span> Contrato 1 a 1
-                          </span>
-
-                          <span [class]="getPaymentStatusBadgeClass(q.paymentStatus, q)" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold border flex items-center gap-1">
-                            @if (q.state === 'Propuesta enviada' && (q.negotiationRound ?? 0) > 0) {
-                              <span class="material-symbols-outlined text-[11px] text-amber-400">handshake</span>
-                            }
-                            {{ getPaymentStatusLabel(q) }}
-                          </span>
-                        </div>
-
-                        <!-- COBRANZA: PROGRESO DE HITOS DE PAGO Y AVISO DE ATRASO (SOLO ESTADO 'FINALIZADA') -->
-                        @if (q.state === 'Finalizada') {
-                          <div class="space-y-1.5">
-                            <div [class]="isQuoteFullyPaid(q) ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : (hasOverdueMilestone(q) ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300')" class="px-3 py-2 rounded-xl border flex items-center justify-between gap-2 text-[10px] font-black">
-                              <span class="flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-xs">{{ isQuoteFullyPaid(q) ? 'task_alt' : (hasOverdueMilestone(q) ? 'error' : 'hourglass_top') }}</span>
-                                {{ getPaidMilestonesCount(q) }}/{{ getTotalMilestonesCount(q) }} Hitos Pagados
-                              </span>
-                              <span>{{ isQuoteFullyPaid(q) ? 'Totalmente Finalizada' : (getPaidAmountPercent(q) | number:'1.0-0') + '% Cobrado' }}</span>
-                            </div>
-
-                            @if (hasOverdueMilestone(q)) {
-                              <div class="px-3 py-1.5 rounded-lg bg-rose-500/15 border border-rose-500/40 text-rose-300 text-[10px] font-bold flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-xs">warning</span>
-                                Pago Atrasado &mdash; {{ getOverdueMilestonesCount(q) }} hito(s) vencido(s) o en mora
-                              </div>
-                            }
-                          </div>
-                        }
-
-                        <!-- COUPLED 1-TO-1 ARTIST & CLIENT CONTRACT INFORMATION -->
-                        <div class="space-y-2">
-                          <!-- Talent / Group Banner -->
-                          <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20 flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-primary/20 text-primary font-black text-xs flex items-center justify-center shrink-0 border border-primary/30">
-                              <span class="material-symbols-outlined text-sm">music_note</span>
-                            </div>
-                            <div class="overflow-hidden">
-                              <span class="text-[9px] font-bold text-primary uppercase tracking-wider block">Grupo / Talento Solicitado</span>
-                              <h4 class="text-xs font-black text-on-surface group-hover:text-primary transition-colors cursor-pointer truncate" (click)="openDetailModal(q)">
-                                {{ q.groupName }}
-                              </h4>
-                            </div>
-                          </div>
-
-                          <!-- Client / Promoter Banner -->
-                          <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20 flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 font-black text-xs flex items-center justify-center shrink-0 border border-blue-500/30">
-                              <span class="material-symbols-outlined text-sm">badge</span>
-                            </div>
-                            <div class="overflow-hidden">
-                              <span class="text-[9px] font-bold text-blue-400 uppercase tracking-wider block">Cliente / Contratante Único</span>
-                              <p class="text-xs font-bold text-on-surface truncate">{{ q.clientName }}</p>
-                              <p class="text-[10px] text-outline truncate">{{ q.clientCompany }}</p>
-                            </div>
-                          </div>
-
-                          <!-- Venue & Date -->
-                          <p class="text-[11px] text-outline pt-1 flex items-center gap-1 min-w-0">
-                            <span class="material-symbols-outlined text-xs text-primary shrink-0">location_on</span> <span class="truncate">{{ q.venue }}, {{ q.city }} ({{ q.proposedDate }})</span>
-                          </p>
-                        </div>
-
-                        <!-- State Progress Stepper (14 States) -->
-                        <div class="p-2.5 rounded-xl bg-surface-container border border-outline-variant/20">
-                          <app-progress-bar
-                            label="Avance de Estado"
-                            [valueLabel]="'Paso ' + (getStateIndex(q.state) + 1) + ' de ' + allStates.length"
-                            [percent]="((getStateIndex(q.state) + 1) / allStates.length) * 100"
-                            colorVariant="primary"
-                          />
-                        </div>
-
-                        <!-- Proposal Amount (Financial) vs Operational Specs (Non-financial) -->
-                        <div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between gap-2 text-xs">
-                          <div class="min-w-0">
-                            @if (roleService.canViewFinances()) {
-                              <span class="text-[10px] text-outline uppercase font-bold block">Monto Propuesto</span>
-                              <span class="font-black text-on-surface text-base">&#36;{{ q.totalAmount | number:'1.0-0' }} MXN</span>
-                            } @else {
-                              <span class="text-[10px] text-purple-300 uppercase font-bold block flex items-center gap-1">
-                                <span class="material-symbols-outlined text-xs">groups</span> Aforo Proyectado
-                              </span>
-                              <span class="font-bold text-on-surface text-xs">12,500 Asistentes</span>
-                            }
-                          </div>
-
-                          <button
-                            (click)="openDetailModal(q)"
-                            class="px-3.5 py-1.5 min-h-11 rounded-xl bg-surface-bright hover:bg-primary hover:text-on-primary text-on-surface text-xs font-bold transition-all flex items-center gap-1 shadow-sm hover:scale-105 shrink-0"
-                          >
-                            <span class="material-symbols-outlined text-xs">visibility</span> Abrir Solicitud
-                          </button>
-                        </div>
-
-                        <!-- BIDIRECTIONAL STATE CONTROLS -->
-                        <div class="flex items-center justify-between bg-surface-container/90 p-2 rounded-xl border border-outline-variant/20 text-xs">
-                          <button
-                            [disabled]="isFirstState(q.state)"
-                            (click)="moveState(q, -1)"
-                            class="px-3 py-1 min-h-11 rounded-lg bg-surface-bright hover:bg-primary/20 text-on-surface disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 font-bold text-[11px]"
-                            title="Retroceder estado"
-                          >
-                            <span class="material-symbols-outlined text-xs">arrow_back</span> Retroceder
-                          </button>
-
-                          <span class="font-semibold text-outline text-[10px] uppercase tracking-wider hidden sm:inline">Mover Estado</span>
-
-                          <button
-                            [disabled]="isLastState(q.state)"
-                            (click)="moveState(q, 1)"
-                            class="px-3 py-1 min-h-11 rounded-lg bg-primary/20 text-primary hover:bg-primary hover:text-on-primary disabled:opacity-30 disabled:pointer-events-none transition-all flex items-center gap-1 font-bold text-[11px]"
-                            title="Avanzar estado"
-                          >
-                            Avanzar <span class="material-symbols-outlined text-xs">arrow_forward</span>
-                          </button>
-                        </div>
-
-                      </div>
+                      <app-quote-kanban-card
+                        [quote]="q"
+                        [paymentBadgeClass]="getPaymentStatusBadgeClass(q.paymentStatus, q)"
+                        [paymentLabel]="getPaymentStatusLabel(q)"
+                        (open)="openDetailModal($event)"
+                        (copyFolio)="copyFolio($event)"
+                      />
                     }
                   </div>
                 } @else if (hasActiveContextFilter(state) && getQuotesByStateRaw(state).length > 0) {
@@ -777,69 +642,25 @@ export class QuotesComponent {
     return stateFilterOptions(state);
   }
 
-  // --- Cobranza por hitos de pago (usado en las cards del estado 'Finalizada') ---
-
-  getPaidMilestonesCount(q: Quote): number {
-    return paidMilestonesCount(q);
-  }
-
-  getTotalMilestonesCount(q: Quote): number {
-    return totalMilestonesCount(q);
-  }
-
-  getPaidAmountPercent(q: Quote): number {
-    return paidAmountPercent(q);
-  }
-
-  isQuoteFullyPaid(q: Quote): boolean {
-    return isFullyPaid(q);
-  }
-
-  hasOverdueMilestone(q: Quote): boolean {
-    return hasOverdue(q);
-  }
-
-  getOverdueMilestonesCount(q: Quote): number {
-    return overdueMilestonesCount(q);
-  }
-
   getStateIndex(state: QuoteState): number {
     return this.allStates.indexOf(state);
   }
 
-  getStateSubtotal(state: QuoteState): number {
-    return this.getFilteredQuotesByState(state).reduce((sum, q) => sum + q.totalAmount, 0);
+  /**
+   * Resumen del encabezado de la columna. Reemplaza al antiguo "Subtotal del
+   * Estado", que solo tenía sentido en las fases donde el monto ya es firme.
+   */
+  getStateSummary(state: QuoteState): string {
+    return stateSummary(state, this.getFilteredQuotesByState(state), this.roleService.canViewFinances());
+  }
+
+  /** Punto de color del encabezado, del mismo color de la fase. */
+  stateDotClass(state: QuoteState): string {
+    return quoteStateMeta(state).badgeClass;
   }
 
   getTotalPipelineAmount(): number {
     return this.mockData.quotes().reduce((sum, q) => sum + q.totalAmount, 0);
-  }
-
-  // 'Cancelada con Imprevisto' / 'Imprevisto Enviado' / 'Cancelada' no son parte de un pipeline
-  // lineal (pueden ir y volver entre si segun la decision del cliente); la transicion real se
-  // hace desde las acciones dedicadas dentro del modal, no con Avanzar/Retroceder del kanban.
-  isNonLinearState(state: QuoteState): boolean {
-    return isNonLinearQuoteState(state);
-  }
-
-  isFirstState(state: QuoteState): boolean {
-    return this.allStates.indexOf(state) === 0 || this.isNonLinearState(state);
-  }
-
-  isLastState(state: QuoteState): boolean {
-    return this.allStates.indexOf(state) === this.allStates.length - 1 || this.isNonLinearState(state);
-  }
-
-  moveState(quote: Quote, delta: number): void {
-    const currentIndex = this.allStates.indexOf(quote.state);
-    const newIndex = currentIndex + delta;
-    if (newIndex >= 0 && newIndex < this.allStates.length) {
-      const newState = this.allStates[newIndex];
-      this.mockData.updateQuoteState(quote.id, newState);
-      if (this.selectedQuote()?.id === quote.id) {
-        this.selectedQuote.update(q => q ? { ...q, state: newState } : null);
-      }
-    }
   }
 
   updatePaymentStatus(newStatus: PaymentStatus): void {
