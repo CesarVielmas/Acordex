@@ -216,6 +216,89 @@ export interface BookingBaseRate {
   notes?: string;
 }
 
+export interface SectionVisibilityConfig {
+  // Main Sections
+  showStatsDashboard: boolean;
+  showAbout: boolean;
+  showPresentationVideo: boolean;
+  showUpcomingEvents: boolean;
+  showMembersSection: boolean;
+  showStaffMembers: boolean;
+  showTechnicalSpecs: boolean;
+  showAudioRider: boolean;
+  showSocials: boolean;
+  showDirectBooking: boolean;
+  showMilestones: boolean;
+  showRepresentatives: boolean;
+
+  // Music & Media Sections in Client Preview
+  showPopularTracks: boolean;
+  showMusicCatalog: boolean;
+  showHighlightVideos: boolean;
+  showPhotoGallery: boolean;
+  showPosts: boolean;
+  showReviews: boolean;
+
+  // Sub-blocks in Stats Dashboard
+  showStatEvents: boolean;
+  showStatHours: boolean;
+  showStatSatisfaction: boolean;
+  showStatMembers: boolean;
+
+  // Sub-blocks in Technical Specs
+  showOriginCity: boolean;
+  showFoundedYear: boolean;
+  showMusicalGenre: boolean;
+  showMembersCountSpec: boolean;
+  showSenioritySpec: boolean;
+
+  // Sub-blocks in Direct Booking
+  showBookingPhone: boolean;
+  showBookingEmail: boolean;
+  showOfficeAddress: boolean;
+  showMinimumHours: boolean;
+}
+
+export function defaultSectionVisibility(): SectionVisibilityConfig {
+  return {
+    showStatsDashboard: true,
+    showAbout: true,
+    showPresentationVideo: true,
+    showUpcomingEvents: true,
+    showMembersSection: true,
+    showStaffMembers: true,
+    showTechnicalSpecs: true,
+    showAudioRider: true,
+    showSocials: true,
+    showDirectBooking: true,
+    showMilestones: true,
+    showRepresentatives: true,
+
+    showPopularTracks: true,
+    showMusicCatalog: true,
+    showHighlightVideos: true,
+    showPhotoGallery: true,
+    showPosts: true,
+    showReviews: true,
+
+    showStatEvents: true,
+    showStatHours: true,
+    showStatSatisfaction: true,
+    showStatMembers: true,
+
+    showOriginCity: true,
+    showFoundedYear: true,
+    showMusicalGenre: true,
+    showMembersCountSpec: true,
+    showSenioritySpec: true,
+
+    showBookingPhone: true,
+    showBookingEmail: true,
+    showOfficeAddress: true,
+    showMinimumHours: true,
+  };
+}
+
 export interface GroupProfile {
   id: string;
   name: string;
@@ -227,6 +310,29 @@ export interface GroupProfile {
   secondaryGenres: string[];
   foundedYear: number;
   originCity: string;
+
+  /** Configuración de visibilidad de secciones para la vista previa y perfil público. */
+  sectionVisibility?: SectionVisibilityConfig;
+
+  // --- Campos propios del portal del cliente ---
+  //
+  // Aquí solo va lo que NO puede deducirse de otros datos. La etiqueta bajo el
+  // nombre es el género, y la disponibilidad sale del estado de agenda del
+  // grupo, así que ninguna se guarda por separado: duplicarlas solo abriría la
+  // puerta a que el perfil público contradiga al expediente.
+
+  /** Insignia de perfil verificado por la disquera. */
+  verified: boolean;
+  /** Fecha de alta en la plataforma; el portal la muestra como antigüedad. */
+  platformJoinedAt: string;
+  /** Video de presentación que encabeza el perfil público. */
+  mixVideoTitle: string;
+  mixVideoThumbnailUrl: string;
+  mixVideoUrl?: string;
+  /** Horas de escenario acumuladas, que el portal muestra como estadística. */
+  totalHoursLogged: number;
+  /** Texto largo de "Historia y Trayectoria"; el corto es `about`. */
+  history: string;
 
   /** Domicilio de las oficinas del grupo. */
   officeAddress: string;

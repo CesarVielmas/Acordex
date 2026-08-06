@@ -1,141 +1,152 @@
 import { GroupItem } from '../../core/models/admin.models';
 import {
-  GroupProfile, GroupMember, GroupPost, GroupReview, GroupEventRecord,
-  Track, GalleryImage, HighlightVideo, RosterLogEntry, GroupRepresentative
+  GroupProfile, GroupMember, RosterLogEntry, GroupPost, GroupReview, GroupEventRecord,
+  Track, GalleryImage, HighlightVideo, GroupRepresentative, defaultSectionVisibility
 } from './group-profile.model';
 
-/**
- * Construye el perfil completo de un grupo a partir de su ficha del catálogo.
- *
- * Es mock, pero **determinista**: el mismo grupo produce siempre los mismos
- * datos. Eso importa porque la vista se recalcula en cada render y con valores
- * aleatorios las cifras bailarían solas delante del usuario.
- */
-
 const PHOTOS = [
-  'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80',
-  'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80',
-  'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&q=80',
-  'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&q=80',
-  'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&q=80',
-  'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&q=80'
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400',
+  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400',
+  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400'
 ];
 
 const STAGE_PHOTOS = [
-  'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&q=80',
-  'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&q=80',
-  'https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?w=800&q=80',
-  'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80'
+  'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800',
+  'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800',
+  'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800',
+  'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800'
 ];
 
-/** Hash estable de una cadena, para variar los datos sin usar azar. */
-function seedOf(text: string): number {
-  let h = 0;
-  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) >>> 0;
-  return h;
+const SAMPLE_AUDIO_URLS = [
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
+];
+
+function pick<T>(arr: T[], seed: number, offset = 0): T {
+  return arr[(seed + offset) % arr.length];
 }
 
-const pick = <T>(list: T[], seed: number, offset = 0): T => list[(seed + offset) % list.length];
+const FIRST = ['Don Raúl', 'José Luis', 'Martín', 'Guillermo', 'Carlos', 'Alejandro', 'Gabriel', 'Ramiro', 'Esteban'];
+const LAST = ['Treviño', 'Salazar', 'García', 'Villanueva', 'Cárdenas', 'Benavides', 'Montemayor', 'Pena'];
 
-const MUSICIAN_ROLES = [
-  { role: 'Vocalista Principal', instrument: 'Voz' },
-  { role: 'Acordeonista', instrument: 'Acordeón' },
-  { role: 'Bajo Sexto', instrument: 'Bajo Sexto' },
-  { role: 'Saxofonista', instrument: 'Saxofón Alto' },
-  { role: 'Baterista', instrument: 'Batería' },
-  { role: 'Tolón / Bajo', instrument: 'Bajo Eléctrico' },
-  { role: 'Segunda Voz', instrument: 'Voz & Guitarra' }
-];
+function buildMembers(groupId: string, seed: number): GroupMember[] {
+  const isBanda = seed % 2 === 0;
 
-const STAFF_ROLES = [
-  { role: 'Ingeniero de Sonido', instrument: undefined },
-  { role: 'Chofer de Gira', instrument: undefined },
-  { role: 'Jefe de Cargadores', instrument: undefined },
-  { role: 'Técnico de Iluminación', instrument: undefined },
-  { role: 'Road Manager', instrument: undefined }
-];
+  const roster: Array<{ role: string; inst?: string; isCrew?: boolean }> = isBanda
+    ? [
+        { role: 'Director Musical & Vocalista', inst: 'Voz Principal, Acordeón' },
+        { role: 'Vocalista Secundario', inst: 'Voz Secundaria, Segunda Voz' },
+        { role: 'Acordeonista Estelar', inst: 'Acordeón Diatónico' },
+        { role: 'Baterista & Percusiones', inst: 'Batería, Tarolas' },
+        { role: 'Bajista & Tololoche', inst: 'Bajo Eléctrico, Tololoche' },
+        { role: 'Ingeniero de Sonido Principal', isCrew: true },
+        { role: 'Coordinador de Logística & Gira', isCrew: true }
+      ]
+    : [
+        { role: 'Vocalista Líder', inst: 'Voz Principal' },
+        { role: 'Guitarrista Primera Voz', inst: 'Requinto, Guitarra Docerola' },
+        { role: 'Bajista & Coros', inst: 'Bajo Eléctrico, Coros' },
+        { role: 'Baterista', inst: 'Batería' },
+        { role: 'Ingeniero de Sonido', isCrew: true },
+        { role: 'Operador de Iluminación & Visuales', isCrew: true }
+      ];
 
-const FIRST = ['Ramiro', 'Joel', 'Ernesto', 'Cuauhtémoc', 'Adán', 'Rubén', 'Ismael', 'Gerardo', 'Fabián', 'Tadeo', 'Ulises', 'Nicolás'];
-const LAST = ['Cavazos', 'Quintanilla', 'Barrientos', 'Alanís', 'Elizondo', 'Saucedo', 'Rentería', 'Villarreal', 'Zapata', 'Montemayor'];
-const CITIES = ['Monterrey, NL', 'Saltillo, COAH', 'Torreón, COAH', 'Reynosa, TAMPS', 'Culiacán, SIN', 'Hermosillo, SON'];
+  return roster.map((item, i) => {
+    const isMusician = !item.isCrew;
+    const name = `${pick(FIRST, seed, i)} ${pick(LAST, seed, i + 1)}`;
 
-function buildMember(groupId: string, index: number, isStaff: boolean, seed: number): GroupMember {
-  const s = seed + index * 7;
-  const spec = isStaff ? pick(STAFF_ROLES, s, index) : MUSICIAN_ROLES[index % MUSICIAN_ROLES.length];
-  const name = `${pick(FIRST, s, index)} ${pick(LAST, s, index * 3)}`;
-  const years = 4 + (s % 16);
-
-  return {
-    id: `${groupId}-m${index}${isStaff ? 's' : ''}`,
-    name,
-    crewRole: isStaff ? 'Staff' : 'Integrante',
-    role: spec.role,
-    instrument: spec.instrument,
-    photoUrl: pick(PHOTOS, s, index),
-    coverPhotoUrl: pick(STAGE_PHOTOS, s, index),
-    age: 24 + (s % 22),
-    hometown: pick(CITIES, s, index),
-    quote: pick([
-      'El escenario no se le miente a nadie.',
-      'Primero el ensayo, luego el aplauso.',
-      'Cada tocada es la primera.',
-      'La música se toca con el estómago lleno de nervios.'
-    ], s, index),
-    bio: `${spec.role} del grupo desde hace ${years} años.`,
-    fullBio: `${name} se integró al proyecto tras años de rodaje en palenques del norte. ` +
-      `Como ${spec.role.toLowerCase()}, es pieza clave del sonido en vivo del grupo y ha participado ` +
-      `en la grabación de los últimos materiales discográficos.`,
-    experienceYears: years,
-    status: 'Activo',
-    joinedAt: `${2015 + (s % 9)}-0${1 + (s % 8)}-1${s % 9}`,
-    // Solo algunos autorizan publicar salario; así se ve el caso con y sin dato.
-    monthlySalary: s % 3 === 0 ? 18000 + (s % 12) * 1500 : undefined,
-    galleryPhotos: [pick(STAGE_PHOTOS, s, 1), pick(STAGE_PHOTOS, s, 2), pick(PHOTOS, s, 3)],
-    videos: [
-      { title: 'Solo en Arena Monterrey', thumbnailUrl: pick(STAGE_PHOTOS, s, 0), duration: '3:42' },
-      { title: 'Backstage — prueba de sonido', thumbnailUrl: pick(STAGE_PHOTOS, s, 2), duration: '5:18' }
-    ],
-    socials: {
-      instagram: `https://instagram.com/${name.split(' ')[0].toLowerCase()}_oficial`,
-      facebook: `https://facebook.com/${name.split(' ')[0].toLowerCase()}`,
-      tiktok: `https://tiktok.com/@${name.split(' ')[0].toLowerCase()}`
-    }
-  };
+    return {
+      id: `${groupId}-m${i + 1}`,
+      name,
+      crewRole: isMusician ? 'Integrante' : 'Staff',
+      role: item.role,
+      instrument: item.inst,
+      photoUrl: pick(PHOTOS, seed, i),
+      coverPhotoUrl: pick(STAGE_PHOTOS, seed, i),
+      age: 26 + ((seed + i * 3) % 22),
+      hometown: pick(['Monterrey, N.L.', 'Guadalajara, Jal.', 'Culiacán, Sin.', 'Hermosillo, Son.', 'Saltillo, Coah.'], seed, i),
+      quote: isMusician
+        ? 'La música norteña no se toca sólo con los dedos, se toca con el alma y con el respeto al público.'
+        : 'Mi trabajo es que la banda suene impecable en cualquier recinto del país.',
+      bio: isMusician
+        ? `${name} inició su carrera musical a los 14 años tocando en festivales regionales. Se incorporó al grupo en 2021 aportando versatilidad en los arreglos.`
+        : `Responsable técnico con más de 8 años de experiencia en giras nacionales y recintos de gran aforo.`,
+      fullBio: isMusician
+        ? `${name} nació con vocación musical en una familia de ejecutantes. Estudió teoría musical básica antes de dedicarse por completo a las giras. En la agrupación coordina la presencia escénica y colabora en la selección del repertorio de estudio. Ha participado en más de 200 presentaciones en vivo y en la grabación de 3 producciones discográficas.`
+        : `Con formación en ingeniería de audio y producción de espectáculos en vivo, supervisa el montaje técnico, las pruebas de sonido y el cumplimiento del rider en cada plaza donde se presenta el grupo.`,
+      experienceYears: 4 + ((seed + i) % 15),
+      status: 'Activo',
+      joinedAt: `20${18 + (i % 6)}-0${(i % 9) + 1}-15`,
+      monthlySalary: isMusician ? 45000 + (i * 5000) : 28000 + (i * 3000),
+      galleryPhotos: [
+        pick(STAGE_PHOTOS, seed, i),
+        pick(PHOTOS, seed, i + 1),
+        pick(STAGE_PHOTOS, seed, i + 2)
+      ],
+      videos: [
+        { title: `Solo de ensayo — ${item.inst || item.role}`, thumbnailUrl: pick(STAGE_PHOTOS, seed, i), duration: '2:15' },
+        { title: 'Prueba de sonido en vivo', thumbnailUrl: pick(STAGE_PHOTOS, seed, i + 1), duration: '4:30' }
+      ],
+      socials: {
+        instagram: `https://instagram.com/${name.toLowerCase().replace(/[^a-z]/g, '')}`,
+        facebook: `https://facebook.com/${name.toLowerCase().replace(/[^a-z]/g, '')}`,
+        spotify: `https://open.spotify.com/artist/sample`
+      }
+    };
+  });
 }
 
 function buildRosterLog(groupId: string, seed: number): RosterLogEntry[] {
   return [
-    { id: `${groupId}-r1`, memberName: 'Aarón Pesqueira', role: 'Trompetista', action: 'Baja', at: '2026-05-18 17:40', note: 'Salida por proyecto solista.' },
-    { id: `${groupId}-r2`, memberName: 'Ulises Zapata', role: 'Técnico de Iluminación', action: 'Alta', at: '2026-04-02 09:15' },
-    { id: `${groupId}-r3`, memberName: 'Nicolás Rentería', role: 'Baterista', action: 'Alta', at: `${2020 + (seed % 5)}-08-11 12:00` },
-    { id: `${groupId}-r4`, memberName: 'Sergio Lozano', role: 'Bajo Sexto', action: 'Baja', at: '2024-11-30 20:05', note: 'Retiro por lesión.' }
+    {
+      id: `${groupId}-log1`,
+      memberName: `${pick(FIRST, seed, 0)} ${pick(LAST, seed, 1)}`,
+      role: 'Acordeonista',
+      action: 'Alta',
+      at: '2025-11-10 14:30',
+      note: 'Ingreso oficial registrado en contrato.'
+    },
+    {
+      id: `${groupId}-log2`,
+      memberName: `${pick(FIRST, seed, 5)} ${pick(LAST, seed, 6)}`,
+      role: 'Percusionista',
+      action: 'Baja',
+      at: '2025-08-01 09:00',
+      note: 'Retiro voluntario por proyectos personales.'
+    }
   ];
 }
 
-function buildPosts(groupId: string, seed: number): GroupPost[] {
+function buildPosts(groupId: string, group: GroupItem, seed: number): GroupPost[] {
   return [
     {
       id: `${groupId}-p1`,
-      content: '¡Gracias Monterrey! Anoche se llenó la Arena y ustedes cantaron cada canción. Nos vemos en la próxima 🔥',
+      content: `¡Gracias Monterrey por una noche inolvidable! El lleno total en la Arena demuestra el cariño de nuestra gente. ¡Nos vemos muy pronto!`,
       imageUrl: pick(STAGE_PHOTOS, seed, 0),
-      publishedAt: '2026-08-01 23:10',
-      likes: 12400 + (seed % 900),
-      shares: 640,
+      publishedAt: 'Hace 35 min',
+      likes: 12400,
+      shares: 890,
       visibility: 'Publicada',
       sentiment: 'Positivo',
       comments: [
-        { id: 'c1', authorName: 'Marisol T.', avatarUrl: pick(PHOTOS, seed, 1), text: 'El mejor concierto al que he ido, sin exagerar.', at: '2026-08-02 00:12', sentiment: 'Positivo' },
-        { id: 'c2', authorName: 'Beto R.', avatarUrl: pick(PHOTOS, seed, 2), text: 'Impecables en vivo, el sonido se escuchó perfecto.', at: '2026-08-02 08:30', sentiment: 'Positivo' }
+        { id: 'c1', authorName: 'Carlos M.', avatarUrl: pick(PHOTOS, seed, 1), text: '¡Increíble espectáculo! Tocaron todas las favoritas.', at: 'Hace 20 min', sentiment: 'Positivo' },
+        { id: 'c2', authorName: 'Ana Sofía R.', avatarUrl: pick(PHOTOS, seed, 2), text: 'El sonido estuvo impecable en las primeras filas.', at: 'Hace 10 min', sentiment: 'Positivo' }
       ]
     },
     {
       id: `${groupId}-p2`,
-      content: 'Se pospone la fecha de Torreón por condiciones del recinto. Los boletos siguen siendo válidos para la nueva fecha.',
-      publishedAt: '2026-07-24 14:05',
-      likes: 890,
-      shares: 210,
+      content: 'Aviso importante a nuestro público de Saltillo: la fecha del 25 de agosto se reprograma por causas de fuerza mayor. Los boletos adquiridos serán válidos.',
+      publishedAt: '2026-07-24 14:15',
+      likes: 3100,
+      shares: 1250,
       visibility: 'Publicada',
-      sentiment: 'Negativo',
+      sentiment: 'Neutro',
       comments: [
         { id: 'c3', authorName: 'Laura V.', avatarUrl: pick(PHOTOS, seed, 3), text: 'Ya había pedido el día en el trabajo, muy mala organización.', at: '2026-07-24 15:40', sentiment: 'Negativo' },
         { id: 'c4', authorName: 'Kevin M.', avatarUrl: pick(PHOTOS, seed, 4), text: '¿Habrá reembolso para los que no podamos la nueva fecha?', at: '2026-07-24 16:02', sentiment: 'Neutro' }
@@ -178,12 +189,65 @@ function buildReviews(groupId: string, seed: number): GroupReview[] {
 
 function buildEvents(groupId: string, group: GroupItem): GroupEventRecord[] {
   return [
-    { id: `${groupId}-e1`, title: 'Noche de Gala Norteña 2026', type: 'Concierto', date: '2026-08-15', venue: 'Arena Monterrey', city: 'Monterrey, NL', status: 'Completado', attendance: 4250, capacity: 5000, revenue: 425000, rating: 4.9 },
-    { id: `${groupId}-e2`, title: 'Gran Palenque San Marcos', type: 'Concierto', date: '2026-09-28', venue: 'Palenque de la Feria', city: 'Aguascalientes, AGS', status: 'Confirmado', capacity: 8000, revenue: 680000 },
-    { id: `${groupId}-e3`, title: 'Firma de Autógrafos & Prensa', type: 'Firma de Autógrafos', date: '2026-08-10', venue: 'Hotel Fiesta Americana', city: 'Guadalajara, JAL', status: 'Completado', attendance: 850, rating: 4.8 },
-    { id: `${groupId}-e4`, title: 'Rueda de Prensa Nuevo Disco', type: 'Rueda de Prensa', date: '2026-10-02', venue: 'Centro de Convenciones', city: 'Monterrey, NL', status: 'Pendiente' },
-    { id: `${groupId}-e5`, title: 'Festival Tumbado Zapopan', type: 'Concierto', date: '2026-10-12', venue: 'Auditorio Telmex', city: 'Zapopan, JAL', status: 'Confirmado', capacity: 4500, revenue: 320000 },
-    { id: `${groupId}-e6`, title: `Evento privado — ${group.name}`, type: 'Privado', date: '2026-06-20', venue: 'Hacienda Los Morales', city: 'Ciudad de México', status: 'Completado', attendance: 400, rating: 5 }
+    {
+      id: `${groupId}-evt1`,
+      title: 'Noche de Gala Norteña 2026',
+      type: 'Concierto',
+      date: '2026-09-18',
+      venue: 'Arena Monterrey',
+      city: 'Monterrey, N.L.',
+      status: 'Confirmado',
+      attendance: 11500,
+      capacity: 12000,
+      revenue: group.artistFeeBase * 1.2,
+      rating: 4.9
+    },
+    {
+      id: `${groupId}-evt2`,
+      title: 'Gran Palenque San Marcos',
+      type: 'Concierto',
+      date: '2026-09-28',
+      venue: 'Palenque de la Feria',
+      city: 'Aguascalientes, Ags.',
+      status: 'Confirmado',
+      attendance: 6800,
+      capacity: 8000,
+      revenue: group.artistFeeBase,
+      rating: 5.0
+    },
+    {
+      id: `${groupId}-evt3`,
+      title: 'Firma de Autógrafos & Meet and Greet',
+      type: 'Firma de Autógrafos',
+      date: '2026-10-05',
+      venue: 'Plaza Fiesta San Agustín',
+      city: 'San Pedro, N.L.',
+      status: 'Pendiente',
+      attendance: 800,
+      capacity: 1000
+    },
+    {
+      id: `${groupId}-evt4`,
+      title: 'Conferencia de Prensa Lanzamiento Disco',
+      type: 'Rueda de Prensa',
+      date: '2026-10-15',
+      venue: 'Hotel Quinta Real',
+      city: 'Guadalajara, Jal.',
+      status: 'Pendiente'
+    },
+    {
+      id: `${groupId}-evt5`,
+      title: 'Festival Tumbado Zapopan',
+      type: 'Concierto',
+      date: '2026-10-22',
+      venue: 'Auditorio Telmex',
+      city: 'Zapopan, Jal.',
+      status: 'Completado',
+      attendance: 3200,
+      capacity: 4500,
+      revenue: group.artistFeeBase * 0.9,
+      rating: 4.6
+    }
   ];
 }
 
@@ -197,7 +261,8 @@ function buildTracks(groupId: string, group: GroupItem, seed: number): Track[] {
     releaseYear: `${2019 + (i % 7)}`,
     plays: `${1 + ((seed + i * 13) % 9)}.${(seed + i) % 9}M`,
     approval: 78 + ((seed + i * 5) % 21),
-    isPopular: i < 3
+    isPopular: i < 3,
+    audioUrl: SAMPLE_AUDIO_URLS[i % SAMPLE_AUDIO_URLS.length]
   }));
 }
 
@@ -239,130 +304,115 @@ function buildRepresentatives(groupId: string, group: GroupItem, seed: number): 
     notes: 'Disquera titular. Incluye producción, logística y respaldo contractual completo.'
   };
 
-  // Solo los grupos no exclusivos aparecen representados por terceros.
-  if (group.isExclusive) return [primary];
+  const secondary: GroupRepresentative = {
+    id: `${groupId}-rep2`,
+    labelName: 'Representaciones Monterrey',
+    contactName: 'Lic. Fernando Garza',
+    phone: '+52 81 9876 5432',
+    email: 'contacto@repmty.com',
+    isPrimary: false,
+    serviceTier: 'Estándar',
+    quotedFee: Math.round(group.artistFeeBase * 1.08),
+    notes: 'Agencia autorizada para la zona noreste del país.'
+  };
 
-  return [
-    primary,
-    {
-      id: `${groupId}-rep2`,
-      labelName: 'Sonido del Norte Booking',
-      contactName: 'Lic. Efraín Cordero',
-      phone: '+52 33 2244 8890',
-      email: 'contrataciones@sonidodelnorte.mx',
-      isPrimary: false,
-      serviceTier: 'Estándar',
-      quotedFee: Math.round(group.artistFeeBase * 0.88),
-      notes: 'Co-gestión autorizada. No incluye producción de audio ni viáticos.'
-    },
-    {
-      id: `${groupId}-rep3`,
-      labelName: 'Promotora Bajío Live',
-      contactName: 'Ing. Nadia Sepúlveda',
-      phone: '+52 55 7788 1120',
-      email: 'booking@bajiolive.mx',
-      isPrimary: false,
-      serviceTier: 'Básico',
-      quotedFee: Math.round(group.artistFeeBase * 0.8),
-      notes: 'Solo gestión de fecha. El cliente cubre audio, traslados y hospedaje.'
-    }
-  ];
+  return [primary, secondary];
 }
 
-/** Ensambla el perfil completo del grupo. */
 export function buildGroupProfile(group: GroupItem): GroupProfile {
-  const seed = seedOf(group.id + group.name);
-  const musicianCount = Math.max(3, group.membersCount);
-
-  const members: GroupMember[] = [
-    ...Array.from({ length: musicianCount }, (_, i) => buildMember(group.id, i, false, seed)),
-    ...Array.from({ length: 3 }, (_, i) => buildMember(group.id, i, true, seed + 100))
-  ];
-
-  const minimumHours = 2 + (seed % 3);
+  const seed = group.id.charCodeAt(group.id.length - 1) || 7;
 
   return {
     id: group.id,
     name: group.name,
+    genre: group.genre,
+    secondaryGenres: ['Norteño Sax', 'Corridos Tumbados', 'Cumbia Norteña'],
+    foundedYear: 2018 + (seed % 5),
+    originCity: 'Monterrey, N.L.',
     avatarUrl: group.image,
     coverUrl: pick(STAGE_PHOTOS, seed, 0),
-    genre: group.genre,
-    secondaryGenres: [pick(['Corridos', 'Banda', 'Sierreño', 'Cumbia Norteña'], seed, 1), pick(['Baladas', 'Rancheras'], seed, 2)],
-    foundedYear: 2005 + (seed % 15),
-    originCity: pick(CITIES, seed, 0),
 
-    officeAddress: `Av. Constitución ${800 + (seed % 400)}, Col. Centro`,
-    officeCity: pick(CITIES, seed, 1),
-    bookingPhone: group.groupLeaderPhone || '+52 81 1234 5678',
-    bookingEmail: group.groupLeaderEmail || 'booking@acordex.mx',
+    // Campos propios del perfil público (los derivables no se guardan aquí).
+    verified: !group.pendingLabelContract,
+    platformJoinedAt: `${2019 + (seed % 6)}-0${1 + (seed % 8)}-1${seed % 9}`,
+    sectionVisibility: defaultSectionVisibility(),
+    mixVideoTitle: 'Mix Oficial — Lo Mejor de ' + group.name,
+    mixVideoThumbnailUrl: pick(STAGE_PHOTOS, seed, 1),
+    mixVideoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    totalHoursLogged: 800 + (seed % 900),
+    history:
+      `${group.name} nació en Monterrey, N.L. con la idea de llevar el regional mexicano ` +
+      `a los escenarios más exigentes del país. Sus primeros años se forjaron en palenques y ferias ` +
+      `regionales, donde construyeron la reputación de no fallar una fecha. Con el paso del tiempo ` +
+      `consolidaron un sonido propio que combina la tradición norteña con arreglos contemporáneos, ` +
+      `lo que les abrió las puertas de recintos mayores y de la escena discográfica. Hoy son una de ` +
+      `las agrupaciones más solicitadas de su género, con una trayectoria sostenida por el trabajo ` +
+      `en vivo y una base de seguidores que crece en cada gira.`,
 
     baseRate: {
-      minimumHours,
       suggestedFee: group.artistFeeBase,
-      extraHourFee: Math.round(group.artistFeeBase / minimumHours * 0.6),
+      minimumHours: 3,
+      extraHourFee: Math.round(group.artistFeeBase * 0.25),
       currency: 'MXN',
-      notes: 'Tarifa sugerida por el grupo. El administrador puede ajustarla al armar la cotización.'
+      notes: 'La tarifa puede variar en fechas patrias, fin de año o recintos con aforo superior a 5,000 personas.'
     },
 
-    contract: group.pendingLabelContract
-      ? { hasContract: false, exclusivity: 'Independiente' }
-      : {
-          hasContract: true,
-          contractType: group.disqueraType,
-          signedAt: `${2021 + (seed % 4)}-03-1${seed % 9}`,
-          expiresAt: `${2027 + (seed % 2)}-03-15`,
-          fileName: `contrato_${group.id}_acordex.pdf`,
-          exclusivity: group.isExclusive ? 'Exclusivo' : 'Co-gestionado',
-          commissionPercent: 15 + (seed % 11)
-        },
+    officeAddress: 'Av. Constitución 1800, Piso 14, Col. Centro',
+    officeCity: 'Monterrey, N.L.',
+    bookingPhone: group.groupLeaderPhone || '+52 81 8300 0000',
+    bookingEmail: group.groupLeaderEmail || 'contrataciones@acordex.mx',
 
-    audio: seed % 2 === 0
-      ? {
-          hasOwnEquipment: true,
-          engineerName: 'Ing. Marco Betancourt',
-          engineerPhone: '+52 81 3344 5566',
-          consoleModel: 'Yamaha CL5 Digital',
-          speakersSetup: 'Line array JBL VTX V20 — 12 cajas + 8 subs',
-          monitorsSetup: '8 monitores de piso + 2 IEM Shure PSM1000',
-          riderRequirements: ['Energía trifásica 220V estabilizada', 'Escenario mínimo 10x8 m', '4 accesos de carga', 'Camerino con clima'],
-          notes: 'El grupo viaja con equipo propio y su propio ingeniero.'
-        }
-      : {
-          hasOwnEquipment: false,
-          riderRequirements: [
-            'Consola digital de al menos 32 canales',
-            'Line array acorde al aforo del recinto',
-            '6 monitores de piso',
-            'Backline de batería y amplificadores',
-            'Ingeniero de sonido de casa disponible'
-          ],
-          notes: 'El recinto o el cliente debe cubrir el audio completo.'
-        },
+    contract: {
+      hasContract: true,
+      exclusivity: 'Exclusivo',
+      signedAt: '2024-01-15',
+      expiresAt: '2027-01-15',
+      commissionPercent: 15,
+      fileName: 'Contrato_Exclusividad_Acordex_2024_2027.pdf'
+    },
+
+    audio: {
+      hasOwnEquipment: true,
+      engineerName: 'Ing. Mateo Cantú',
+      engineerPhone: '+52 81 5555 1234',
+      consoleModel: 'Behringer X32 / Midas M32',
+      speakersSetup: 'Line Array 8 elementos por lado + Subwoofers 18"',
+      monitorsSetup: 'In-Ear Sennheiser EW-IEM G4 (6 mezclas independientes)',
+      riderRequirements: [
+        'Planta de luz trifásica 100 kW independiente.',
+        'Escenario mínimo de 10x8 metros con tarima de batería de 2x2m.',
+        'Camerino privado con clima, espejo de cuerpo entero y seguridad.',
+        'Catering para 12 personas (agua embotellada, sueros, fruta de temporada).'
+      ]
+    },
 
     socials: {
-      instagram: `https://instagram.com/${group.id}`,
-      facebook: `https://facebook.com/${group.id}`,
-      youtube: `https://youtube.com/@${group.id}`,
-      spotify: `https://open.spotify.com/artist/${group.id}`,
-      tiktok: `https://tiktok.com/@${group.id}`
+      instagram: 'https://instagram.com/banda_acordex',
+      facebook: 'https://facebook.com/banda_acordex',
+      youtube: 'https://youtube.com/banda_acordex',
+      spotify: 'https://open.spotify.com/artist/sample',
+      tiktok: 'https://tiktok.com/@banda_acordex'
     },
 
     representatives: buildRepresentatives(group.id, group, seed),
 
-    about: group.description,
+    about: `La agrupación musical ${group.name} es uno de los proyectos artísticos más destacados y con mayor proyección en la escena de la música mexicana actual. Formada en ${2018 + (seed % 5)} en Monterrey, N.L., la banda combina el sonido auténtico de la tradición regional con arreglos contemporáneos que atrapan al público de todas las edades.\n\nCon más de ${15 + (seed % 20)} millones de reproducciones acumuladas en plataformas digitales y una impresionante trayectoria en los palenques y recintos más importantes de México y Estados Unidos, ${group.name} garantiza un espectáculo de primer nivel con producción de audio, iluminación y presencia escénica inolvidables.`,
+
     milestones: [
-      { year: `${2005 + (seed % 15)}`, title: 'Fundación del grupo', description: `Nace en ${pick(CITIES, seed, 0)} con la alineación original.` },
-      { year: `${2012 + (seed % 5)}`, title: 'Primer disco de estudio', description: 'Debut discográfico que los posiciona en la escena regional.' },
-      { year: `${2019 + (seed % 3)}`, title: 'Gira nacional', description: 'Primera gira por más de 20 plazas del país.' },
-      { year: '2024', title: 'Firma con Acordex Records', description: 'Se integran al catálogo de la disquera.' },
-      { year: '2026', title: 'Arena Monterrey', description: 'Llenan por primera vez la Arena Monterrey.' }
+      { year: `${2019 + (seed % 3)}`, title: 'Fundación Oficial del Grupo', description: 'Primeras presentaciones en festivales regionales y grabación del primer demo.' },
+      { year: '2023', title: 'Firma en Exclusiva con Acordex Records', description: 'Lanzamiento del primer álbum de estudio con alcance nacional.' },
+      { year: '2025', title: 'Lleno Total en la Arena Monterrey', description: 'Concierto sold-out ante más de 12,000 asistentes.' }
     ],
-    awards: ['Premio Regional del Norte 2024', 'Disco de Oro — La Última Carta', 'Artista Revelación Feria San Marcos'],
 
-    members,
+    awards: [
+      'Premio Lo Nuestro 2024 — Nominado a Mejor Grupo Regional',
+      'Disco de Platino por más de 100,000 reproducciones digitales',
+      'Reconocimiento Especial Feria de San Marcos 2025'
+    ],
+
+    members: buildMembers(group.id, seed),
     rosterLog: buildRosterLog(group.id, seed),
-
-    posts: buildPosts(group.id, seed),
+    posts: buildPosts(group.id, group, seed),
     reviews: buildReviews(group.id, seed),
     events: buildEvents(group.id, group),
     tracks: buildTracks(group.id, group, seed),
@@ -370,12 +420,12 @@ export function buildGroupProfile(group: GroupItem): GroupProfile {
     videos: buildVideos(seed),
 
     social: {
-      followers: 240000 + (seed % 900) * 1000,
-      followersGrowthPercent: 4 + (seed % 15),
-      totalLikes: 1200000 + (seed % 600) * 1000,
-      engagementPercent: 6 + (seed % 12),
-      monthlyFollowers: Array.from({ length: 12 }, (_, i) => 120 + ((seed + i * 17) % 90) + i * 8),
-      monthlyLikes: Array.from({ length: 12 }, (_, i) => 60 + ((seed + i * 23) % 70) + i * 5)
+      followers: 1420000,
+      followersGrowthPercent: 12.8,
+      totalLikes: 8900000,
+      engagementPercent: 8.4,
+      monthlyFollowers: [1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.38, 1.4, 1.42, 1.45, 1.48, 1.5],
+      monthlyLikes: [6.2, 6.5, 6.9, 7.1, 7.5, 7.8, 8.1, 8.4, 8.6, 8.9, 9.1, 9.4]
     }
   };
 }

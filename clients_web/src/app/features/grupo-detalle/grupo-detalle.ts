@@ -37,6 +37,24 @@ export class GrupoDetalle implements OnInit, OnDestroy {
     return count.toString();
   });
 
+  officeAddressMapsUrl = computed(() => {
+    const address = this.band()?.officeAddress;
+    if (!address) return '';
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  });
+
+  formattedManagerPhone = computed(() => {
+    const phone = this.band()?.managerPhone;
+    if (!phone) return '';
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length !== 12) return phone;
+    const countryCode = digits.slice(0, 2);
+    const areaCode = digits.slice(2, 4);
+    const firstPart = digits.slice(4, 8);
+    const secondPart = digits.slice(8, 12);
+    return `+${countryCode} ${areaCode} ${firstPart} ${secondPart}`;
+  });
+
   toggleFollowBand(event?: Event) {
     if (event) {
       event.stopPropagation();

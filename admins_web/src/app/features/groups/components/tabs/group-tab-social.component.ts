@@ -1,6 +1,7 @@
-import { Component, input, output, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, computed, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GroupProfile, GroupPost, GroupReview, PostVisibility, approvalPercent, averageAttendance, averageRating } from '../../group-profile.model';
+import { GroupProfile, GroupPost, GroupReview, PostVisibility, approvalPercent, averageAttendance, averageRating, defaultSectionVisibility } from '../../group-profile.model';
+import { GroupProfileStore } from '../../group-profile.store';
 import { SparkChartComponent, SparkSeries } from '../../../../shared/ui/charts/spark-chart.component';
 
 @Component({
@@ -12,10 +13,10 @@ import { SparkChartComponent, SparkSeries } from '../../../../shared/ui/charts/s
   template: `
     <div class="space-y-6 text-xs select-none">
 
-      <!-- MÉTRICAS DE ALCANCE E IMPACTO -->
+      <!-- MÉTRICAS DE ALCANCE E IMPACTO (MÉTRICAS INTERNAS DE LA DISQUERA) -->
       <section class="p-5 sm:p-6 rounded-3xl bg-[#18152a] border border-outline-variant/30 space-y-4 shadow-xl">
         <h3 class="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-2">
-          <span class="material-symbols-outlined text-base">insights</span> Alcance & Métricas de Comunidad
+          <span class="material-symbols-outlined text-base">insights</span> Alcance & Métricas de Comunidad (Interno Disquera)
         </h3>
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -65,21 +66,50 @@ import { SparkChartComponent, SparkSeries } from '../../../../shared/ui/charts/s
         </div>
       </section>
 
-      <!-- PUBLICACIONES DEL GRUPO (MURO ADMINISTRATIVO) -->
-      <section class="space-y-3.5">
-        <header class="flex items-center justify-between gap-3 flex-wrap">
-          <h3 class="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-base">dynamic_feed</span> Publicaciones & Moderación de Muro
-          </h3>
+      <!-- PUBLICACIONES DEL GRUPO (EXPUESTAS EN VISTA PREVIA) -->
+      <section
+        class="p-5 sm:p-6 rounded-3xl bg-[#18152a] border transition-all duration-300 space-y-4 shadow-xl"
+        [class]="vis().showPosts ? 'border-outline-variant/30' : 'border-rose-500/60 bg-rose-950/20 shadow-[0_0_25px_rgba(244,63,94,0.2)] opacity-85'"
+      >
+        <header class="flex items-center justify-between gap-3 flex-wrap border-b border-outline-variant/20 pb-3">
+          <div>
+            <h3 class="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-base">dynamic_feed</span> Publicaciones & Novedades del Grupo
+            </h3>
+            <p class="text-[10px] text-outline">Sección "Publicaciones & Novedades" expuesta en la Vista Previa del Cliente</p>
+          </div>
 
-          <div class="flex items-center gap-2.5 flex-wrap">
-            <button
-              type="button"
-              (click)="createNewPost()"
-              class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-primary to-amber-400 text-on-primary font-black text-xs hover:scale-105 transition-all flex items-center gap-1.5 shadow-lg active:scale-95"
-            >
-              <span class="material-symbols-outlined text-sm font-bold">add_comment</span> Nueva Publicación
-            </button>
+          <div class="flex items-center gap-3">
+            <div class="inline-flex p-0.5 rounded-xl bg-[#131022] border border-white/15 shadow-inner">
+              <button
+                type="button"
+                (click)="!vis().showPosts && store.toggleSectionVisibility('showPosts')"
+                class="px-3 py-1 rounded-lg text-[10px] uppercase tracking-wider transition-all"
+                [class]="vis().showPosts ? 'bg-emerald-500 text-black font-black shadow-md' : 'text-white/50 hover:text-white font-bold'"
+              >
+                VISIBLE
+              </button>
+              <button
+                type="button"
+                (click)="vis().showPosts && store.toggleSectionVisibility('showPosts')"
+                class="px-3 py-1 rounded-lg text-[10px] uppercase tracking-wider transition-all"
+                [class]="!vis().showPosts ? 'bg-rose-500 text-white font-black shadow-md animate-pulse' : 'text-white/50 hover:text-white font-bold'"
+              >
+                OCULTAR
+              </button>
+            </div>
+
+          </div>
+        </header>
+
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <button
+            type="button"
+            (click)="createNewPost()"
+            class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-primary to-amber-400 text-on-primary font-black text-xs hover:scale-105 transition-all flex items-center gap-1.5 shadow-lg active:scale-95"
+          >
+            <span class="material-symbols-outlined text-sm font-bold">add_comment</span> Nueva Publicación
+          </button>
 
             <div class="flex items-center gap-1 flex-wrap">
               @for (f of sentimentFilters; track f.id) {
@@ -94,7 +124,6 @@ import { SparkChartComponent, SparkSeries } from '../../../../shared/ui/charts/s
               }
             </div>
           </div>
-        </header>
 
         @if (visiblePosts().length) {
           <div class="space-y-4">
@@ -167,10 +196,37 @@ import { SparkChartComponent, SparkSeries } from '../../../../shared/ui/charts/s
       </section>
 
       <!-- RESEÑAS DEL PÚBLICO -->
-      <section class="space-y-3.5 pt-2">
-        <h3 class="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
-          <span class="material-symbols-outlined text-base">reviews</span> Reseñas & Evaluaciones del Público
-        </h3>
+      <section
+        class="p-5 sm:p-6 rounded-3xl bg-[#18152a] border transition-all duration-300 space-y-4 shadow-xl"
+        [class]="vis().showReviews ? 'border-outline-variant/30' : 'border-rose-500/60 bg-rose-950/20 shadow-[0_0_25px_rgba(244,63,94,0.2)] opacity-85'"
+      >
+        <header class="flex items-center justify-between gap-3 flex-wrap border-b border-outline-variant/20 pb-3">
+          <div>
+            <h3 class="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
+              <span class="material-symbols-outlined text-base">reviews</span> Reseñas & Evaluaciones del Público
+            </h3>
+            <p class="text-[10px] text-outline">Sección "Reseñas & Testimonios" expuesta en la Vista Previa del Cliente</p>
+          </div>
+
+          <div class="inline-flex p-0.5 rounded-xl bg-[#131022] border border-white/15 shadow-inner">
+            <button
+              type="button"
+              (click)="!vis().showReviews && store.toggleSectionVisibility('showReviews')"
+              class="px-3 py-1 rounded-lg text-[10px] uppercase tracking-wider transition-all"
+              [class]="vis().showReviews ? 'bg-emerald-500 text-black font-black shadow-md' : 'text-white/50 hover:text-white font-bold'"
+            >
+              VISIBLE
+            </button>
+            <button
+              type="button"
+              (click)="vis().showReviews && store.toggleSectionVisibility('showReviews')"
+              class="px-3 py-1 rounded-lg text-[10px] uppercase tracking-wider transition-all"
+              [class]="!vis().showReviews ? 'bg-rose-500 text-white font-black shadow-md animate-pulse' : 'text-white/50 hover:text-white font-bold'"
+            >
+              OCULTAR
+            </button>
+          </div>
+        </header>
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <div class="p-4 rounded-2xl bg-[#18152a] border border-amber-500/30 text-center shadow-md">
@@ -228,6 +284,9 @@ import { SparkChartComponent, SparkSeries } from '../../../../shared/ui/charts/s
 export class GroupTabSocialComponent {
   profile = input.required<GroupProfile>();
 
+  store = inject(GroupProfileStore);
+  vis = computed(() => this.profile().sectionVisibility ?? defaultSectionVisibility());
+
   openPost = output<GroupPost>();
   addPost = output<GroupPost>();
   editPost = output<GroupPost>();
@@ -238,6 +297,13 @@ export class GroupTabSocialComponent {
   protected readonly months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
   sentimentFilter = signal<'todas' | 'Positivo' | 'Neutro' | 'Negativo'>('todas');
+
+  // Modal signals for creating posts
+  showPostModal = signal<boolean>(false);
+  newPostContent = signal<string>('');
+  newPostImageUrl = signal<string>('');
+  newPostVisibility = signal<string>('Publicada');
+  newPostSentiment = signal<string>('Positivo');
 
   protected readonly sentimentFilters = [
     { id: 'todas' as const, label: 'Todas', activeClass: 'bg-primary text-on-primary border-primary shadow-sm' },
@@ -268,24 +334,34 @@ export class GroupTabSocialComponent {
   avgAttendance = computed(() => averageAttendance(this.profile()));
 
   createNewPost(): void {
-    const content = prompt('Escribe el contenido de la publicación:');
-    if (!content || !content.trim()) return;
+    this.store.openAddPostModal();
+  }
 
-    const imageUrl = prompt('URL de imagen (opcional):') || undefined;
+  handlePostFileSelect(e: Event): void {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file) {
+      this.newPostImageUrl.set(URL.createObjectURL(file));
+    }
+  }
+
+  submitNewPost(): void {
+    const content = this.newPostContent().trim();
+    if (!content) return;
 
     const newPost: GroupPost = {
       id: 'post-' + Date.now(),
-      content: content.trim(),
-      imageUrl: imageUrl?.trim() || undefined,
+      content,
+      imageUrl: this.newPostImageUrl().trim() || undefined,
       publishedAt: 'Hace un momento',
       likes: 0,
       shares: 0,
-      visibility: 'Publicada',
-      sentiment: 'Positivo',
+      visibility: (this.newPostVisibility() as PostVisibility) || 'Publicada',
+      sentiment: (this.newPostSentiment() as 'Positivo' | 'Neutro' | 'Negativo') || 'Positivo',
       comments: []
     };
 
     this.addPost.emit(newPost);
+    this.showPostModal.set(false);
   }
 
   countBySentiment(id: 'todas' | 'Positivo' | 'Neutro' | 'Negativo'): number {

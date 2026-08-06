@@ -1,6 +1,6 @@
 import { Component, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GroupMember, MemberVideo, SocialLinks } from '../group-profile.model';
+import { GroupMember, MemberVideo, SocialLinks, MemberStatus } from '../group-profile.model';
 import { EditableFieldComponent } from '../../../shared/ui/editable-field/editable-field.component';
 import { MultiTagSelectComponent } from '../../../shared/ui/multi-tag-select/multi-tag-select.component';
 import { ImageSuggestionPickerComponent } from '../../../shared/ui/image-suggestion-picker/image-suggestion-picker.component';
@@ -62,9 +62,51 @@ type MemberTab = 'general' | 'media' | 'redes';
               @if (member().instrument) {
                 <span class="px-2 py-0.5 rounded-lg bg-surface-container text-outline border border-outline-variant/25 text-[10px] font-bold truncate max-w-[150px]">{{ member().instrument }}</span>
               }
+              <span
+                class="px-2 py-0.5 rounded-lg text-[10px] font-black border"
+                [class]="member().status === 'Baja'
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'"
+              >{{ member().status }}</span>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- ALTA / BAJA. Queda arriba porque decide si el resto de la ficha
+           sigue siendo la de un integrante vigente. -->
+      <div
+        class="p-3 rounded-2xl border flex items-center justify-between gap-3 flex-wrap"
+        [class]="member().status === 'Baja'
+          ? 'bg-rose-500/8 border-rose-500/30'
+          : 'bg-surface-container border-outline-variant/25'"
+      >
+        <div class="min-w-0">
+          <span class="block text-[10px] font-black uppercase tracking-wider text-outline">Situación en el grupo</span>
+          @if (member().status === 'Baja' && member().leftAt) {
+            <span class="text-[11px] font-bold text-rose-300">Dado de baja el {{ member().leftAt }}</span>
+          } @else {
+            <span class="text-[11px] font-bold text-emerald-300">Integrante activo desde {{ member().joinedAt }}</span>
+          }
+        </div>
+
+        @if (member().status === 'Baja') {
+          <button
+            type="button"
+            (click)="statusChange.emit('Activo')"
+            class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-white text-[11px] font-black transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <span class="material-symbols-outlined text-sm">person_add</span> Reingresar al grupo
+          </button>
+        } @else {
+          <button
+            type="button"
+            (click)="statusChange.emit('Baja')"
+            class="px-3 py-1.5 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/40 hover:bg-rose-500 hover:text-white text-[11px] font-black transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <span class="material-symbols-outlined text-sm">person_remove</span> Dar de baja
+          </button>
+        }
       </div>
 
       <!-- Pestañas -->
@@ -297,6 +339,8 @@ export class GroupMemberDetailComponent {
   edit = output<MemberEdit>();
   mediaUpdate = output<{ photos: string[]; videos: MemberVideo[] }>();
   socialsUpdate = output<SocialLinks>();
+  /** Alta o baja del integrante; el modal lo asienta en la bitácora. */
+  statusChange = output<MemberStatus>();
 
   tab = signal<MemberTab>('general');
   showPicker = signal<'avatar' | 'cover' | null>(null);

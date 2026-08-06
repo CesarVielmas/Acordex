@@ -57,5 +57,16 @@ export const routes: Routes = [
       }
     ]
   },
+  /**
+   * Vista previa del perfil público de un grupo.
+   *
+   * Va fuera de `MainLayoutComponent` a propósito: debe verse como el portal
+   * del cliente, sin la barra lateral ni la cabecera del panel administrativo.
+   */
+  {
+    path: 'grupo-preview/:id',
+    loadComponent: () =>
+      import('./features/group-preview/group-preview.page').then(m => m.GroupPreviewPageComponent)
+  },
   { path: '**', redirectTo: 'dashboard' }
 ];

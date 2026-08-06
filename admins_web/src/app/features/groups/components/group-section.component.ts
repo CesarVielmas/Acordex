@@ -14,28 +14,28 @@ export type SectionTone = 'primary' | 'emerald' | 'amber' | 'cyan' | 'purple' | 
   host: { class: 'block' },
   template: `
     <section
-      class="rounded-3xl bg-surface-container-high/95 border shadow-lg overflow-hidden transition-all duration-300"
+      class="rounded-3xl bg-gradient-to-br from-[#18152a]/95 via-[#151226]/95 to-[#0f0c1b]/98 backdrop-blur-2xl border shadow-[0_12px_35px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300 relative group/section"
       [class]="borderClass()"
     >
       <header
-        class="px-4 sm:px-5 py-3 flex items-center justify-between gap-3 border-b border-outline-variant/20 bg-surface-container/40 select-none"
+        class="px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3 border-b border-outline-variant/20 bg-[#161326]/60 backdrop-blur-md select-none relative"
         [class.cursor-pointer]="collapsible()"
         (click)="toggleCollapse()"
       >
-        <div class="flex items-center gap-2.5 min-w-0">
+        <div class="flex items-center gap-3 min-w-0">
           <span
-            class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border"
+            class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-md transition-transform group-hover/section:scale-105"
             [class]="iconClass()"
           >
-            <span class="material-symbols-outlined text-base">{{ icon() }}</span>
+            <span class="material-symbols-outlined text-base font-bold">{{ icon() }}</span>
           </span>
 
           <div class="min-w-0">
-            <h3 class="text-xs font-black uppercase tracking-wider truncate" [class]="titleClass()">
+            <h3 class="text-xs font-black uppercase tracking-wider truncate font-display-md" [class]="titleClass()">
               {{ title() }}
             </h3>
             @if (subtitle()) {
-              <p class="text-[11px] text-outline truncate">{{ subtitle() }}</p>
+              <p class="text-[10px] text-outline font-bold truncate mt-0.5">{{ subtitle() }}</p>
             }
           </div>
         </div>
@@ -47,18 +47,18 @@ export type SectionTone = 'primary' | 'emerald' | 'amber' | 'cyan' | 'purple' | 
             <button
               type="button"
               (click)="toggleCollapse()"
-              class="w-7 h-7 rounded-lg bg-surface-container hover:bg-surface-bright text-outline hover:text-on-surface flex items-center justify-center transition-transform duration-300"
+              class="w-8 h-8 rounded-xl bg-surface-container-highest/80 hover:bg-primary/20 hover:text-primary text-outline border border-outline-variant/30 flex items-center justify-center transition-all duration-300 shadow-sm"
               [class.rotate-180]="!collapsed()"
               title="Desplegar / Ocultar"
             >
-              <span class="material-symbols-outlined text-sm font-bold">expand_more</span>
+              <span class="material-symbols-outlined text-base font-bold">expand_more</span>
             </button>
           }
         </div>
       </header>
 
       @if (!collapsed()) {
-        <div class="p-4 sm:p-5 animate-fade-in">
+        <div class="p-4 sm:p-6 animate-fade-in space-y-4">
           <ng-content />
         </div>
       }

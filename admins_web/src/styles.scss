@@ -102,15 +102,19 @@
 
 /* Quote detail modal ---------------------------------------------------- */
 .quote-modal-backdrop {
-  isolation: isolate;
-  animation: quoteModalBackdropIn 240ms ease-out both;
+  animation: quoteModalBackdropIn 240ms ease-out forwards;
   background: rgba(3, 7, 18, .88);
 }
 
 .quote-modal-shell {
-  isolation: isolate;
-  animation: quoteModalShellIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  container-type: inline-size;
+  /* Sin "forwards": con fill-mode forwards, el navegador retiene una matriz de
+   * transform (aunque sea la identidad) para siempre, y eso convierte a este
+   * elemento en containing block de sus descendientes "position: fixed",
+   * atrapándolos dentro de su caja en vez de cubrir el viewport completo. Al
+   * no usar forwards, tras los 320ms el elemento vuelve a su estado base
+   * (transform: none, opacity: 1), que es visualmente idéntico al final de la
+   * animación, pero sin dejar el transform "fantasma" activo. */
+  animation: quoteModalShellIn 320ms cubic-bezier(0.16, 1, 0.3, 1);
   background:
     radial-gradient(circle at 8% 0%, rgba(56,189,248,.08), transparent 28%),
     radial-gradient(circle at 100% 100%, rgba(242,202,80,.07), transparent 30%),
@@ -497,7 +501,7 @@
 
 @keyframes quoteModalShellIn {
   from { opacity: 0; transform: translateY(14px) scale(.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 1; transform: none; }
 }
 
 @keyframes quoteModalContentIn {
@@ -575,4 +579,148 @@
   .quote-modal-shell .quote-modal-phase2-tabs > div:first-child::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Expediente de grupo ---------------------------------------------------- */
+/*
+ * Comparte el vocabulario visual del modal de cotizaciones —franja de acento,
+ * halo interior, orbes de ambiente— para que las dos pantallas grandes del
+ * sistema se sientan la misma pieza y no dos módulos distintos.
+ */
+.group-modal-backdrop {
+  animation: quoteModalBackdropIn 240ms ease-out forwards;
+  background: rgba(3, 7, 18, .9);
+}
+
+.group-modal-shell {
+  /* Sin "forwards": ver la nota idéntica en .quote-modal-shell. Aquí es
+   * crítico porque header/main (que alojan los 7 pop-ups del expediente)
+   * cuelgan directamente de este elemento; con forwards, sus pop-ups
+   * "position: fixed" quedaban atrapados dentro de esta caja en vez de
+   * cubrir toda la pantalla. */
+  animation: quoteModalShellIn 340ms cubic-bezier(.16, 1, .3, 1);
+  background:
+    radial-gradient(circle at 6% 0%, rgba(168,85,247,.10), transparent 30%),
+    radial-gradient(circle at 100% 100%, rgba(242,202,80,.08), transparent 32%),
+    #120f20;
+  box-shadow: 0 30px 110px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06) inset;
+}
+
+/* Halo interior: da profundidad al borde sin engrosarlo. */
+.group-modal-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,.07), transparent 26%, transparent 74%, rgba(242,202,80,.06));
+  z-index: 0;
+}
+
+/* Franja de acento, la firma visual de los modales del sistema. */
+.group-modal-shell::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1.75rem;
+  bottom: 1.75rem;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(180deg, rgba(242,202,80,.95), rgba(168,85,247,.5) 55%, rgba(242,202,80,.06));
+  box-shadow: 0 0 26px rgba(242,202,80,.45);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/*
+ * Apila los paneles del expediente sobre el halo y la franja de acento.
+ * El :not() es imprescindible: esta regla no está dentro de @layer, así que
+ * gana sobre las utilidades de Tailwind (que sí lo están) y le arrancaba el
+ * "position: fixed" a cualquier capa superpuesta que colgara del shell,
+ * dejándola anclada a media pantalla en lugar de cubrir el viewport.
+ */
+.group-modal-shell > *:not(.fixed) {
+  position: relative;
+  z-index: 1;
+}
+
+.group-modal-orb {
+  opacity: .5;
+  filter: blur(78px);
+  animation: quoteModalOrbDrift 9s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.group-modal-orb-purple { animation-delay: -3s; opacity: .38; }
+.group-modal-orb-amber { animation-delay: -6s; }
+
+/* Línea degradada bajo la cabecera, igual que en cotizaciones. */
+.group-modal-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 14%;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(242,202,80,.85), transparent);
+  pointer-events: none;
+}
+
+/*
+ * Sombras laterales que aparecen solo cuando la barra de pestañas se puede
+ * desplazar. Sin ellas, en móvil no hay forma de saber que hay más pestañas.
+ */
+.group-modal-tabs {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+
+.group-modal-tabs::-webkit-scrollbar { display: none; }
+
+/* Desde tablet caben todas y la máscara sobra. */
+@media (min-width: 1024px) {
+  .group-modal-tabs {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+.group-modal-shell [class*="overflow-y-auto"] {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242,202,80,.4) transparent;
+}
+
+.group-modal-shell [class*="overflow-y-auto"]::-webkit-scrollbar { width: 7px; }
+.group-modal-shell [class*="overflow-y-auto"]::-webkit-scrollbar-track { background: transparent; }
+.group-modal-shell [class*="overflow-y-auto"]::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(242,202,80,.6), rgba(168,85,247,.42));
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+/* Ningún texto del expediente debe desbordar su tarjeta. */
+.group-modal-shell [class*="grid"],
+.group-modal-shell [class*="flex"] { min-width: 0; }
+.group-modal-shell [class*="grid"] > *,
+.group-modal-shell [class*="flex"] > * { min-width: 0; }
+
+@media (max-width: 640px) {
+  .group-modal-shell::after { display: none; }
+
+  /* En pantallas chicas el modal ocupa todo: los márgenes solo roban espacio. */
+  .group-modal-shell {
+    border-radius: 0;
+    height: 100dvh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group-modal-shell,
+  .group-modal-backdrop,
+  .group-modal-orb { animation: none; }
 }

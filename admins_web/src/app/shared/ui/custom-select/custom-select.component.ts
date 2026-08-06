@@ -56,7 +56,6 @@ interface PopoverRect {
   host: { class: 'block' },
   template: `
     <div class="relative w-full text-xs">
-
       @if (label()) {
         <label [attr.for]="triggerId" class="block text-[10px] font-black uppercase tracking-wider text-outline mb-1.5">
           {{ label() }}
@@ -71,9 +70,9 @@ interface PopoverRect {
         aria-haspopup="listbox"
         [attr.aria-expanded]="isOpen()"
         [attr.aria-controls]="listboxId"
-        (click)="toggleOpen()"
+        (click)="toggleOpen($event)"
         (keydown)="onTriggerKeydown($event)"
-        class="w-full py-2.5 px-3.5 rounded-2xl bg-surface-container-highest hover:bg-surface-bright border border-outline-variant/50 hover:border-primary/70 text-on-surface font-extrabold flex items-center justify-between gap-2 shadow-md transition-all duration-200"
+        class="w-full py-2.5 px-3.5 rounded-2xl bg-[#18152a] hover:bg-[#1f1b36] border border-outline-variant/50 hover:border-primary/70 text-on-surface font-extrabold flex items-center justify-between gap-2 shadow-md transition-all duration-200"
         [class.ring-2]="isOpen()"
         [class.ring-primary]="isOpen()"
         [class.border-primary]="isOpen()"
@@ -97,14 +96,14 @@ interface PopoverRect {
 
     </div>
 
-    <!-- Se monta en document.body al abrir; ver attachPopover(). -->
+    <!-- Popover desplegable flotante con alta elevación z-[99999] -->
     <ng-template #popoverTpl>
       @if (rect(); as r) {
         <div
           [id]="listboxId"
           role="listbox"
           [attr.aria-activedescendant]="optionId(activeIndex())"
-          class="fixed z-[9999] p-1.5 rounded-2xl bg-[#18152a] border border-outline-variant/60 shadow-[0_25px_60px_rgba(0,0,0,0.95)] space-y-1 overflow-y-auto custom-scrollbar animate-fade-in text-xs"
+          class="fixed z-[99999] p-1.5 rounded-2xl bg-[#18152a]/98 backdrop-blur-3xl border border-primary/50 shadow-[0_25px_60px_rgba(0,0,0,0.95)] space-y-1 overflow-y-auto custom-scrollbar animate-fade-in text-xs"
           [style.top.px]="r.top"
           [style.left.px]="r.left"
           [style.width.px]="r.width"
@@ -115,8 +114,8 @@ interface PopoverRect {
               [id]="optionId(i)"
               type="button"
               role="option"
-              [attr.aria-selected]="value() === opt.value"
-              (click)="selectOption(opt.value)"
+              [attr.aria-selected]="effectiveValue() === opt.value"
+              (click)="selectOption(opt.value, $event)"
               (mouseenter)="activeIndex.set(i)"
               class="w-full py-2.5 px-3 rounded-xl font-bold flex items-center justify-between gap-2 transition-all text-left"
               [ngClass]="optionClass(opt, i)"
@@ -125,7 +124,7 @@ interface PopoverRect {
                 @if (opt.icon) {
                   <span
                     class="material-symbols-outlined text-sm shrink-0"
-                    [ngClass]="value() === opt.value ? 'text-on-primary' : 'text-primary'"
+                    [ngClass]="effectiveValue() === opt.value ? 'text-on-primary' : 'text-primary'"
                   >
                     {{ opt.icon }}
                   </span>
@@ -136,7 +135,7 @@ interface PopoverRect {
               @if (opt.badge) {
                 <span
                   class="text-[9px] px-2 py-0.5 rounded-full font-black uppercase shrink-0"
-                  [ngClass]="value() === opt.value ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-bright text-outline border border-outline-variant/30'"
+                  [ngClass]="effectiveValue() === opt.value ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-bright text-outline border border-outline-variant/30'"
                 >
                   {{ opt.badge }}
                 </span>
@@ -154,9 +153,7 @@ export class CustomSelectComponent implements OnDestroy {
   protected readonly triggerId = `acx-select-${this.uid}`;
   protected readonly listboxId = `acx-listbox-${this.uid}`;
 
-  /** Separación entre el disparador y el desplegable. */
-  private readonly OFFSET = 8;
-  /** Margen mínimo contra el borde del viewport. */
+  private readonly OFFSET = 6;
   private readonly VIEWPORT_MARGIN = 12;
 
   options = input.required<SelectOption[]>();
@@ -167,7 +164,7 @@ export class CustomSelectComponent implements OnDestroy {
   valueChange = output<string>();
 
   isOpen = signal<boolean>(false);
-  /** Opción resaltada por teclado. */
+  internalValue = signal<string | null>(null);
   activeIndex = signal<number>(-1);
   rect = signal<PopoverRect | null>(null);
 
@@ -183,7 +180,6 @@ export class CustomSelectComponent implements OnDestroy {
     this.detachPopover();
   }
 
-  /** Crea la vista del desplegable y traslada sus nodos al body. */
   private attachPopover(): void {
     if (this.popoverView || !this.popoverTpl) return;
     this.popoverView = this.vcr.createEmbeddedView(this.popoverTpl);
@@ -198,8 +194,10 @@ export class CustomSelectComponent implements OnDestroy {
     this.popoverView = null;
   }
 
+  effectiveValue = computed<string>(() => this.internalValue() ?? this.value() ?? '');
+
   selectedOption = computed<SelectOption | null>(() => {
-    const val = this.value();
+    const val = this.effectiveValue();
     const opts = this.options();
     return opts.find(o => o.value === val) || opts[0] || null;
   });
@@ -209,18 +207,19 @@ export class CustomSelectComponent implements OnDestroy {
   }
 
   protected optionClass(opt: SelectOption, index: number): string {
-    if (this.value() === opt.value) return 'bg-primary text-on-primary shadow-sm';
+    if (this.effectiveValue() === opt.value) return 'bg-primary text-on-primary shadow-sm';
     return index === this.activeIndex()
       ? 'text-on-surface bg-surface-container-highest'
       : 'text-on-surface hover:bg-surface-container-highest';
   }
 
-  toggleOpen(): void {
+  toggleOpen(event?: MouseEvent): void {
+    if (event) event.stopPropagation();
     this.isOpen() ? this.close() : this.open();
   }
 
   open(): void {
-    this.activeIndex.set(this.options().findIndex(o => o.value === this.value()));
+    this.activeIndex.set(this.options().findIndex(o => o.value === this.effectiveValue()));
     this.updateRect();
     this.isOpen.set(true);
     this.attachPopover();
@@ -232,16 +231,14 @@ export class CustomSelectComponent implements OnDestroy {
     this.detachPopover();
   }
 
-  selectOption(val: string): void {
+  selectOption(val: string, event?: MouseEvent): void {
+    if (event) event.stopPropagation();
+    this.internalValue.set(val);
     this.valueChange.emit(val);
     this.close();
     this.triggerRef?.nativeElement.focus();
   }
 
-  /**
-   * Calcula dónde cabe el desplegable. Si abajo no hay espacio suficiente y
-   * arriba hay más, se voltea; en cualquier caso limita su alto al hueco real.
-   */
   private updateRect(): void {
     const el = this.triggerRef?.nativeElement;
     if (!el) return;
@@ -249,13 +246,11 @@ export class CustomSelectComponent implements OnDestroy {
     const r = el.getBoundingClientRect();
     const spaceBelow = window.innerHeight - r.bottom - this.OFFSET - this.VIEWPORT_MARGIN;
     const spaceAbove = r.top - this.OFFSET - this.VIEWPORT_MARGIN;
-    const preferred = 240;
+    const preferred = 260;
 
     const openUp = spaceBelow < Math.min(preferred, 160) && spaceAbove > spaceBelow;
-    const maxHeight = Math.max(120, Math.min(preferred, openUp ? spaceAbove : spaceBelow));
+    const maxHeight = Math.max(140, Math.min(preferred, openUp ? spaceAbove : spaceBelow));
 
-    // Mantiene el desplegable dentro del viewport aunque el disparador esté
-    // pegado a un borde.
     const left = Math.min(
       Math.max(this.VIEWPORT_MARGIN, r.left),
       Math.max(this.VIEWPORT_MARGIN, window.innerWidth - r.width - this.VIEWPORT_MARGIN)
@@ -273,8 +268,6 @@ export class CustomSelectComponent implements OnDestroy {
   onClickOutside(event: Event): void {
     if (!this.isOpen()) return;
     const target = event.target as Node;
-    // El desplegable vive fuera del host (position: fixed), así que hay que
-    // comprobar también si el clic cayó dentro de él.
     const insideHost = this.elementRef.nativeElement.contains(target);
     const insideList = !!document.getElementById(this.listboxId)?.contains(target);
     if (!insideHost && !insideList) this.close();

@@ -102,6 +102,9 @@ export interface BandDetail {
   managerName: string;
   managerPhone: string;
   managerEmail: string;
+  officeAddress?: string;
+  seniorityLabel?: string;
+  minimumHours?: number;
   socials: {
     instagram?: string;
     facebook?: string;
@@ -174,6 +177,8 @@ export class BandService {
       managerName: 'Don Pedro Reyes',
       managerPhone: '523312345678',
       managerEmail: 'contacto@bandalosreyes.mx',
+      officeAddress: 'Av. Camarón Sábalo 1920, Zona Dorada, 82110 Mazatlán, Sinaloa',
+      seniorityLabel: '3 Años en Acordex',
       socials: {
         instagram: 'https://instagram.com',
         facebook: 'https://facebook.com',
@@ -454,6 +459,7 @@ Su energía sobre el escenario contagia a los asistentes desde el primer minuto 
       managerName: 'Ing. Luis Donaldo',
       managerPhone: '528112345678',
       managerEmail: 'contacto@nortenodelsur.com',
+      officeAddress: 'Av. Constitución 400, Centro, 64000 Monterrey, Nuevo León',
       socials: {
         instagram: 'https://instagram.com',
         facebook: 'https://facebook.com',
@@ -617,6 +623,7 @@ Su energía sobre el escenario contagia a los asistentes desde el primer minuto 
         managerName: 'Representación Artística Acordex',
         managerPhone: '523312345678',
         managerEmail: `contacto@${slug}.com`,
+        officeAddress: 'Av. Camarón Sábalo 1920, Zona Dorada, 82110 Mazatlán, Sinaloa',
         socials: {
           instagram: 'https://instagram.com',
           facebook: 'https://facebook.com',

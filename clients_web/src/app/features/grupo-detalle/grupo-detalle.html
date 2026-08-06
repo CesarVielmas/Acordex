@@ -461,6 +461,13 @@
                   <span>Total Integrantes:</span>
                   <strong class="text-white font-semibold">{{ band()!.membersCount }} Músicos</strong>
                 </li>
+                <li class="flex justify-between items-center text-white/70">
+                  <span>Antigüedad:</span>
+                  <strong class="text-white font-semibold inline-flex items-center gap-1">
+                    <span *ngIf="band()!.verified" class="material-symbols-outlined text-sm text-primary">verified</span>
+                    <span>{{ band()!.seniorityLabel || '3 Años en Acordex' }}</span>
+                  </strong>
+                </li>
               </ul>
             </div>
 
@@ -520,6 +527,40 @@
                   </svg>
                   <span>YouTube</span>
                 </a>
+              </div>
+            </div>
+
+            <!-- Contratación Directa Card (SIN COSTO - SOLO HORAS MÍNIMAS Y CONTACTO) -->
+            <div class="bg-[#1a1a1a] border border-white/10 rounded-3xl p-5 sm:p-6 backdrop-blur-xl space-y-4 shadow-xl">
+              <h3 class="font-['Epilogue'] font-black text-base sm:text-lg text-white uppercase tracking-wide border-b border-white/10 pb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base">call</span>
+                <span>Contratación Directa</span>
+              </h3>
+              <div class="space-y-3 text-xs">
+                <div *ngIf="band()!.managerPhone">
+                  <span class="block text-[10px] font-black uppercase tracking-wider text-white/40 font-['Epilogue']">Teléfono Directo</span>
+                  <span class="font-mono font-black text-primary text-sm">{{ formattedManagerPhone() }}</span>
+                </div>
+                <div *ngIf="band()!.managerName">
+                  <span class="block text-[10px] font-black uppercase tracking-wider text-white/40 font-['Epilogue']">Representante Oficial</span>
+                  <span class="font-bold text-white text-xs">{{ band()!.managerName }}</span>
+                </div>
+                <div *ngIf="band()!.officeAddress">
+                  <span class="block text-[10px] font-black uppercase tracking-wider text-white/40 font-['Epilogue']">Domicilio de Oficinas</span>
+                  <a [href]="officeAddressMapsUrl()"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     title="Abrir ubicación en Google Maps"
+                     class="group font-semibold text-white/90 text-xs flex items-center gap-1.5 hover:text-primary transition-colors cursor-pointer pt-0.5">
+                    <span class="material-symbols-outlined text-xs text-primary shrink-0 group-hover:scale-110 transition-transform">location_on</span>
+                    <span class="underline decoration-white/20 underline-offset-2 group-hover:decoration-primary">{{ band()!.officeAddress }}</span>
+                    <span class="material-symbols-outlined text-xs text-primary shrink-0 opacity-70 group-hover:opacity-100">open_in_new</span>
+                  </a>
+                </div>
+                <div>
+                  <span class="block text-[10px] font-black uppercase tracking-wider text-white/40 font-['Epilogue']">Tiempo Mínimo de Servicio Por Tanda</span>
+                  <span class="font-black text-white text-sm font-mono">{{ band()!.minimumHours || '3' }} Horas Mínimas</span>
+                </div>
               </div>
             </div>
 
@@ -600,7 +641,8 @@
           <!-- Tracklist Table / Card Grid -->
           <div class="space-y-3">
             <div *ngFor="let track of band()!.topTracks" 
-                 class="flex items-center justify-between gap-4 p-4 rounded-2xl bg-black/40 border transition-all duration-300 hover:scale-[1.01]"
+                 (click)="toggleTrack(track.id)"
+                 class="flex items-center justify-between gap-4 p-4 rounded-2xl bg-black/40 border transition-all duration-300 hover:scale-[1.01] cursor-pointer"
                  [ngClass]="playingTrackId() === track.id ? 'border-primary bg-primary/10 shadow-[0_0_20px_rgba(242,202,80,0.15)]' : 'border-white/5 hover:border-white/20'">
               
               <div class="flex items-center gap-4 min-w-0">
@@ -662,7 +704,8 @@
               
               <ul class="space-y-2.5">
                 <li *ngFor="let song of rep.songs" 
-                    class="flex items-center justify-between p-2.5 rounded-xl border transition-all duration-300"
+                    (click)="toggleRepertoireSong(song)"
+                    class="flex items-center justify-between p-2.5 rounded-xl border transition-all duration-300 cursor-pointer"
                     [ngClass]="playingRepertoireSong() === song ? 'bg-primary/10 border-primary/40 text-primary' : 'bg-white/5 border-white/5 hover:border-white/20 text-white/90'">
                   
                   <div class="flex items-center gap-2.5 min-w-0">

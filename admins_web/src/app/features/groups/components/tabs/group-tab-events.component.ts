@@ -1,6 +1,7 @@
-import { Component, input, output, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, computed, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GroupProfile, GroupEventRecord } from '../../group-profile.model';
+import { GroupProfile, GroupEventRecord, defaultSectionVisibility } from '../../group-profile.model';
+import { GroupProfileStore } from '../../group-profile.store';
 
 @Component({
   selector: 'app-group-tab-events',
@@ -45,10 +46,10 @@ import { GroupProfile, GroupEventRecord } from '../../group-profile.model';
                   {{ e.attendance || 0 | number:'1.0-0' }} / {{ e.capacity | number:'1.0-0' }}
                 </span>
               </div>
-              <div class="h-3 rounded-full bg-surface-container overflow-hidden border border-outline-variant/25 p-0.5">
+              <div class="h-2 rounded-full bg-surface-container overflow-hidden">
                 <div
-                  class="h-full rounded-full bg-gradient-to-r from-primary via-amber-400 to-emerald-400 transition-all duration-500"
-                  [style.width.%]="occupancy(e)"
+                  class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-primary transition-all duration-500"
+                  [style.width.%]="occupancyPercent(e)"
                 ></div>
               </div>
             </div>
@@ -56,23 +57,50 @@ import { GroupProfile, GroupEventRecord } from '../../group-profile.model';
         </div>
       </section>
 
-      <!-- LISTADO DE AGENDA -->
-      <section class="space-y-3.5">
-        <header class="flex items-center justify-between gap-3 flex-wrap">
-          <h3 class="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-2">
-            <span class="material-symbols-outlined text-base">event</span> Agenda de Eventos & Firmas
-          </h3>
-          <div class="flex items-center gap-1.5 flex-wrap">
-            @for (f of filters; track f) {
+      <section
+        class="p-5 rounded-3xl bg-[#18152a] border transition-all duration-300 space-y-3.5 shadow-xl"
+        [class]="vis().showUpcomingEvents ? 'border-outline-variant/30' : 'border-rose-500/60 bg-rose-950/20 shadow-[0_0_25px_rgba(244,63,94,0.2)] opacity-85'"
+      >
+        <header class="flex items-center justify-between gap-3 flex-wrap border-b border-outline-variant/20 pb-3">
+          <div>
+            <h3 class="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-2">
+              <span class="material-symbols-outlined text-base">event</span> Agenda de Eventos & Firmas
+            </h3>
+            <p class="text-[10px] text-outline">Sección "Próximos Eventos & Gira" expuesta en la Vista Previa del Cliente</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="inline-flex p-0.5 rounded-xl bg-[#131022] border border-white/15 shadow-inner">
               <button
                 type="button"
-                (click)="statusFilter.set(f)"
-                class="px-3 py-1 rounded-xl text-[10px] font-black border transition-all"
-                [class]="statusFilter() === f ? 'bg-primary text-on-primary border-primary shadow-sm' : 'bg-[#18152a] text-outline border-outline-variant/25 hover:text-on-surface'"
+                (click)="!vis().showUpcomingEvents && store.toggleSectionVisibility('showUpcomingEvents')"
+                class="px-3 py-1 rounded-lg text-[10px] uppercase tracking-wider transition-all"
+                [class]="vis().showUpcomingEvents ? 'bg-emerald-500 text-black font-black shadow-md' : 'text-white/50 hover:text-white font-bold'"
               >
-                {{ f }}
+                VISIBLE
               </button>
-            }
+              <button
+                type="button"
+                (click)="vis().showUpcomingEvents && store.toggleSectionVisibility('showUpcomingEvents')"
+                class="px-3 py-1 rounded-lg text-[10px] uppercase tracking-wider transition-all"
+                [class]="!vis().showUpcomingEvents ? 'bg-rose-500 text-white font-black shadow-md animate-pulse' : 'text-white/50 hover:text-white font-bold'"
+              >
+                OCULTAR
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1.5 flex-wrap">
+              @for (f of filters; track f) {
+                <button
+                  type="button"
+                  (click)="statusFilter.set(f)"
+                  class="px-3 py-1 rounded-xl text-[10px] font-black border transition-all"
+                  [class]="statusFilter() === f ? 'bg-primary text-on-primary border-primary shadow-sm' : 'bg-[#18152a] text-outline border-outline-variant/25 hover:text-on-surface'"
+                >
+                  {{ f }}
+                </button>
+              }
+            </div>
           </div>
         </header>
 
@@ -117,6 +145,10 @@ import { GroupProfile, GroupEventRecord } from '../../group-profile.model';
 })
 export class GroupTabEventsComponent {
   profile = input.required<GroupProfile>();
+
+  store = inject(GroupProfileStore);
+  vis = computed(() => this.profile().sectionVisibility ?? defaultSectionVisibility());
+
   openEvent = output<GroupEventRecord>();
 
   protected readonly filters = ['Todos', 'Completado', 'Confirmado', 'Pendiente'] as const;
@@ -141,6 +173,10 @@ export class GroupTabEventsComponent {
   occupancy(e: GroupEventRecord): number {
     if (!e.capacity) return 0;
     return Math.min(100, ((e.attendance || 0) / e.capacity) * 100);
+  }
+
+  occupancyPercent(e: GroupEventRecord): number {
+    return this.occupancy(e);
   }
 
   typeIcon(type: GroupEventRecord['type']): string {
