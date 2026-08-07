@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
+import { EventState } from '../../core/models/event.models';
+import { eventStateMeta } from '../../core/models/event-state.meta';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
 import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.component';
@@ -583,11 +585,11 @@ import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.
                       <span class="text-xs font-bold text-on-surface bg-surface-bright px-2.5 py-1 rounded-lg">
                         {{ evt.date }}
                       </span>
-                      <span 
-                        [class]="evt.status === 'Publicado' ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'"
-                        class="text-[11px] font-semibold px-2 py-0.5 rounded border border-current/20"
+                      <span
+                        [class]="eventStateBadgeClass(evt.state)"
+                        class="text-[11px] font-semibold px-2 py-0.5 rounded border"
                       >
-                        {{ evt.status }}
+                        {{ evt.state }}
                       </span>
                     </div>
                   </div>
@@ -1367,6 +1369,11 @@ import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.
 export class DashboardComponent {
   roleService = inject(RoleService);
   mockData = inject(MockDataService);
+
+  /** Color de la fase del evento, tomado de la misma fuente que usa el gestor de eventos. */
+  eventStateBadgeClass(state: EventState): string {
+    return eventStateMeta(state).badgeClass;
+  }
 
   getUserTitle(): string {
     const role = this.roleService.activeRole();

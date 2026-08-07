@@ -18,57 +18,28 @@ export type DisqueraContractType = 'Firmado Exclusivo' | 'Co-gestionado' | 'Inde
 
 export type TaskPrivacy = 'Pública' | 'Delicada' | 'Privada';
 
-export interface TicketTier {
-  name: string;
-  price: number;
-  totalSeats: number;
-  soldSeats: number;
-  color: string;
-}
-
-export interface CroquisZone {
-  id: string;
-  name: string;
-  capacity: number;
-  occupancyPercent: number;
-  color: string;
-}
-
-export interface EventEvidence {
-  id: string;
-  type: 'photo' | 'video';
-  url: string;
-  caption: string;
-  uploaderName: string;
-  uploaderRole: Role;
-  uploadedAt: string;
-}
-
-export interface EventItem {
-  id: string;
-  title: string;
-  date: string;
-  location: string;
-  venue: string;
-  groupName: string;
-  artistName?: string;
-  disqueraId: string; // Active label ID e.g. 'acordex-records'
-  status: 'Publicado' | 'Borrador' | 'Próximo' | 'Pasado';
-  flyerUrl: string;
-  ticketTiers: TicketTier[];
-  croquisZones: CroquisZone[];
-  isCoProduction: boolean;
-  coProductionPartner?: string;
-  coProductionStatus?: 'approved' | 'pending_review' | 'rejected';
-  pendingChanges?: {
-    proposedBy: string;
-    proposedDate?: string;
-    proposedVenue?: string;
-    proposedSplitPercent?: number;
-    reason: string;
-  };
-  evidenceMedia: EventEvidence[];
-}
+/**
+ * El evento y todo lo que cuelga de él (cartel, sonido, boletaje, croquis,
+ * aprobaciones, venta y cierre) vive en `event.models.ts`, que es un modelo
+ * demasiado grande para tenerlo mezclado aquí.
+ */
+export type {
+  EventState,
+  LegacyEventStatus,
+  TicketTier,
+  CroquisZone,
+  EventEvidence,
+  EventItem,
+  EventLineupSlot,
+  EventSoundSetup,
+  EventSchedule,
+  EventApproval,
+  EventReviewRound,
+  EventPublication,
+  EventSalesSnapshot,
+  EventClosureReport,
+  EventTimelineStep
+} from './event.models';
 
 // Interfaz para Hitos / Parcialidades de Pago Programadas con Soporte de Cargos Moratorios y Control Tesorería
 export interface PaymentMilestone {

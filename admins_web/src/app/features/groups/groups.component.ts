@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
-import { GroupItem, Quote, EventItem } from '../../core/models/admin.models';
+import { GroupItem } from '../../core/models/admin.models';
 
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 

@@ -1,0 +1,372 @@
+import { EventItem } from '../../core/models/event.models';
+import {
+  lineup,
+  totalSeats,
+  slotCost,
+  publicProfile,
+  lacksSeatMap,
+  tiersWithSeatMismatch
+} from './event-metrics';
+
+/**
+ * Qué le falta a un evento para poder salir de 'Borrador'.
+ *
+ * Esta es la regla más importante del módulo: el evento no se envía a revisión
+ * "cuando el encargado crea que ya está", sino cuando la información que los
+ * demás encargados necesitan para poder aprobar existe de verdad. Pedirle a
+ * alguien que apruebe un cartel sin horas de entrada ni costos desglosados es
+ * pedirle que apruebe a ciegas, y ese es exactamente el error que después se
+ * paga caro en 'En Venta'.
+ *
+ * Hay dos niveles: `required` bloquea el envío a revisión; el resto son
+ * recomendaciones que solo bajan el porcentaje de avance.
+ */
+
+export type CompletenessGroup = 'Identidad' | 'Cartelera Pública' | 'Cartel' | 'Producción' | 'Boletaje';
+
+export interface CompletenessItem {
+  id: string;
+  group: CompletenessGroup;
+  label: string;
+  /** Qué hacer para cumplirlo, cuando no está cumplido. */
+  hint: string;
+  done: boolean;
+  /** True si su ausencia impide enviar el evento a revisión. */
+  required: boolean;
+}
+
+export interface CompletenessReport {
+  items: CompletenessItem[];
+  doneCount: number;
+  totalCount: number;
+  /** Avance sobre todos los puntos, obligatorios y recomendados. */
+  percent: number;
+  /** Puntos obligatorios que siguen sin cumplirse. */
+  missingRequired: CompletenessItem[];
+  /** Puntos recomendados que siguen sin cumplirse. */
+  missingOptional: CompletenessItem[];
+  /** True cuando ya no falta ningún punto obligatorio. */
+  canSubmitForReview: boolean;
+}
+
+export function eventCompleteness(e: EventItem): CompletenessReport {
+  const slots = lineup(e);
+  const tiers = e.ticketTiers || [];
+  const zones = e.croquisZones || [];
+  const zoneIds = new Set(zones.map(z => z.id));
+  const publico = publicProfile(e);
+
+  const items: CompletenessItem[] = [
+    // --- Identidad y logística ---
+    {
+      id: 'identidad',
+      group: 'Identidad',
+      label: 'Nombre, fecha y recinto del evento',
+      hint: 'Captura título, fecha, recinto y ciudad',
+      required: true,
+      done: !!e.title?.trim() && !!e.date && !!e.venue?.trim() && !!e.location?.trim()
+    },
+    {
+      id: 'flyer',
+      group: 'Identidad',
+      label: 'Flyer o imagen de cartelera',
+      hint: 'Sube la imagen con la que el evento aparecerá en la cartelera pública',
+      required: true,
+      done: !!e.flyerUrl?.trim()
+    },
+    {
+      id: 'descripcion',
+      group: 'Identidad',
+      label: 'Descripción pública del evento',
+      hint: 'Escribe el texto que leerá el público en la cartelera',
+      required: false,
+      done: (e.description || '').trim().length >= 30
+    },
+    {
+      id: 'direccion',
+      group: 'Identidad',
+      label: 'Dirección exacta del recinto',
+      hint: 'Captura la dirección completa para el público y para la producción',
+      required: false,
+      done: !!e.venueAddress?.trim()
+    },
+
+    // --- Cartelera pública ---
+    // Todo lo que el portal del cliente muestra en /events/comprar-boletos.
+    // Sin esto el evento se publica con huecos visibles para el público.
+    {
+      id: 'portada',
+      group: 'Cartelera Pública',
+      label: 'Portada panorámica del evento',
+      hint: 'Imagen horizontal que encabeza la ficha pública',
+      required: true,
+      done: !!publico.coverUrl.trim()
+    },
+    {
+      id: 'cartel_oficial',
+      group: 'Cartelera Pública',
+      label: 'Cartel oficial vertical (3:4)',
+      hint: 'Es el cartel que el cliente amplía con la lupa; no puede ser la misma portada',
+      required: true,
+      done: !!publico.posterUrl.trim()
+    },
+    {
+      id: 'categoria',
+      group: 'Cartelera Pública',
+      label: 'Categoría del evento',
+      hint: 'Concierto, festival, baile, palenque… es la etiqueta que ve el público',
+      required: true,
+      done: !!publico.category
+    },
+    {
+      id: 'tagline',
+      group: 'Cartelera Pública',
+      label: 'Frase de portada',
+      hint: 'La línea corta que aparece bajo el título en la ficha pública',
+      required: true,
+      done: publico.tagline.trim().length >= 15
+    },
+    {
+      id: 'about_publico',
+      group: 'Cartelera Pública',
+      label: 'Texto de "Información del Evento"',
+      hint: 'Descripción larga que lee el cliente antes de comprar',
+      required: true,
+      done: publico.about.trim().length >= 80
+    },
+    {
+      id: 'reglas',
+      group: 'Cartelera Pública',
+      label: 'Reglas e información adicional',
+      hint: 'Al menos tres reglas: accesos, edad mínima, apertura de puertas',
+      required: true,
+      done: publico.rules.length >= 3
+    },
+    {
+      id: 'edad',
+      group: 'Cartelera Pública',
+      label: 'Restricción de edad',
+      hint: 'Qué edad mínima se le comunica al público',
+      required: false,
+      done: !!publico.minimumAge?.trim()
+    },
+    {
+      id: 'soporte',
+      group: 'Cartelera Pública',
+      label: 'Teléfono de compra y soporte',
+      hint: 'El número que la ficha ofrece para comprar por teléfono',
+      required: true,
+      done: !!publico.supportPhone?.trim()
+    },
+    {
+      id: 'cargo_servicio',
+      group: 'Cartelera Pública',
+      label: 'Cargo por servicio por asiento',
+      hint: 'Lo que la taquilla suma a cada boleto; el cliente lo ve en el total',
+      required: true,
+      done: (publico.serviceFeePerSeat ?? 0) > 0
+    },
+
+    // --- Cartel ---
+    {
+      id: 'cartel',
+      group: 'Cartel',
+      label: 'Al menos un grupo en el cartel',
+      hint: 'Agrega los grupos que se presentarán',
+      required: true,
+      done: slots.length > 0
+    },
+    {
+      id: 'headliner',
+      group: 'Cartel',
+      label: 'Cabeza de cartel definida',
+      hint: 'Marca cuál grupo encabeza el evento',
+      required: true,
+      done: slots.some(s => s.isHeadliner)
+    },
+    {
+      id: 'orden',
+      group: 'Cartel',
+      label: 'Orden de entradas con hora de cada grupo',
+      hint: 'Define hora de inicio y fin de la tanda de cada grupo',
+      required: true,
+      done: slots.length > 0 && slots.every(s => !!s.setStartTime && !!s.setEndTime)
+    },
+    {
+      id: 'llegadas',
+      group: 'Cartel',
+      label: 'Hora de llegada de cada grupo',
+      hint: 'Indica a qué hora debe estar cada grupo en el recinto',
+      required: true,
+      done: slots.length > 0 && slots.every(s => !!s.arrivalTime)
+    },
+    {
+      id: 'costos',
+      group: 'Cartel',
+      label: 'Costo desglosado de cada grupo',
+      hint: 'Cada grupo debe traer su desglose de honorarios y viáticos',
+      required: true,
+      done: slots.length > 0 && slots.every(s => slotCost(s) > 0)
+    },
+    {
+      id: 'encargados',
+      group: 'Cartel',
+      label: 'Encargado responsable de cada grupo externo',
+      hint: 'Sin encargado no hay a quién pedirle la aprobación',
+      required: true,
+      done: slots.filter(s => s.isExternal).every(s => !!s.managerName?.trim())
+    },
+    {
+      id: 'grupos_publico',
+      group: 'Cartel',
+      label: 'Ficha pública de cada grupo (foto, género, rating y perfil)',
+      hint: 'Es lo que el cliente ve en el line-up y lo que enlaza al perfil del grupo',
+      required: true,
+      done: slots.length > 0 && slots.every(s =>
+        !!s.imageUrl?.trim() && !!s.genre?.trim() && !!s.profileSlug?.trim() && (s.rating ?? 0) > 0)
+    },
+    {
+      id: 'videos_grupos',
+      group: 'Cartel',
+      label: 'Video de invitación de al menos un grupo',
+      hint: 'El portal muestra los saludos de los artistas antes de comprar',
+      required: false,
+      done: slots.some(s => (s.invitationVideos || []).length > 0)
+    },
+
+    // --- Producción ---
+    {
+      id: 'sonido',
+      group: 'Producción',
+      label: 'Equipo de sonido definido',
+      hint: 'Indica quién lleva el audio: un grupo, un proveedor externo o el recinto',
+      required: true,
+      done: !!e.sound && e.sound.providerType !== 'Por Definir'
+    },
+    {
+      id: 'ingeniero',
+      group: 'Producción',
+      label: 'Responsable de audio con contacto',
+      hint: 'Captura nombre y teléfono del ingeniero de audio',
+      required: true,
+      done: !!e.sound?.engineerName?.trim() && !!e.sound?.engineerPhone?.trim()
+    },
+    {
+      id: 'soundcheck',
+      group: 'Producción',
+      label: 'Prueba de sonido agendada',
+      hint: 'Define la hora del sound check general',
+      required: true,
+      done: !!e.schedule?.soundCheckAt || !!e.sound?.soundCheckStart
+    },
+    {
+      id: 'corrida',
+      group: 'Producción',
+      label: 'Corrida del día: puertas e inicio de show',
+      hint: 'Define apertura de puertas y hora de inicio del espectáculo',
+      required: true,
+      done: !!e.schedule?.doorsOpenAt && !!e.schedule?.showStartAt
+    },
+    {
+      id: 'rider',
+      group: 'Producción',
+      label: 'Requerimientos técnicos del rider revisados',
+      hint: 'Marca los puntos del rider que el recinto ya cubre',
+      required: false,
+      done: (e.sound?.riderChecklist || []).length > 0
+    },
+
+    // --- Boletaje ---
+    {
+      id: 'zonas',
+      group: 'Boletaje',
+      label: 'Zonas del croquis definidas',
+      hint: 'Divide el recinto en zonas con su capacidad',
+      required: true,
+      done: zones.length > 0 && zones.every(z => (z.capacity || 0) > 0)
+    },
+    {
+      id: 'boletos',
+      group: 'Boletaje',
+      label: 'Categorías de boleto con precio y lugares',
+      hint: 'Cada categoría necesita precio y número de lugares',
+      required: true,
+      done: tiers.length > 0 && tiers.every(t => (t.price || 0) > 0 && (t.totalSeats || 0) > 0)
+    },
+    {
+      id: 'boletos_zona',
+      group: 'Boletaje',
+      label: 'Cada categoría ligada a una zona del croquis',
+      hint: 'Sin esta liga el cliente no sabe dónde se sienta lo que compra',
+      required: true,
+      done: tiers.length > 0 && tiers.every(t => !!t.zoneId && zoneIds.has(t.zoneId))
+    },
+    {
+      id: 'aforo',
+      group: 'Boletaje',
+      label: 'El boletaje cabe en el aforo de las zonas',
+      hint: 'Los lugares a la venta no pueden superar la capacidad de las zonas',
+      required: true,
+      done: zones.length > 0 && totalSeats(e) > 0 &&
+        totalSeats(e) <= zones.reduce((sum, z) => sum + (z.capacity || 0), 0)
+    },
+    {
+      id: 'butacas',
+      group: 'Boletaje',
+      label: 'Mapa de butacas de cada categoría (filas y asientos)',
+      hint: 'Sin filas y butacas por fila el cliente no puede elegir asiento',
+      required: true,
+      done: tiers.length > 0 && tiers.every(t => !lacksSeatMap(t))
+    },
+    {
+      id: 'butacas_cuadran',
+      group: 'Boletaje',
+      label: 'El mapa de butacas cuadra con los lugares a la venta',
+      hint: 'Filas × asientos por fila debe dar exactamente los lugares de la categoría',
+      required: true,
+      done: tiers.length > 0 && tiersWithSeatMismatch(e).length === 0
+    },
+    {
+      id: 'descripcion_boletos',
+      group: 'Boletaje',
+      label: 'Descripción de cada categoría de boleto',
+      hint: 'Qué incluye cada zona; el cliente decide su compra con este texto',
+      required: true,
+      done: tiers.length > 0 && tiers.every(t => (t.description || '').trim().length >= 15)
+    }
+  ];
+
+  const doneCount = items.filter(i => i.done).length;
+  const missingRequired = items.filter(i => i.required && !i.done);
+  const missingOptional = items.filter(i => !i.required && !i.done);
+
+  return {
+    items,
+    doneCount,
+    totalCount: items.length,
+    percent: items.length ? Math.round((doneCount / items.length) * 100) : 0,
+    missingRequired,
+    missingOptional,
+    canSubmitForReview: missingRequired.length === 0
+  };
+}
+
+/** Avance de captura del borrador, en porcentaje. */
+export function completenessPercent(e: EventItem): number {
+  return eventCompleteness(e).percent;
+}
+
+/** True cuando el borrador ya tiene todo lo obligatorio para irse a revisión. */
+export function canSubmitForReview(e: EventItem): boolean {
+  return eventCompleteness(e).canSubmitForReview;
+}
+
+/** Puntos por grupo temático, para pintar el checklist agrupado. */
+export function completenessByGroup(e: EventItem): { group: CompletenessGroup; items: CompletenessItem[]; done: number }[] {
+  const report = eventCompleteness(e);
+  const groups: CompletenessGroup[] = ['Identidad', 'Cartelera Pública', 'Cartel', 'Producción', 'Boletaje'];
+  return groups.map(group => {
+    const items = report.items.filter(i => i.group === group);
+    return { group, items, done: items.filter(i => i.done).length };
+  });
+}

@@ -1,254 +1,372 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
-import { EventItem } from '../../core/models/admin.models';
-import { BadgeComponent } from '../../shared/ui/badge/badge.component';
-import { InfoBannerComponent } from '../../shared/ui/info-banner/info-banner.component';
+import { EventItem, EventState } from '../../core/models/event.models';
+import { EVENT_ALL_STATES, eventStateMeta } from '../../core/models/event-state.meta';
 import { ModalShellComponent } from '../../shared/ui/modal-shell/modal-shell.component';
 import { FormFieldComponent, FormFieldOption } from '../../shared/ui/form-field/form-field.component';
-import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.component';
+import { KpiCardComponent } from '../../shared/ui/kpi-card/kpi-card.component';
+import { EventCardComponent } from './components/event-card.component';
+import { EventDetailModalComponent } from './components/event-detail-modal.component';
+import { EventStateFilterBarComponent, EventFilterChip } from './components/event-state-filter-bar.component';
+import {
+  EventFiltersToolbarComponent,
+  EventStateChip,
+  EventSortMode,
+  ActiveEventFilterChip
+} from './components/event-filters-toolbar.component';
+import { stateSummary } from './event-card-insights';
+import { PanelMetric, panelMetrics as resolvePanelMetrics } from './event-panel-metrics';
+import {
+  EventFilterOption,
+  stateFilterLabel,
+  stateFilterOptions,
+  transversalFilterOptions,
+  TRANSVERSAL_FILTER_LABEL
+} from './event-filter-catalog';
+import { daysUntilEvent, grossTicketRevenue, occupancyPercent, soldSeats } from './event-metrics';
 
+/**
+ * Gestor de eventos.
+ *
+ * El evento se mueve por siete fases (`event-state.meta.ts`) y cada una
+ * bloquea más que la anterior. Esta pantalla existe para que en cualquier
+ * momento se pueda contestar "¿qué evento necesita algo de mí hoy?", y por eso
+ * ofrece dos lecturas del mismo dato:
+ *
+ * - **Tablero**: agrupa por fase, con el resumen y los filtros propios de cada
+ *   una. Sirve para trabajar el flujo.
+ * - **Cartelera**: rejilla plana ordenable, para mirar el calendario completo.
+ *
+ * El rol Usuario de campo solo ve los eventos que ya son públicos: un borrador
+ * con costos de grupos no es información suya.
+ */
 @Component({
   selector: 'app-events',
   standalone: true,
-  imports: [CommonModule, FormsModule, BadgeComponent, InfoBannerComponent, ModalShellComponent, FormFieldComponent, ProgressBarComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ModalShellComponent,
+    FormFieldComponent,
+    KpiCardComponent,
+    EventCardComponent,
+    EventDetailModalComponent,
+    EventFiltersToolbarComponent,
+    EventStateFilterBarComponent
+  ],
   template: `
-    <div class="space-y-6 animate-fade-in">
+    <div class="space-y-6 animate-fade-in pb-12">
 
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="font-display-xl text-xl sm:text-2xl font-black text-on-surface">Gestor de Eventos & Cartelera</h1>
-            <app-badge label="Co-producción & Croquis Zonal" variant="primary" />
+      <!-- ─── ENCABEZADO ─── -->
+      <div class="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-surface-container-high/90 via-surface-container/80 to-surface-container-high/90 backdrop-blur-xl border border-outline-variant/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 min-w-0">
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="p-2.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-inner shrink-0">
+              <span class="material-symbols-outlined text-2xl">festival</span>
+            </div>
+            <div class="min-w-0">
+              <h1 class="font-display-xl text-xl sm:text-2xl lg:text-3xl font-black text-on-surface tracking-tight">
+                Gestor de Eventos & Cartelera
+              </h1>
+              <p class="text-xs text-outline mt-0.5">
+                Creación, aprobación entre encargados, publicación y cierre de eventos con venta de boletos al público
+                · {{ allStates.length }} fases del ciclo
+              </p>
+            </div>
           </div>
-          <p class="text-xs text-outline mt-1">Diseñador de eventos, aprobaciones compartidas y carga de evidencia de campo</p>
         </div>
 
-        @if (roleService.canEditEvents()) {
-          <button
-            (click)="isCreating.set(true)"
-            class="px-4 py-2.5 min-h-11 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2 self-start"
-          >
-            <span class="material-symbols-outlined text-lg">add_circle</span> Crear Nuevo Evento
-          </button>
-        }
-      </div>
-
-      <!-- CO-PRODUCTION WARNING & APPROVAL BANNER (CRITICAL REQUIREMENT #3) -->
-      @for (evt of getPendingCoProductionEvents(); track evt.id) {
-        <app-info-banner icon="handshake" title="Aviso de Co-producción Pendiente" variant="urgent" [hasAction]="true">
-          <span class="text-purple-200/90">
-            <strong class="text-purple-200">{{ evt.title }}</strong> — La disquera socia <strong>{{ evt.pendingChanges?.proposedBy }}</strong> ha solicitado cambios en el evento:
-            <em>"{{ evt.pendingChanges?.reason }}"</em>
-          </span>
-
-          <div banner-action>
+        <div class="flex items-center gap-3 self-start md:self-auto relative z-10 flex-wrap">
+          <div class="p-1.5 rounded-2xl bg-surface-container-highest/60 border border-outline-variant/40 flex items-center gap-1.5 shadow-lg backdrop-blur-md">
             <button
-              (click)="openCoProductionModal(evt)"
-              class="px-4 py-2 min-h-11 rounded-xl bg-purple-500 hover:bg-purple-400 text-purple-950 font-black text-xs shadow-md transition-all flex items-center gap-1.5"
+              type="button"
+              (click)="viewMode.set('tablero')"
+              [class]="viewMode() === 'tablero' ? 'bg-primary text-on-primary font-bold shadow-lg shadow-primary/20' : 'text-on-surface-variant hover:text-on-surface'"
+              class="px-4 py-2 min-h-11 rounded-xl text-xs flex items-center gap-2 transition-all duration-300"
             >
-              <span class="material-symbols-outlined text-base">rate_review</span> Revisar y Aprobar/Rechazar
+              <span class="material-symbols-outlined text-base">view_kanban</span> Tablero
+            </button>
+            <button
+              type="button"
+              (click)="viewMode.set('cartelera')"
+              [class]="viewMode() === 'cartelera' ? 'bg-primary text-on-primary font-bold shadow-lg shadow-primary/20' : 'text-on-surface-variant hover:text-on-surface'"
+              class="px-4 py-2 min-h-11 rounded-xl text-xs flex items-center gap-2 transition-all duration-300"
+            >
+              <span class="material-symbols-outlined text-base">grid_view</span> Cartelera
             </button>
           </div>
-        </app-info-banner>
+
+          @if (roleService.canEditEvents()) {
+            <button
+              type="button"
+              (click)="openCreateModal()"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2"
+            >
+              <span class="material-symbols-outlined text-lg">add_circle</span> Crear Evento
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- ─── MÉTRICAS (cambian por rol a propósito) ─── -->
+      @if (roleService.isAdminOrEncargado()) {
+        <div class="space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-x-2.5 gap-y-0.5">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="material-symbols-outlined text-base text-primary shrink-0">insights</span>
+              <h2 class="text-xs font-black text-on-surface uppercase tracking-wider">{{ metricsTitle() }}</h2>
+            </div>
+            <span class="text-[11px] text-outline">{{ metricsSubtitle() }}</span>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            @for (m of panelMetrics(); track m.label) {
+              <app-kpi-card
+                [label]="m.label"
+                [value]="m.value"
+                [unit]="m.unit || ''"
+                [icon]="m.icon"
+                [trend]="m.trend || ''"
+                [trendIcon]="m.trendIcon || ''"
+                [colorVariant]="m.colorVariant"
+                [dense]="!!m.dense"
+              />
+            }
+          </div>
+        </div>
       }
 
-      <!-- EVENTS LIST -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-        @for (evt of mockData.events(); track evt.id) {
-          <div class="p-5 rounded-3xl bg-surface-container border border-outline-variant/30 hover:border-primary/50 transition-all duration-300 shadow-xl flex flex-col justify-between group">
+      <!-- ─── FILTROS ─── -->
+      <app-event-filters-toolbar
+        [viewMode]="viewMode()"
+        [stateChips]="stateChips()"
+        [stateFilter]="stateFilter()"
+        [searchTerm]="searchTerm()"
+        [sortMode]="sortMode()"
+        [hideEmptyStates]="hideEmptyStates()"
+        [resultCount]="carteleraEvents().length"
+        [totalCount]="visibleEvents().length"
+        [activeFilterChips]="activeFilterChips()"
+        [contextChips]="activeContextChips()"
+        [contextActive]="activeContextValue()"
+        [contextLabel]="activeContextLabel()"
+        (stateFilterChange)="stateFilter.set($event)"
+        (searchTermChange)="searchTerm.set($event)"
+        (sortModeChange)="sortMode.set($event)"
+        (hideEmptyStatesChange)="hideEmptyStates.set($event)"
+        (contextFilterChange)="setActiveContextFilter($event)"
+        (clearFilters)="clearAllFilters()"
+        (removeFilter)="removeFilter($event)"
+      />
 
-            <div>
-              <div class="relative rounded-2xl overflow-hidden mb-4 aspect-video bg-surface-container-high">
-                <img [src]="evt.flyerUrl" [alt]="evt.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+      <!-- ─── TABLERO POR FASE ─── -->
+      @if (viewMode() === 'tablero') {
+        <div class="space-y-6">
+          @for (state of filteredStates(); track state) {
+            <section class="p-4 sm:p-6 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-xl space-y-5">
 
-                <div class="absolute top-3 left-3 flex items-center gap-2">
-                  <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-background/80 backdrop-blur-md text-primary border border-primary/30">
-                    {{ evt.groupName }}
-                  </span>
+              <!-- Encabezado de la fase -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline-variant/20">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span [class]="stateBadgeClass(state)" class="w-3.5 h-3.5 rounded-full shadow-sm shrink-0 border"></span>
+                  <div class="min-w-0">
+                    <h3 class="text-sm font-extrabold text-on-surface flex items-center gap-2 min-w-0 flex-wrap">
+                      <span [class]="stateTextColor(state)" class="material-symbols-outlined text-base">{{ stateIcon(state) }}</span>
+                      {{ state }}
+                      <span [class]="stateBadgeClass(state)" class="text-xs font-bold px-3 py-0.5 rounded-full border shadow-sm">
+                        @if (hasActiveContextFilter(state)) {
+                          {{ eventsByState(state).length }} de {{ rawEventsByState(state).length }}
+                        } @else {
+                          {{ eventsByState(state).length }}
+                        }
+                      </span>
+                    </h3>
+                    <p class="text-[11px] text-outline mt-0.5 line-clamp-1">{{ stateMeaning(state) }}</p>
+                  </div>
                 </div>
 
-                <div class="absolute top-3 right-3">
-                  <span [class]="evt.status === 'Publicado' ? 'bg-emerald-500/80 text-black' : 'bg-amber-500/80 text-black'" class="px-2.5 py-1 rounded-lg text-xs font-black backdrop-blur-md">
-                    {{ evt.status }}
-                  </span>
-                </div>
+                <span class="text-xs font-semibold text-outline shrink-0 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-sm">insights</span>
+                  {{ stateSummaryLabel(state) }}
+                </span>
               </div>
 
-              <h3 class="text-base font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-1">
-                {{ evt.title }}
-              </h3>
+              <!-- Filtros contextuales de la fase -->
+              @if (rawEventsByState(state).length > 0) {
+                <app-event-state-filter-bar
+                  class="-mt-1"
+                  [chips]="stateFilterChips(state)"
+                  [active]="activeStateFilter(state)"
+                  [label]="stateFilterBarLabel(state)"
+                  (select)="setStateContextFilter(state, $event)"
+                />
+              }
 
-              <div class="mt-2 space-y-1 text-xs text-outline font-medium">
-                <p class="flex items-center gap-1.5">
-                  <span class="material-symbols-outlined text-sm text-primary">calendar_month</span> {{ evt.date }}
-                </p>
-                <p class="flex items-center gap-1.5 min-w-0">
-                  <span class="material-symbols-outlined text-sm text-primary shrink-0">location_on</span> <span class="truncate">{{ evt.venue }}, {{ evt.location }}</span>
-                </p>
-              </div>
-
-              <!-- Ticket Tiers Summary -->
-              <div class="mt-4 pt-3 border-t border-outline-variant/20">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-outline block mb-2">Zonas & Boletos</span>
-                <div class="flex items-center gap-2 flex-wrap">
-                  @for (tier of evt.ticketTiers; track tier.name) {
-                    <span class="text-[11px] font-semibold px-2 py-1 rounded-lg bg-surface-container-high border border-outline-variant/30 text-on-surface">
-                      {{ tier.name }}: <strong class="text-primary">&#36;{{ tier.price }}</strong>
-                    </span>
+              <!-- Tarjetas -->
+              @if (eventsByState(state).length > 0) {
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-stretch">
+                  @for (evt of eventsByState(state); track evt.id) {
+                    <app-event-card
+                      [event]="evt"
+                      (open)="openDetail($event)"
+                      (uploadEvidence)="openUploadModal($event)"
+                      (submitReview)="submitForReview($event)"
+                    />
                   }
                 </div>
-              </div>
-            </div>
-
-            <!-- Footer Actions & Role Buttons -->
-            <div class="mt-6 pt-4 border-t border-outline-variant/20 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <button
-                (click)="openDetailModal(evt)"
-                class="flex-1 py-2.5 min-h-11 rounded-xl bg-surface-container-highest hover:bg-surface-bright text-on-surface font-bold text-xs transition-all flex items-center justify-center gap-1"
-              >
-                <span class="material-symbols-outlined text-sm">visibility</span> Ver Croquis & Evidencias
-              </button>
-
-              <!-- EXCLUSIVE UPLOAD ACTION FOR USUARIO ROLE (CRITICAL REQUIREMENT #4) -->
-              @if (roleService.isUsuarioOnly()) {
-                <button
-                  (click)="openUploadModal(evt)"
-                  class="px-3 py-2.5 min-h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs transition-all flex items-center justify-center gap-1 shrink-0"
-                  title="Subir Fotos o Videos de campo sin modificar precios o fechas"
-                >
-                  <span class="material-symbols-outlined text-base">add_a_photo</span> Subir Evidencia
-                </button>
-              }
-            </div>
-
-          </div>
-        }
-      </div>
-
-      <!-- CO-PRODUCTION MODAL APPROVAL / REJECTION (CRITICAL REQUIREMENT #3) -->
-      @if (selectedCoProdEvent(); as evt) {
-        <app-modal-shell title="Revisión de Co-producción" icon="handshake" size="xl" [hasFooter]="true" (closed)="selectedCoProdEvent.set(null)">
-          <div class="space-y-4 text-xs">
-            <div class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30">
-              <p class="font-bold text-purple-200 text-sm mb-1">{{ evt.title }}</p>
-              <p class="text-outline">Socio Propugnante: <strong class="text-on-surface">{{ evt.pendingChanges?.proposedBy }}</strong></p>
-            </div>
-
-            <div class="space-y-2 bg-surface-container-high p-4 rounded-2xl border border-outline-variant/30">
-              <h4 class="font-bold text-on-surface text-xs uppercase tracking-wider">Modificaciones Solicitadas:</h4>
-              <p><strong>Fecha Propuesta:</strong> {{ evt.pendingChanges?.proposedDate }}</p>
-              <p><strong>Recinto Propuesto:</strong> {{ evt.pendingChanges?.proposedVenue }}</p>
-              <p><strong>Reparto de Utilidades:</strong> {{ evt.pendingChanges?.proposedSplitPercent }}% / {{ 100 - (evt.pendingChanges?.proposedSplitPercent || 50) }}%</p>
-              <p class="mt-2 text-outline"><strong>Justificación:</strong> {{ evt.pendingChanges?.reason }}</p>
-            </div>
-          </div>
-
-          <ng-container modal-footer>
-            <button
-              (click)="respondCoProduction(false)"
-              class="px-4 py-2.5 min-h-11 rounded-xl bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white font-bold text-xs transition-all"
-            >
-              Rechazar Propuesta
-            </button>
-            <button
-              (click)="respondCoProduction(true)"
-              class="px-5 py-2.5 min-h-11 rounded-xl bg-emerald-500 text-black hover:bg-emerald-400 font-black text-xs shadow-lg transition-all"
-            >
-              Aprobar Cambios en Evento
-            </button>
-          </ng-container>
-        </app-modal-shell>
-      }
-
-      <!-- EVENT DETAIL & CROQUIS MODAL -->
-      @if (selectedEvent(); as evt) {
-        <app-modal-shell [title]="evt.title" [subtitle]="evt.venue + ', ' + evt.location + ' (' + evt.date + ')'" size="3xl" [hasFooter]="true" (closed)="selectedEvent.set(null)">
-          <div class="space-y-6">
-            <!-- SIMULATED CROQUIS MAP ZONES -->
-            <div class="space-y-3">
-              <h4 class="text-xs font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary text-base">map</span> Croquis Zonal Interactivo (Simulado)
-              </h4>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                @for (zone of evt.croquisZones; track zone.id) {
-                  <div class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-2">
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-bold text-on-surface">{{ zone.name }}</span>
-                      <span class="w-3 h-3 rounded-full shrink-0" [style.background-color]="zone.color"></span>
-                    </div>
-                    <p class="text-xs text-outline">Capacidad: {{ zone.capacity }} personas</p>
-                    <app-progress-bar [percent]="zone.occupancyPercent" valueLabel="{{ zone.occupancyPercent }}% Ocupado" colorVariant="primary" />
-                  </div>
-                }
-              </div>
-            </div>
-
-            <!-- EVIDENCE MEDIA GALLERY -->
-            <div class="space-y-3 pt-3 border-t border-outline-variant/20">
-              <div class="flex items-center justify-between gap-2">
-                <h4 class="text-xs font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
-                  <span class="material-symbols-outlined text-emerald-400 text-base">photo_library</span>
-                  Evidencia Multimedia de Campo ({{ evt.evidenceMedia?.length || 0 }})
-                </h4>
-
-                <button
-                  (click)="openUploadModal(evt)"
-                  class="px-3 py-1.5 min-h-9 rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-black font-bold text-xs transition-all flex items-center gap-1 shrink-0"
-                >
-                  <span class="material-symbols-outlined text-sm">add_a_photo</span> Subir Evidencia
-                </button>
-              </div>
-
-              @if ((evt.evidenceMedia?.length || 0) === 0) {
-                <div class="p-6 rounded-2xl bg-surface-container-high text-center text-xs text-outline border border-dashed border-outline-variant/40">
-                  No se ha adjuntado evidencia aún. El rol Usuario puede subir fotos/videos de la prueba de sonido.
+              } @else if (hasActiveContextFilter(state)) {
+                <div class="py-5 px-4 text-center bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/20 space-y-2">
+                  <p class="text-xs text-outline font-medium italic">
+                    Ningún evento de "{{ state }}" coincide con el filtro
+                    <strong class="text-on-surface not-italic">{{ activeContextFilterLabel(state) }}</strong>.
+                  </p>
+                  <button
+                    type="button"
+                    (click)="setStateContextFilter(state, 'todas')"
+                    class="px-3.5 py-1.5 min-h-9 rounded-xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-on-primary text-[11px] font-bold transition-all inline-flex items-center gap-1.5"
+                  >
+                    <span class="material-symbols-outlined text-xs">filter_alt_off</span> Quitar filtro
+                  </button>
                 </div>
               } @else {
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  @for (ev of evt.evidenceMedia; track ev.id) {
-                    <div class="rounded-2xl overflow-hidden bg-surface-container-high border border-outline-variant/30 space-y-2 p-2">
-                      <img [src]="ev.url" [alt]="ev.caption" class="w-full aspect-video object-cover rounded-xl" />
-                      <p class="text-[11px] font-semibold text-on-surface px-1">{{ ev.caption }}</p>
-                      <div class="flex items-center justify-between text-[10px] text-outline px-1">
-                        <span class="truncate">{{ ev.uploaderName }}</span>
-                        <span class="shrink-0">{{ ev.uploadedAt }}</span>
-                      </div>
-                    </div>
-                  }
-                </div>
+                <p class="py-5 text-center text-xs text-outline font-medium italic bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/20">
+                  Sin eventos en la fase "{{ state }}"
+                </p>
               }
+            </section>
+          }
+        </div>
+      } @else {
+        <!-- ─── CARTELERA ─── -->
+        @if (carteleraEvents().length > 0) {
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-stretch">
+            @for (evt of carteleraEvents(); track evt.id) {
+              <app-event-card
+                [event]="evt"
+                (open)="openDetail($event)"
+                (uploadEvidence)="openUploadModal($event)"
+                (submitReview)="submitForReview($event)"
+              />
+            }
+          </div>
+        } @else {
+          <div class="p-12 text-center bg-surface-container-high rounded-3xl border border-outline-variant/30 space-y-2">
+            <span class="material-symbols-outlined text-4xl text-outline">search_off</span>
+            <p class="text-sm text-outline font-bold">No se encontraron eventos con los filtros seleccionados.</p>
+            <button type="button" (click)="clearAllFilters()" class="text-xs text-primary font-bold hover:underline">
+              Limpiar todos los filtros
+            </button>
+          </div>
+        }
+      }
+
+      <!-- ─── EXPEDIENTE DEL EVENTO ─── -->
+      @if (selectedEvent()) {
+        <app-event-detail-modal
+          [event]="selectedEvent()"
+          [availableGroups]="mockData.groups()"
+          (closed)="selectedEvent.set(null)"
+          (uploadEvidence)="openUploadModal($event)"
+          (submitReview)="submitForReview($event)"
+          (approve)="respondApproval($event.event, $event.approvalId, true)"
+          (reject)="respondApproval($event.event, $event.approvalId, false, $event.reason)"
+          (publish)="publish($event.event, $event.scheduledAt)"
+          (cancel)="cancelEvent($event.event, $event.reason)"
+          (seal)="sealEvent($event)"
+          (patch)="applyPatch($event)"
+        />
+      }
+
+      <!-- ─── ALTA DE EVENTO ─── -->
+      @if (isCreating()) {
+        <app-modal-shell
+          title="Crear Nuevo Evento"
+          subtitle="Solo lo mínimo para identificarlo: el resto se captura en el expediente"
+          icon="add_circle"
+          size="lg"
+          [hasFooter]="true"
+          (closed)="isCreating.set(false)"
+        >
+          <div class="space-y-3.5">
+            <div class="p-3 rounded-xl bg-primary/10 border border-primary/25 text-[11px] text-on-surface-variant">
+              El evento nace en <strong class="text-primary">Borrador</strong>: podrás agregar el cartel, el equipo de
+              sonido, los horarios y el boletaje antes de enviarlo a la revisión de los encargados involucrados.
             </div>
+
+            <app-form-field label="Nombre del Evento" [(value)]="createForm.title" placeholder="Ej. Gran Baile del Recuerdo" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <app-form-field label="Fecha del Evento" type="date" [(value)]="createForm.date" />
+              <app-form-field label="Aforo Estimado del Recinto" type="number" [(value)]="createForm.capacity" placeholder="Ej. 8000" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <app-form-field label="Recinto" [(value)]="createForm.venue" placeholder="Ej. Arena Monterrey" />
+              <app-form-field label="Ciudad y Estado" [(value)]="createForm.location" placeholder="Ej. Monterrey, NL" />
+            </div>
+            <app-form-field label="Dirección del Recinto" [(value)]="createForm.venueAddress" placeholder="Calle, número, colonia" />
+            <app-form-field label="Descripción Pública" type="textarea" [(value)]="createForm.description" placeholder="Lo que leerá el público en la cartelera" />
+            <app-form-field label="Imagen de Cartelera (URL)" [(value)]="createForm.flyerUrl" placeholder="https://..." />
+            <app-form-field label="¿Es Co-producción?" type="select" [(value)]="createForm.isCoProduction" [options]="yesNoOptions" />
+            @if (createForm.isCoProduction === 'si') {
+              <app-form-field label="Disquera Socia" [(value)]="createForm.coProductionPartner" placeholder="Nombre de la disquera co-productora" />
+            }
           </div>
 
           <ng-container modal-footer>
-            <button (click)="selectedEvent.set(null)" class="px-5 py-2.5 min-h-11 rounded-xl bg-surface-bright text-on-surface font-semibold text-xs">
-              Cerrar Detalle
+            <button
+              type="button"
+              (click)="isCreating.set(false)"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-surface-bright text-on-surface text-xs font-semibold"
+            >Cancelar</button>
+            <button
+              type="button"
+              (click)="createEvent()"
+              [disabled]="!canCreate()"
+              class="px-5 py-2.5 min-h-11 rounded-xl bg-primary text-on-primary text-xs font-black disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1.5"
+            >
+              <span class="material-symbols-outlined text-sm">save</span> Crear Borrador
             </button>
           </ng-container>
         </app-modal-shell>
       }
 
-      <!-- USUARIO EVIDENCE UPLOAD MODAL (CRITICAL REQUIREMENT #4) -->
-      @if (uploadEventTarget(); as target) {
-        <app-modal-shell title="Subir Evidencia (Fotos / Videos)" icon="add_a_photo" size="md" [hasFooter]="true" (closed)="uploadEventTarget.set(null)">
+      <!-- ─── CARGA DE EVIDENCIA ─── -->
+      @if (uploadTarget(); as target) {
+        <app-modal-shell
+          title="Subir Evidencia de Campo"
+          [subtitle]="target.title"
+          icon="add_a_photo"
+          size="md"
+          [hasFooter]="true"
+          (closed)="uploadTarget.set(null)"
+        >
           <div class="space-y-3.5">
             <div class="p-3 rounded-xl bg-emerald-500/10 text-emerald-300 text-xs">
-              <strong>Acción de Campo Habilitada:</strong> Subida de evidencia autorizada para el evento {{ target.title }}. No se modifican costos ni fechas.
+              Carga de fotos y videos del montaje, la prueba de sonido o el show. No modifica precios, horarios ni boletaje.
             </div>
 
             <app-form-field label="Tipo de Archivo" type="select" [(value)]="uploadForm.type" [options]="uploadTypeOptions" />
+            <app-form-field label="Momento del Evento" type="select" [(value)]="uploadForm.stage" [options]="stageOptions" />
             <app-form-field label="Descripción / Pie de Foto" [(value)]="uploadForm.caption" placeholder="Ej. Prueba de sonido escenario principal" />
-            <app-form-field label="Simulación de URL / Archivo Mock" [(value)]="uploadForm.url" placeholder="https://..." />
+            <app-form-field label="URL del Archivo" [(value)]="uploadForm.url" placeholder="https://..." />
           </div>
 
           <ng-container modal-footer>
-            <button (click)="uploadEventTarget.set(null)" class="px-4 py-2 min-h-11 rounded-xl bg-surface-bright text-on-surface text-xs font-semibold">Cancelar</button>
-            <button (click)="saveEvidence()" class="px-5 py-2 min-h-11 rounded-xl bg-emerald-500 text-black text-xs font-bold">Subir Evidencia</button>
+            <button
+              type="button"
+              (click)="uploadTarget.set(null)"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-surface-bright text-on-surface text-xs font-semibold"
+            >Cancelar</button>
+            <button
+              type="button"
+              (click)="saveEvidence()"
+              [disabled]="!uploadForm.caption.trim()"
+              class="px-5 py-2.5 min-h-11 rounded-xl bg-emerald-500 text-black text-xs font-bold disabled:opacity-40 disabled:pointer-events-none"
+            >Subir Evidencia</button>
           </ng-container>
         </app-modal-shell>
       }
@@ -260,9 +378,20 @@ export class EventsComponent {
   roleService = inject(RoleService);
   mockData = inject(MockDataService);
 
-  selectedCoProdEvent = signal<EventItem | null>(null);
+  readonly allStates: readonly EventState[] = EVENT_ALL_STATES;
+
+  viewMode = signal<'tablero' | 'cartelera'>('tablero');
+  searchTerm = signal('');
+  stateFilter = signal('Todos');
+  sortMode = signal<EventSortMode>('fecha');
+  hideEmptyStates = signal(false);
+  /** Filtro contextual activo por fase ({ 'En Venta': 'venta_lenta', ... }). */
+  stateContextFilter = signal<Record<string, string>>({});
+  /** Filtro transversal, el que aplica cuando la cartelera muestra todas las fases. */
+  transversalFilter = signal('todas');
+
   selectedEvent = signal<EventItem | null>(null);
-  uploadEventTarget = signal<EventItem | null>(null);
+  uploadTarget = signal<EventItem | null>(null);
   isCreating = signal(false);
 
   readonly uploadTypeOptions: FormFieldOption[] = [
@@ -270,56 +399,399 @@ export class EventsComponent {
     { label: 'Video Corto (MP4)', value: 'video' }
   ];
 
-  uploadForm = {
-    type: 'photo' as 'photo' | 'video',
-    caption: '',
-    url: ''
+  readonly stageOptions: FormFieldOption[] = [
+    { label: 'Montaje', value: 'Montaje' },
+    { label: 'Prueba de Sonido', value: 'Prueba de Sonido' },
+    { label: 'Show', value: 'Show' },
+    { label: 'Desmontaje', value: 'Desmontaje' },
+    { label: 'Otro', value: 'Otro' }
+  ];
+
+  readonly yesNoOptions: FormFieldOption[] = [
+    { label: 'No', value: 'no' },
+    { label: 'Sí', value: 'si' }
+  ];
+
+  // `type` y `stage` se guardan como string simple: el binding de dos vías de
+  // `app-form-field` emite `string | number`, y tiparlos como unión aquí haría
+  // fallar la verificación estricta de plantillas.
+  uploadForm = { type: 'photo', stage: 'Montaje', caption: '', url: '' };
+
+  createForm = {
+    title: '',
+    date: '',
+    venue: '',
+    location: '',
+    venueAddress: '',
+    description: '',
+    flyerUrl: '',
+    capacity: '' as string | number,
+    isCoProduction: 'no',
+    coProductionPartner: ''
   };
 
-  getPendingCoProductionEvents(): EventItem[] {
-    return this.mockData.events().filter(e => e.isCoProduction && e.coProductionStatus === 'pending_review' && e.pendingChanges);
+  // ─── Datos visibles según el rol ──────────────────────────────────────────
+
+  /**
+   * El Usuario de campo solo ve eventos ya públicos. Un borrador trae costos
+   * de grupos y acuerdos entre encargados que no le corresponden.
+   */
+  visibleEvents = computed<EventItem[]>(() => {
+    const list = this.mockData.events();
+    if (!this.roleService.isUsuarioOnly()) return list;
+    return list.filter(e => e.state === 'Publicado' || e.state === 'En Venta' || e.state === 'Finalizada');
+  });
+
+  /** Búsqueda + fase, sin los filtros contextuales. */
+  private searchedEvents = computed<EventItem[]>(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const state = this.stateFilter();
+
+    return this.visibleEvents().filter(e => {
+      const matchState = state === 'Todos' || e.state === state;
+      if (!matchState) return false;
+      if (!term) return true;
+
+      return e.id.toLowerCase().includes(term)
+        || e.title.toLowerCase().includes(term)
+        || e.venue.toLowerCase().includes(term)
+        || e.location.toLowerCase().includes(term)
+        || e.groupName.toLowerCase().includes(term)
+        || (e.lineup || []).some(s => s.groupName.toLowerCase().includes(term));
+    });
+  });
+
+  // ─── Tablero ──────────────────────────────────────────────────────────────
+
+  filteredStates = computed<EventState[]>(() => {
+    if (this.stateFilter() !== 'Todos') return [this.stateFilter() as EventState];
+    if (this.hideEmptyStates()) return this.allStates.filter(st => this.rawEventsByState(st).length > 0);
+    return [...this.allStates];
+  });
+
+  stateChips = computed<EventStateChip[]>(() =>
+    this.allStates.map(state => ({
+      state,
+      count: this.visibleEvents().filter(e => e.state === state).length
+    }))
+  );
+
+  /** Eventos de una fase sin su filtro contextual (base de los conteos). */
+  rawEventsByState(state: EventState): EventItem[] {
+    return this.searchedEvents().filter(e => e.state === state);
   }
 
-  openCoProductionModal(evt: EventItem): void {
-    this.selectedCoProdEvent.set(evt);
+  /** Eventos de una fase con su filtro contextual aplicado. */
+  eventsByState(state: EventState): EventItem[] {
+    return this.applyContextFilter(this.rawEventsByState(state), state);
   }
 
-  respondCoProduction(approve: boolean): void {
-    const current = this.selectedCoProdEvent();
-    if (current) {
-      this.mockData.respondCoProductionChanges(current.id, approve);
-      this.selectedCoProdEvent.set(null);
+  // ─── Cartelera ────────────────────────────────────────────────────────────
+
+  carteleraEvents = computed<EventItem[]>(() => {
+    const list = this.stateFilter() === 'Todos'
+      ? this.applyTransversalFilter(this.searchedEvents())
+      : this.applyContextFilter(this.searchedEvents(), this.stateFilter() as EventState);
+
+    const sorted = [...list];
+    switch (this.sortMode()) {
+      case 'estado':
+        return sorted.sort((a, b) => this.allStates.indexOf(a.state) - this.allStates.indexOf(b.state));
+      case 'ocupacion':
+        return sorted.sort((a, b) => occupancyPercent(b) - occupancyPercent(a));
+      case 'taquilla':
+        return sorted.sort((a, b) => grossTicketRevenue(b) - grossTicketRevenue(a));
+      case 'titulo':
+        return sorted.sort((a, b) => a.title.localeCompare(b.title, 'es'));
+      default:
+        // Primero lo que está por venir, en orden; lo ya ocurrido al final.
+        return sorted.sort((a, b) => {
+          const da = daysUntilEvent(a);
+          const db = daysUntilEvent(b);
+          if (da >= 0 && db < 0) return -1;
+          if (da < 0 && db >= 0) return 1;
+          return da - db;
+        });
+    }
+  });
+
+  // ─── Filtros contextuales ─────────────────────────────────────────────────
+
+  private applyContextFilter(list: EventItem[], state: EventState): EventItem[] {
+    const active = this.activeStateFilter(state);
+    if (active === 'todas') return list;
+    const option = this.stateOptions(state).find(o => o.value === active);
+    return option ? list.filter(e => option.match(e)) : list;
+  }
+
+  private applyTransversalFilter(list: EventItem[]): EventItem[] {
+    const active = this.transversalFilter();
+    if (active === 'todas') return list;
+    const option = transversalFilterOptions().find(o => o.value === active);
+    return option ? list.filter(e => option.match(e)) : list;
+  }
+
+  private stateOptions(state: EventState): EventFilterOption[] {
+    return stateFilterOptions(state);
+  }
+
+  activeStateFilter(state: EventState): string {
+    return this.stateContextFilter()[state] ?? 'todas';
+  }
+
+  setStateContextFilter(state: EventState, value: string): void {
+    this.stateContextFilter.update(map => ({ ...map, [state]: value }));
+  }
+
+  hasActiveContextFilter(state: EventState): boolean {
+    return this.activeStateFilter(state) !== 'todas';
+  }
+
+  activeContextFilterLabel(state: EventState): string {
+    const active = this.activeStateFilter(state);
+    return this.stateOptions(state).find(o => o.value === active)?.label ?? '';
+  }
+
+  stateFilterBarLabel(state: EventState): string {
+    return stateFilterLabel(state);
+  }
+
+  stateFilterChips(state: EventState): EventFilterChip[] {
+    const base = this.rawEventsByState(state);
+    return this.stateOptions(state).map(o => ({
+      value: o.value,
+      label: o.label,
+      icon: o.icon,
+      activeClass: o.activeClass,
+      count: base.filter(e => o.match(e)).length
+    }));
+  }
+
+  /** True cuando la cartelera muestra todas las fases y por lo tanto usa los transversales. */
+  private usesTransversalFilters(): boolean {
+    return this.stateFilter() === 'Todos';
+  }
+
+  activeContextChips(): EventFilterChip[] {
+    if (this.usesTransversalFilters()) {
+      const base = this.searchedEvents();
+      return transversalFilterOptions().map(o => ({
+        value: o.value,
+        label: o.label,
+        icon: o.icon,
+        activeClass: o.activeClass,
+        count: base.filter(e => o.match(e)).length
+      }));
+    }
+    return this.stateFilterChips(this.stateFilter() as EventState);
+  }
+
+  activeContextValue(): string {
+    return this.usesTransversalFilters()
+      ? this.transversalFilter()
+      : this.activeStateFilter(this.stateFilter() as EventState);
+  }
+
+  activeContextLabel(): string {
+    return this.usesTransversalFilters()
+      ? TRANSVERSAL_FILTER_LABEL
+      : stateFilterLabel(this.stateFilter() as EventState);
+  }
+
+  setActiveContextFilter(value: string): void {
+    if (this.usesTransversalFilters()) {
+      this.transversalFilter.set(value);
+    } else {
+      this.setStateContextFilter(this.stateFilter() as EventState, value);
     }
   }
 
-  openDetailModal(evt: EventItem): void {
+  activeFilterChips(): ActiveEventFilterChip[] {
+    const chips: ActiveEventFilterChip[] = [];
+
+    if (this.searchTerm()) {
+      chips.push({ key: 'search', label: '"' + this.searchTerm() + '"', icon: 'search' });
+    }
+
+    if (this.stateFilter() !== 'Todos') {
+      chips.push({
+        key: 'state',
+        label: this.stateFilter(),
+        icon: eventStateMeta(this.stateFilter() as EventState).icon
+      });
+    }
+
+    const context = this.activeContextValue();
+    if (context !== 'todas') {
+      const label = this.activeContextChips().find(c => c.value === context)?.label;
+      if (label) chips.push({ key: 'context', label, icon: 'filter_alt' });
+    }
+
+    return chips;
+  }
+
+  removeFilter(key: ActiveEventFilterChip['key']): void {
+    switch (key) {
+      case 'search': this.searchTerm.set(''); break;
+      case 'state': this.stateFilter.set('Todos'); break;
+      case 'context': this.setActiveContextFilter('todas'); break;
+    }
+  }
+
+  clearAllFilters(): void {
+    this.searchTerm.set('');
+    this.stateFilter.set('Todos');
+    this.transversalFilter.set('todas');
+    this.stateContextFilter.set({});
+  }
+
+  // ─── Presentación de la fase ──────────────────────────────────────────────
+
+  stateIcon(state: EventState): string {
+    return eventStateMeta(state).icon;
+  }
+
+  stateTextColor(state: EventState): string {
+    return eventStateMeta(state).textColor;
+  }
+
+  stateBadgeClass(state: EventState): string {
+    return eventStateMeta(state).badgeClass;
+  }
+
+  stateMeaning(state: EventState): string {
+    return eventStateMeta(state).meaning;
+  }
+
+  stateSummaryLabel(state: EventState): string {
+    return stateSummary(state, this.eventsByState(state), this.roleService.canViewFinances());
+  }
+
+  // ─── Métricas ─────────────────────────────────────────────────────────────
+
+  panelMetrics(): PanelMetric[] {
+    return resolvePanelMetrics(this.visibleEvents(), this.roleService.canViewFinances());
+  }
+
+  metricsTitle(): string {
+    return this.roleService.canViewFinances()
+      ? 'Taquilla & Compromisos de Producción'
+      : 'Operación de Eventos & Aprobaciones';
+  }
+
+  metricsSubtitle(): string {
+    return this.roleService.canViewFinances()
+      ? 'Cuánto se ha cobrado, cuánto falta por vender y qué está comprometido con los grupos'
+      : 'Qué está esperando aprobación, qué está por publicarse y cómo va el aforo';
+  }
+
+  // ─── Acciones ─────────────────────────────────────────────────────────────
+
+  openDetail(evt: EventItem): void {
     this.selectedEvent.set(evt);
   }
 
-  openUploadModal(evt: EventItem): void {
-    this.uploadEventTarget.set(evt);
-    this.uploadForm = {
-      type: 'photo',
-      caption: '',
-      url: ''
+  /** Vuelve a leer el evento del store para que el modal abierto no se quede con datos viejos. */
+  private refreshSelected(eventId: string): void {
+    if (this.selectedEvent()?.id !== eventId) return;
+    const fresh = this.mockData.events().find(e => e.id === eventId) || null;
+    this.selectedEvent.set(fresh);
+  }
+
+  submitForReview(evt: EventItem): void {
+    this.mockData.submitEventForReview(evt.id);
+    this.refreshSelected(evt.id);
+  }
+
+  respondApproval(evt: EventItem, approvalId: string, approve: boolean, reason?: string): void {
+    this.mockData.respondEventApproval(evt.id, approvalId, approve, reason);
+    this.refreshSelected(evt.id);
+  }
+
+  publish(evt: EventItem, scheduledAt?: string): void {
+    this.mockData.publishEvent(evt.id, scheduledAt);
+    this.refreshSelected(evt.id);
+  }
+
+  /**
+   * Guarda una edición del expediente. Cada pestaña arma el objeto ya
+   * modificado y lo manda entero, en vez de que el servicio tenga un método
+   * por campo: así agregar un dato nuevo al evento no obliga a tocar el store.
+   */
+  applyPatch(changes: Partial<EventItem>): void {
+    const current = this.selectedEvent();
+    if (!current) return;
+    this.mockData.updateEventDetails(current.id, changes);
+    this.refreshSelected(current.id);
+  }
+
+  cancelEvent(evt: EventItem, reason: string): void {
+    // Los boletos ya vendidos son exactamente los que hay que reembolsar.
+    this.mockData.cancelEvent(evt.id, reason, soldSeats(evt), grossTicketRevenue(evt));
+    this.refreshSelected(evt.id);
+  }
+
+  sealEvent(evt: EventItem): void {
+    this.mockData.sealEventClosure(evt.id);
+    this.refreshSelected(evt.id);
+  }
+
+  openCreateModal(): void {
+    this.createForm = {
+      title: '',
+      date: '',
+      venue: '',
+      location: '',
+      venueAddress: '',
+      description: '',
+      flyerUrl: '',
+      capacity: '',
+      isCoProduction: 'no',
+      coProductionPartner: ''
     };
+    this.isCreating.set(true);
+  }
+
+  canCreate(): boolean {
+    const f = this.createForm;
+    return !!f.title.trim() && !!f.date && !!f.venue.trim() && !!f.location.trim();
+  }
+
+  createEvent(): void {
+    if (!this.canCreate()) return;
+    const f = this.createForm;
+    this.mockData.addEvent({
+      title: f.title.trim(),
+      date: String(f.date),
+      venue: f.venue.trim(),
+      location: f.location.trim(),
+      venueAddress: f.venueAddress.trim() || undefined,
+      description: f.description.trim() || undefined,
+      flyerUrl: f.flyerUrl.trim() || undefined,
+      capacity: Number(f.capacity) || undefined,
+      isCoProduction: f.isCoProduction === 'si',
+      coProductionPartner: f.isCoProduction === 'si' ? (f.coProductionPartner.trim() || undefined) : undefined
+    });
+    this.isCreating.set(false);
+  }
+
+  openUploadModal(evt: EventItem): void {
+    this.uploadTarget.set(evt);
+    this.uploadForm = { type: 'photo', stage: 'Montaje', caption: '', url: '' };
   }
 
   saveEvidence(): void {
-    const target = this.uploadEventTarget();
-    if (target && this.uploadForm.caption) {
-      this.mockData.uploadEventEvidence(
-        target.id,
-        this.uploadForm.type,
-        this.uploadForm.caption,
-        this.uploadForm.url
-      );
-      this.uploadEventTarget.set(null);
-      // Refresh detail modal if open
-      const updatedEvent = this.mockData.events().find(e => e.id === target.id);
-      if (updatedEvent && this.selectedEvent()?.id === target.id) {
-        this.selectedEvent.set(updatedEvent);
-      }
-    }
+    const target = this.uploadTarget();
+    if (!target || !this.uploadForm.caption.trim()) return;
+
+    this.mockData.uploadEventEvidence(
+      target.id,
+      this.uploadForm.type === 'video' ? 'video' : 'photo',
+      this.uploadForm.caption.trim(),
+      this.uploadForm.url.trim(),
+      this.uploadForm.stage
+    );
+    this.uploadTarget.set(null);
+    this.refreshSelected(target.id);
   }
 }

@@ -5,7 +5,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-export type EditableType = 'text' | 'textarea' | 'number' | 'tel' | 'email' | 'date' | 'url' | 'select';
+export type EditableType =
+  'text' | 'textarea' | 'number' | 'tel' | 'email' | 'date' | 'datetime-local' | 'url' | 'select';
 
 export interface EditableOption {
   value: string;

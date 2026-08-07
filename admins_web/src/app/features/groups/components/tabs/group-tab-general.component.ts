@@ -31,109 +31,102 @@ type PickerKind = 'avatar' | 'cover' | 'mixVideo';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
-  template: `
-    <div class="space-y-6 text-xs select-none">
+  template: `    <div class="space-y-5 text-xs select-none">
 
-      <!-- IDENTIDAD COMPACTA DE LUJO EN CRISTAL Y ORO NEÓN -->
-      <section class="rounded-3xl overflow-hidden border border-primary/40 bg-gradient-to-br from-[#18152a] via-[#151226] to-[#0f0c1b] shadow-[0_15px_40px_rgba(0,0,0,0.6)] relative">
-        <div class="relative h-32 sm:h-44 group/cover overflow-hidden">
-          <img [src]="profile().coverUrl" alt="Portada del grupo" class="w-full h-full object-cover group-hover/cover:scale-105 transition-transform duration-700 opacity-60" />
-          <div class="absolute inset-0 bg-gradient-to-t from-[#18152a] via-[#18152a]/50 to-transparent"></div>
+      <!-- INFORMACIÓN GENERAL Y GÉNEROS (COMPACTO DE LUJO) -->
+      <section class="rounded-2xl p-4 sm:p-5 border border-primary/30 bg-gradient-to-br from-[#18152a]/95 via-[#151226]/95 to-[#0f0c1b]/98 shadow-lg relative space-y-4">
+        <header class="flex items-center justify-between gap-3 pb-3 border-b border-primary/20 flex-wrap">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-primary/20 text-primary border border-primary/30 flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-base font-bold">badge</span>
+            </span>
+            <div>
+              <h3 class="text-xs font-black uppercase tracking-wider text-primary font-display-md">Información General del Talento</h3>
+              <p class="text-[10px] text-outline font-bold">Nombre, género principal, año de fundación y ciudad de origen</p>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            (click)="showPicker.set('cover')"
-            class="absolute top-3.5 right-3.5 px-3.5 py-1.5 rounded-xl bg-black/75 hover:bg-primary hover:text-on-primary border border-white/20 text-white text-[11px] font-black flex items-center gap-1.5 backdrop-blur-md transition-all shadow-xl hover:scale-105 active:scale-95"
-          >
-            <span class="material-symbols-outlined text-xs">photo_camera</span> Cambiar Portada
-          </button>
-        </div>
-
-        <div class="px-5 sm:px-8 pb-6 -mt-14 relative flex flex-col sm:flex-row sm:items-start gap-5">
-          <div class="relative shrink-0 group/avatar">
-            <img
-              [src]="profile().avatarUrl"
-              [alt]="profile().name"
-              class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover ring-4 ring-[#18152a] shadow-[0_0_30px_rgba(242,202,80,0.35)]"
-            />
+          <div class="flex items-center gap-2">
             <button
               type="button"
               (click)="showPicker.set('avatar')"
-              class="absolute inset-0 rounded-3xl bg-black/75 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center text-white backdrop-blur-sm"
-              aria-label="Cambiar foto de perfil"
+              class="px-2.5 py-1 rounded-xl bg-surface-container-highest/80 hover:bg-primary hover:text-on-primary border border-outline-variant/30 text-outline text-[11px] font-black flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
             >
-              <span class="material-symbols-outlined text-3xl">photo_camera</span>
+              <span class="material-symbols-outlined text-xs">photo_camera</span> Cambiar Foto
+            </button>
+            <button
+              type="button"
+              (click)="showPicker.set('cover')"
+              class="px-2.5 py-1 rounded-xl bg-surface-container-highest/80 hover:bg-primary hover:text-on-primary border border-outline-variant/30 text-outline text-[11px] font-black flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+            >
+              <span class="material-symbols-outlined text-xs">image</span> Cambiar Portada
             </button>
           </div>
+        </header>
 
-          <div class="flex-1 min-w-0 space-y-3">
-            <app-editable-field
-              [value]="profile().name"
-              label="Nombre del Grupo / Talento Estelar"
-              valueClass="text-xl sm:text-3xl font-black text-on-surface leading-tight tracking-tight break-words font-display-lg"
-              (save)="edit.emit({ section: 'root', field: 'name', value: $event })"
-            />
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <app-editable-field
+            [value]="profile().name"
+            label="Nombre del Grupo / Talento"
+            valueClass="text-sm font-black text-on-surface truncate"
+            (save)="edit.emit({ section: 'root', field: 'name', value: $event })"
+          />
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <app-custom-select
-                label="Género Principal"
-                [options]="genreSelectOptions"
-                [value]="profile().genre"
-                (valueChange)="edit.emit({ section: 'root', field: 'genre', value: $event })"
-              />
+          <app-custom-select
+            label="Género Principal"
+            [options]="genreSelectOptions"
+            [value]="profile().genre"
+            (valueChange)="edit.emit({ section: 'root', field: 'genre', value: $event })"
+          />
 
-              <app-editable-field
-                [value]="profile().foundedYear"
-                label="Año de Fundación"
-                type="number"
-                [groupThousands]="false"
-                valueClass="text-sm font-black text-amber-300 font-mono"
-                (save)="edit.emit({ section: 'root', field: 'foundedYear', value: $event })"
-              />
+          <app-editable-field
+            [value]="profile().foundedYear"
+            label="Año de Fundación"
+            type="number"
+            [groupThousands]="false"
+            valueClass="text-xs font-black text-amber-300 font-mono"
+            (save)="edit.emit({ section: 'root', field: 'foundedYear', value: $event })"
+          />
 
-              <app-editable-field
-                [value]="profile().originCity"
-                label="Ciudad de Origen"
-                valueClass="text-xs font-black text-on-surface truncate"
-                (save)="edit.emit({ section: 'root', field: 'originCity', value: $event })"
-              />
-            </div>
+          <app-editable-field
+            [value]="profile().originCity"
+            label="Ciudad de Origen"
+            valueClass="text-xs font-black text-on-surface truncate"
+            (save)="edit.emit({ section: 'root', field: 'originCity', value: $event })"
+          />
+        </div>
 
-            <!-- Secondary Genres Multi-Tag Select -->
-            <div class="pt-1">
-              <app-multi-tag-select
-                label="Géneros Secundarios (Opción Múltiple):"
-                placeholder="Seleccionar géneros secundarios..."
-                [selectedTags]="profile().secondaryGenres"
-                [availableOptions]="genreTagOptions"
-                (tagsChange)="updateSecondaryGenres($event)"
-              />
-            </div>
-          </div>
+        <div class="pt-2 border-t border-outline-variant/15">
+          <app-multi-tag-select
+            label="Géneros Secundarios (Opción Múltiple):"
+            placeholder="Seleccionar géneros secundarios..."
+            [selectedTags]="profile().secondaryGenres"
+            [availableOptions]="genreTagOptions"
+            (tagsChange)="updateSecondaryGenres($event)"
+          />
         </div>
       </section>
 
-      <!-- ACERCA DEL GRUPO (EDITORIAL BIO SHOWCASE CARD REDESIGN) + REDES SOCIALES + PERFIL PÚBLICO (GRID 2:1) -->
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 items-start">
+      <!-- MASTER 2-COLUMN GRID (EQUILIBRADO Y SIN ESPACIOS VACÍOS) -->
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
         
-        <!-- LEFT COLUMN (SPAN 2): Bio + Redes Sociales -->
-        <div class="xl:col-span-2 space-y-5">
+        <!-- LEFT COLUMN: Bio + Tarifa + Contacto + Representantes + Redes -->
+        <div class="space-y-5">
+          
           <!-- ACERCA DEL GRUPO -->
           <section
-            class="rounded-3xl p-5 sm:p-7 bg-gradient-to-br from-[#18152a] via-[#151226] to-[#0f0c1b] border transition-all duration-300 relative overflow-hidden space-y-4"
+            class="rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-[#18152a] via-[#151226] to-[#0f0c1b] border transition-all duration-300 relative overflow-hidden space-y-4"
             [class]="vis().showAbout ? 'border-primary/40 shadow-[0_15px_35px_rgba(0,0,0,0.5)]' : 'border-rose-500/60 bg-rose-950/20 shadow-[0_0_30px_rgba(244,63,94,0.2)] opacity-85'"
           >
-            
-            <!-- WATERMARK COMMA DECORATION -->
             <span class="absolute -right-4 -bottom-8 text-[180px] font-serif font-bold text-primary/5 select-none pointer-events-none leading-none font-display-lg">“</span>
 
             <header class="flex items-center justify-between gap-3 flex-wrap border-b border-primary/20 pb-3">
               <div class="flex items-center gap-2.5">
-                <span class="w-9 h-9 rounded-2xl bg-primary/20 text-primary border border-primary/30 flex items-center justify-center shadow-md">
-                  <span class="material-symbols-outlined text-lg font-bold">auto_stories</span>
+                <span class="w-8 h-8 rounded-xl bg-primary/20 text-primary border border-primary/30 flex items-center justify-center shadow-md">
+                  <span class="material-symbols-outlined text-base font-bold">auto_stories</span>
                 </span>
                 <div>
-                  <h3 class="text-xs font-black uppercase tracking-wider text-primary font-display-md flex items-center gap-2">
+                  <h3 class="text-xs font-black uppercase tracking-wider text-primary font-display-md">
                     <span>Acerca del Grupo — Biografía Oficial</span>
                   </h3>
                   <p class="text-[10px] text-outline font-bold">Reseña editorial expuesta en el perfil público del cliente</p>
@@ -160,13 +153,12 @@ type PickerKind = 'avatar' | 'cover' | 'mixVideo';
               </div>
             </header>
 
-            <!-- EDITORIAL TEXT AREA SHOWCASE -->
-            <div class="relative p-4 sm:p-5 rounded-2xl bg-[#131022]/90 border border-outline-variant/30 shadow-inner space-y-3">
+            <div class="relative p-4 rounded-2xl bg-[#131022]/90 border border-outline-variant/30 shadow-inner space-y-3">
               <app-editable-field
                 [value]="profile().about"
                 type="textarea"
-                [rows]="6"
-                valueClass="text-xs sm:text-sm text-on-surface/95 leading-relaxed font-medium font-sans tracking-wide whitespace-pre-line"
+                [rows]="5"
+                valueClass="text-xs text-on-surface/95 leading-relaxed font-medium font-sans tracking-wide whitespace-pre-line"
                 placeholder="Escribe la biografía completa del grupo..."
                 (save)="edit.emit({ section: 'root', field: 'about', value: $event })"
               />
@@ -207,10 +199,11 @@ type PickerKind = 'avatar' | 'cover' | 'mixVideo';
               </div>
             </div>
           </app-group-section>
+
         </div>
 
-        <!-- RIGHT COLUMN (SPAN 1): Perfil Público -->
-        <div class="xl:col-span-1">
+        <!-- RIGHT COLUMN: Perfil Público + Video + Métricas -->
+        <div class="space-y-5">
           <app-group-section
             title="Perfil Público del Cliente"
             icon="public"
@@ -218,7 +211,6 @@ type PickerKind = 'avatar' | 'cover' | 'mixVideo';
             subtitle="Lo que aparece en el portal cuando un cliente busca al grupo"
           >
             <div class="space-y-3">
-              <!-- Lo que el portal deduce solo, para que no se capture dos veces -->
               <div class="p-3 rounded-2xl bg-surface-container/60 border border-dashed border-outline-variant/30">
                 <span class="block text-[10px] font-black uppercase tracking-wider text-outline mb-1.5">
                   Se deduce automáticamente
@@ -237,7 +229,6 @@ type PickerKind = 'avatar' | 'cover' | 'mixVideo';
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <!-- Sub-bloque: Horas de escenario -->
                 <div
                   class="p-3 rounded-2xl bg-surface-container border transition-all duration-300 relative space-y-1.5"
                   [class]="vis().showStatHours ? 'border-emerald-500/25' : 'border-rose-500/60 bg-rose-950/20 shadow-[0_0_15px_rgba(244,63,94,0.15)] opacity-85'"
@@ -274,7 +265,6 @@ type PickerKind = 'avatar' | 'cover' | 'mixVideo';
                   />
                 </div>
 
-                <!-- Sub-bloque: Alta en la plataforma (Antigüedad) -->
                 <div
                   class="p-3 rounded-2xl bg-surface-container border transition-all duration-300 relative space-y-1.5"
                   [class]="vis().showSenioritySpec ? 'border-outline-variant/25' : 'border-rose-500/60 bg-rose-950/20 shadow-[0_0_15px_rgba(244,63,94,0.15)] opacity-85'"
@@ -318,14 +308,13 @@ type PickerKind = 'avatar' | 'cover' | 'mixVideo';
                   label="Historia y Trayectoria"
                   hint="texto largo de la pestaña Trayectoria del portal"
                   type="textarea"
-                  [rows]="7"
+                  [rows]="5"
                   valueClass="text-xs text-on-surface/90 leading-relaxed"
                   placeholder="Cuenta la historia del grupo para el público..."
                   (save)="edit.emit({ section: 'root', field: 'history', value: $event })"
                 />
               </div>
 
-              <!-- Seccion Video de Presentación del Grupo -->
               <div
                 class="space-y-3 p-4 rounded-2xl bg-surface-container border transition-all duration-300"
                 [class]="vis().showPresentationVideo ? 'border-outline-variant/25' : 'border-rose-500/60 bg-rose-950/20 shadow-[0_0_20px_rgba(244,63,94,0.15)] opacity-85'"
@@ -376,7 +365,6 @@ type PickerKind = 'avatar' | 'cover' | 'mixVideo';
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <!-- Botón Subir Video MP4 desde la computadora -->
                   <input type="file" accept="video/*" #videoFileInput class="hidden" (change)="onVideoFileSelected($event)" />
                   <button
                     type="button"
@@ -390,7 +378,6 @@ type PickerKind = 'avatar' | 'cover' | 'mixVideo';
                     <span class="material-symbols-outlined text-primary text-xl shrink-0 group-hover:scale-110 transition-transform">upload_file</span>
                   </button>
 
-                  <!-- Botón Cambiar Portada / Miniatura -->
                   <button
                     type="button"
                     (click)="showPicker.set('mixVideo')"
@@ -427,10 +414,10 @@ type PickerKind = 'avatar' | 'cover' | 'mixVideo';
             </div>
           </app-group-section>
         </div>
+
       </div>
 
-      <!-- 2-COLUMN MASTER GRID (OPTIMIZED SPACE) -->
-      <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
         
         <!-- LEFT COLUMN: Tarifa + Contacto + Representantes -->
         <div class="space-y-5">
