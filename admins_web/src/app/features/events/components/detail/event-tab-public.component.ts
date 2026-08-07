@@ -1,7 +1,9 @@
 import { Component, input, output, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { EventItem, EventPublicProfile, EventRule } from '../../../../core/models/event.models';
+import { EventItem, EventPublicProfile, EventRule, ArtistGreetingVideo } from '../../../../core/models/event.models';
+import { GroupItem } from '../../../../core/models/admin.models';
 import { EditableFieldComponent, EditableOption } from '../../../../shared/ui/editable-field/editable-field.component';
+import { EventTabLineupComponent } from './event-tab-lineup.component';
 import {
   publicProfile,
   lineup,
@@ -13,146 +15,364 @@ import {
 } from '../../event-metrics';
 
 /**
- * Ficha pública del evento: exactamente lo que el cliente ve en
- * `/events/comprar-boletos`.
+ * Pestaña unificada "EVENTO": concentra toda la información pública del evento.
  *
- * A la izquierda se captura; a la derecha se ve el resultado. La vista previa
- * no es adorno: sin ella es fácil dar por buena una ficha a la que le falta el
- * cartel vertical o el texto de presentación, porque desde el panel
- * administrativo esos huecos no se notan — se notan en la página del cliente,
- * que es donde ya es tarde.
+ * Secciones:
+ * 1. Encabezado con estado de la ficha y botón para alternar el Side Modal Window de vista previa.
+ * 2. Datos Principales del Evento (Tarjetas de cristal con editores inline).
+ * 3. Imágenes Oficiales (Portada 16:9 y Cartel 3:4).
+ * 4. Textos de Difusión Pública, Reglas dinámicas y Teléfonos de soporte.
+ * 5. Cartel & Alineación de grupos (Integrado con app-event-tab-lineup).
  */
 @Component({
   selector: 'app-event-tab-public',
   standalone: true,
-  imports: [CommonModule, EditableFieldComponent],
+  imports: [CommonModule, EditableFieldComponent, EventTabLineupComponent],
   host: { class: 'block' },
   template: `
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
+    <div class="space-y-6">
 
-      <!-- ─── CAPTURA ─── -->
-      <div class="space-y-4">
-
-        <!-- Imágenes -->
-        <section class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
-          <h5 class="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[13px]">image</span> Imágenes de la ficha pública
-          </h5>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="space-y-2">
-              <app-editable-field
-                label="Portada panorámica"
-                hint="encabeza la ficha"
-                type="url"
-                placeholder="https://…"
-                valueClass="text-[10px] font-medium text-on-surface break-all"
-                [value]="profile().coverUrl"
-                [readonly]="!canEdit()"
-                (save)="patchProfile({ coverUrl: $event })"
-              />
-              <div class="aspect-video rounded-xl overflow-hidden bg-surface-container border border-outline-variant/25">
-                @if (profile().coverUrl) {
-                  <img [src]="profile().coverUrl" alt="Portada" class="w-full h-full object-cover" />
-                } @else {
-                  <div class="w-full h-full flex items-center justify-center text-outline text-[10px] gap-1">
-                    <span class="material-symbols-outlined text-base">wallpaper</span> Sin portada
-                  </div>
-                }
-              </div>
+      <!-- ─── BARRA DE ACCIÓN SUPERIOR Y TOGGLE DEL SIDE MODAL ─── -->
+      <div class="p-5 rounded-3xl bg-gradient-to-r from-amber-500/10 via-surface-container-high/95 to-amber-500/5 border border-amber-500/30 flex items-center justify-between gap-4 backdrop-blur-2xl shadow-2xl flex-wrap">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center font-black shrink-0 shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+            <span class="material-symbols-outlined text-2xl font-bold">event</span>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h4 class="text-base font-black uppercase tracking-wider text-on-surface truncate">Gestión Integral del Evento</h4>
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase tracking-widest">
+                Información Pública
+              </span>
             </div>
+            <p class="text-xs text-outline font-medium truncate mt-0.5">Captura de datos base, ficha técnica para el cliente y alineación de grupos</p>
+          </div>
+        </div>
 
-            <div class="space-y-2">
-              <app-editable-field
-                label="Cartel oficial (3:4)"
-                hint="el que se amplía con lupa"
-                type="url"
-                placeholder="https://…"
-                valueClass="text-[10px] font-medium text-on-surface break-all"
-                [value]="profile().posterUrl"
-                [readonly]="!canEdit()"
-                (save)="patchProfile({ posterUrl: $event })"
-              />
-              <div class="aspect-[3/4] max-h-44 rounded-xl overflow-hidden bg-surface-container border border-outline-variant/25 mx-auto">
-                @if (profile().posterUrl) {
-                  <img [src]="profile().posterUrl" alt="Cartel" class="w-full h-full object-cover" />
-                } @else {
-                  <div class="w-full h-full flex flex-col items-center justify-center text-outline text-[10px] gap-1 text-center px-2">
-                    <span class="material-symbols-outlined text-base">imagesmode</span> Sin cartel vertical
-                  </div>
-                }
-              </div>
+        <button
+          type="button"
+          (click)="togglePreview.emit(!showPreview())"
+          [class]="showPreview()
+            ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black shadow-[0_0_25px_rgba(245,158,11,0.4)] scale-[1.03] border border-amber-300/60 ring-2 ring-amber-400/30'
+            : 'bg-surface-container-high/90 text-on-surface border border-outline-variant/30 hover:border-amber-500/50 hover:bg-surface-bright shadow-lg'"
+          class="px-5 py-3 min-h-12 rounded-2xl text-xs font-black transition-all duration-300 flex items-center gap-2.5 shrink-0"
+        >
+          <span class="material-symbols-outlined text-xl font-bold">{{ showPreview() ? 'visibility_off' : 'visibility' }}</span>
+          <span>{{ showPreview() ? 'Cerrar Vista Previa Lateral' : 'Ver Vista Previa de Cliente (Side Modal)' }}</span>
+        </button>
+      </div>
+
+      <!-- ─── SECCIÓN 1: DATOS PRINCIPALES DEL EVENTO ─── -->
+      <section class="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-amber-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-amber-500/25 border-l-4 border-l-amber-500/70 shadow-2xl shadow-amber-500/5 space-y-5 backdrop-blur-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-4">
+          <h5 class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold material-symbols-outlined text-lg">event</span>
+            <span>Datos principales del evento</span>
+          </h5>
+          <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">Identidad Base</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <app-editable-field
+            label="Nombre del evento"
+            [value]="event().title"
+            [readonly]="!canEditIdentity()"
+            (save)="patch.emit({ title: $event })"
+          />
+          <app-editable-field
+            label="Fecha del evento"
+            type="date"
+            [value]="event().date"
+            [readonly]="!canEditIdentity()"
+            (save)="patch.emit({ date: $event })"
+          />
+          <app-editable-field
+            label="Aforo del recinto"
+            type="number"
+            [value]="event().capacity ?? ''"
+            [readonly]="!canEditIdentity()"
+            (save)="patch.emit({ capacity: toNumber($event) })"
+          />
+          <app-editable-field
+            label="Recinto / Inmueble"
+            [value]="event().venue"
+            [readonly]="!canEditIdentity()"
+            (save)="patch.emit({ venue: $event })"
+          />
+          <app-editable-field
+            label="Ciudad y estado"
+            [value]="event().location"
+            [readonly]="!canEditIdentity()"
+            (save)="patch.emit({ location: $event })"
+          />
+          <app-editable-field
+            label="Dirección del recinto"
+            [value]="event().venueAddress || ''"
+            [readonly]="!canEditIdentity()"
+            (save)="patch.emit({ venueAddress: $event })"
+          />
+        </div>
+
+        <!-- Categoría como chips y no como <select>: son seis opciones fijas,
+             se ven todas de golpe y la elegida queda evidente. Es además el
+             dato que encabeza la ficha del cliente. -->
+        <div class="space-y-2.5 pt-1">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <label class="text-[10px] font-black uppercase tracking-wider text-outline">Categoría del evento</label>
+            <span class="text-[10px] text-outline">Encabeza la ficha pública del cliente</span>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            @for (c of categoryChips; track c.value) {
+              <button
+                type="button"
+                [disabled]="!canEdit()"
+                (click)="patchProfile({ category: $any(c.value) })"
+                class="px-3.5 py-2 rounded-2xl border text-[11px] font-black transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                [class]="profile().category === c.value
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black border-amber-300/60 shadow-[0_0_18px_-4px_rgba(245,158,11,0.8)] scale-[1.04]'
+                  : 'bg-surface-container/60 text-outline border-outline-variant/25 hover:text-on-surface hover:border-amber-500/40'"
+              >
+                <span class="material-symbols-outlined text-base">{{ c.icon }}</span>
+                {{ c.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <app-editable-field
+          label="Nota interna (Confidencial)"
+          hint="no se muestra al público"
+          type="textarea"
+          [rows]="2"
+          valueClass="text-xs font-medium text-on-surface-variant break-words"
+          [value]="event().description || ''"
+          [readonly]="!canEditIdentity()"
+          (save)="patch.emit({ description: $event })"
+        />
+      </section>
+
+      <!-- ─── SECCIÓN 2: IMÁGENES OFICIALES DEL EVENTO ─── -->
+      <section class="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-cyan-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-cyan-500/25 border-l-4 border-l-cyan-500/70 shadow-2xl shadow-cyan-500/5 space-y-5 backdrop-blur-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-4">
+          <h5 class="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold material-symbols-outlined text-lg">image</span>
+            <span>Imágenes oficiales del evento</span>
+          </h5>
+          <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">Multimedia de Difusión</span>
+        </div>
+
+        <!-- Solo dos imágenes: son exactamente las que ve el público en la
+             ficha de compra —la portada de fondo y el cartel que se amplía—.
+             El thumbnail interno de las tarjetas del panel se sincroniza solo
+             con el cartel, para no pedirle al encargado una tercera imagen. -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+          <!-- Portada Panorámica -->
+          <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/20 space-y-3 shadow-md">
+            <app-editable-field
+              label="Portada panorámica (16:9)"
+              hint="encabeza la ficha del portal"
+              type="url"
+              placeholder="https://…"
+              valueClass="text-xs font-mono text-on-surface break-all"
+              [value]="profile().coverUrl"
+              [readonly]="!canEdit()"
+              (save)="patchProfile({ coverUrl: $event })"
+            />
+            <div class="aspect-video rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/25 relative group shadow-lg">
+              @if (profile().coverUrl) {
+                <img [src]="profile().coverUrl" alt="Portada" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute bottom-2 left-2 px-2.5 py-1 rounded-xl bg-black/70 backdrop-blur-md text-[9px] font-mono font-bold text-white border border-white/20">
+                  16:9 Panorámica
+                </div>
+              } @else {
+                <div class="w-full h-full flex flex-col items-center justify-center text-outline text-xs gap-1.5">
+                  <span class="material-symbols-outlined text-2xl text-outline/60">wallpaper</span>
+                  <span class="font-semibold">Sin portada panorámica</span>
+                </div>
+              }
             </div>
           </div>
 
-          @if (sameImages()) {
-            <p class="text-[10px] text-amber-300 flex items-start gap-1.5">
-              <span class="material-symbols-outlined text-[13px] shrink-0">warning</span>
-              La portada y el cartel son la misma imagen. En la ficha del cliente una va horizontal de fondo y la otra
-              se amplía en vertical: usar la misma se ve recortada en al menos una de las dos.
-            </p>
-          }
-        </section>
+          <!-- Cartel Oficial Vertical -->
+          <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/20 space-y-3 shadow-md">
+            <app-editable-field
+              label="Cartel / flyer oficial (3:4)"
+              hint="el que se amplía en la ficha del cliente"
+              type="url"
+              placeholder="https://…"
+              valueClass="text-xs font-mono text-on-surface break-all"
+              [value]="profile().posterUrl"
+              [readonly]="!canEdit()"
+              (save)="savePoster($event)"
+            />
+            <div class="aspect-[3/4] max-h-52 rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/25 mx-auto relative group shadow-lg">
+              @if (profile().posterUrl) {
+                <img [src]="profile().posterUrl" alt="Cartel" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute bottom-2 left-2 px-2.5 py-1 rounded-xl bg-black/70 backdrop-blur-md text-[9px] font-mono font-bold text-white border border-white/20">
+                  3:4 Vertical
+                </div>
+              } @else {
+                <div class="w-full h-full flex flex-col items-center justify-center text-outline text-xs gap-1 text-center p-3">
+                  <span class="material-symbols-outlined text-2xl text-outline/60">imagesmode</span>
+                  <span class="font-semibold">Sin cartel vertical 3:4</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
 
-        <!-- Textos -->
-        <section class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
-          <h5 class="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[13px]">edit_note</span> Textos de la ficha
+        @if (sameImages()) {
+          <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-3 shadow-md">
+            <span class="material-symbols-outlined text-lg shrink-0 text-amber-400 mt-0.5">warning</span>
+            <span>La portada y el cartel son la misma imagen. En la ficha del cliente una va horizontal de fondo y la otra se amplía en vertical: se verá recortada en una de las dos.</span>
+          </div>
+        }
+      </section>
+
+      <!-- ─── SECCIÓN 2B: SALUDOS EN VIDEO DE LOS ARTISTAS ─── -->
+      <section class="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-rose-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-rose-500/25 border-l-4 border-l-rose-500/70 shadow-2xl shadow-rose-500/5 space-y-5 backdrop-blur-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-4 flex-wrap">
+          <h5 class="text-xs font-black uppercase tracking-wider text-rose-400 flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center font-bold material-symbols-outlined text-lg">videocam</span>
+            <span>Saludos y mensajes de los artistas</span>
           </h5>
+          <div class="flex items-center gap-2.5">
+            <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">{{ greetingVideos().length }} video(s)</span>
+            @if (canEdit()) {
+              <button
+                type="button"
+                (click)="addGreetingVideo()"
+                class="px-3.5 py-2 rounded-xl bg-rose-500/20 text-rose-200 border border-rose-500/40 hover:bg-rose-500 hover:text-white text-[11px] font-black transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+              >
+                <span class="material-symbols-outlined text-sm">add</span> Añadir saludo
+              </button>
+            }
+          </div>
+        </div>
 
-          <app-editable-field
-            label="Categoría del evento"
-            type="select"
-            [options]="categories"
-            [value]="profile().category"
-            [readonly]="!canEdit()"
-            (save)="patchProfile({ category: $any($event) })"
-          />
+        @if (greetingVideos().length) {
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            @for (v of greetingVideos(); track v.id) {
+              <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/20 space-y-3 shadow-md">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border"
+                    [class]="v.type === 'youtube'
+                      ? 'bg-red-500/15 text-red-300 border-red-500/30'
+                      : 'bg-sky-500/15 text-sky-300 border-sky-500/30'">
+                    {{ v.type === 'youtube' ? 'YouTube' : 'MP4 subido' }}
+                  </span>
+                  @if (canEdit()) {
+                    <div class="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        (click)="patchGreetingVideo(v, { type: v.type === 'youtube' ? 'local' : 'youtube' })"
+                        class="px-2.5 py-1 rounded-lg bg-surface-container-highest text-outline hover:text-on-surface border border-outline-variant/30 text-[10px] font-black transition-all"
+                        title="Cambiar entre video subido y enlace de YouTube"
+                      >
+                        Cambiar tipo
+                      </button>
+                      <button
+                        type="button"
+                        (click)="removeGreetingVideo(v)"
+                        class="p-1.5 rounded-lg bg-surface-container-highest hover:bg-rose-500/20 text-outline hover:text-rose-300 border border-outline-variant/30 transition-all"
+                        title="Quitar este saludo"
+                      >
+                        <span class="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    </div>
+                  }
+                </div>
 
+                <app-editable-field
+                  label="Título del video"
+                  [value]="v.title"
+                  [readonly]="!canEdit()"
+                  (save)="patchGreetingVideo(v, { title: $event })"
+                />
+                <app-editable-field
+                  [label]="v.type === 'youtube' ? 'Enlace de YouTube (embed)' : 'URL del MP4 subido'"
+                  type="url"
+                  placeholder="https://…"
+                  valueClass="text-xs font-mono text-on-surface break-all"
+                  [value]="v.url"
+                  [readonly]="!canEdit()"
+                  (save)="patchGreetingVideo(v, { url: $event })"
+                />
+
+                @if (!v.url.trim()) {
+                  <p class="text-[11px] text-amber-300 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm">warning</span>
+                    Sin enlace: este saludo no se le mostrará al público.
+                  </p>
+                }
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="p-5 text-center text-xs text-outline italic bg-surface-container/40 rounded-2xl border border-dashed border-outline-variant/30">
+            Todavía no hay saludos en video. El bloque "Saludos y Mensajes de los Artistas" no aparecerá en la ficha del cliente.
+          </p>
+        }
+      </section>
+
+      <!-- ─── SECCIÓN 3: TEXTOS DE DIFUSIÓN PÚBLICA & REGLAS ─── -->
+      <section class="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-emerald-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-emerald-500/25 border-l-4 border-l-emerald-500/70 shadow-2xl shadow-emerald-500/5 space-y-6 backdrop-blur-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-4">
+          <h5 class="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold material-symbols-outlined text-lg">edit_note</span>
+            <span>Textos de la ficha pública & Reglas</span>
+          </h5>
+          <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">Contenido del Cliente</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <app-editable-field
             label="Frase de portada"
             hint="una línea bajo el título"
             type="textarea"
             [rows]="2"
             placeholder="Ej. La tambora más potente del país, una sola noche."
-            valueClass="text-[11px] font-semibold text-on-surface break-words"
+            valueClass="text-xs font-bold text-on-surface break-words"
             [value]="profile().tagline"
             [readonly]="!canEdit()"
             (save)="patchProfile({ tagline: $event })"
           />
+        </div>
 
-          <app-editable-field
-            label="Información del evento"
-            hint="lo que el cliente lee antes de comprar"
-            type="textarea"
-            [rows]="5"
-            placeholder="Describe la experiencia, accesos, amenidades y seguridad."
-            valueClass="text-[11px] font-medium text-on-surface-variant break-words leading-relaxed"
-            [value]="profile().about"
-            [readonly]="!canEdit()"
-            (save)="patchProfile({ about: $event })"
-          />
-        </section>
+        <app-editable-field
+          label="Información detallada del evento"
+          hint="lo que el cliente lee antes de comprar"
+          type="textarea"
+          [rows]="4"
+          placeholder="Describe la experiencia, accesos, amenidades y seguridad."
+          valueClass="text-xs font-medium text-on-surface-variant break-words leading-relaxed"
+          [value]="profile().about"
+          [readonly]="!canEdit()"
+          (save)="patchProfile({ about: $event })"
+        />
 
         <!-- Reglas -->
-        <section class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
+        <div class="pt-4 border-t border-outline-variant/20 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <h5 class="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[13px]">gavel</span> Reglas e información adicional
-            </h5>
-            <span class="text-[9px] text-outline">{{ profile().rules.length }} regla(s)</span>
+            <h6 class="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-2">
+              <span class="material-symbols-outlined text-base text-primary">gavel</span> Reglas e Información Adicional
+            </h6>
+            <span class="text-xs font-mono font-bold text-outline px-2.5 py-0.5 rounded-lg bg-surface-container border border-outline-variant/20">
+              {{ profile().rules.length }} regla(s)
+            </span>
           </div>
 
-          <div class="space-y-2">
+          <div class="space-y-2.5">
             @for (rule of profile().rules; track rule.id) {
-              <div class="flex items-start gap-2 p-2 rounded-lg bg-surface-container border border-outline-variant/20">
-                <span class="material-symbols-outlined text-[13px] text-primary mt-1 shrink-0">chevron_right</span>
+              <div class="flex items-center gap-3 p-3 rounded-2xl bg-surface-container/70 border border-outline-variant/20 shadow-sm hover:border-amber-500/30 transition-all">
+                <span class="material-symbols-outlined text-base text-primary shrink-0">chevron_right</span>
                 <div class="flex-1 min-w-0">
                   <app-editable-field
                     [value]="rule.text"
                     type="textarea"
                     [rows]="2"
-                    valueClass="text-[11px] font-medium text-on-surface-variant break-words"
+                    valueClass="text-xs font-medium text-on-surface-variant break-words"
                     [readonly]="!canEdit()"
                     (save)="patchRule(rule, $event)"
                   />
@@ -161,15 +381,15 @@ import {
                   <button
                     type="button"
                     (click)="removeRule(rule)"
-                    class="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500 hover:text-white flex items-center justify-center shrink-0 transition-all"
+                    class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500 hover:text-white flex items-center justify-center shrink-0 transition-all shadow-sm"
                   >
-                    <span class="material-symbols-outlined text-[13px]">delete</span>
+                    <span class="material-symbols-outlined text-base">delete</span>
                   </button>
                 }
               </div>
             } @empty {
-              <p class="text-[10px] text-outline italic">
-                Sin reglas capturadas. El portal muestra este bloque siempre: vacío se ve incompleto.
+              <p class="text-xs text-outline italic p-4 rounded-2xl bg-surface-container/40 text-center border border-dashed border-outline-variant/30">
+                Sin reglas capturadas. Se recomienda agregar accesos, horarios de puertas y restricción de objetos.
               </p>
             }
           </div>
@@ -178,20 +398,20 @@ import {
             <button
               type="button"
               (click)="addRule()"
-              class="px-2.5 py-1.5 min-h-9 rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary hover:text-on-primary text-[10px] font-bold flex items-center gap-1 transition-all"
+              class="px-4 py-2.5 min-h-11 rounded-2xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary hover:text-on-primary text-xs font-bold flex items-center gap-2 transition-all shadow-md"
             >
-              <span class="material-symbols-outlined text-[13px]">add</span> Agregar regla
+              <span class="material-symbols-outlined text-base font-bold">add</span> Agregar regla
             </button>
           }
-        </section>
+        </div>
 
         <!-- Compra y contacto -->
-        <section class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
-          <h5 class="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-[13px]">support_agent</span> Compra, contacto y avisos
-          </h5>
+        <div class="pt-4 border-t border-outline-variant/20 space-y-4">
+          <h6 class="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-2">
+            <span class="material-symbols-outlined text-base text-primary">support_agent</span> Compra, Contacto y Restricciones
+          </h6>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <app-editable-field
               label="Teléfono de compra"
               type="tel"
@@ -226,8 +446,15 @@ import {
               (save)="patchProfile({ minimumAge: $event })"
             />
             <app-editable-field
-              label="Búsqueda en el mapa"
-              hint="lo que se envía a Google Maps"
+              label="Cierre de venta de boletos"
+              hint="días antes del evento"
+              type="number"
+              [value]="profile().salesCloseDaysBefore ?? 1"
+              [readonly]="!canEdit()"
+              (save)="patchProfile({ salesCloseDaysBefore: toNumber($event) })"
+            />
+            <app-editable-field
+              label="Búsqueda en Google Maps"
               placeholder="Arena Monterrey"
               [value]="profile().mapsQuery || ''"
               [readonly]="!canEdit()"
@@ -241,190 +468,54 @@ import {
               (save)="patchProfile({ guaranteeLabel: $event })"
             />
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
 
-      <!-- ─── VISTA PREVIA DE LA FICHA DEL CLIENTE ─── -->
-      <div class="xl:sticky xl:top-2 space-y-3">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-base text-cyan-400">visibility</span>
-          <h5 class="text-[10px] font-black uppercase tracking-wider text-on-surface">Vista previa de la ficha del cliente</h5>
-          <span class="text-[9px] text-outline ml-auto">/events/comprar-boletos?id={{ event().id }}</span>
+      <!-- ─── SECCIÓN 4: ALINEACIÓN & CARTEL DE GRUPOS ─── -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between gap-3 px-1">
+          <h5 class="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center font-bold material-symbols-outlined text-lg">queue_music</span>
+            <span>Alineación & Cartel de Grupos</span>
+          </h5>
+          <span class="px-3.5 py-1.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-xs font-mono font-bold text-outline shadow-sm">
+            {{ slots().length }} grupo(s) asignados
+          </span>
         </div>
 
-        <div class="rounded-2xl overflow-hidden border border-outline-variant/40 bg-[#121212] shadow-2xl">
+        <app-event-tab-lineup
+          [event]="event()"
+          [canEdit]="canEditLineup()"
+          [canViewFinances]="canViewFinances()"
+          [availableGroups]="availableGroups()"
+          (patch)="patch.emit($event)"
+        />
+      </section>
 
-          <!-- Hero -->
-          <div class="relative h-40 sm:h-48 bg-surface-container-high">
-            @if (profile().coverUrl) {
-              <img [src]="profile().coverUrl" alt="Portada" class="w-full h-full object-cover brightness-[0.45]" />
-            }
-            <div class="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/40 to-transparent"></div>
-            <div class="absolute bottom-0 inset-x-0 p-4 space-y-1.5">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="px-2.5 py-1 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-[8px] font-black uppercase tracking-widest">
-                  {{ profile().category }}
-                </span>
-                <span class="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 text-[8px] font-bold flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[10px] text-primary">schedule</span>
-                  {{ showTime() }}
-                </span>
-              </div>
-              <h3 class="font-display-xl font-black text-lg sm:text-xl uppercase tracking-wide text-white leading-tight line-clamp-2">
-                {{ event().title }}
-              </h3>
-              <p class="text-[10px] text-white/70 font-light line-clamp-2">
-                {{ profile().tagline || 'Sin frase de portada' }}
-              </p>
-            </div>
-          </div>
-
-          <div class="p-4 space-y-4">
-
-            <!-- Información del evento -->
-            <div class="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3 space-y-2">
-              <span class="text-[9px] font-black uppercase tracking-wider text-primary flex items-center gap-1">
-                <span class="material-symbols-outlined text-[11px]">info</span> Información del Evento
-              </span>
-              <p class="text-[10px] text-white/60 leading-relaxed line-clamp-4">
-                {{ profile().about || 'Sin texto de presentación. El cliente vería este bloque vacío.' }}
-              </p>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                <div class="bg-white/5 border border-white/[0.04] p-2 rounded-lg">
-                  <span class="text-[7px] text-white/40 uppercase font-medium block">Fecha</span>
-                  <span class="text-[9px] text-white font-bold">{{ dateLabel() }}</span>
-                </div>
-                <div class="bg-white/5 border border-white/[0.04] p-2 rounded-lg">
-                  <span class="text-[7px] text-white/40 uppercase font-medium block">Categoría</span>
-                  <span class="text-[9px] text-white font-bold uppercase truncate block">{{ profile().category }}</span>
-                </div>
-                <div class="bg-white/5 border border-white/[0.04] p-2 rounded-lg">
-                  <span class="text-[7px] text-white/40 uppercase font-medium block">Precios desde</span>
-                  <span class="text-[9px] text-emerald-400 font-bold">{{ fromPrice() }}</span>
-                </div>
-                <div class="bg-white/5 border border-white/[0.04] p-2 rounded-lg">
-                  <span class="text-[7px] text-white/40 uppercase font-medium block">Garantía</span>
-                  <span class="text-[9px] text-white font-bold truncate block">{{ profile().guaranteeLabel || '—' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Cartel oficial + line-up -->
-            <div class="grid grid-cols-3 gap-3">
-              <div class="col-span-1">
-                <div class="aspect-[3/4] rounded-xl overflow-hidden border border-white/10 bg-white/[0.03]">
-                  @if (profile().posterUrl) {
-                    <img [src]="profile().posterUrl" alt="Cartel" class="w-full h-full object-cover" />
-                  } @else {
-                    <div class="w-full h-full flex items-center justify-center text-white/30 text-[8px] text-center px-1">
-                      Falta el cartel oficial
-                    </div>
-                  }
-                </div>
-              </div>
-
-              <div class="col-span-2 rounded-xl bg-white/[0.02] border border-white/[0.06] p-3 space-y-2">
-                <span class="text-[9px] font-black uppercase tracking-wider text-primary flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[11px]">groups</span> Line-up
-                </span>
-                @for (slot of slots(); track slot.id) {
-                  <div class="flex items-center gap-2 p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                    @if (slot.imageUrl) {
-                      <img [src]="slot.imageUrl" [alt]="slot.groupName" class="w-7 h-7 rounded-lg object-cover shrink-0" />
-                    } @else {
-                      <span class="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-[11px] text-white/40">no_photography</span>
-                      </span>
-                    }
-                    <span class="min-w-0 flex-1">
-                      <span class="text-[10px] font-bold text-white truncate block">{{ slot.groupName }}</span>
-                      <span class="text-[8px] text-white/40 truncate block">{{ slot.genre || 'Sin género' }}</span>
-                    </span>
-                    <span class="text-[9px] text-primary font-black shrink-0 flex items-center gap-0.5">
-                      <span class="material-symbols-outlined text-[9px]">star</span>{{ slot.rating || '—' }}
-                    </span>
-                  </div>
-                } @empty {
-                  <p class="text-[9px] text-white/30 italic">Sin grupos en el cartel</p>
-                }
-              </div>
-            </div>
-
-            <!-- Zonas y precios -->
-            <div class="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3 space-y-2">
-              <span class="text-[8px] font-bold text-white/35 uppercase tracking-widest">Zonas y Precios</span>
-              @for (tier of event().ticketTiers; track tier.name) {
-                <div class="p-2 rounded-lg bg-white/[0.02] border border-white/5">
-                  <div class="flex justify-between items-center gap-2">
-                    <span class="text-[10px] font-bold text-white flex items-center gap-1 min-w-0">
-                      <span class="material-symbols-outlined text-[11px] text-primary shrink-0">{{ tier.icon || 'confirmation_number' }}</span>
-                      <span class="truncate">{{ tier.name }}</span>
-                    </span>
-                    <span class="text-[10px] font-bold text-emerald-400 shrink-0">&#36;{{ tier.price | number:'1.0-0' }} MXN</span>
-                  </div>
-                  <p class="text-[8px] text-white/40 leading-relaxed mt-0.5 line-clamp-2">
-                    {{ tier.description || 'Sin descripción: el cliente no sabe qué incluye esta zona.' }}
-                  </p>
-                </div>
-              } @empty {
-                <p class="text-[9px] text-white/30 italic">Sin categorías de boleto</p>
-              }
-            </div>
-
-            <!-- Ubicación y soporte -->
-            <div class="grid grid-cols-2 gap-3">
-              <div class="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3">
-                <span class="text-[8px] font-bold text-white/35 uppercase tracking-widest block">Ubicación</span>
-                <span class="text-[10px] font-black text-white uppercase mt-1 flex items-center gap-1">
-                  <span class="material-symbols-outlined text-primary text-[12px]">pin_drop</span>
-                  <span class="truncate">{{ event().venue }}</span>
-                </span>
-                <span class="text-[8px] text-white/40 block mt-0.5 truncate">
-                  {{ profile().mapsQuery || event().venue + ', ' + event().location }}
-                </span>
-              </div>
-
-              <div class="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
-                <span class="text-[8px] font-bold text-emerald-400 uppercase tracking-widest block">Compra telefónica</span>
-                <span class="text-[10px] font-black text-white mt-1 block truncate">
-                  {{ profile().supportPhone || 'Sin teléfono' }}
-                </span>
-                <span class="text-[8px] text-white/40 block mt-0.5">
-                  + &#36;{{ profile().serviceFeePerSeat ?? 0 }} de cargo por asiento
-                </span>
-              </div>
-            </div>
-
-            <!-- Reglas -->
-            <div class="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3">
-              <span class="text-[9px] font-black uppercase tracking-wider text-primary flex items-center gap-1 mb-1.5">
-                <span class="material-symbols-outlined text-[11px]">gavel</span> Reglas e Información Adicional
-              </span>
-              <ul class="list-disc list-inside space-y-0.5">
-                @for (rule of profile().rules; track rule.id) {
-                  <li class="text-[9px] text-white/50 font-light">{{ rule.text }}</li>
-                } @empty {
-                  <li class="text-[9px] text-white/30 italic list-none">Sin reglas capturadas</li>
-                }
-              </ul>
-            </div>
-
-            <div class="text-center pt-1">
-              <span class="text-[8px] text-white/30 uppercase tracking-widest">
-                {{ seats() }} lugares · Cargo por servicio no incluido
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   `
 })
 export class EventTabPublicComponent {
   event = input.required<EventItem>();
   canEdit = input<boolean>(false);
+  canEditIdentity = input<boolean>(false);
+  canEditLineup = input<boolean>(false);
+  canViewFinances = input<boolean>(false);
+  availableGroups = input<GroupItem[]>([]);
+  showPreview = input<boolean>(false);
 
   patch = output<Partial<EventItem>>();
+  togglePreview = output<boolean>();
+
+  /** Las seis categorías con su ícono, para el selector de chips. */
+  readonly categoryChips: ReadonlyArray<{ value: string; label: string; icon: string }> = [
+    { value: 'Concierto', label: 'Concierto', icon: 'music_note' },
+    { value: 'Festival', label: 'Festival', icon: 'festival' },
+    { value: 'Baile', label: 'Baile', icon: 'nightlife' },
+    { value: 'Palenque', label: 'Palenque', icon: 'stadium' },
+    { value: 'Firma de Autógrafos', label: 'Firma de Autógrafos', icon: 'stylus_note' },
+    { value: 'Rueda de Prensa', label: 'Rueda de Prensa', icon: 'campaign' }
+  ];
 
   readonly categories: EditableOption[] = [
     { value: 'Concierto', label: 'Concierto' },
@@ -436,9 +527,12 @@ export class EventTabPublicComponent {
   ];
 
   profile = computed(() => publicProfile(this.event()));
-
   slots = computed(() => lineup(this.event()));
 
+  greetingVideos = computed(() => this.profile().greetingVideos ?? []);
+
+  /** Grupos ya puestos en el cartel: son los que pueden mandar un saludo. */
+  lineupBandNames = computed(() => this.slots().map(s => s.groupName).filter(Boolean));
   dateLabel = computed(() => shortDate(this.event().date));
 
   showTime = computed(() => {
@@ -451,16 +545,8 @@ export class EventTabPublicComponent {
     return low > 0 ? '$' + low.toLocaleString('es-MX') : 'Por definir';
   });
 
-  priceRange = computed(() => {
-    const low = lowestTicketPrice(this.event());
-    const high = highestTicketPrice(this.event());
-    if (low <= 0) return 'Sin precios';
-    return '$' + low.toLocaleString('es-MX') + ' – $' + high.toLocaleString('es-MX') + ' MXN';
-  });
-
   seats = computed(() => totalSeats(this.event()).toLocaleString('es-MX'));
 
-  /** Usar la misma imagen de portada y de cartel deja una de las dos recortada. */
   sameImages = computed(() => {
     const p = this.profile();
     return !!p.coverUrl && p.coverUrl === p.posterUrl;
@@ -472,6 +558,40 @@ export class EventTabPublicComponent {
 
   patchProfile(changes: Partial<EventPublicProfile>): void {
     this.patch.emit({ publicProfile: { ...this.profile(), ...changes } });
+  }
+
+  /**
+   * El cartel es la única imagen vertical del evento, así que también sirve de
+   * miniatura en las tarjetas del panel. Se guardan las dos a la vez para que
+   * el encargado no tenga que subir la misma imagen dos veces ni pueda dejarlas
+   * desincronizadas.
+   */
+  savePoster(url: string): void {
+    this.patch.emit({
+      publicProfile: { ...this.profile(), posterUrl: url },
+      flyerUrl: url
+    });
+  }
+
+  addGreetingVideo(): void {
+    const video: ArtistGreetingVideo = {
+      id: 'vid-' + this.event().id + '-' + Date.now(),
+      bandName: this.lineupBandNames()[0] || this.event().groupName || 'Grupo del cartel',
+      title: 'Saludo del grupo al público',
+      url: '',
+      type: 'youtube'
+    };
+    this.patchProfile({ greetingVideos: [...this.greetingVideos(), video] });
+  }
+
+  patchGreetingVideo(video: ArtistGreetingVideo, changes: Partial<ArtistGreetingVideo>): void {
+    this.patchProfile({
+      greetingVideos: this.greetingVideos().map(v => (v.id === video.id ? { ...v, ...changes } : v))
+    });
+  }
+
+  removeGreetingVideo(video: ArtistGreetingVideo): void {
+    this.patchProfile({ greetingVideos: this.greetingVideos().filter(v => v.id !== video.id) });
   }
 
   addRule(): void {
@@ -487,3 +607,4 @@ export class EventTabPublicComponent {
     this.patchProfile({ rules: this.profile().rules.filter(r => r.id !== rule.id) });
   }
 }
+

@@ -71,7 +71,7 @@ import {
       </div>
 
       <!-- Cifras finales -->
-      <section class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
+      <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-purple-500/25 border-l-4 border-l-purple-500/70 shadow-2xl shadow-purple-500/5 space-y-4 backdrop-blur-2xl">
         <h5 class="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
           <span class="material-symbols-outlined text-[13px]">analytics</span> Resultados finales
         </h5>
@@ -139,7 +139,7 @@ import {
 
       <!-- Gastos de producción -->
       @if (canViewFinances()) {
-        <section class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
+        <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-purple-500/25 border-l-4 border-l-purple-500/70 shadow-2xl shadow-purple-500/5 space-y-4 backdrop-blur-2xl">
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <h5 class="text-[10px] font-black uppercase tracking-wider text-rose-300 flex items-center gap-1.5">
               <span class="material-symbols-outlined text-[13px]">receipt_long</span> Gastos de producción
@@ -199,7 +199,7 @@ import {
         </section>
 
         <!-- Pagos a los grupos -->
-        <section class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
+        <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-purple-500/25 border-l-4 border-l-purple-500/70 shadow-2xl shadow-purple-500/5 space-y-4 backdrop-blur-2xl">
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <h5 class="text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
               <span class="material-symbols-outlined text-[13px]">payments</span> Pagos a los grupos

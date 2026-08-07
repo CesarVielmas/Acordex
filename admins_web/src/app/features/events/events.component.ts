@@ -14,7 +14,6 @@ import { EventStateFilterBarComponent, EventFilterChip } from './components/even
 import {
   EventFiltersToolbarComponent,
   EventStateChip,
-  EventSortMode,
   ActiveEventFilterChip
 } from './components/event-filters-toolbar.component';
 import { stateSummary } from './event-card-insights';
@@ -22,23 +21,16 @@ import { PanelMetric, panelMetrics as resolvePanelMetrics } from './event-panel-
 import {
   EventFilterOption,
   stateFilterLabel,
-  stateFilterOptions,
-  transversalFilterOptions,
-  TRANSVERSAL_FILTER_LABEL
+  stateFilterOptions
 } from './event-filter-catalog';
 import { daysUntilEvent, grossTicketRevenue, occupancyPercent, soldSeats } from './event-metrics';
 
 /**
- * Gestor de eventos.
+ * Gestor de eventos (Tablero por fase).
  *
  * El evento se mueve por siete fases (`event-state.meta.ts`) y cada una
- * bloquea más que la anterior. Esta pantalla existe para que en cualquier
- * momento se pueda contestar "¿qué evento necesita algo de mí hoy?", y por eso
- * ofrece dos lecturas del mismo dato:
- *
- * - **Tablero**: agrupa por fase, con el resumen y los filtros propios de cada
- *   una. Sirve para trabajar el flujo.
- * - **Cartelera**: rejilla plana ordenable, para mirar el calendario completo.
+ * bloquea más que la anterior. Esta pantalla agrupa los eventos por fase en un
+ * Tablero, con su resumen y los filtros propios de cada una para trabajar el flujo.
  *
  * El rol Usuario de campo solo ve los eventos que ya son públicos: un borrador
  * con costos de grupos no es información suya.
@@ -71,7 +63,7 @@ import { daysUntilEvent, grossTicketRevenue, occupancyPercent, soldSeats } from 
             </div>
             <div class="min-w-0">
               <h1 class="font-display-xl text-xl sm:text-2xl lg:text-3xl font-black text-on-surface tracking-tight">
-                Gestor de Eventos & Cartelera
+                Gestor de Eventos
               </h1>
               <p class="text-xs text-outline mt-0.5">
                 Creación, aprobación entre encargados, publicación y cierre de eventos con venta de boletos al público
@@ -82,25 +74,6 @@ import { daysUntilEvent, grossTicketRevenue, occupancyPercent, soldSeats } from 
         </div>
 
         <div class="flex items-center gap-3 self-start md:self-auto relative z-10 flex-wrap">
-          <div class="p-1.5 rounded-2xl bg-surface-container-highest/60 border border-outline-variant/40 flex items-center gap-1.5 shadow-lg backdrop-blur-md">
-            <button
-              type="button"
-              (click)="viewMode.set('tablero')"
-              [class]="viewMode() === 'tablero' ? 'bg-primary text-on-primary font-bold shadow-lg shadow-primary/20' : 'text-on-surface-variant hover:text-on-surface'"
-              class="px-4 py-2 min-h-11 rounded-xl text-xs flex items-center gap-2 transition-all duration-300"
-            >
-              <span class="material-symbols-outlined text-base">view_kanban</span> Tablero
-            </button>
-            <button
-              type="button"
-              (click)="viewMode.set('cartelera')"
-              [class]="viewMode() === 'cartelera' ? 'bg-primary text-on-primary font-bold shadow-lg shadow-primary/20' : 'text-on-surface-variant hover:text-on-surface'"
-              class="px-4 py-2 min-h-11 rounded-xl text-xs flex items-center gap-2 transition-all duration-300"
-            >
-              <span class="material-symbols-outlined text-base">grid_view</span> Cartelera
-            </button>
-          </div>
-
           @if (roleService.canEditEvents()) {
             <button
               type="button"
@@ -143,127 +116,96 @@ import { daysUntilEvent, grossTicketRevenue, occupancyPercent, soldSeats } from 
 
       <!-- ─── FILTROS ─── -->
       <app-event-filters-toolbar
-        [viewMode]="viewMode()"
         [stateChips]="stateChips()"
         [stateFilter]="stateFilter()"
         [searchTerm]="searchTerm()"
-        [sortMode]="sortMode()"
         [hideEmptyStates]="hideEmptyStates()"
-        [resultCount]="carteleraEvents().length"
+        [resultCount]="displayedEventsCount()"
         [totalCount]="visibleEvents().length"
         [activeFilterChips]="activeFilterChips()"
-        [contextChips]="activeContextChips()"
-        [contextActive]="activeContextValue()"
-        [contextLabel]="activeContextLabel()"
         (stateFilterChange)="stateFilter.set($event)"
         (searchTermChange)="searchTerm.set($event)"
-        (sortModeChange)="sortMode.set($event)"
         (hideEmptyStatesChange)="hideEmptyStates.set($event)"
-        (contextFilterChange)="setActiveContextFilter($event)"
         (clearFilters)="clearAllFilters()"
         (removeFilter)="removeFilter($event)"
       />
 
       <!-- ─── TABLERO POR FASE ─── -->
-      @if (viewMode() === 'tablero') {
-        <div class="space-y-6">
-          @for (state of filteredStates(); track state) {
-            <section class="p-4 sm:p-6 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-xl space-y-5">
+      <div class="space-y-6">
+        @for (state of filteredStates(); track state) {
+          <section class="p-4 sm:p-6 rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-xl space-y-5">
 
-              <!-- Encabezado de la fase -->
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline-variant/20">
-                <div class="flex items-center gap-3 min-w-0">
-                  <span [class]="stateBadgeClass(state)" class="w-3.5 h-3.5 rounded-full shadow-sm shrink-0 border"></span>
-                  <div class="min-w-0">
-                    <h3 class="text-sm font-extrabold text-on-surface flex items-center gap-2 min-w-0 flex-wrap">
-                      <span [class]="stateTextColor(state)" class="material-symbols-outlined text-base">{{ stateIcon(state) }}</span>
-                      {{ state }}
-                      <span [class]="stateBadgeClass(state)" class="text-xs font-bold px-3 py-0.5 rounded-full border shadow-sm">
-                        @if (hasActiveContextFilter(state)) {
-                          {{ eventsByState(state).length }} de {{ rawEventsByState(state).length }}
-                        } @else {
-                          {{ eventsByState(state).length }}
-                        }
-                      </span>
-                    </h3>
-                    <p class="text-[11px] text-outline mt-0.5 line-clamp-1">{{ stateMeaning(state) }}</p>
-                  </div>
+            <!-- Encabezado de la fase -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline-variant/20">
+              <div class="flex items-center gap-3 min-w-0">
+                <span [class]="stateBadgeClass(state)" class="w-3.5 h-3.5 rounded-full shadow-sm shrink-0 border"></span>
+                <div class="min-w-0">
+                  <h3 class="text-sm font-extrabold text-on-surface flex items-center gap-2 min-w-0 flex-wrap">
+                    <span [class]="stateTextColor(state)" class="material-symbols-outlined text-base">{{ stateIcon(state) }}</span>
+                    {{ state }}
+                    <span [class]="stateBadgeClass(state)" class="text-xs font-bold px-3 py-0.5 rounded-full border shadow-sm">
+                      @if (hasActiveContextFilter(state)) {
+                        {{ eventsByState(state).length }} de {{ rawEventsByState(state).length }}
+                      } @else {
+                        {{ eventsByState(state).length }}
+                      }
+                    </span>
+                  </h3>
+                  <p class="text-[11px] text-outline mt-0.5 line-clamp-1">{{ stateMeaning(state) }}</p>
                 </div>
-
-                <span class="text-xs font-semibold text-outline shrink-0 flex items-center gap-1.5">
-                  <span class="material-symbols-outlined text-sm">insights</span>
-                  {{ stateSummaryLabel(state) }}
-                </span>
               </div>
 
-              <!-- Filtros contextuales de la fase -->
-              @if (rawEventsByState(state).length > 0) {
-                <app-event-state-filter-bar
-                  class="-mt-1"
-                  [chips]="stateFilterChips(state)"
-                  [active]="activeStateFilter(state)"
-                  [label]="stateFilterBarLabel(state)"
-                  (select)="setStateContextFilter(state, $event)"
-                />
-              }
+              <span class="text-xs font-semibold text-outline shrink-0 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">insights</span>
+                {{ stateSummaryLabel(state) }}
+              </span>
+            </div>
 
-              <!-- Tarjetas -->
-              @if (eventsByState(state).length > 0) {
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-stretch">
-                  @for (evt of eventsByState(state); track evt.id) {
-                    <app-event-card
-                      [event]="evt"
-                      (open)="openDetail($event)"
-                      (uploadEvidence)="openUploadModal($event)"
-                      (submitReview)="submitForReview($event)"
-                    />
-                  }
-                </div>
-              } @else if (hasActiveContextFilter(state)) {
-                <div class="py-5 px-4 text-center bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/20 space-y-2">
-                  <p class="text-xs text-outline font-medium italic">
-                    Ningún evento de "{{ state }}" coincide con el filtro
-                    <strong class="text-on-surface not-italic">{{ activeContextFilterLabel(state) }}</strong>.
-                  </p>
-                  <button
-                    type="button"
-                    (click)="setStateContextFilter(state, 'todas')"
-                    class="px-3.5 py-1.5 min-h-9 rounded-xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-on-primary text-[11px] font-bold transition-all inline-flex items-center gap-1.5"
-                  >
-                    <span class="material-symbols-outlined text-xs">filter_alt_off</span> Quitar filtro
-                  </button>
-                </div>
-              } @else {
-                <p class="py-5 text-center text-xs text-outline font-medium italic bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/20">
-                  Sin eventos en la fase "{{ state }}"
-                </p>
-              }
-            </section>
-          }
-        </div>
-      } @else {
-        <!-- ─── CARTELERA ─── -->
-        @if (carteleraEvents().length > 0) {
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-stretch">
-            @for (evt of carteleraEvents(); track evt.id) {
-              <app-event-card
-                [event]="evt"
-                (open)="openDetail($event)"
-                (uploadEvidence)="openUploadModal($event)"
-                (submitReview)="submitForReview($event)"
+            <!-- Filtros contextuales de la fase -->
+            @if (rawEventsByState(state).length > 0) {
+              <app-event-state-filter-bar
+                class="-mt-1"
+                [chips]="stateFilterChips(state)"
+                [active]="activeStateFilter(state)"
+                [label]="stateFilterBarLabel(state)"
+                (select)="setStateContextFilter(state, $event)"
               />
             }
-          </div>
-        } @else {
-          <div class="p-12 text-center bg-surface-container-high rounded-3xl border border-outline-variant/30 space-y-2">
-            <span class="material-symbols-outlined text-4xl text-outline">search_off</span>
-            <p class="text-sm text-outline font-bold">No se encontraron eventos con los filtros seleccionados.</p>
-            <button type="button" (click)="clearAllFilters()" class="text-xs text-primary font-bold hover:underline">
-              Limpiar todos los filtros
-            </button>
-          </div>
+
+            <!-- Tarjetas -->
+            @if (eventsByState(state).length > 0) {
+              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-stretch">
+                @for (evt of eventsByState(state); track evt.id) {
+                  <app-event-card
+                    [event]="evt"
+                    (open)="openDetail($event)"
+                    (uploadEvidence)="openUploadModal($event)"
+                    (submitReview)="submitForReview($event)"
+                  />
+                }
+              </div>
+            } @else if (hasActiveContextFilter(state)) {
+              <div class="py-5 px-4 text-center bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/20 space-y-2">
+                <p class="text-xs text-outline font-medium italic">
+                  Ningún evento de "{{ state }}" coincide con el filtro
+                  <strong class="text-on-surface not-italic">{{ activeContextFilterLabel(state) }}</strong>.
+                </p>
+                <button
+                  type="button"
+                  (click)="setStateContextFilter(state, 'todas')"
+                  class="px-3.5 py-1.5 min-h-9 rounded-xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-on-primary text-[11px] font-bold transition-all inline-flex items-center gap-1.5"
+                >
+                  <span class="material-symbols-outlined text-xs">filter_alt_off</span> Quitar filtro
+                </button>
+              </div>
+            } @else {
+              <p class="py-5 text-center text-xs text-outline font-medium italic bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/20">
+                Sin eventos en la fase "{{ state }}"
+              </p>
+            }
+          </section>
         }
-      }
+      </div>
 
       <!-- ─── EXPEDIENTE DEL EVENTO ─── -->
       @if (selectedEvent()) {
@@ -370,8 +312,6 @@ import { daysUntilEvent, grossTicketRevenue, occupancyPercent, soldSeats } from 
           </ng-container>
         </app-modal-shell>
       }
-
-    </div>
   `
 })
 export class EventsComponent {
@@ -380,15 +320,11 @@ export class EventsComponent {
 
   readonly allStates: readonly EventState[] = EVENT_ALL_STATES;
 
-  viewMode = signal<'tablero' | 'cartelera'>('tablero');
   searchTerm = signal('');
   stateFilter = signal('Todos');
-  sortMode = signal<EventSortMode>('fecha');
   hideEmptyStates = signal(false);
   /** Filtro contextual activo por fase ({ 'En Venta': 'venta_lenta', ... }). */
   stateContextFilter = signal<Record<string, string>>({});
-  /** Filtro transversal, el que aplica cuando la cartelera muestra todas las fases. */
-  transversalFilter = signal('todas');
 
   selectedEvent = signal<EventItem | null>(null);
   uploadTarget = signal<EventItem | null>(null);
@@ -412,9 +348,6 @@ export class EventsComponent {
     { label: 'Sí', value: 'si' }
   ];
 
-  // `type` y `stage` se guardan como string simple: el binding de dos vías de
-  // `app-form-field` emite `string | number`, y tiparlos como unión aquí haría
-  // fallar la verificación estricta de plantillas.
   uploadForm = { type: 'photo', stage: 'Montaje', caption: '', url: '' };
 
   createForm = {
@@ -476,6 +409,11 @@ export class EventsComponent {
     }))
   );
 
+  /** Cantidad total de eventos mostrados actualmente en el tablero. */
+  displayedEventsCount = computed<number>(() => {
+    return this.filteredStates().reduce((sum, state) => sum + this.eventsByState(state).length, 0);
+  });
+
   /** Eventos de una fase sin su filtro contextual (base de los conteos). */
   rawEventsByState(state: EventState): EventItem[] {
     return this.searchedEvents().filter(e => e.state === state);
@@ -486,48 +424,12 @@ export class EventsComponent {
     return this.applyContextFilter(this.rawEventsByState(state), state);
   }
 
-  // ─── Cartelera ────────────────────────────────────────────────────────────
-
-  carteleraEvents = computed<EventItem[]>(() => {
-    const list = this.stateFilter() === 'Todos'
-      ? this.applyTransversalFilter(this.searchedEvents())
-      : this.applyContextFilter(this.searchedEvents(), this.stateFilter() as EventState);
-
-    const sorted = [...list];
-    switch (this.sortMode()) {
-      case 'estado':
-        return sorted.sort((a, b) => this.allStates.indexOf(a.state) - this.allStates.indexOf(b.state));
-      case 'ocupacion':
-        return sorted.sort((a, b) => occupancyPercent(b) - occupancyPercent(a));
-      case 'taquilla':
-        return sorted.sort((a, b) => grossTicketRevenue(b) - grossTicketRevenue(a));
-      case 'titulo':
-        return sorted.sort((a, b) => a.title.localeCompare(b.title, 'es'));
-      default:
-        // Primero lo que está por venir, en orden; lo ya ocurrido al final.
-        return sorted.sort((a, b) => {
-          const da = daysUntilEvent(a);
-          const db = daysUntilEvent(b);
-          if (da >= 0 && db < 0) return -1;
-          if (da < 0 && db >= 0) return 1;
-          return da - db;
-        });
-    }
-  });
-
   // ─── Filtros contextuales ─────────────────────────────────────────────────
 
   private applyContextFilter(list: EventItem[], state: EventState): EventItem[] {
     const active = this.activeStateFilter(state);
     if (active === 'todas') return list;
     const option = this.stateOptions(state).find(o => o.value === active);
-    return option ? list.filter(e => option.match(e)) : list;
-  }
-
-  private applyTransversalFilter(list: EventItem[]): EventItem[] {
-    const active = this.transversalFilter();
-    if (active === 'todas') return list;
-    const option = transversalFilterOptions().find(o => o.value === active);
     return option ? list.filter(e => option.match(e)) : list;
   }
 
@@ -567,45 +469,6 @@ export class EventsComponent {
     }));
   }
 
-  /** True cuando la cartelera muestra todas las fases y por lo tanto usa los transversales. */
-  private usesTransversalFilters(): boolean {
-    return this.stateFilter() === 'Todos';
-  }
-
-  activeContextChips(): EventFilterChip[] {
-    if (this.usesTransversalFilters()) {
-      const base = this.searchedEvents();
-      return transversalFilterOptions().map(o => ({
-        value: o.value,
-        label: o.label,
-        icon: o.icon,
-        activeClass: o.activeClass,
-        count: base.filter(e => o.match(e)).length
-      }));
-    }
-    return this.stateFilterChips(this.stateFilter() as EventState);
-  }
-
-  activeContextValue(): string {
-    return this.usesTransversalFilters()
-      ? this.transversalFilter()
-      : this.activeStateFilter(this.stateFilter() as EventState);
-  }
-
-  activeContextLabel(): string {
-    return this.usesTransversalFilters()
-      ? TRANSVERSAL_FILTER_LABEL
-      : stateFilterLabel(this.stateFilter() as EventState);
-  }
-
-  setActiveContextFilter(value: string): void {
-    if (this.usesTransversalFilters()) {
-      this.transversalFilter.set(value);
-    } else {
-      this.setStateContextFilter(this.stateFilter() as EventState, value);
-    }
-  }
-
   activeFilterChips(): ActiveEventFilterChip[] {
     const chips: ActiveEventFilterChip[] = [];
 
@@ -621,12 +484,6 @@ export class EventsComponent {
       });
     }
 
-    const context = this.activeContextValue();
-    if (context !== 'todas') {
-      const label = this.activeContextChips().find(c => c.value === context)?.label;
-      if (label) chips.push({ key: 'context', label, icon: 'filter_alt' });
-    }
-
     return chips;
   }
 
@@ -634,16 +491,15 @@ export class EventsComponent {
     switch (key) {
       case 'search': this.searchTerm.set(''); break;
       case 'state': this.stateFilter.set('Todos'); break;
-      case 'context': this.setActiveContextFilter('todas'); break;
     }
   }
 
   clearAllFilters(): void {
     this.searchTerm.set('');
     this.stateFilter.set('Todos');
-    this.transversalFilter.set('todas');
     this.stateContextFilter.set({});
   }
+
 
   // ─── Presentación de la fase ──────────────────────────────────────────────
 

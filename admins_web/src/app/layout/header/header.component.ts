@@ -11,7 +11,7 @@ import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.com
   standalone: true,
   imports: [CommonModule, RouterModule, IconButtonComponent],
   template: `
-    <header class="bg-surface/95 backdrop-blur-2xl border-b border-white/10 px-2.5 sm:px-6 h-[72px] flex items-center justify-between gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-300 select-none relative z-[99999]">
+    <header class="bg-surface/95 backdrop-blur-2xl border-b border-white/10 px-2.5 sm:px-6 h-[72px] flex items-center justify-between gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.8)] transition-all duration-300 select-none relative z-30">
 
       <!-- Left Section: 2-Line Vertical Brand Identity -->
       <div class="flex items-center gap-3.5">

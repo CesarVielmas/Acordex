@@ -307,6 +307,12 @@ export interface GroupItem {
   monthlyQuotesCount: number;
   labelRevenueAcordex: number;
   artistFeeBase: number; // Cobro directo del grupo (honorarios sin comisión)
+  /**
+   * Horas de show que cubre `artistFeeBase`. Es el piso que el grupo cobra
+   * aunque el evento sea más corto; a partir de aquí, cada hora extra sube el
+   * costo de forma proporcional.
+   */
+  minimumHours?: number;
   estimatedMonthlyEarnings: number; // Proyección de ganancias para rol Encargado
   agendaStatus: GroupAgendaStatus;
   followersCount: string; // e.g. '1.4M'

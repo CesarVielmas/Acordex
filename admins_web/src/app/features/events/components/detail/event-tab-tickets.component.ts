@@ -9,6 +9,7 @@ import {
   seatMapSeats,
   serviceFee,
   soldSeats,
+  occupancyPercent,
   totalSeats
 } from '../../event-metrics';
 
@@ -30,27 +31,49 @@ import {
   template: `
     <div class="space-y-4">
 
-      <!-- Resumen -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="p-3 rounded-xl bg-surface-container-high border border-outline-variant/25">
-          <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Lugares a la venta</span>
-          <span class="font-black text-on-surface text-sm">{{ seats().toLocaleString('es-MX') }}</span>
-        </div>
-        <div class="p-3 rounded-xl bg-surface-container-high border border-outline-variant/25">
-          <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Vendidos</span>
-          <span class="font-black text-emerald-400 text-sm">{{ sold().toLocaleString('es-MX') }}</span>
-        </div>
-        @if (canViewFinances()) {
-          <div class="p-3 rounded-xl bg-surface-container-high border border-outline-variant/25">
-            <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Taquilla potencial</span>
-            <span class="font-black text-on-surface text-sm">{{ potential() }}</span>
+      <!-- Aforo y avance de venta: es el número que define este apartado, así
+           que va arriba y con barra, no como un dato suelto más. -->
+      <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-cyan-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-cyan-500/25 border-l-4 border-l-cyan-500/70 shadow-2xl shadow-cyan-500/5 space-y-4 backdrop-blur-2xl">
+        <div class="flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <span class="text-[10px] font-black uppercase tracking-widest text-cyan-400 block">Aforo a la venta</span>
+            <span class="font-black text-on-surface text-2xl sm:text-3xl font-mono leading-tight">
+              {{ seats().toLocaleString('es-MX') }}
+            </span>
+            <span class="text-[11px] text-outline block">lugares habilitados en el croquis</span>
           </div>
-        }
-        <div class="p-3 rounded-xl bg-surface-container-high border border-outline-variant/25">
-          <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Cargo por servicio</span>
-          <span class="font-black text-on-surface text-sm">&#36;{{ fee() }}</span>
+
+          <div class="text-right">
+            <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">Vendidos</span>
+            <span class="font-black text-emerald-400 text-2xl sm:text-3xl font-mono leading-tight">
+              {{ occupancy() }}%
+            </span>
+            <span class="text-[11px] text-outline block">
+              {{ sold().toLocaleString('es-MX') }} de {{ seats().toLocaleString('es-MX') }}
+            </span>
+          </div>
         </div>
-      </div>
+
+        <div class="h-2.5 rounded-full bg-surface-container-highest/80 overflow-hidden">
+          <div
+            class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.5)] transition-all duration-500"
+            [style.width.%]="occupancy()"
+          ></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          @if (canViewFinances()) {
+            <div class="p-3 rounded-2xl bg-surface-container/60 border border-outline-variant/25">
+              <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Taquilla potencial</span>
+              <span class="font-black text-on-surface text-sm">{{ potential() }}</span>
+            </div>
+          }
+          <div class="p-3 rounded-2xl bg-surface-container/60 border border-outline-variant/25">
+            <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Cargo por servicio</span>
+            <span class="font-black text-on-surface text-sm">&#36;{{ fee() }}</span>
+          </div>
+        </div>
+      </section>
 
       @if (mismatchCount() > 0) {
         <p class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-[11px] text-rose-200 flex items-start gap-1.5">
@@ -63,7 +86,7 @@ import {
       }
 
       <!-- ─── CATEGORÍAS DE BOLETO ─── -->
-      <section class="space-y-3">
+      <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-cyan-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-cyan-500/25 border-l-4 border-l-cyan-500/70 shadow-2xl shadow-cyan-500/5 space-y-4 backdrop-blur-2xl">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <h5 class="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
             <span class="material-symbols-outlined text-[13px]">confirmation_number</span>
@@ -214,7 +237,7 @@ import {
       </section>
 
       <!-- ─── ZONAS DEL CROQUIS ─── -->
-      <section class="space-y-3">
+      <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-cyan-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-cyan-500/25 border-l-4 border-l-cyan-500/70 shadow-2xl shadow-cyan-500/5 space-y-4 backdrop-blur-2xl">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <h5 class="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
             <span class="material-symbols-outlined text-[13px]">map</span>
@@ -323,6 +346,8 @@ export class EventTabTicketsComponent {
 
   seats = computed(() => totalSeats(this.event()));
   sold = computed(() => soldSeats(this.event()));
+  /** Avance de venta en %, el indicador que manda en este apartado. */
+  occupancy = computed(() => occupancyPercent(this.event()));
   potential = computed(() => money(potentialTicketRevenue(this.event())));
   fee = computed(() => serviceFee(this.event()));
 

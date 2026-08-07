@@ -85,11 +85,40 @@ export interface EventRule {
  * página del cliente sale incompleta aunque internamente todo esté listo. Al
  * tenerlos juntos, el checklist del borrador puede exigirlos como un grupo.
  */
+/**
+ * Video de saludo que graba un grupo del cartel para invitar al público.
+ * En la ficha pública salen bajo "Saludos y Mensajes de los Artistas".
+ */
+export interface ArtistGreetingVideo {
+  id: string;
+  /** Grupo que graba el saludo; se muestra sobre el título del video. */
+  bandName: string;
+  title: string;
+  url: string;
+  /**
+   * 'local' es un MP4 subido a la plataforma y 'youtube' un enlace incrustado.
+   * El reproductor del cliente es distinto en cada caso, así que el tipo tiene
+   * que viajar con el dato y no adivinarse desde la URL.
+   */
+  type: 'local' | 'youtube';
+}
+
 export interface EventPublicProfile {
   /** Portada panorámica del encabezado de la ficha pública. */
   coverUrl: string;
-  /** Cartel oficial vertical (3:4), el que se amplía con la lupa. */
+  /**
+   * Cartel oficial vertical (3:4), el que se amplía con la lupa. Es la única
+   * otra imagen que ve el público: la ficha muestra portada y cartel, nada más.
+   */
   posterUrl: string;
+  /** Saludos en video de los grupos del cartel. */
+  greetingVideos: ArtistGreetingVideo[];
+  /**
+   * Cuántos días antes del evento deja de venderse el boletaje. Se guarda
+   * relativo y no como fecha fija para que mover la fecha del evento no deje
+   * un cierre de venta incoherente detrás.
+   */
+  salesCloseDaysBefore?: number;
   category: EventCategory;
   /** Frase corta bajo el título, en la portada. */
   tagline: string;
@@ -114,6 +143,8 @@ export function emptyPublicProfile(): EventPublicProfile {
   return {
     coverUrl: '',
     posterUrl: '',
+    greetingVideos: [],
+    salesCloseDaysBefore: 1,
     category: 'Concierto',
     tagline: '',
     about: '',
@@ -181,6 +212,24 @@ export interface EventEvidence {
 
 export type LineupApprovalStatus = 'No Requiere' | 'Pendiente' | 'Aprobado' | 'Rechazado';
 
+/**
+ * Contraoferta que el organizador manda al dueño de un grupo externo.
+ *
+ * El dueño publicó una tarifa; el organizador puede proponer otra cifra y el
+ * dueño decide. Mientras la contraoferta esté `Pendiente`, el costo que manda
+ * sigue siendo el publicado: una propuesta no es un acuerdo.
+ */
+export interface EventCounterOffer {
+  /** Importe propuesto por el organizador, ya por el total de horas. */
+  amount: number;
+  /** Horas sobre las que se hizo la propuesta. */
+  hours?: number;
+  note?: string;
+  proposedBy: string;
+  proposedAt: string;
+  status: 'Pendiente' | 'Aceptada' | 'Rechazada';
+}
+
 /** Un concepto del costo que cobra un grupo, desglosado por el dueño del grupo. */
 export interface EventCostItem {
   id: string;
@@ -233,6 +282,21 @@ export interface EventLineupSlot {
   arrivalTime?: string;
   /** Su turno de prueba de sonido. */
   soundCheckTime?: string;
+  /**
+   * Tarifa que el dueño del grupo tiene publicada, congelada al momento de
+   * agregarlo al cartel. Se guarda en el slot y no se lee del catálogo para que
+   * un cambio de tarifa posterior no altere un evento ya armado.
+   */
+  publishedFee?: number;
+  /** Horas que cubre `publishedFee`; por debajo de esto no se cobra menos. */
+  minimumHours?: number;
+  /** Horas de show contratadas para este evento. */
+  contractedHours?: number;
+  /**
+   * Contraoferta enviada al dueño del grupo. Solo aplica a grupos externos:
+   * los propios no se negocian, se les asigna presupuesto y ya.
+   */
+  counterOffer?: EventCounterOffer;
   /** Desglose del costo propuesto por el dueño del grupo. */
   costItems: EventCostItem[];
   /** Quién propuso ese costo. */
@@ -240,6 +304,48 @@ export interface EventLineupSlot {
   /** Total pactado tras la revisión; mientras no exista, manda la suma del desglose. */
   agreedTotal?: number;
   approval: LineupApprovalStatus;
+  notes?: string;
+}
+
+// ─── Acuerdos entre managers ──────────────────────────────────────────────────
+
+/**
+ * Cómo cobra un manager su parte del evento.
+ *
+ * - `porcentaje`: se lleva un % de las ganancias totales. La plataforma lo
+ *   liquida sola al cerrar el evento, porque el total ya se conoce.
+ * - `fijo`: cobra un monto pactado de antemano. Se liquida a mano al cierre,
+ *   ya que no depende de cómo haya salido la taquilla.
+ *
+ * Se puede mezclar: un manager por porcentaje y otro por monto fijo en el mismo
+ * evento es un caso válido, no un error de captura.
+ */
+export type EventSettlementKind = 'porcentaje' | 'fijo';
+
+export type EventAgreementStatus = 'Aceptado' | 'Pendiente' | 'Rechazado';
+
+/**
+ * Manager que co-organiza el evento.
+ *
+ * Un co-organizador ayuda a armar el evento (precios, horarios, cartel), pero
+ * los costos de SUS grupos no son visibles para los demás: lo único que se
+ * comparte entre managers es la ganancia total del evento. El desglose de quién
+ * paga qué lo calcula la plataforma por detrás y no se expone en el expediente.
+ */
+export interface EventManagerAgreement {
+  id: string;
+  managerName: string;
+  /** Quién creó el evento manda; el resto entra invitado. */
+  role: 'organizador' | 'coorganizador';
+  settlementKind: EventSettlementKind;
+  /** Solo con `porcentaje`: parte de las ganancias totales. */
+  percent?: number;
+  /** Solo con `fijo`: monto pactado, liquidado manualmente al cierre. */
+  fixedAmount?: number;
+  status: EventAgreementStatus;
+  invitedAt?: string;
+  viewedAt?: string;
+  respondedAt?: string;
   notes?: string;
 }
 
@@ -491,6 +597,13 @@ export interface EventItem {
   isCoProduction: boolean;
   coProductionPartner?: string;
   coProductionSplitPercent?: number;
+
+  /**
+   * Managers que arman el evento entre varios y cómo cobra cada uno. Opcional:
+   * un evento de un solo manager no necesita acuerdos y no debe obligar a
+   * capturarlos.
+   */
+  managerAgreements?: EventManagerAgreement[];
 }
 
 /**

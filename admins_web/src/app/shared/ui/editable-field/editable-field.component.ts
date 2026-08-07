@@ -32,12 +32,12 @@ export interface EditableOption {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <div class="min-w-0">
+    <div class="min-w-0 p-3.5 rounded-2xl bg-surface-container/70 border border-outline-variant/20 hover:border-amber-500/40 transition-all duration-300 shadow-sm group/field">
       @if (label()) {
-        <span class="block text-[10px] font-black uppercase tracking-wider text-outline mb-1">
-          {{ label() }}
+        <span class="block text-[10px] font-black uppercase tracking-wider text-outline mb-1.5 flex items-center justify-between">
+          <span>{{ label() }}</span>
           @if (hint()) {
-            <span class="normal-case font-bold text-outline/70 ml-1">· {{ hint() }}</span>
+            <span class="normal-case font-bold text-outline/70">· {{ hint() }}</span>
           }
         </span>
       }
@@ -47,7 +47,7 @@ export interface EditableOption {
           type="button"
           (click)="beginEdit()"
           [disabled]="readonly()"
-          class="group/edit w-full text-left flex items-start gap-1.5 rounded-lg -mx-1 px-1 py-0.5 transition-colors enabled:hover:bg-primary/10 disabled:cursor-default"
+          class="group/edit w-full text-left flex items-center justify-between gap-2 rounded-xl p-1.5 -m-1.5 transition-colors enabled:hover:bg-primary/10 disabled:cursor-default"
           [attr.aria-label]="'Editar ' + label()"
         >
           <span class="min-w-0 flex-1" [class]="valueClass()">
@@ -60,7 +60,7 @@ export interface EditableOption {
 
           @if (!readonly()) {
             <span
-              class="material-symbols-outlined text-[13px] text-outline opacity-0 group-hover/edit:opacity-100 transition-opacity shrink-0 mt-0.5"
+              class="material-symbols-outlined text-sm text-amber-400 opacity-0 group-hover/field:opacity-100 transition-opacity shrink-0 p-1 rounded-lg bg-amber-500/10 border border-amber-500/20 shadow-sm"
             >edit</span>
           }
         </button>

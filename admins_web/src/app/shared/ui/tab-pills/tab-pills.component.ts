@@ -6,6 +6,14 @@ export interface TabPillItem {
   label: string;
   icon?: string;
   badge?: string;
+  /**
+   * Color propio de la pestaña cuando está activa (clases Tailwind completas).
+   * Darle a cada apartado su color hace que se reconozcan por color y no solo
+   * por el texto. Si se omite, la pestaña usa el ámbar del sistema.
+   */
+  accentActiveClass?: string;
+  /** Tinte del ícono y del texto cuando la pestaña está en reposo. */
+  accentIdleClass?: string;
 }
 
 @Component({
@@ -13,22 +21,29 @@ export interface TabPillItem {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+    <div class="p-1.5 rounded-2xl bg-surface-container-highest/50 border border-outline-variant/25 backdrop-blur-xl flex items-center gap-1.5 overflow-x-auto custom-scrollbar shadow-inner">
       @for (tab of tabs; track tab.value) {
         <button
           type="button"
           (click)="change.emit(tab.value)"
-          class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 min-h-11 rounded-xl text-xs font-bold whitespace-nowrap transition-all"
+          class="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 min-h-11 rounded-xl text-xs font-black tracking-wide whitespace-nowrap transition-all duration-300 relative group overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container"
           [ngClass]="tab.value === active
-            ? 'bg-primary text-on-primary shadow-md shadow-primary/20'
-            : 'bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright border border-outline-variant/30'"
+            ? (tab.accentActiveClass || 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black shadow-amber-500/25 border-amber-300/40') + ' shadow-lg scale-[1.03] border'
+            : (tab.accentIdleClass || 'text-on-surface-variant') + ' hover:text-on-surface hover:bg-surface-container-high/80 border border-transparent'"
         >
           @if (tab.icon) {
-            <span class="material-symbols-outlined text-base">{{ tab.icon }}</span>
+            <span class="material-symbols-outlined text-base transition-transform group-hover:scale-110">{{ tab.icon }}</span>
           }
-          {{ tab.label }}
+          <span>{{ tab.label }}</span>
           @if (tab.badge) {
-            <span class="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-black/20">{{ tab.badge }}</span>
+            <span
+              class="text-[10px] font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
+              [ngClass]="tab.value === active
+                ? 'bg-black/25 text-current'
+                : 'bg-surface-container-highest/80 text-outline border border-outline-variant/30 group-hover:text-on-surface'"
+            >
+              {{ tab.badge }}
+            </span>
           }
         </button>
       }
@@ -40,3 +55,4 @@ export class TabPillsComponent {
   @Input() active: string = '';
   @Output() change = new EventEmitter<string>();
 }
+

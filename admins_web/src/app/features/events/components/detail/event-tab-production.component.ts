@@ -22,7 +22,7 @@ import { lineup, money } from '../../event-metrics';
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
 
       <!-- ─── EQUIPO DE SONIDO ─── -->
-      <section class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
+      <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-violet-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-violet-500/25 border-l-4 border-l-violet-500/70 shadow-2xl shadow-violet-500/5 space-y-4 backdrop-blur-2xl">
         <div class="flex items-center justify-between gap-2">
           <h5 class="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
             <span class="material-symbols-outlined text-[13px]">speaker</span> Equipo de sonido
@@ -184,7 +184,7 @@ import { lineup, money } from '../../event-metrics';
 
       <!-- ─── CORRIDA DEL DÍA ─── -->
       <section class="space-y-4">
-        <div class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
+        <div class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-violet-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-violet-500/25 border-l-4 border-l-violet-500/70 shadow-2xl shadow-violet-500/5 space-y-4 backdrop-blur-2xl">
           <h5 class="text-[10px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
             <span class="material-symbols-outlined text-[13px]">schedule</span> Corrida del día
           </h5>

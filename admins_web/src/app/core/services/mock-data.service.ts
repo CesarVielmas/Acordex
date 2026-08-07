@@ -105,13 +105,14 @@ export class MockDataService {
       monthlyQuotesCount: 12,
       labelRevenueAcordex: 450000,
       artistFeeBase: 320000,
+      minimumHours: 3,
       estimatedMonthlyEarnings: 680000,
       agendaStatus: 'Parcialmente Ocupado',
       followersCount: '1.4M',
       isPlatformRegistered: true,
       isExclusive: true,
       pendingLabelContract: false,
-      groupLeaderName: 'Don Raúl Treviño',
+      groupLeaderName: 'Encargado Acordex',
       groupLeaderRole: 'Director Musical & Vocalista',
       groupLeaderPhone: '+52 81 9928 1120',
       groupLeaderEmail: 'raul.trevino@elegantes.com',
@@ -150,6 +151,7 @@ export class MockDataService {
       monthlyQuotesCount: 9,
       labelRevenueAcordex: 280000,
       artistFeeBase: 210000,
+      minimumHours: 4,
       estimatedMonthlyEarnings: 420000,
       agendaStatus: 'Agenda Llena',
       followersCount: '2.8M',
@@ -195,6 +197,7 @@ export class MockDataService {
       monthlyQuotesCount: 18,
       labelRevenueAcordex: 920000,
       artistFeeBase: 650000,
+      minimumHours: 2,
       estimatedMonthlyEarnings: 1350000,
       agendaStatus: 'Agenda Llena',
       followersCount: '4.1M',
@@ -240,6 +243,7 @@ export class MockDataService {
       monthlyQuotesCount: 5,
       labelRevenueAcordex: 110000,
       artistFeeBase: 85000,
+      minimumHours: 3,
       estimatedMonthlyEarnings: 180000,
       agendaStatus: 'Totalmente Libre',
       followersCount: '620K',
@@ -285,6 +289,7 @@ export class MockDataService {
       monthlyQuotesCount: 4,
       labelRevenueAcordex: 60000,
       artistFeeBase: 50000,
+      minimumHours: 5,
       estimatedMonthlyEarnings: 120000,
       agendaStatus: 'Totalmente Libre',
       followersCount: '340K',
@@ -330,6 +335,7 @@ export class MockDataService {
       monthlyQuotesCount: 14,
       labelRevenueAcordex: 390000,
       artistFeeBase: 280000,
+      minimumHours: 4,
       estimatedMonthlyEarnings: 560000,
       agendaStatus: 'Parcialmente Ocupado',
       followersCount: '1.9M',
@@ -355,6 +361,82 @@ export class MockDataService {
         { date: '2026-08-04', dayLabel: 'Mar', quotes: 1, events: 0, revenue: 0 },
         { date: '2026-08-05', dayLabel: 'Mié', quotes: 2, events: 1, revenue: 70000 }
       ]
+    },
+    {
+      id: 'grp-7',
+      name: 'Banda La Consentida de Monterrey (Propio)',
+      disqueraType: 'Firmado Exclusivo',
+      disqueraId: ACTIVE_DISQUERA_ID,
+      disqueraName: 'Acordex Records',
+      genre: 'Banda Sinaloense',
+      rating: 4.95,
+      publicApprovalPercent: 98,
+      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
+      membersCount: 16,
+      labelQuotesCount: 18,
+      pendingQuotesCount: 5,
+      completedQuotesCount: 13,
+      labelActiveEventsCount: 6,
+      monthlyEventsCount: 10,
+      monthlyQuotesCount: 18,
+      labelRevenueAcordex: 520000,
+      artistFeeBase: 380000,
+      minimumHours: 3,
+      estimatedMonthlyEarnings: 750000,
+      agendaStatus: 'Totalmente Libre',
+      followersCount: '3.1M',
+      isPlatformRegistered: true,
+      isExclusive: true,
+      pendingLabelContract: false,
+      groupLeaderName: 'Encargado Acordex',
+      groupLeaderRole: 'Representante de Marca Acordex',
+      groupLeaderPhone: '+52 81 8800 1199',
+      groupLeaderEmail: 'encargado@acordex.com',
+      lastActivityText: 'Ensayando repertorio de gala para palenques',
+      lastActivityTime: 'Hace 15 min',
+      isOnline: true,
+      lastConnectionText: 'En línea ahora',
+      globalTotalEventsCount: 62,
+      description: 'Banda sinaloense exclusiva de la casa editorial Acordex, disponible sin comisiones de intermediarios.',
+      dailyMetrics: []
+    },
+    {
+      id: 'grp-8',
+      name: 'Mariachi Real de Monterrey (Propio)',
+      disqueraType: 'Firmado Exclusivo',
+      disqueraId: ACTIVE_DISQUERA_ID,
+      disqueraName: 'Acordex Records',
+      genre: 'Mariachi / Ranchero',
+      rating: 4.9,
+      publicApprovalPercent: 97,
+      image: 'https://images.unsplash.com/photo-1526478806334-5fd488fcaabc?w=600&auto=format&fit=crop&q=80',
+      membersCount: 12,
+      labelQuotesCount: 14,
+      pendingQuotesCount: 2,
+      completedQuotesCount: 12,
+      labelActiveEventsCount: 4,
+      monthlyEventsCount: 8,
+      monthlyQuotesCount: 14,
+      labelRevenueAcordex: 310000,
+      artistFeeBase: 195000,
+      minimumHours: 2,
+      estimatedMonthlyEarnings: 480000,
+      agendaStatus: 'Totalmente Libre',
+      followersCount: '1.2M',
+      isPlatformRegistered: true,
+      isExclusive: true,
+      pendingLabelContract: false,
+      groupLeaderName: 'Encargado Acordex',
+      groupLeaderRole: 'Director de Elenco Acordex',
+      groupLeaderPhone: '+52 81 8800 1199',
+      groupLeaderEmail: 'encargado@acordex.com',
+      lastActivityText: 'Disponible para reservaciones inmediatas',
+      lastActivityTime: 'Hace 5 min',
+      isOnline: true,
+      lastConnectionText: 'En línea ahora',
+      globalTotalEventsCount: 48,
+      description: 'Mariachi institucional propio de la cartelera Acordex.',
+      dailyMetrics: []
     }
   ];
 
@@ -1465,10 +1547,20 @@ export class MockDataService {
       createdAt: '2026-07-30T09:40',
       ownerManagerName: 'Encargado Acordex',
       capacity: 9800,
-      isCoProduction: false,
+      isCoProduction: true,
+      coProductionPartner: 'Beto Ramírez (Sierreño Music)',
+      managerAgreements: [
+        { id: 'agr-102-1', managerName: 'Encargado Acordex', role: 'organizador', settlementKind: 'porcentaje', percent: 60, status: 'Aceptado' },
+        { id: 'agr-102-2', managerName: 'Beto Ramírez (Sierreño Music)', role: 'coorganizador', settlementKind: 'porcentaje', percent: 40, status: 'Pendiente', invitedAt: '2026-08-02T10:15', viewedAt: '2026-08-02T14:20' }
+      ],
       publicProfile: {
         coverUrl: 'https://images.unsplash.com/photo-1459749411177-042180ce673c?w=1400&auto=format&fit=crop&q=80',
         posterUrl: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=900&auto=format&fit=crop&q=80',
+        greetingVideos: [
+          { id: 'EVT-102-vid-1', bandName: 'Banda La Imperial', title: 'Invitación especial del grupo', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', type: 'local' },
+          { id: 'EVT-102-vid-2', bandName: 'Banda La Imperial', title: 'Video de promoción en redes', url: 'https://www.youtube.com/embed/F77FwZq-7gE', type: 'youtube' }
+        ],
+        salesCloseDaysBefore: 1,
         category: 'Baile',
         tagline: 'La tambora más potente del país, una sola noche en Guadalajara.',
         about: 'Una noche dedicada a la banda sinaloense en el Auditorio Telmex, con la cumbia sonidera de Sonido Dinamita Urbano abriendo la velada. Contamos con accesos controlados, zona de alimentos, estacionamiento vigilado y accesibilidad para silla de ruedas en todas las zonas.',
@@ -1640,6 +1732,11 @@ export class MockDataService {
       publicProfile: {
         coverUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1400&auto=format&fit=crop&q=80',
         posterUrl: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=900&auto=format&fit=crop&q=80',
+        greetingVideos: [
+          { id: 'EVT-103-vid-1', bandName: 'Grupo Dinastía Real', title: 'Invitación especial del grupo', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', type: 'local' },
+          { id: 'EVT-103-vid-2', bandName: 'Grupo Dinastía Real', title: 'Video de promoción en redes', url: 'https://www.youtube.com/embed/gJM7_Mv30tA', type: 'youtube' }
+        ],
+        salesCloseDaysBefore: 2,
         category: 'Festival',
         tagline: 'Tres agrupaciones, una explanada y la nueva ola del corrido tumbado.',
         about: 'El Festival Tumbado llega a la Explanada Vallarta con tres agrupaciones en un solo cartel: apertura acústica, cumbia sonidera y el cierre estelar de Grupo Dinastía Real. Explanada techada, zona de alimentos, hidratación gratuita y accesos independientes por zona.',
@@ -1853,6 +1950,11 @@ export class MockDataService {
       publicProfile: {
         coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1400&auto=format&fit=crop&q=80',
         posterUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=900&auto=format&fit=crop&q=80',
+        greetingVideos: [
+          { id: 'EVT-104-vid-1', bandName: 'Los Elegantes del Norte', title: 'Invitación especial del grupo', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', type: 'local' },
+          { id: 'EVT-104-vid-2', bandName: 'Los Elegantes del Norte', title: 'Video de promoción en redes', url: 'https://www.youtube.com/embed/TfH73dnhfmg', type: 'youtube' }
+        ],
+        salesCloseDaysBefore: 3,
         category: 'Palenque',
         tagline: 'Doble cartel norteño en el palenque más famoso de la feria.',
         about: 'El Palenque San Marcos recibe una noche de norteño clásico y sax con dos agrupaciones de casa. Acceso por anillo dorado, servicio de mesa en zona VIP y venta de alimentos dentro del recinto durante toda la función.',
@@ -2072,6 +2174,11 @@ export class MockDataService {
       publicProfile: {
         coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1400&auto=format&fit=crop&q=80',
         posterUrl: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=900&auto=format&fit=crop&q=80',
+        greetingVideos: [
+          { id: 'EVT-105-vid-1', bandName: 'Los Herederos del Regio', title: 'Invitación especial del grupo', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', type: 'local' },
+          { id: 'EVT-105-vid-2', bandName: 'Los Herederos del Regio', title: 'Video de promoción en redes', url: 'https://www.youtube.com/embed/D3sR1hU767E', type: 'youtube' }
+        ],
+        salesCloseDaysBefore: 1,
         category: 'Baile',
         tagline: 'El baile del recuerdo vuelve a Saltillo con acordeón y cumbia.',
         about: 'Gran baile masivo en la Expo Arena Coahuila con mesas VIP en pista, zona preferente y pista general de pie. Servicio de bar en todas las zonas, estacionamiento vigilado y transporte seguro coordinado a la salida.',
@@ -2263,6 +2370,11 @@ export class MockDataService {
       publicProfile: {
         coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1400&auto=format&fit=crop&q=80',
         posterUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=900&auto=format&fit=crop&q=80',
+        greetingVideos: [
+          { id: 'EVT-106-vid-1', bandName: 'Los Elegantes del Norte', title: 'Invitación especial del grupo', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', type: 'local' },
+          { id: 'EVT-106-vid-2', bandName: 'Los Elegantes del Norte', title: 'Video de promoción en redes', url: 'https://www.youtube.com/embed/2Vv-BfVoq4g', type: 'youtube' }
+        ],
+        salesCloseDaysBefore: 2,
         category: 'Concierto',
         tagline: 'Una noche entera dedicada al acordeón norteño en Torreón.',
         about: 'Los Elegantes del Norte presentan dos horas de acordeón y sax en el Coliseo Centenario, repasando sus discos más queridos. Recinto techado con butaca numerada en zona preferente y gradas generales con excelente visibilidad.',
@@ -2394,6 +2506,11 @@ export class MockDataService {
       publicProfile: {
         coverUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1400&auto=format&fit=crop&q=80',
         posterUrl: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=900&auto=format&fit=crop&q=80',
+        greetingVideos: [
+          { id: 'EVT-107-vid-1', bandName: 'Banda La Imperial', title: 'Invitación especial del grupo', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', type: 'local' },
+          { id: 'EVT-107-vid-2', bandName: 'Banda La Imperial', title: 'Video de promoción en redes', url: 'https://www.youtube.com/embed/F77FwZq-7gE', type: 'youtube' }
+        ],
+        salesCloseDaysBefore: 3,
         category: 'Palenque',
         tagline: 'Dos horas y media de tambora en el palenque de la feria.',
         about: 'Banda La Imperial cierra la Feria de San Marcos con dos horas y media de tambora en el palenque más famoso del país. Servicio de mesa en el anillo dorado, alimentos dentro del recinto y acceso escalonado por zona para evitar filas.',
@@ -2573,6 +2690,11 @@ export class MockDataService {
       publicProfile: {
         coverUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=1400&auto=format&fit=crop&q=80',
         posterUrl: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=900&auto=format&fit=crop&q=80',
+        greetingVideos: [
+          { id: 'EVT-108-vid-1', bandName: 'Grupo Dinastía Real', title: 'Invitación especial del grupo', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', type: 'local' },
+          { id: 'EVT-108-vid-2', bandName: 'Grupo Dinastía Real', title: 'Video de promoción en redes', url: 'https://www.youtube.com/embed/gJM7_Mv30tA', type: 'youtube' }
+        ],
+        salesCloseDaysBefore: 1,
         category: 'Concierto',
         tagline: 'Corridos tumbados y sierreño acústico en una sola noche.',
         about: 'Explosión Norteña reunió en Expo Chihuahua el sierreño acústico de Valentina & Los De La Sierra con el cierre estelar de Grupo Dinastía Real. Recinto con zona preferente numerada y pista general de pie frente al escenario.',
@@ -2772,6 +2894,11 @@ export class MockDataService {
       publicProfile: {
         coverUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1400&auto=format&fit=crop&q=80',
         posterUrl: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=900&auto=format&fit=crop&q=80',
+        greetingVideos: [
+          { id: 'EVT-109-vid-1', bandName: 'Los Elegantes del Norte', title: 'Invitación especial del grupo', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', type: 'local' },
+          { id: 'EVT-109-vid-2', bandName: 'Los Elegantes del Norte', title: 'Video de promoción en redes', url: 'https://www.youtube.com/embed/TfH73dnhfmg', type: 'youtube' }
+        ],
+        salesCloseDaysBefore: 2,
         category: 'Festival',
         tagline: 'Tres agrupaciones de casa celebrando el aniversario de Acordex.',
         about: 'El Aniversario Acordex reunió en la Arena Monterrey a tres agrupaciones de la casa en una noche de más de cuatro horas de música. Producción completa de audio, video e iluminación, con accesos escalonados y zona de alimentos en los tres niveles.',
@@ -3000,6 +3127,11 @@ export class MockDataService {
       publicProfile: {
         coverUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=1400&auto=format&fit=crop&q=80',
         posterUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=900&auto=format&fit=crop&q=80',
+        greetingVideos: [
+          { id: 'EVT-110-vid-1', bandName: 'Valentina & Los De La Sierra', title: 'Invitación especial del grupo', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', type: 'local' },
+          { id: 'EVT-110-vid-2', bandName: 'Valentina & Los De La Sierra', title: 'Video de promoción en redes', url: 'https://www.youtube.com/embed/D3sR1hU767E', type: 'youtube' }
+        ],
+        salesCloseDaysBefore: 3,
         category: 'Concierto',
         tagline: 'Un concierto acústico e íntimo en el corazón de Culiacán.',
         about: 'Serenata de Primavera proponía una velada acústica en el Teatro Pablo de Villavicencio, con luneta y balcón numerados y un formato íntimo de dos horas. El evento fue cancelado por causa de fuerza mayor y todos los boletos fueron reembolsados.',

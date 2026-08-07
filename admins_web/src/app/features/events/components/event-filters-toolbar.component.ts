@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EventState } from '../../../core/models/event.models';
 import { eventStateMeta } from '../../../core/models/event-state.meta';
-import { EventStateFilterBarComponent, EventFilterChip } from './event-state-filter-bar.component';
-import { CustomSelectComponent, SelectOption } from '../../../shared/ui/custom-select/custom-select.component';
+import { EventStateFilterBarComponent } from './event-state-filter-bar.component';
 
 /** Una fase del ciclo con su conteo, para pintar la rejilla de fases. */
 export interface EventStateChip {
@@ -19,25 +18,17 @@ export interface ActiveEventFilterChip {
   icon: string;
 }
 
-export type EventSortMode = 'fecha' | 'estado' | 'ocupacion' | 'taquilla' | 'titulo';
-
 /**
  * Barra de filtros del panel de eventos.
  *
- * Mismo comportamiento que la de cotizaciones —arranca colapsada y los filtros
- * aplicados quedan visibles como chips removibles aunque el panel esté
- * cerrado— porque las dos pantallas se usan igual y no tiene sentido que se
- * comporten distinto.
- *
- * Los controles del panel cambian según la vista: el Tablero ya agrupa por
- * fase y lleva su barra contextual en cada columna, así que aquí solo decide
- * qué columnas ver; la Cartelera es una rejilla plana y necesita ordenar y
- * filtrar de forma transversal.
+ * Arranca colapsada y los filtros aplicados quedan visibles como chips
+ * removibles aunque el panel esté cerrado. Permite filtrar por texto, por
+ * fase del ciclo de vida y ocultar fases vacías en el Tablero.
  */
 @Component({
   selector: 'app-event-filters-toolbar',
   standalone: true,
-  imports: [CommonModule, FormsModule, EventStateFilterBarComponent, CustomSelectComponent],
+  imports: [CommonModule, FormsModule, EventStateFilterBarComponent],
   host: { class: 'block' },
   template: `
     <div class="rounded-3xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 shadow-lg overflow-hidden">
@@ -92,8 +83,7 @@ export type EventSortMode = 'fecha' | 'estado' | 'ocupacion' | 'taquilla' | 'tit
           </div>
         </div>
 
-        <!-- Filtros aplicados: visibles aunque el panel esté colapsado, para que
-             nunca se filtre la lista "en secreto". -->
+        <!-- Filtros aplicados: visibles aunque el panel esté colapsado -->
         @if (activeFilterChips.length > 0) {
           <div class="flex items-center gap-1.5 flex-wrap">
             <span class="text-[10px] font-bold text-outline uppercase tracking-wider shrink-0">Aplicados:</span>
@@ -157,39 +147,20 @@ export type EventSortMode = 'fecha' | 'estado' | 'ocupacion' | 'taquilla' | 'tit
               </div>
             </div>
 
-            <!-- CONTROLES PROPIOS DE CADA VISTA -->
-            <div class="pt-3 border-t border-outline-variant/20 space-y-3">
-              @if (viewMode === 'cartelera') {
-                <app-event-state-filter-bar
-                  [chips]="contextChips"
-                  [active]="contextActive"
-                  [label]="contextLabel"
-                  (select)="contextFilterChange.emit($event)"
-                />
-
-                <div class="w-60 text-xs">
-                  <app-custom-select
-                    label="Ordenar por:"
-                    placeholder="Modo de orden"
-                    [options]="sortOptions"
-                    [value]="sortMode"
-                    (valueChange)="sortModeChange.emit($any($event))"
-                  />
-                </div>
-              } @else {
-                <button
-                  type="button"
-                  (click)="hideEmptyStatesChange.emit(!hideEmptyStates)"
-                  [attr.aria-pressed]="hideEmptyStates"
-                  [class]="hideEmptyStates
-                    ? 'bg-primary/20 text-primary border-primary/50'
-                    : 'bg-surface-container-high/80 text-outline border-outline-variant/30 hover:text-on-surface'"
-                  class="px-3.5 py-2 min-h-11 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5"
-                >
-                  <span class="material-symbols-outlined text-base">{{ hideEmptyStates ? 'check_box' : 'check_box_outline_blank' }}</span>
-                  Ocultar fases vacías
-                </button>
-              }
+            <!-- OPCOINES ADICIONALES -->
+            <div class="pt-3 border-t border-outline-variant/20">
+              <button
+                type="button"
+                (click)="hideEmptyStatesChange.emit(!hideEmptyStates)"
+                [attr.aria-pressed]="hideEmptyStates"
+                [class]="hideEmptyStates
+                  ? 'bg-primary/20 text-primary border-primary/50'
+                  : 'bg-surface-container-high/80 text-outline border-outline-variant/30 hover:text-on-surface'"
+                class="px-3.5 py-2 min-h-11 rounded-xl text-[11px] font-bold border transition-all flex items-center gap-1.5"
+              >
+                <span class="material-symbols-outlined text-base">{{ hideEmptyStates ? 'check_box' : 'check_box_outline_blank' }}</span>
+                Ocultar fases vacías
+              </button>
             </div>
           </div>
         </div>
@@ -198,37 +169,20 @@ export type EventSortMode = 'fecha' | 'estado' | 'ocupacion' | 'taquilla' | 'tit
   `
 })
 export class EventFiltersToolbarComponent {
-  @Input() viewMode: 'tablero' | 'cartelera' = 'tablero';
   @Input() stateChips: EventStateChip[] = [];
   @Input() stateFilter = 'Todos';
   @Input() searchTerm = '';
-  @Input() sortMode: EventSortMode = 'fecha';
   @Input() hideEmptyStates = false;
   @Input() resultCount = 0;
   @Input() totalCount = 0;
   /** Filtros aplicados, para mostrarlos y poder quitarlos uno a uno. */
   @Input() activeFilterChips: ActiveEventFilterChip[] = [];
 
-  /** Chips contextuales de la fase, o transversales si se ven todas juntas. */
-  @Input() contextChips: EventFilterChip[] = [];
-  @Input() contextActive = 'todas';
-  @Input() contextLabel = 'Filtrar por:';
-
   @Output() stateFilterChange = new EventEmitter<string>();
   @Output() searchTermChange = new EventEmitter<string>();
-  @Output() sortModeChange = new EventEmitter<EventSortMode>();
   @Output() hideEmptyStatesChange = new EventEmitter<boolean>();
-  @Output() contextFilterChange = new EventEmitter<string>();
   @Output() clearFilters = new EventEmitter<void>();
   @Output() removeFilter = new EventEmitter<ActiveEventFilterChip['key']>();
-
-  readonly sortOptions: SelectOption[] = [
-    { value: 'fecha', label: 'Fecha del evento', icon: 'event' },
-    { value: 'estado', label: 'Fase del ciclo', icon: 'segment' },
-    { value: 'ocupacion', label: 'Ocupación vendida', icon: 'event_seat' },
-    { value: 'taquilla', label: 'Taquilla cobrada', icon: 'payments' },
-    { value: 'titulo', label: 'Nombre (A-Z)', icon: 'sort_by_alpha' }
-  ];
 
   /** Estado visual del panel. Arranca cerrado para no robar espacio. */
   expanded = signal(false);
@@ -249,3 +203,4 @@ export class EventFiltersToolbarComponent {
     return 'bg-surface-container-high/80 border-outline-variant/30 hover:border-outline-variant/60 ' + eventStateMeta(state).textColor;
   }
 }
+

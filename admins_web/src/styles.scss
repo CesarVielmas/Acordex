@@ -57,22 +57,32 @@
     scrollbar-width: none;
   }
 
-  /* Animations */
+  /*
+   * Animations
+   *
+   * Ninguna lleva "forwards" a propósito. Todas terminan justo en el estado
+   * base del elemento (opacity 1, transform none), así que el fill no aporta
+   * nada visual, pero sí deja la animación "rellenando" para siempre: eso
+   * mantiene vivo un contexto de apilamiento —y, cuando hay transform, un
+   * containing block— en el elemento animado. Cualquier overlay "fixed" que
+   * cuelgue de él queda atrapado ahí dentro y se pinta por debajo de la
+   * barra lateral y la cabecera por muy alto que sea su z-index.
+   */
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-out forwards;
+    animation: fadeIn 0.3s ease-out;
   }
-  
+
   .animate-slide-up {
-    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .animate-scale-up {
-    animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   /* Panel lateral del modal de grupo. */
   .animate-slide-in-right {
-    animation: slideInRight 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: slideInRight 0.32s cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
 

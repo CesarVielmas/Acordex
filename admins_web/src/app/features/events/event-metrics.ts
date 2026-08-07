@@ -178,7 +178,31 @@ export function externalSlots(e: EventItem): EventLineupSlot[] {
 /** Costo propuesto por el dueño de un grupo, sumando su desglose. */
 export function slotCost(slot: EventLineupSlot): number {
   if (typeof slot.agreedTotal === 'number') return slot.agreedTotal;
+
+  // Grupo externo con tarifa publicada: el costo no se teclea, se deriva de las
+  // horas contratadas. Una contraoferta solo manda cuando el dueño la aceptó;
+  // mientras siga pendiente, lo pactado sigue siendo la tarifa publicada.
+  if (slot.isExternal && typeof slot.publishedFee === 'number') {
+    if (slot.counterOffer?.status === 'Aceptada') return slot.counterOffer.amount;
+    return externalSlotFee(slot);
+  }
+
   return (slot.costItems || []).reduce((sum, c) => sum + (c.amount || 0), 0);
+}
+
+/**
+ * Tarifa de un grupo externo según las horas contratadas.
+ *
+ * Las horas mínimas son un piso, no un tramo proporcional: pedir menos horas de
+ * las mínimas no abarata al grupo. Por encima del mínimo, cada hora extra se
+ * cobra al mismo precio por hora que sale de la tarifa base.
+ */
+export function externalSlotFee(slot: EventLineupSlot): number {
+  const base = slot.publishedFee || 0;
+  const min = Math.max(1, slot.minimumHours || 1);
+  const hours = slot.contractedHours || min;
+  if (hours <= min) return base;
+  return Math.round(base * (hours / min));
 }
 
 /** Lo que cuesta el cartel completo. */
