@@ -5,11 +5,30 @@ import {
   EventLineupSlot,
   EventCostItem,
   EventInvitationVideo,
-  EventCounterOffer
+  EventCounterOffer,
+  EventManagerAgreement,
+  LineupEngagementKind
 } from '../../../../core/models/event.models';
 import { GroupItem } from '../../../../core/models/admin.models';
 import { EditableFieldComponent, EditableOption } from '../../../../shared/ui/editable-field/editable-field.component';
-import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-metrics';
+import {
+  activeCounterOffer,
+  counterOfferSavings,
+  dateTimeLabel,
+  isCoOrganizedSlot,
+  isQuoteSlot,
+  lineup,
+  lineupTotalCost,
+  money,
+  pendingOutboundCount,
+  slotCost,
+  slotOfferAmount,
+  slotProposedFee,
+  slotPublishedTotal,
+  slugify,
+  unsentLineupRequests,
+  unsentManagerInvites
+} from '../../event-metrics';
 
 /**
  * Cartel del evento, con un sub-apartado completo por grupo.
@@ -58,6 +77,48 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
         }
       </div>
 
+      <!-- Nada de lo que se decide aquí sale del borrador. Se dice explícito
+           porque el encargado necesita saber que puede armar, cambiar de opinión
+           y contraofertar sin que el otro manager se entere de cada intento. -->
+      @if (isDraft() && outboundCount() > 0) {
+        <div class="p-4 rounded-2xl bg-amber-500/[0.08] border border-amber-500/30 border-l-4 border-l-amber-500/70 space-y-2.5 shadow-lg">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-base">outbox</span>
+            </span>
+            <div class="min-w-0">
+              <h5 class="text-[11px] font-black uppercase tracking-wider text-amber-300">
+                {{ outboundCount() }} aviso(s) esperando el envío a revisión
+              </h5>
+              <p class="text-[10px] text-outline">
+                Mientras el evento sea borrador, nadie de fuera recibe nada
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            @if (unsentQuoteSlots().length) {
+              <span class="px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-[10px] font-bold text-amber-200 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[13px]">request_quote</span>
+                {{ unsentQuoteSlots().length }} solicitud(es) de cotización directa
+              </span>
+            }
+            @if (unsentCoorgSlots().length) {
+              <span class="px-2.5 py-1 rounded-xl bg-sky-500/15 border border-sky-500/30 text-[10px] font-bold text-sky-200 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[13px]">handshake</span>
+                {{ unsentCoorgSlots().length }} grupo(s) por co-organización
+              </span>
+            }
+            @if (unsentInvites().length) {
+              <span class="px-2.5 py-1 rounded-xl bg-sky-500/15 border border-sky-500/30 text-[10px] font-bold text-sky-200 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[13px]">person_add</span>
+                {{ unsentInvites().length }} invitación(es) a manager
+              </span>
+            }
+          </div>
+        </div>
+      }
+
       @if (!slots().length) {
         <p class="p-6 text-center text-[11px] text-outline italic bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/30">
           Todavía no hay grupos en el cartel. Agrega al menos uno y marca cuál encabeza el evento.
@@ -103,17 +164,20 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
             </button>
 
             <div class="flex items-center gap-1.5 shrink-0">
+              <!-- La etiqueta dice la VÍA por la que entra el grupo, no de quién
+                   es: el mismo grupo ajeno se trae de las dos maneras y lo que
+                   cambia todo (quién ve los números, quién decide) es la vía. -->
               @if (!slot.isExternal) {
                 <span class="px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider">
                   Grupo Propio
                 </span>
               } @else if (isCoOrganizerSlot(slot)) {
                 <span class="px-2 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[9px] font-black uppercase tracking-wider shadow-sm">
-                  Grupo Co-Organizador
+                  Co-Organización
                 </span>
               } @else {
                 <span class="px-2 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase tracking-wider">
-                  Grupo de Otro Encargado
+                  Cotización Directa
                 </span>
               }
               @if (missingPublic(slot)) {
@@ -125,8 +189,9 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
                 </span>
               }
               @if (slot.isExternal) {
-                <span [class]="approvalClass(slot.approval)" class="px-2 py-1 rounded-lg text-[9px] font-black border">
-                  {{ slot.approval }}
+                <span [class]="approvalClass(slot.approval)" class="px-2 py-1 rounded-lg text-[9px] font-black border flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[11px]">{{ approvalIcon(slot.approval) }}</span>
+                  {{ approvalLabel(slot.approval) }}
                 </span>
               }
               <button
@@ -143,30 +208,58 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
           @if (isOpen(slot.id)) {
             <div class="p-4 space-y-4 border-t border-outline-variant/20 animate-slide-up">
 
-              <!-- Notificación si es un grupo de otro encargado / co-organizador -->
+              <!-- Estado real de la solicitud al dueño del grupo. En borrador
+                   todavía no ha salido nada, y decirlo evita que el encargado
+                   crea que ya está negociando cuando aún no ha mandado nada. -->
               @if (slot.isExternal) {
                 <div
-                  class="p-3.5 rounded-xl border text-xs flex items-center justify-between gap-3 flex-wrap"
-                  [class]="isCoOrganizerSlot(slot)
-                    ? 'bg-sky-500/10 border-sky-500/30 text-sky-200'
-                    : 'bg-amber-500/10 border-amber-500/30 text-amber-200'"
+                  class="p-3.5 rounded-xl border text-xs space-y-2"
+                  [class]="slot.approval === 'Sin Enviar'
+                    ? 'bg-surface-container-highest/60 border-outline-variant/35 text-on-surface-variant'
+                    : (isCoOrganizerSlot(slot)
+                      ? 'bg-sky-500/10 border-sky-500/30 text-sky-200'
+                      : 'bg-amber-500/10 border-amber-500/30 text-amber-200')"
                 >
-                  <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-base" [class]="isCoOrganizerSlot(slot) ? 'text-sky-300' : 'text-amber-300'">
-                      {{ isCoOrganizerSlot(slot) ? 'group_add' : 'outgoing_mail' }}
-                    </span>
-                    <span>
-                      Solicitud enviada a <strong>{{ slot.managerName }}</strong>
-                      @if (isCoOrganizerSlot(slot)) {
-                        (Manager Co-Organizador)
-                      } @else {
-                        (Manager encargado)
-                      }.
+                  <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="material-symbols-outlined text-base shrink-0"
+                        [class]="slot.approval === 'Sin Enviar'
+                          ? 'text-outline'
+                          : (isCoOrganizerSlot(slot) ? 'text-sky-300' : 'text-amber-300')">
+                        {{ slot.approval === 'Sin Enviar' ? 'schedule_send' : (isCoOrganizerSlot(slot) ? 'group_add' : 'outgoing_mail') }}
+                      </span>
+                      <span>
+                        @if (slot.approval === 'Sin Enviar') {
+                          Se le enviará a <strong class="text-on-surface">{{ slot.managerName }}</strong> al mandar el evento a revisión.
+                        } @else {
+                          Solicitud enviada a <strong>{{ slot.managerName }}</strong>
+                          @if (slot.requestSentAt) { el {{ dateTimeLabel(slot.requestSentAt) }} }.
+                        }
+                      </span>
+                    </div>
+                    <span [class]="approvalClass(slot.approval)" class="px-2.5 py-1 rounded-lg text-[10px] font-black border shrink-0">
+                      {{ approvalLabel(slot.approval) }}
                     </span>
                   </div>
-                  <span [class]="approvalClass(slot.approval)" class="px-2.5 py-1 rounded-lg text-[10px] font-black border">
-                    Estado: {{ slot.approval }}
-                  </span>
+
+                  <!-- Qué es exactamente lo que va a recibir. Son dos cosas muy
+                       distintas y de ahí depende cuánto del evento verá. -->
+                  <p class="text-[10px] leading-relaxed pt-1.5 border-t"
+                    [class]="slot.approval === 'Sin Enviar' ? 'border-outline-variant/20 text-outline' : 'border-white/10'">
+                    @if (isCoOrganizerSlot(slot)) {
+                      <strong>Co-organización:</strong> {{ slot.managerName }} entra al evento. Verá boletaje,
+                      precios y avance de venta, y podrá sugerir grupos — aceptarlos sigue siendo decisión tuya.
+                      No verá lo que ganan tus grupos ni los de los demás managers.
+                    } @else {
+                      <strong>Cotización directa:</strong> {{ slot.managerName }} solo recibe la oferta, el lugar,
+                      la hora de llegada, la prueba de sonido y la duración. No entra al evento ni ve boletaje,
+                      ventas ni ganancias.
+                      @if (canViewFinances()) {
+                        Se ofertan <strong class="font-mono">{{ money(offerAmount(slot)) }}</strong>
+                        @if (slot.counterOffer && slot.counterOffer.status !== 'Rechazada') { (contraoferta) } @else { (su tarifa publicada) }.
+                      }
+                    }
+                  </p>
                 </div>
               }
 
@@ -262,23 +355,57 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
                     ? 'bg-amber-500/[0.06] border-amber-500/25'
                     : 'bg-emerald-500/[0.06] border-emerald-500/25'"
                 >
-                  <h5 class="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5"
-                    [class]="slot.isExternal ? 'text-amber-300' : 'text-emerald-300'">
-                    <span class="material-symbols-outlined text-[13px]">payments</span>
-                    {{ slot.isExternal ? 'Tarifa del grupo (de otro manager)' : 'Presupuesto asignado al grupo' }}
-                  </h5>
+                  @let live = liveCounter(slot);
+
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <h5 class="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5"
+                      [class]="slot.isExternal ? 'text-amber-300' : 'text-emerald-300'">
+                      <span class="material-symbols-outlined text-[13px]">{{ live ? 'gavel' : 'payments' }}</span>
+                      @if (!slot.isExternal) {
+                        Presupuesto asignado al grupo
+                      } @else if (live) {
+                        Tarifa negociada · contraoferta {{ counterStatusLabel(live.status) }}
+                      } @else {
+                        Tarifa del grupo (de otro manager)
+                      }
+                    </h5>
+                    @if (live) {
+                      <span [class]="counterStatusClass(live.status)" class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border">
+                        {{ counterStatusLabel(live.status) }}
+                      </span>
+                    }
+                  </div>
 
                   @if (slot.isExternal) {
                     <!-- Externo: el importe no se teclea. Lo fija su dueño y solo
-                         se mueve cambiando las horas o vía contraoferta. -->
+                         se mueve cambiando las horas o vía contraoferta. Con una
+                         contraoferta viva, ella pasa a ser la tarifa base: es la
+                         cifra que de verdad se va a pagar si el dueño acepta, así
+                         que las horas y el total se calculan sobre ella. -->
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       <div>
-                        <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Costo fijo</span>
-                        <span class="text-xs font-black text-on-surface font-mono">{{ money(slot.publishedFee || 0) }}</span>
+                        <span class="text-[10px] font-black uppercase tracking-wider text-outline block">
+                          {{ live ? 'Tu contraoferta' : 'Costo fijo' }}
+                        </span>
+                        @if (live) {
+                          <span class="text-xs font-black text-amber-300 font-mono">{{ money(live.amount) }}</span>
+                          <span class="text-[9px] text-outline block">por {{ live.hours || slot.minimumHours || 3 }} h</span>
+                        } @else {
+                          <span class="text-xs font-black text-on-surface font-mono">{{ money(slot.publishedFee || 0) }}</span>
+                        }
                       </div>
                       <div>
-                        <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Horas mínimas</span>
-                        <span class="text-xs font-black text-on-surface font-mono">{{ slot.minimumHours || 3 }} h</span>
+                        <span class="text-[10px] font-black uppercase tracking-wider text-outline block">
+                          {{ live ? 'Tarifa publicada' : 'Horas mínimas' }}
+                        </span>
+                        @if (live) {
+                          <span class="text-xs font-black text-outline font-mono line-through">{{ money(publishedTotal(slot)) }}</span>
+                          <span class="text-[9px] block" [class]="savings(slot) >= 0 ? 'text-emerald-300' : 'text-rose-300'">
+                            {{ savings(slot) >= 0 ? 'Ahorro ' : 'Sobrecosto ' }}{{ money(absSavings(slot)) }}
+                          </span>
+                        } @else {
+                          <span class="text-xs font-black text-on-surface font-mono">{{ slot.minimumHours || 3 }} h</span>
+                        }
                       </div>
                       <app-editable-field
                         label="Horas del evento"
@@ -289,37 +416,77 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
                         (save)="setHours(slot, $event)"
                       />
                       <div>
-                        <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Total a pagar</span>
-                        <span class="text-sm font-black text-amber-300 font-mono">{{ cost(slot) }}</span>
+                        <span class="text-[10px] font-black uppercase tracking-wider text-outline block">
+                          {{ live ? 'Total propuesto' : 'Total a pagar' }}
+                        </span>
+                        <span class="text-sm font-black text-amber-300 font-mono">{{ money(proposedTotal(slot)) }}</span>
+                        @if (live && live.status !== 'Aceptada') {
+                          <span class="text-[9px] text-outline block">si {{ slot.managerName }} acepta</span>
+                        }
                       </div>
                     </div>
 
-                    <p class="text-[10px] text-outline flex items-start gap-1.5">
-                      <span class="material-symbols-outlined text-[13px] shrink-0">info</span>
-                      El total sube con las horas y no se edita a mano. Para pagar otra cifra, manda una contraoferta.
-                    </p>
-
-                    @if (slot.counterOffer; as co) {
-                      <div class="p-3 rounded-xl border flex items-center justify-between gap-3 flex-wrap"
-                        [class]="co.status === 'Aceptada'
-                          ? 'bg-emerald-500/10 border-emerald-500/30'
-                          : (co.status === 'Rechazada' ? 'bg-rose-500/10 border-rose-500/30' : 'bg-surface-container border-outline-variant/30')">
-                        <div class="min-w-0">
-                          <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Contraoferta enviada</span>
-                          <span class="text-xs font-black text-on-surface font-mono">{{ money(co.amount) }}</span>
-                          @if (co.note) {
-                            <span class="text-[10px] text-outline block truncate">{{ co.note }}</span>
-                          }
+                    @if (live) {
+                      <!-- La misma probabilidad que se calculó al armarla, ahora
+                           fija en la ficha: es lo que dice si conviene esperar la
+                           respuesta o subir la oferta antes de mandarla. -->
+                      <div class="p-3 rounded-xl bg-surface-container/80 border border-outline-variant/25 space-y-2.5">
+                        <div class="flex items-center justify-between gap-2">
+                          <span class="text-[10px] font-black uppercase tracking-wider text-outline flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[13px] text-amber-400">analytics</span>
+                            Probabilidad de aceptación
+                          </span>
+                          <span [class]="savedOdds(slot).badgeClass" class="px-2 py-0.5 rounded-md text-[10px] font-black border">
+                            {{ savedOdds(slot).label }}
+                          </span>
                         </div>
-                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border shrink-0"
-                          [class]="co.status === 'Aceptada'
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                            : (co.status === 'Rechazada'
-                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                              : 'bg-amber-500/20 text-amber-300 border-amber-500/40')">
-                          {{ co.status }}
-                        </span>
+
+                        <div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+                          <div
+                            class="h-full rounded-full transition-all duration-300"
+                            [class]="savedOdds(slot).percent >= 80 ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]' : (savedOdds(slot).percent >= 50 ? 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]' : 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]')"
+                            [style.width.%]="savedOdds(slot).percent"
+                          ></div>
+                        </div>
+
+                        <div class="flex items-start gap-2">
+                          <span class="material-symbols-outlined text-[13px] shrink-0 mt-0.5" [class]="savedOdds(slot).class">lightbulb</span>
+                          <p class="text-[10px] text-on-surface-variant font-medium leading-relaxed">
+                            <strong>Recomendación:</strong> {{ savedOdds(slot).advice }}
+                          </p>
+                        </div>
+
+                        @if (live.note) {
+                          <p class="text-[10px] text-outline italic pt-2 border-t border-outline-variant/20">
+                            Nota enviada al manager: "{{ live.note }}"
+                          </p>
+                        }
                       </div>
+
+                      <!-- Hasta que el dueño acepte, el evento sigue debiendo la
+                           tarifa de lista. Se dice aquí para que el total del
+                           cartel no parezca un error de captura. -->
+                      @if (live.status !== 'Aceptada') {
+                        <p class="text-[10px] text-outline flex items-start gap-1.5">
+                          <span class="material-symbols-outlined text-[13px] shrink-0">savings</span>
+                          Mientras no la acepte, el cartel sigue comprometiendo la tarifa publicada
+                          (<strong class="font-mono text-on-surface">{{ money(publishedTotal(slot)) }}</strong>).
+                          El ahorro se da por bueno cuando responda.
+                        </p>
+                      }
+                    } @else {
+                      <p class="text-[10px] text-outline flex items-start gap-1.5">
+                        <span class="material-symbols-outlined text-[13px] shrink-0">info</span>
+                        El total sube con las horas y no se edita a mano. Para pagar otra cifra, manda una contraoferta.
+                      </p>
+                    }
+
+                    @if (slot.counterOffer?.status === 'Rechazada') {
+                      <p class="text-[10px] text-rose-300 flex items-start gap-1.5">
+                        <span class="material-symbols-outlined text-[13px] shrink-0">cancel</span>
+                        {{ slot.managerName }} rechazó tu contraoferta de {{ money(slot.counterOffer!.amount) }}.
+                        Vuelve a mandar otra o quédate con su tarifa publicada.
+                      </p>
                     }
 
                     @if (canEdit() && slot.counterOffer?.status !== 'Aceptada') {
@@ -329,7 +496,11 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
                         class="px-3.5 py-2 rounded-xl bg-amber-500/20 text-amber-200 border border-amber-500/40 hover:bg-amber-500 hover:text-black text-[11px] font-black transition-all active:scale-95 flex items-center gap-1.5"
                       >
                         <span class="material-symbols-outlined text-sm">gavel</span>
-                        {{ slot.counterOffer ? 'Cambiar contraoferta' : 'Enviar contraoferta' }}
+                        @if (slot.counterOffer) {
+                          Cambiar contraoferta
+                        } @else {
+                          {{ isDraft() ? 'Preparar contraoferta' : 'Enviar contraoferta' }}
+                        }
                       </button>
                     }
                   } @else {
@@ -612,7 +783,9 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
                 <span class="material-symbols-outlined text-xl">gavel</span>
               </span>
               <div class="min-w-0">
-                <h3 class="text-base font-black text-on-surface tracking-tight">ENVIAR CONTRAOFERTA</h3>
+                <h3 class="text-base font-black text-on-surface tracking-tight">
+                  {{ isDraft() ? 'PREPARAR CONTRAOFERTA' : 'ENVIAR CONTRAOFERTA' }}
+                </h3>
                 <p class="text-[11px] text-outline truncate">{{ slot.groupName }} · Manager: {{ slot.managerName }}</p>
               </div>
             </div>
@@ -628,8 +801,8 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
           <div class="space-y-4 relative z-10">
             <div class="grid grid-cols-2 gap-3">
               <div class="p-3.5 rounded-2xl bg-black/30 border border-white/10">
-                <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Pide actualmente</span>
-                <span class="text-lg font-black text-on-surface font-mono">{{ cost(slot) }}</span>
+                <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Su tarifa publicada</span>
+                <span class="text-lg font-black text-on-surface font-mono">{{ money(publishedTotal(slot)) }}</span>
                 <span class="text-[10px] text-outline block">
                   por {{ slot.contractedHours ?? (slot.minimumHours || 3) }} h
                 </span>
@@ -697,8 +870,14 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
             <p class="text-[11px] text-outline flex items-start gap-2">
               <span class="material-symbols-outlined text-sm shrink-0 mt-0.5">info</span>
               <span>
-                El grupo queda <strong class="text-amber-300">Pendiente</strong> hasta que su manager responda.
-                Mientras tanto el costo que cuenta sigue siendo el publicado.
+                @if (isDraft()) {
+                  La contraoferta se guarda en el borrador y <strong class="text-on-surface">no se manda todavía</strong>:
+                  sale junto con la solicitud cuando envíes el evento a revisión. Puedes cambiarla las veces que quieras
+                  sin que el manager se entere.
+                } @else {
+                  El grupo queda <strong class="text-amber-300">Pendiente</strong> hasta que su manager responda.
+                  Mientras tanto el costo que cuenta sigue siendo el publicado.
+                }
               </span>
             </p>
           </div>
@@ -717,7 +896,7 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
               [disabled]="counterAmount() <= 0"
               class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black text-xs hover:scale-105 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:scale-100"
             >
-              Enviar contraoferta
+              {{ isDraft() ? 'Guardar contraoferta' : 'Enviar contraoferta' }}
             </button>
           </footer>
         </div>
@@ -743,7 +922,13 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
               </span>
               <div class="min-w-0">
                 <h3 class="text-base font-black text-on-surface tracking-tight">AGREGAR GRUPO AL CARTEL</h3>
-                <p class="text-[11px] text-outline">Los grupos se separan según de quién sean, porque cada origen se contrata distinto</p>
+                <p class="text-[11px] text-outline">
+                  @if (isDraft()) {
+                    Nada de lo que elijas aquí se envía todavía: sale al mandar el evento a revisión
+                  } @else {
+                    Los grupos ajenos se traen por cotización directa o invitando a su manager a co-organizar
+                  }
+                </p>
               </div>
             </div>
             <button
@@ -799,77 +984,97 @@ import { lineup, money, slotCost, lineupTotalCost, slugify } from '../../event-m
               }
             </section>
 
-            <!-- 2. Grupos de managers invitados: se piden, no se contratan. -->
-            @if (invitedManagerNames().length) {
-              <section class="space-y-3">
-                <div class="flex items-center justify-between gap-2 flex-wrap">
-                  <h4 class="text-[11px] font-black uppercase tracking-wider text-sky-300 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-base text-sky-400">handshake</span>
-                    De managers co-organizadores ({{ invitedGroups().length }})
-                  </h4>
-                  <span class="text-[10px] text-outline">No se ve su costo: co-organizan y reparten ganancias</span>
-                </div>
+            <!-- 2. Grupos ajenos: TODOS, invitado o no su manager.
+                 Antes solo aparecían los de managers ya invitados, lo que
+                 obligaba a invitar a ciegas para poder ver siquiera qué grupos
+                 tenía. Ahora se ve el catálogo completo y lo que se elige por
+                 grupo es la VÍA: pagarle una cotización a su dueño, o meter a su
+                 dueño al evento como co-organizador. -->
+            <section class="space-y-3">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <h4 class="text-[11px] font-black uppercase tracking-wider text-on-surface flex items-center gap-2">
+                  <span class="material-symbols-outlined text-base text-primary">diversity_3</span>
+                  Grupos de otros managers ({{ foreignGroups().length }})
+                </h4>
+                <span class="text-[10px] text-outline">Elige cómo lo traes: cada vía cambia quién ve el evento</span>
+              </div>
 
-                @for (g of invitedGroups(); track g.id) {
-                  <div class="p-3.5 rounded-2xl bg-sky-500/[0.08] border border-sky-500/30 flex items-center justify-between gap-3 flex-wrap shadow-[0_0_15px_rgba(56,189,248,0.08)]">
+              <!-- Las dos vías, explicadas una vez arriba en lugar de repetirlas
+                   en cada tarjeta. -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="p-3 rounded-2xl bg-amber-500/[0.07] border border-amber-500/25 space-y-1">
+                  <span class="text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[13px]">request_quote</span> Cotización directa
+                  </span>
+                  <p class="text-[10px] text-outline leading-relaxed">
+                    Le pagas al dueño del grupo por unas horas y ahí acaba. No entra al evento ni ve boletaje,
+                    ventas ni ganancias: solo lugar, hora de llegada, prueba de sonido y duración.
+                  </p>
+                </div>
+                <div class="p-3 rounded-2xl bg-sky-500/[0.08] border border-sky-500/30 space-y-1">
+                  <span class="text-[10px] font-black uppercase tracking-wider text-sky-300 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[13px]">handshake</span> Invitando a su manager
+                  </span>
+                  <p class="text-[10px] text-outline leading-relaxed">
+                    El dueño co-organiza: ve boletaje, precios y avance de venta, y puede sugerir grupos —
+                    aceptarlos lo decides tú. No ve lo que ganan tus grupos ni los de los demás.
+                  </p>
+                </div>
+              </div>
+
+              @for (g of foreignGroups(); track g.id) {
+                @let invite = managerInviteState(g.groupLeaderName);
+                <div class="p-3.5 rounded-2xl bg-surface-container/50 border border-outline-variant/25 space-y-3">
+                  <div class="flex items-center justify-between gap-3 flex-wrap">
                     <div class="flex items-center gap-3 min-w-0">
                       <img [src]="g.image" [alt]="g.name" class="w-11 h-11 rounded-xl object-cover shrink-0 border border-white/10" />
                       <div class="min-w-0">
                         <p class="text-xs font-black text-on-surface truncate">{{ g.name }}</p>
-                        <p class="text-[10px] text-sky-300/80 font-medium truncate">{{ g.genre }} · Manager Co-Organizador: {{ g.groupLeaderName }}</p>
+                        <p class="text-[10px] text-outline truncate">{{ g.genre }} · Manager: {{ g.groupLeaderName }}</p>
+                        <p class="text-[10px] text-outline truncate">Agenda: {{ g.agendaStatus }}</p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      (click)="addGroup(g.id)"
-                      class="px-3.5 py-2 rounded-xl bg-sky-500/25 text-sky-200 border border-sky-500/40 hover:bg-sky-400 hover:text-black text-[11px] font-black transition-all active:scale-95 shrink-0 flex items-center gap-1.5"
-                    >
-                      <span class="material-symbols-outlined text-sm">outgoing_mail</span> Pedir grupo
-                    </button>
-                  </div>
-                } @empty {
-                  <p class="p-4 text-center text-[11px] text-outline italic bg-surface-container/40 rounded-2xl border border-dashed border-outline-variant/30">
-                    Los managers co-organizadores no tienen grupos libres para este evento.
-                  </p>
-                }
-              </section>
-            }
-
-            <!-- 3. Grupos de terceros: se contratan al precio que publicó su dueño. -->
-            <section class="space-y-3">
-              <div class="flex items-center justify-between gap-2 flex-wrap">
-                <h4 class="text-[11px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
-                  <span class="material-symbols-outlined text-base">payments</span>
-                  De otros managers ({{ hireableGroups().length }})
-                </h4>
-                <span class="text-[10px] text-outline">Su dueño acepta el precio o contraoferta</span>
-              </div>
-
-              @for (g of hireableGroups(); track g.id) {
-                <div class="p-3.5 rounded-2xl bg-amber-500/[0.06] border border-amber-500/25 flex items-center justify-between gap-3 flex-wrap">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <img [src]="g.image" [alt]="g.name" class="w-11 h-11 rounded-xl object-cover shrink-0 border border-white/10" />
-                    <div class="min-w-0">
-                      <p class="text-xs font-black text-on-surface truncate">{{ g.name }}</p>
-                      <p class="text-[10px] text-outline truncate">{{ g.genre }} · Manager: {{ g.groupLeaderName }}</p>
-                      <p class="text-[10px] text-outline truncate">Agenda: {{ g.agendaStatus }}</p>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2.5 shrink-0">
                     @if (canViewFinances()) {
-                      <span class="text-[10px] text-outline text-right">
+                      <span class="text-[10px] text-outline text-right shrink-0">
                         Costo fijo
                         <strong class="text-amber-300 font-mono block">{{ feeLabel(g) }}</strong>
                         <span class="block text-outline">por {{ g.minimumHours || 3 }} h mínimas</span>
                       </span>
                     }
-                    <button
-                      type="button"
-                      (click)="addGroup(g.id)"
-                      class="px-3.5 py-2 rounded-xl bg-amber-500/20 text-amber-200 border border-amber-500/40 hover:bg-amber-500 hover:text-black text-[11px] font-black transition-all active:scale-95"
-                    >
-                      Contratar
-                    </button>
+                  </div>
+
+                  <div class="flex items-center gap-2 flex-wrap pt-2.5 border-t border-outline-variant/20">
+                    <!-- Cotización directa: solo si su manager no está ya dentro
+                         del evento. Pagarle una cotización a alguien que es
+                         co-organizador y ve toda la taquilla no tiene sentido. -->
+                    @if (invite) {
+                      <span class="px-2.5 py-1.5 rounded-xl bg-sky-500/15 border border-sky-500/30 text-[10px] font-bold text-sky-200 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[13px]">handshake</span>
+                        {{ g.groupLeaderName }} ya co-organiza · {{ inviteStateLabel(invite) }}
+                      </span>
+                      <button
+                        type="button"
+                        (click)="addGroup(g.id, 'coorganizacion')"
+                        class="ml-auto px-3.5 py-2 rounded-xl bg-sky-500/25 text-sky-200 border border-sky-500/40 hover:bg-sky-400 hover:text-black text-[11px] font-black transition-all active:scale-95 shrink-0 flex items-center gap-1.5"
+                      >
+                        <span class="material-symbols-outlined text-sm">add</span> Añadir a su cartel
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        (click)="addGroup(g.id, 'cotizacion')"
+                        class="px-3.5 py-2 rounded-xl bg-amber-500/20 text-amber-200 border border-amber-500/40 hover:bg-amber-500 hover:text-black text-[11px] font-black transition-all active:scale-95 flex items-center gap-1.5"
+                      >
+                        <span class="material-symbols-outlined text-sm">request_quote</span> Cotización directa
+                      </button>
+                      <button
+                        type="button"
+                        (click)="addGroup(g.id, 'coorganizacion')"
+                        class="px-3.5 py-2 rounded-xl bg-sky-500/25 text-sky-200 border border-sky-500/40 hover:bg-sky-400 hover:text-black text-[11px] font-black transition-all active:scale-95 flex items-center gap-1.5"
+                      >
+                        <span class="material-symbols-outlined text-sm">person_add</span> Invitar a {{ g.groupLeaderName }}
+                      </button>
+                    }
                   </div>
                 </div>
               } @empty {
@@ -895,7 +1100,6 @@ export class EventTabLineupComponent {
 
   /** Grupos con su sub-apartado desplegado. */
   private openIds = signal<Set<string>>(new Set());
-  addMode = signal(false);
 
   readonly costCategories: EditableOption[] = [
     { value: 'Honorarios', label: 'Honorarios' },
@@ -928,52 +1132,60 @@ export class EventTabLineupComponent {
   /** Quién arma el evento: contra él se decide si un grupo es propio o ajeno. */
   private ownerName = computed(() => this.event().ownerManagerName || this.event().createdBy);
 
-  /** Managers co-organizadores que YA ACEPTARON la invitación. */
-  acceptedCoorganizerManagerNames = computed(() =>
-    (this.event().managerAgreements ?? [])
-      .filter(a => a.role === 'coorganizador' && a.status === 'Aceptado')
-      .map(a => a.managerName)
-  );
-
-  /** Managers co-organizadores cuya invitación está PENDIENTE. */
-  pendingCoorganizerManagerNames = computed(() =>
-    (this.event().managerAgreements ?? [])
-      .filter(a => a.role === 'coorganizador' && a.status === 'Pendiente')
-      .map(a => a.managerName)
-  );
-
-  invitedManagerNames = computed(() => this.acceptedCoorganizerManagerNames());
+  /**
+   * En borrador nada sale del evento. Es la frontera que decide si al agregar un
+   * grupo ajeno se le manda la solicitud a su dueño o solo se deja lista.
+   */
+  isDraft = computed(() => this.event().state === 'Borrador');
 
   /** Grupos propios del organizador. */
   ownGroups = computed(() =>
     this.selectableGroups().filter(g => g.groupLeaderName === this.ownerName())
   );
 
-  /** Grupos de los managers co-organizadores que YA ACEPTARON el acuerdo. */
-  invitedGroups = computed(() => {
-    const accepted = new Set(this.acceptedCoorganizerManagerNames());
-    return this.selectableGroups().filter(g => accepted.has(g.groupLeaderName));
-  });
+  /**
+   * Todos los grupos que no son del organizador, esté o no invitado su manager.
+   * La vía por la que entran se elige al agregarlos, no se hereda de si el
+   * manager ya está dentro del evento.
+   */
+  foreignGroups = computed(() =>
+    this.selectableGroups().filter(g => g.groupLeaderName !== this.ownerName())
+  );
 
-  /** El resto: se contratan pagando la tarifa que publicó su dueño. Excluye co-organizadores pendientes o aceptados. */
-  hireableGroups = computed(() => {
-    const accepted = new Set(this.acceptedCoorganizerManagerNames());
-    const pending = new Set(this.pendingCoorganizerManagerNames());
-    return this.selectableGroups().filter(
-      g => g.groupLeaderName !== this.ownerName() && !accepted.has(g.groupLeaderName) && !pending.has(g.groupLeaderName)
-    );
-  });
+  /** Acuerdo del manager de un grupo en este evento, si ya existe alguno. */
+  managerInviteState(managerName: string): EventManagerAgreement | null {
+    return (this.event().managerAgreements ?? [])
+      .find(a => a.role === 'coorganizador' && a.managerName === managerName) ?? null;
+  }
+
+  inviteStateLabel(agreement: EventManagerAgreement): string {
+    return agreement.status === 'Sin Enviar' ? 'invitación por enviar' : 'invitación ' + agreement.status.toLowerCase();
+  }
 
   isCoOrganizerSlot(slot: EventLineupSlot): boolean {
-    const coorgs = new Set((this.event().managerAgreements ?? [])
-      .filter(a => a.role === 'coorganizador')
-      .map(a => a.managerName));
-    return slot.isExternal && coorgs.has(slot.managerName);
+    return isCoOrganizedSlot(this.event(), slot);
   }
 
   isThirdPartySlot(slot: EventLineupSlot): boolean {
-    return slot.isExternal && !this.isCoOrganizerSlot(slot);
+    return isQuoteSlot(this.event(), slot);
   }
+
+  // ─── Lo que espera el envío a revisión ────────────────────────────────────
+
+  unsentQuoteSlots = computed(() =>
+    unsentLineupRequests(this.event()).filter(s => this.isThirdPartySlot(s))
+  );
+
+  unsentCoorgSlots = computed(() =>
+    unsentLineupRequests(this.event()).filter(s => this.isCoOrganizerSlot(s))
+  );
+
+  unsentInvites = computed(() => unsentManagerInvites(this.event()));
+
+  outboundCount = computed(() => pendingOutboundCount(this.event()));
+
+  offerAmount = slotOfferAmount;
+  dateTimeLabel = dateTimeLabel;
 
   feeLabel(g: GroupItem): string {
     return money(g.artistFeeBase || 0);
@@ -987,11 +1199,11 @@ export class EventTabLineupComponent {
   counterAmount = signal(0);
   counterNote = signal('');
 
-  /** Diferencia contra lo que el grupo pide hoy; negativa es ahorro. */
+  /** Diferencia contra la tarifa de lista del grupo; negativa es ahorro. */
   counterDelta = computed(() => {
     const slot = this.counterSlot();
     if (!slot) return 0;
-    return this.counterAmount() - slotCost(slot);
+    return this.counterAmount() - slotPublishedTotal(slot);
   });
 
   absCounterDelta = computed(() => Math.abs(this.counterDelta()));
@@ -999,9 +1211,27 @@ export class EventTabLineupComponent {
   /** Probabilidad calculada de aceptación de la contraoferta (0-100%) y su recomendación */
   counterProbabilityInfo = computed(() => {
     const slot = this.counterSlot();
-    if (!slot) return { percent: 100, label: 'Muy Alta (100%)', class: 'text-emerald-400', badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', advice: 'Propuesta excelente.' };
-    const original = slot.publishedFee || slotCost(slot) || 1;
-    const proposed = this.counterAmount();
+    if (!slot) return this.acceptanceOdds(1, 1);
+    return this.acceptanceOdds(this.counterAmount(), slotPublishedTotal(slot));
+  });
+
+  /**
+   * Probabilidad de aceptación de la contraoferta ya guardada de un grupo, para
+   * poder mostrarla en la ficha del grupo y no solo mientras el modal está
+   * abierto: una vez guardada, es el dato que dice si vale la pena esperar la
+   * respuesta o conviene subir la oferta.
+   */
+  savedOdds(slot: EventLineupSlot) {
+    const co = activeCounterOffer(slot);
+    return this.acceptanceOdds(co ? slotProposedFee(slot) : 0, slotPublishedTotal(slot));
+  }
+
+  /**
+   * Qué tan probable es que el dueño acepte, según cuánto se aleja la propuesta
+   * de su tarifa de lista por esas mismas horas.
+   */
+  private acceptanceOdds(proposed: number, published: number) {
+    const original = published || 1;
     const ratio = proposed / original;
 
     if (ratio >= 1.0) {
@@ -1037,12 +1267,16 @@ export class EventTabLineupComponent {
         advice: 'Propuesta muy por debajo del costo fijo publicado (>30% de descuento). Existe un alto riesgo de rechazo por parte del manager a menos que la exposición sea extraordinaria.'
       };
     }
-  });
+  }
 
   openCounterOffer(slot: EventLineupSlot): void {
     this.counterSlot.set(slot);
-    // Arranca en lo que pide hoy: así el encargado ajusta desde la cifra real.
-    this.counterAmount.set(slotCost(slot));
+    // Si ya hay una contraoferta viva se arranca desde ella —se está corrigiendo
+    // una cifra propia, no partiendo de cero—; si no, desde lo que pide el dueño.
+    // Va escalada a las horas de hoy para que se compare contra la tarifa
+    // publicada por esas mismas horas y no contra las de cuando se propuso.
+    const live = activeCounterOffer(slot);
+    this.counterAmount.set(live ? slotProposedFee(slot) : slotPublishedTotal(slot));
     this.counterNote.set(slot.counterOffer?.note || '');
   }
 
@@ -1050,18 +1284,29 @@ export class EventTabLineupComponent {
     const slot = this.counterSlot();
     if (!slot || this.counterAmount() <= 0) return;
 
+    const draft = this.isDraft();
+    const now = new Date().toISOString().slice(0, 16);
+
     const offer: EventCounterOffer = {
       amount: this.counterAmount(),
-      hours: slot.contractedHours ?? slot.minimumHours,
+      // Siempre con horas: son la base sobre la que después escala el total si
+      // el evento cambia de duración. Sin ellas la cifra queda sin referencia.
+      hours: slot.contractedHours ?? slot.minimumHours ?? 3,
       note: this.counterNote().trim() || undefined,
-      proposedBy: this.event().ownerManagerName || this.event().createdBy,
-      proposedAt: new Date().toISOString().slice(0, 16),
-      status: 'Pendiente'
+      proposedBy: this.ownerName(),
+      proposedAt: now,
+      status: draft ? 'Sin Enviar' : 'Pendiente',
+      sentAt: draft ? undefined : now
     };
 
-    // Mandar una contraoferta reabre la negociación: el grupo vuelve a
-    // 'Pendiente' aunque su dueño ya hubiera aprobado la tarifa anterior.
-    this.patchSlot(slot, { counterOffer: offer, approval: 'Pendiente' });
+    // En borrador la contraoferta solo se guarda: viaja con la solicitud al
+    // enviar a revisión. Después del borrador sí sale sola, y reabre la
+    // negociación aunque el dueño ya hubiera aprobado la tarifa anterior.
+    this.patchSlot(slot, {
+      counterOffer: offer,
+      approval: draft ? 'Sin Enviar' : 'Pendiente',
+      requestSentAt: draft ? slot.requestSentAt : now
+    });
     this.counterSlot.set(null);
   }
 
@@ -1091,6 +1336,44 @@ export class EventTabLineupComponent {
     return money(slotCost(slot));
   }
 
+  // ─── Contraoferta guardada ─────────────────────────────────────────────────
+
+  /** Contraoferta vigente del grupo; una rechazada ya no cuenta como tarifa. */
+  liveCounter(slot: EventLineupSlot): EventCounterOffer | null {
+    return activeCounterOffer(slot);
+  }
+
+  /** Lo que se propone pagar, ya escalado a las horas del evento. */
+  proposedTotal(slot: EventLineupSlot): number {
+    return slotProposedFee(slot);
+  }
+
+  /** Lo que costaría a tarifa de lista por esas mismas horas. */
+  publishedTotal(slot: EventLineupSlot): number {
+    return slotPublishedTotal(slot);
+  }
+
+  savings(slot: EventLineupSlot): number {
+    return counterOfferSavings(slot);
+  }
+
+  absSavings(slot: EventLineupSlot): number {
+    return Math.abs(counterOfferSavings(slot));
+  }
+
+  counterStatusLabel(status: EventCounterOffer['status']): string {
+    return status === 'Sin Enviar' ? 'Por enviar' : status;
+  }
+
+  counterStatusClass(status: EventCounterOffer['status']): string {
+    switch (status) {
+      case 'Aceptada': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+      case 'Rechazada': return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+      case 'Pendiente': return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+      default: return 'bg-surface-container-highest text-outline border-outline-variant/40';
+    }
+  }
+
   suggestSlug(slot: EventLineupSlot): string {
     return slugify(slot.groupName);
   }
@@ -1105,7 +1388,26 @@ export class EventTabLineupComponent {
       case 'Aprobado': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
       case 'Rechazado': return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
       case 'Pendiente': return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+      case 'Sin Enviar': return 'bg-surface-container-highest text-outline border-outline-variant/40';
       default: return 'bg-surface-container-highest text-outline border-outline-variant/30';
+    }
+  }
+
+  /**
+   * 'Sin Enviar' se lee como "por enviar": el estado dice que falta mandarla, no
+   * que se haya decidido no mandarla.
+   */
+  approvalLabel(status: EventLineupSlot['approval']): string {
+    return status === 'Sin Enviar' ? 'Por enviar' : status;
+  }
+
+  approvalIcon(status: EventLineupSlot['approval']): string {
+    switch (status) {
+      case 'Aprobado': return 'check_circle';
+      case 'Rechazado': return 'cancel';
+      case 'Pendiente': return 'hourglass_top';
+      case 'Sin Enviar': return 'schedule_send';
+      default: return 'remove';
     }
   }
 
@@ -1142,25 +1444,33 @@ export class EventTabLineupComponent {
     this.commit(this.slots().map(s => ({ ...s, isHeadliner: s.id === slot.id ? !s.isHeadliner : false })));
   }
 
-  toggleExternal(slot: EventLineupSlot): void {
-    const isExternal = !slot.isExternal;
-    this.patchSlot(slot, {
-      isExternal,
-      approval: isExternal ? 'Pendiente' : 'No Requiere'
-    });
-  }
-
   remove(slot: EventLineupSlot): void {
     this.commit(this.slots().filter(s => s.id !== slot.id));
   }
 
-  addGroup(groupId: string): void {
+  /**
+   * Agrega un grupo al cartel por la vía indicada.
+   *
+   * En borrador el slot nace 'Sin Enviar': el grupo ya cuenta para el cartel, el
+   * costo y el checklist, pero su dueño no se entera de nada hasta que el evento
+   * se manda a revisión. Si el evento ya salió del borrador, un grupo nuevo sí
+   * dispara su solicitud de inmediato — el flujo de revisión ya está corriendo.
+   *
+   * Elegir la vía de co-organización crea además la invitación al manager dueño,
+   * si todavía no la tenía: sin manager dentro, el grupo no puede entrar por ahí.
+   */
+  addGroup(groupId: string, kind?: LineupEngagementKind): void {
     if (!groupId) return;
     const group = this.availableGroups().find(g => g.id === groupId);
     if (!group) return;
 
+    const e = this.event();
+    const isExternal = group.groupLeaderName !== this.ownerName();
+    const engagementKind: LineupEngagementKind = !isExternal ? 'propio' : (kind ?? 'cotizacion');
+    const draft = this.isDraft();
+
     const slot: EventLineupSlot = {
-      id: 'ln-' + this.event().id + '-' + Date.now(),
+      id: 'ln-' + e.id + '-' + Date.now(),
       groupId: group.id,
       groupName: group.name,
       imageUrl: group.image,
@@ -1168,7 +1478,8 @@ export class EventTabLineupComponent {
       rating: group.rating,
       profileSlug: slugify(group.name),
       // El grupo es "de otro encargado" cuando su líder no es quien arma el evento.
-      isExternal: group.groupLeaderName !== this.event().ownerManagerName,
+      isExternal,
+      engagementKind,
       managerName: group.groupLeaderName,
       managerEmail: group.groupLeaderEmail,
       managerPhone: group.groupLeaderPhone,
@@ -1177,12 +1488,41 @@ export class EventTabLineupComponent {
       minimumHours: group.minimumHours || 3,
       contractedHours: group.minimumHours || 3,
       costItems: [],
-      approval: group.groupLeaderName !== this.event().ownerManagerName ? 'Pendiente' : 'No Requiere'
+      approval: !isExternal ? 'No Requiere' : (draft ? 'Sin Enviar' : 'Pendiente'),
+      requestSentAt: isExternal && !draft ? new Date().toISOString().slice(0, 16) : undefined
     };
 
-    this.commit([...this.slots(), slot]);
+    const changes: Partial<EventItem> = {
+      lineup: [...this.slots(), slot].map((s, i) => ({ ...s, order: i + 1 }))
+    };
+
+    if (engagementKind === 'coorganizacion' && !this.managerInviteState(group.groupLeaderName)) {
+      changes.managerAgreements = [
+        ...(e.managerAgreements ?? []),
+        this.newInvitation(group.groupLeaderName, draft)
+      ];
+    }
+
+    this.patch.emit(changes);
     this.openIds.update(set => new Set(set).add(slot.id));
     this.addModalOpen.set(false);
+  }
+
+  /**
+   * Invitación a co-organizar recién creada. Entra sin reparto pactado a
+   * propósito: el porcentaje o el monto se acuerdan cuando el manager responde,
+   * y ponerle un número por defecto sería inventar un acuerdo que nadie hizo.
+   */
+  private newInvitation(managerName: string, draft: boolean): EventManagerAgreement {
+    return {
+      id: 'agr-' + this.event().id + '-' + Date.now(),
+      managerName,
+      role: 'coorganizador',
+      settlementKind: 'porcentaje',
+      percent: 0,
+      status: draft ? 'Sin Enviar' : 'Pendiente',
+      invitedAt: draft ? undefined : new Date().toISOString().slice(0, 16)
+    };
   }
 
   addCost(slot: EventLineupSlot): void {

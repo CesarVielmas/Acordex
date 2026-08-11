@@ -17,7 +17,7 @@ import { EventTabLineupComponent } from './detail/event-tab-lineup.component';
 import { EventTabProductionComponent } from './detail/event-tab-production.component';
 import { EventTabTicketsComponent } from './detail/event-tab-tickets.component';
 import { EventTabClosureComponent } from './detail/event-tab-closure.component';
-import { completenessByGroup, eventCompleteness } from '../event-completeness';
+import { CompletenessItem, completenessByGroup, eventCompleteness } from '../event-completeness';
 import {
   approvals,
   approvedCount,
@@ -32,12 +32,17 @@ import {
   money,
   occupancyPercent,
   pendingApprovals,
+  pendingOutboundCount,
   potentialTicketRevenue,
   productionCost,
   publicProfile,
   shortDate,
+  slotEngagement,
+  slotOfferAmount,
   soldSeats,
-  totalSeats
+  totalSeats,
+  unsentLineupRequests,
+  unsentResponsibilities
 } from '../event-metrics';
 
 export type EventDetailTab =
@@ -297,7 +302,8 @@ export type EventDetailTab =
                       <ul class="space-y-2 relative z-10">
                         @for (item of block.items; track item.id) {
                           <li
-                            class="p-2.5 rounded-2xl border transition-all duration-200"
+                            [title]="itemTooltip(item)"
+                            class="p-2.5 rounded-2xl border transition-all duration-200 cursor-help"
                             [class]="item.done
                               ? 'bg-emerald-500/5 border-emerald-500/20 text-on-surface'
                               : (item.required
@@ -339,6 +345,20 @@ export type EventDetailTab =
                                     {{ item.hint }}
                                   </p>
                                 }
+
+                                <!-- Solo se etiqueta cuando NO le toca al
+                                     organizador: marcar "esto es tuyo" en casi
+                                     todos los puntos sería ruido. -->
+                                @if (!item.done && !isOwnItem(item)) {
+                                  <div class="flex items-center gap-1 flex-wrap mt-1">
+                                    @for (owner of foreignOwners(item); track owner) {
+                                      <span class="px-1.5 py-0.5 rounded-md text-[9px] font-black bg-sky-500/15 text-sky-300 border border-sky-500/30 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[10px]">hourglass_top</span>
+                                        Depende de {{ owner }}
+                                      </span>
+                                    }
+                                  </div>
+                                }
                               </div>
                             </div>
                           </li>
@@ -348,6 +368,105 @@ export type EventDetailTab =
                   }
                 </div>
               </section>
+
+              <!-- ¿De quién depende lo que falta? La pregunta que decide si el
+                   encargado se pone a capturar o se pone a perseguir a alguien. -->
+              @if (report().missingRequired.length) {
+                <section class="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-indigo-500/25 border-l-4 border-l-indigo-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
+                  <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <h5 class="text-xs font-black uppercase tracking-wider text-indigo-300 flex items-center gap-2.5">
+                      <span class="w-8 h-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center justify-center material-symbols-outlined text-lg">assignment_ind</span>
+                      <span>Quién resuelve lo que falta</span>
+                    </h5>
+                    <span class="px-3 py-1.5 rounded-xl text-[11px] font-black border"
+                      [class]="report().allPendingAreOwn
+                        ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                        : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
+                      {{ report().allPendingAreOwn ? 'Todo está en tus manos' : 'Hay pendientes de otros managers' }}
+                    </span>
+                  </div>
+
+                  <p class="text-[11px] text-outline leading-relaxed">
+                    @if (report().allPendingAreOwn) {
+                      Los {{ report().missingRequired.length }} punto(s) que faltan los puedes capturar tú:
+                      nada del expediente está esperando a nadie más.
+                    } @else {
+                      Hay puntos que tú no puedes tocar. Los horarios y los costos de los grupos de un
+                      co-organizador los captura su dueño, y la ficha pública de cualquier grupo ajeno vive en el
+                      expediente de ese grupo.
+                    }
+                  </p>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    @for (block of report().pendingByOwner; track block.owner) {
+                      <div class="p-4 rounded-2xl border space-y-2.5"
+                        [class]="block.isOrganizer
+                          ? 'bg-surface-container/70 border-outline-variant/25'
+                          : 'bg-sky-500/[0.07] border-sky-500/30'">
+                        <div class="flex items-center justify-between gap-2 flex-wrap">
+                          <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="w-8 h-8 rounded-xl border flex items-center justify-center material-symbols-outlined text-base shrink-0"
+                              [class]="block.isOrganizer
+                                ? 'bg-primary/15 border-primary/30 text-primary'
+                                : 'bg-sky-500/15 border-sky-500/30 text-sky-300'">
+                              {{ block.isOrganizer ? 'person' : 'group' }}
+                            </span>
+                            <div class="min-w-0">
+                              <p class="text-xs font-black text-on-surface truncate">
+                                {{ block.owner }}{{ block.isOrganizer ? ' (tú)' : '' }}
+                              </p>
+                              <p class="text-[10px] text-outline">
+                                {{ block.isOrganizer ? 'Organizador del evento' : ownerRoleLabel(block.owner) }}
+                              </p>
+                            </div>
+                          </div>
+                          <span class="px-2.5 py-1 rounded-xl text-[10px] font-mono font-black border shrink-0"
+                            [class]="block.isOrganizer
+                              ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                              : 'bg-sky-500/15 text-sky-300 border-sky-500/30'">
+                            {{ block.items.length }} pendiente(s)
+                          </span>
+                        </div>
+
+                        <ul class="space-y-1 pt-1 border-t border-outline-variant/15">
+                          @for (item of block.items; track item.id) {
+                            <li class="text-[11px] text-on-surface-variant flex items-start gap-1.5">
+                              <span class="material-symbols-outlined text-[12px] shrink-0 mt-0.5 text-outline">chevron_right</span>
+                              <span>{{ item.label }}</span>
+                            </li>
+                          }
+                        </ul>
+
+                        <!-- Un manager que ni siquiera ha recibido la invitación
+                             no puede capturar nada: perseguirlo no sirve de nada
+                             hasta que el evento salga a revisión. -->
+                        @if (!block.isOrganizer) {
+                          @let invite = invitationOf(block.owner);
+                          <p class="text-[10px] flex items-start gap-1.5 pt-1.5 border-t border-outline-variant/15"
+                            [class]="invite && invite.status === 'Aceptado' ? 'text-emerald-300' : 'text-amber-300'">
+                            <span class="material-symbols-outlined text-[12px] shrink-0 mt-0.5">
+                              {{ invite && invite.status === 'Aceptado' ? 'check_circle' : 'schedule_send' }}
+                            </span>
+                            <span>
+                              @if (!invite) {
+                                No co-organiza el evento: sus datos salen del expediente de su grupo, no de aquí.
+                              } @else if (invite.status === 'Sin Enviar') {
+                                Todavía no recibe la invitación. No podrá capturar nada hasta que envíes el evento a revisión.
+                              } @else if (invite.status === 'Pendiente') {
+                                Ya recibió la invitación pero no ha respondido. Podrá capturar en cuanto acepte.
+                              } @else if (invite.status === 'Aceptado') {
+                                Ya aceptó co-organizar: puede capturar estos puntos cuando quiera.
+                              } @else {
+                                Rechazó co-organizar. Estos puntos se quedan sin dueño hasta que cambies el cartel.
+                              }
+                            </span>
+                          </p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </section>
+              }
 
               <!-- Cifras de un vistazo -->
               <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -417,7 +536,10 @@ export type EventDetailTab =
                         {{ a.settlementKind === 'porcentaje' ? a.percent + '%' : money(a.fixedAmount || 0) }}
                       </span>
                       @if (a.status !== 'Aceptado') {
-                        <span class="text-[9px] font-black uppercase tracking-wider text-amber-300">{{ a.status }}</span>
+                        <span class="text-[9px] font-black uppercase tracking-wider"
+                          [class]="a.status === 'Sin Enviar' ? 'text-outline' : 'text-amber-300'">
+                          {{ agreementStatusLabel(a.status) }}
+                        </span>
                       }
                     </span>
                   }
@@ -432,7 +554,13 @@ export type EventDetailTab =
                 @if (externalSlots().length) {
                   <p class="text-[11px] text-outline flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-sm text-teal-300">groups</span>
-                    {{ externalSlots().length }} grupo(s) del cartel se contratan a otros managers.
+                    {{ externalSlots().length }} grupo(s) del cartel son de otros managers.
+                  </p>
+                }
+                @if (isDraft() && outboundCount() > 0) {
+                  <p class="text-[11px] text-amber-300 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm">schedule_send</span>
+                    {{ outboundCount() }} solicitud(es) e invitación(es) saldrán al enviar el evento a revisión.
                   </p>
                 }
               </section>
@@ -477,6 +605,89 @@ export type EventDetailTab =
           <!-- ─── ACUERDOS ─── -->
           @if (activeTab() === 'acuerdos') {
             <div class="space-y-6">
+
+              <!-- Bandeja de salida del borrador. Todo lo que el organizador
+                   decidió aquí sigue guardado: sale de una sola vez al enviar el
+                   evento a revisión, no conforme se va armando. -->
+              @if (isDraft() && outboundCount() > 0) {
+                <section class="p-6 rounded-3xl bg-gradient-to-br from-amber-500/[0.08] via-surface-container-high/90 to-surface-container-high/90 border border-amber-500/30 border-l-4 border-l-amber-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
+                  <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <h5 class="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2.5">
+                      <span class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center material-symbols-outlined text-lg">outbox</span>
+                      <span>Esperando el envío a revisión</span>
+                    </h5>
+                    <span class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-200 border border-amber-500/40 text-[11px] font-black">
+                      {{ outboundCount() }} por salir
+                    </span>
+                  </div>
+
+                  <p class="text-[11px] text-outline leading-relaxed">
+                    Mientras el evento sea borrador, ningún manager de fuera recibe nada. Puedes agregar grupos,
+                    contraofertar y retirar invitaciones las veces que haga falta: todo sale junto al presionar
+                    <strong class="text-on-surface">Enviar a Revisión</strong>.
+                  </p>
+
+                  <div class="space-y-2.5">
+                    @for (a of unsentInvites(); track a.id) {
+                      <div class="p-3.5 rounded-2xl bg-surface-container/60 border border-outline-variant/25 flex items-center justify-between gap-3 flex-wrap">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <span class="material-symbols-outlined text-base text-sky-300 shrink-0">person_add</span>
+                          <span class="text-[11px] text-on-surface-variant min-w-0">
+                            Invitación a co-organizar para <strong class="text-on-surface">{{ a.managerName }}</strong>
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          (click)="cancelInvitation(a)"
+                          class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500 hover:text-white text-[10px] font-black transition-all shrink-0 flex items-center gap-1"
+                        >
+                          <span class="material-symbols-outlined text-[13px]">undo</span> Retirar
+                        </button>
+                      </div>
+                    }
+
+                    @for (s of unsentRequests(); track s.id) {
+                      <div class="p-3.5 rounded-2xl bg-surface-container/60 border border-outline-variant/25 flex items-center justify-between gap-3 flex-wrap">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <span class="material-symbols-outlined text-base shrink-0"
+                            [class]="engagementOf(s) === 'coorganizacion' ? 'text-sky-300' : 'text-amber-300'">
+                            {{ engagementOf(s) === 'coorganizacion' ? 'handshake' : 'request_quote' }}
+                          </span>
+                          <span class="text-[11px] text-on-surface-variant min-w-0">
+                            <strong class="text-on-surface">{{ s.groupName }}</strong>
+                            @if (engagementOf(s) === 'coorganizacion') {
+                              · se pedirá a {{ s.managerName }} como co-organizador
+                            } @else {
+                              · cotización directa a {{ s.managerName }}
+                            }
+                          </span>
+                        </div>
+                        @if (roleService.canViewFinances() && engagementOf(s) === 'cotizacion') {
+                          <span class="px-2.5 py-1 rounded-xl bg-surface-container-highest border border-outline-variant/30 text-[10px] font-black font-mono text-amber-300 shrink-0">
+                            Se ofrece {{ money(offerAmount(s)) }}
+                          </span>
+                        }
+                      </div>
+                    }
+
+                    @for (r of unsentAssignments(); track r.id) {
+                      <div class="p-3.5 rounded-2xl bg-surface-container/60 border border-outline-variant/25 flex items-center justify-between gap-3 flex-wrap">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <span class="material-symbols-outlined text-base text-violet-300 shrink-0">assignment_ind</span>
+                          <span class="text-[11px] text-on-surface-variant min-w-0">
+                            Encargo de <strong class="text-on-surface">{{ r.category }}</strong> para {{ r.managerName }}
+                          </span>
+                        </div>
+                        @if (roleService.canViewFinances() && r.budgetCap) {
+                          <span class="px-2.5 py-1 rounded-xl bg-surface-container-highest border border-outline-variant/30 text-[10px] font-black font-mono text-on-surface shrink-0">
+                            Tope {{ money(r.budgetCap) }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </section>
+              }
 
               <!-- Reparto entre managers -->
               <section class="p-6 rounded-3xl bg-gradient-to-br from-teal-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-teal-500/25 border-l-4 border-l-teal-500/70 shadow-2xl shadow-teal-500/5 space-y-5 backdrop-blur-2xl">
@@ -529,6 +740,11 @@ export type EventDetailTab =
                       [class]="pendingAgreements().length ? 'text-amber-300' : 'text-emerald-400'">
                       {{ pendingAgreements().length }}
                     </span>
+                    @if (unsentInvites().length) {
+                      <span class="text-[10px] text-outline block">
+                        + {{ unsentInvites().length }} sin enviar todavía
+                      </span>
+                    }
                   </div>
                 </div>
 
@@ -570,18 +786,32 @@ export type EventDetailTab =
                               : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
                             {{ a.settlementKind === 'porcentaje' ? a.percent + '%' : money(a.fixedAmount || 0) }}
                           </span>
-                          <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border"
-                            [class]="a.status === 'Aceptado'
-                              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                              : (a.status === 'Pendiente'
-                                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                                : 'bg-rose-500/15 text-rose-300 border-rose-500/30')">
-                            {{ a.status }}
+                          <span [class]="agreementStatusClass(a.status)" class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border">
+                            {{ agreementStatusLabel(a.status) }}
                           </span>
                         </div>
                       </div>
 
-                      @if (a.role === 'coorganizador') {
+                      @if (a.role === 'coorganizador' && a.status === 'Sin Enviar') {
+                        <!-- Todavía no ha salido: no hay nada que rastrear, solo
+                             la opción de arrepentirse antes de mandarla. -->
+                        <div class="pt-2 border-t border-outline-variant/15 flex items-center justify-between gap-3 flex-wrap">
+                          <p class="text-[10px] text-outline flex items-center gap-1.5 min-w-0">
+                            <span class="material-symbols-outlined text-[13px] shrink-0">schedule_send</span>
+                            <span>
+                              La invitación sale al presionar <strong class="text-on-surface">Enviar a Revisión</strong>.
+                              {{ a.managerName }} todavía no sabe nada de este evento.
+                            </span>
+                          </p>
+                          <button
+                            type="button"
+                            (click)="cancelInvitation(a)"
+                            class="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500 hover:text-white text-[10px] font-black transition-all shrink-0 flex items-center gap-1.5"
+                          >
+                            <span class="material-symbols-outlined text-xs">undo</span> Retirar invitación
+                          </button>
+                        </div>
+                      } @else if (a.role === 'coorganizador') {
                         <div class="pt-2 border-t border-outline-variant/15 flex items-center justify-between gap-3 flex-wrap">
                           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10px] flex-1 min-w-0">
                             <div class="flex items-center gap-1.5 text-outline">
@@ -648,7 +878,7 @@ export type EventDetailTab =
                 <div class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-4 flex-wrap">
                   <h5 class="text-xs font-black uppercase tracking-wider text-teal-300 flex items-center gap-2.5">
                     <span class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center material-symbols-outlined text-lg">groups</span>
-                    <span>Grupos contratados a otros managers</span>
+                    <span>Grupos de otros managers en el cartel</span>
                   </h5>
                   <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">
                     {{ externalSlots().length }} de {{ slots().length }} en cartel
@@ -658,38 +888,68 @@ export type EventDetailTab =
                 @for (s of externalSlots(); track s.id) {
                   <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/25 flex items-center justify-between gap-4 flex-wrap shadow-md">
                     <div class="min-w-0">
-                      <p class="text-sm font-black text-on-surface truncate">{{ s.groupName }}</p>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <p class="text-sm font-black text-on-surface truncate">{{ s.groupName }}</p>
+                        <!-- La vía es el dato que importa aquí: decide si ese
+                             manager ve el evento o solo cobra y se va. -->
+                        <span class="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border"
+                          [class]="engagementOf(s) === 'coorganizacion'
+                            ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                            : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
+                          {{ engagementOf(s) === 'coorganizacion' ? 'Co-Organización' : 'Cotización Directa' }}
+                        </span>
+                      </div>
                       <p class="text-[11px] text-outline truncate">
                         Manager dueño: <strong class="text-on-surface">{{ s.managerName }}</strong>
                       </p>
                     </div>
                     <div class="flex items-center gap-2.5 shrink-0">
-                      @if (roleService.canViewFinances()) {
+                      @if (roleService.canViewFinances() && engagementOf(s) === 'cotizacion') {
                         <span class="px-3 py-1.5 rounded-xl bg-surface-container-highest border border-outline-variant/30 text-xs font-black font-mono text-on-surface">
-                          {{ money(slotCost(s)) }}
+                          {{ money(s.approval === 'Sin Enviar' ? offerAmount(s) : slotCost(s)) }}
                         </span>
                       }
                       <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border"
                         [class]="lineupApprovalClass(s.approval)">
-                        {{ s.approval }}
+                        {{ lineupApprovalLabel(s.approval) }}
                       </span>
                     </div>
                   </div>
                 } @empty {
                   <p class="p-5 text-center text-xs text-outline italic bg-surface-container/40 rounded-2xl border border-dashed border-outline-variant/30">
-                    Todo el cartel es de grupos propios. No hay contrataciones a otros managers.
+                    Todo el cartel es de grupos propios. No hay grupos de otros managers.
                   </p>
                 }
 
                 @if (externalSlots().length) {
-                  <p class="text-[11px] text-outline flex items-start gap-2">
-                    <span class="material-symbols-outlined text-sm shrink-0 mt-0.5">info</span>
-                    <span>
-                      Al manager dueño le llega la solicitud con el precio propuesto: puede aceptarlo o
-                      contraofertar. Una vez aceptado no interviene en el evento; solo recibe horarios de
-                      llegada, prueba de sonido y zona asignada.
-                    </span>
-                  </p>
+                  <div class="text-[11px] text-outline space-y-2 pt-1">
+                    <p class="flex items-start gap-2">
+                      <span class="material-symbols-outlined text-sm shrink-0 mt-0.5 text-amber-300">request_quote</span>
+                      <span>
+                        <strong class="text-amber-300">Cotización directa:</strong> al manager dueño le llega la
+                        solicitud con el precio propuesto y puede aceptarlo o contraofertar. Aceptado, no interviene
+                        en el evento ni ve boletaje o ganancias: solo recibe horarios de llegada, prueba de sonido y
+                        zona asignada.
+                      </span>
+                    </p>
+                    <p class="flex items-start gap-2">
+                      <span class="material-symbols-outlined text-sm shrink-0 mt-0.5 text-sky-300">handshake</span>
+                      <span>
+                        <strong class="text-sky-300">Co-organización:</strong> el manager dueño entra al evento. Ve
+                        boletaje, precios y avance de venta, y puede sugerir grupos — aceptarlos sigue siendo decisión
+                        del organizador. Nunca ve lo que ganan los grupos de los demás managers.
+                      </span>
+                    </p>
+                    @if (isDraft()) {
+                      <p class="flex items-start gap-2">
+                        <span class="material-symbols-outlined text-sm shrink-0 mt-0.5">schedule_send</span>
+                        <span>
+                          En borrador nada de esto ha salido: las solicitudes y las invitaciones se mandan al
+                          presionar <strong class="text-on-surface">Enviar a Revisión</strong>.
+                        </span>
+                      </p>
+                    }
+                  </div>
                 }
               </section>
             </div>
@@ -1081,11 +1341,24 @@ export type EventDetailTab =
           }
 
           @if (e.state === 'Borrador' && roleService.canEditEvents()) {
+            <!-- El contador es el aviso de que este botón no solo cambia de fase:
+                 es el momento en el que salen todas las solicitudes e
+                 invitaciones que el borrador tenía guardadas. -->
+            @if (outboundCount() > 0) {
+              <span class="text-[11px] text-outline flex items-center gap-1.5 mr-1">
+                <span class="material-symbols-outlined text-sm text-amber-300">outbox</span>
+                Saldrán <strong class="text-amber-300">{{ outboundCount() }}</strong> aviso(s) a otros managers
+              </span>
+            }
             <button
               type="button"
               (click)="submitReview.emit(e)"
               [disabled]="!report().canSubmitForReview"
-              [title]="report().canSubmitForReview ? 'Enviar a los encargados involucrados' : 'Faltan puntos obligatorios por capturar'"
+              [title]="report().canSubmitForReview
+                ? (outboundCount() > 0
+                  ? 'Cambia el evento a revisión y manda las ' + outboundCount() + ' solicitud(es) e invitación(es) guardadas'
+                  : 'Enviar a los encargados involucrados')
+                : 'Faltan puntos obligatorios por capturar'"
               class="px-6 py-3 min-h-11 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-xs shadow-xl shadow-amber-500/25 hover:scale-105 transition-all disabled:opacity-40 disabled:pointer-events-none flex items-center gap-2 border border-amber-300/40"
             >
               <span class="material-symbols-outlined text-base">send</span> Enviar a Revisión
@@ -1133,7 +1406,13 @@ export type EventDetailTab =
                 </span>
                 <div class="min-w-0">
                   <h3 class="text-base font-black text-on-surface tracking-tight">INVITAR MANAGER A CO-ORGANIZAR</h3>
-                  <p class="text-[11px] text-outline">Podrá ayudar a armar el evento; sus costos quedan privados y solo se reparte la ganancia total</p>
+                  <p class="text-[11px] text-outline">
+                    @if (isDraft()) {
+                      La invitación se guarda en el borrador y sale al enviar el evento a revisión
+                    } @else {
+                      Podrá ayudar a armar el evento; sus costos quedan privados y solo se reparte la ganancia total
+                    }
+                  </p>
                 </div>
               </div>
               <button
@@ -1166,7 +1445,8 @@ export type EventDetailTab =
                       (click)="inviteManager(m.name)"
                       class="px-4 py-2 rounded-xl bg-teal-500/20 text-teal-200 border border-teal-500/40 hover:bg-teal-500 hover:text-black text-[11px] font-black transition-all active:scale-95 shrink-0 flex items-center gap-1.5"
                     >
-                      <span class="material-symbols-outlined text-sm">outgoing_mail</span> Enviar invitación
+                      <span class="material-symbols-outlined text-sm">{{ isDraft() ? 'schedule_send' : 'outgoing_mail' }}</span>
+                      {{ isDraft() ? 'Preparar invitación' : 'Enviar invitación' }}
                     </button>
                   </div>
 
@@ -1191,7 +1471,12 @@ export type EventDetailTab =
 
             <footer class="shrink-0 p-4 border-t border-white/10 bg-black/30 text-center relative z-10">
               <span class="text-[10px] text-outline">
-                Al invitar, el manager recibe la solicitud y decide si acepta. Su reparto se define en este mismo apartado.
+                @if (isDraft()) {
+                  Nada sale mientras el evento sea borrador: las invitaciones se mandan al presionar
+                  <strong class="text-on-surface">Enviar a Revisión</strong>. Hasta entonces puedes retirarlas.
+                } @else {
+                  Al invitar, el manager recibe la solicitud y decide si acepta. Su reparto se define en este mismo apartado.
+                }
               </span>
             </footer>
           </div>
@@ -1309,22 +1594,43 @@ export type EventDetailTab =
                 <span class="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1">
                   <span class="material-symbols-outlined text-sm">groups</span> Line-up de Artistas
                 </span>
-                @for (slot of approvedSlots(); track slot.id) {
-                  <div class="flex items-center gap-2 p-2 rounded-xl bg-white/5 border border-white/10">
+
+                <!-- Los grupos ajenos que aún no responden SÍ se muestran, pero
+                     marcados: el encargado tiene que ver cómo quedaría la ficha
+                     si aceptan, sabiendo que podrían no aparecer si no aceptan. -->
+                @for (slot of previewSlots(); track slot.id) {
+                  <div class="flex items-center gap-2 p-2 rounded-xl border"
+                    [class]="isTentativeSlot(slot) ? 'bg-amber-500/10 border-amber-500/30' : 'bg-white/5 border-white/10'">
                     @if (slot.imageUrl) {
-                      <img [src]="slot.imageUrl" [alt]="slot.groupName" class="w-8 h-8 rounded-xl object-cover shrink-0" />
+                      <img [src]="slot.imageUrl" [alt]="slot.groupName" class="w-8 h-8 rounded-xl object-cover shrink-0"
+                        [class.opacity-60]="isTentativeSlot(slot)" />
                     } @else {
                       <span class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
                         <span class="material-symbols-outlined text-xs text-white/40">no_photography</span>
                       </span>
                     }
                     <div class="min-w-0 flex-1">
-                      <span class="text-xs font-bold text-white truncate block">{{ slot.groupName }}</span>
+                      <span class="text-xs font-bold truncate block"
+                        [class]="isTentativeSlot(slot) ? 'text-amber-100' : 'text-white'">{{ slot.groupName }}</span>
                       <span class="text-[9px] text-white/50 truncate block">{{ slot.genre || 'Sin género' }}</span>
                     </div>
+                    @if (isTentativeSlot(slot)) {
+                      <span class="px-1.5 py-0.5 rounded-md bg-amber-500/25 text-amber-200 border border-amber-400/40 text-[8px] font-black uppercase tracking-wider shrink-0 flex items-center gap-0.5"
+                        [title]="'Depende de ' + slot.managerName + ': si no acepta, este grupo no aparecerá en la ficha del cliente'">
+                        <span class="material-symbols-outlined text-[9px]">hourglass_top</span> Pendiente
+                      </span>
+                    }
                   </div>
                 } @empty {
-                  <p class="text-xs text-white/40 italic">Sin grupos confirmados (los pendientes no se muestran al público)</p>
+                  <p class="text-xs text-white/40 italic">Sin grupos en el cartel todavía</p>
+                }
+
+                @if (tentativeSlots().length) {
+                  <p class="text-[9px] text-amber-200/80 leading-snug flex items-start gap-1 pt-1 border-t border-white/10">
+                    <span class="material-symbols-outlined text-[11px] shrink-0 mt-0.5">info</span>
+                    {{ tentativeSlots().length }} grupo(s) siguen sin confirmar. Así se vería la ficha si aceptan;
+                    si alguno rechaza, desaparece de aquí.
+                  </p>
                 }
               </div>
             </div>
@@ -1369,9 +1675,16 @@ export type EventDetailTab =
                       <span class="material-symbols-outlined text-xs text-amber-400">stars</span>
                       {{ group.groupName }}
                     </h5>
-                    <span class="text-[9px] font-bold text-white/50 bg-white/10 px-2 py-0.5 rounded-md">
-                      {{ group.videos.length }} {{ group.videos.length === 1 ? 'video' : 'videos' }}
-                    </span>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      @if (group.tentative) {
+                        <span class="px-1.5 py-0.5 rounded-md bg-amber-500/25 text-amber-200 border border-amber-400/40 text-[8px] font-black uppercase tracking-wider flex items-center gap-0.5">
+                          <span class="material-symbols-outlined text-[9px]">hourglass_top</span> Pendiente
+                        </span>
+                      }
+                      <span class="text-[9px] font-bold text-white/50 bg-white/10 px-2 py-0.5 rounded-md">
+                        {{ group.videos.length }} {{ group.videos.length === 1 ? 'video' : 'videos' }}
+                      </span>
+                    </div>
                   </div>
 
                   <div class="space-y-2">
@@ -1671,6 +1984,52 @@ export class EventDetailModalComponent {
 
   pendingAgreements = computed(() => this.agreements().filter(a => a.status === 'Pendiente'));
 
+  /** En borrador nada sale del evento: ni solicitudes ni invitaciones. */
+  isDraft = computed(() => this.event()?.state === 'Borrador');
+
+  /** Invitaciones decididas en el borrador que aún no le llegan a su manager. */
+  unsentInvites = computed(() => this.agreements().filter(a => a.status === 'Sin Enviar'));
+
+  /** Solicitudes de grupo que salen al enviar el evento a revisión. */
+  unsentRequests = computed(() => {
+    const e = this.event();
+    return e ? unsentLineupRequests(e) : [];
+  });
+
+  /** Rubros de producción encargados a otro manager que aún no salen. */
+  unsentAssignments = computed(() => {
+    const e = this.event();
+    return e ? unsentResponsibilities(e) : [];
+  });
+
+  /** Todo lo que el evento tiene guardado esperando el envío a revisión. */
+  outboundCount = computed(() => {
+    const e = this.event();
+    return e ? pendingOutboundCount(e) : 0;
+  });
+
+  /** Vía por la que entró un grupo ajeno, para etiquetarlo en los acuerdos. */
+  engagementOf(slot: EventLineupSlot): 'propio' | 'cotizacion' | 'coorganizacion' {
+    const e = this.event();
+    return e ? slotEngagement(e, slot) : 'propio';
+  }
+
+  /** Importe que se le ofrece al dueño del grupo por una cotización directa. */
+  offerAmount = slotOfferAmount;
+
+  agreementStatusClass(status: EventAgreementStatus): string {
+    switch (status) {
+      case 'Aceptado': return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+      case 'Pendiente': return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+      case 'Sin Enviar': return 'bg-surface-container-highest text-outline border-outline-variant/40';
+      default: return 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+    }
+  }
+
+  agreementStatusLabel(status: EventAgreementStatus): string {
+    return status === 'Sin Enviar' ? 'Por enviar' : status;
+  }
+
   inviteModalOpen = signal(false);
 
   /**
@@ -1699,26 +2058,38 @@ export class EventDetailModalComponent {
   });
 
   /**
-   * Alta del co-organizador. Entra en 'Pendiente' y sin reparto: el porcentaje
-   * o el monto se pactan después, cuando el manager acepte. Darle un número por
-   * defecto aquí sería inventar un acuerdo que nadie hizo.
+   * Alta del co-organizador. Entra sin reparto: el porcentaje o el monto se
+   * pactan después, cuando el manager acepte. Darle un número por defecto aquí
+   * sería inventar un acuerdo que nadie hizo.
+   *
+   * Y entra 'Sin Enviar' mientras el evento sea borrador: la invitación no sale
+   * al armar el borrador sino al enviarlo a revisión, igual que las solicitudes
+   * de cotización directa. Invitar a alguien a co-organizar un evento que aún no
+   * existe es pedirle que evalúe algo a medias.
    */
   inviteManager(managerName: string): void {
     const e = this.event();
     if (!e) return;
 
+    const draft = this.isDraft();
     const nuevo: EventManagerAgreement = {
       id: 'agr-' + e.id + '-' + Date.now(),
       managerName,
       role: 'coorganizador',
       settlementKind: 'porcentaje',
       percent: 0,
-      status: 'Pendiente',
-      invitedAt: new Date().toISOString().slice(0, 16)
+      status: draft ? 'Sin Enviar' : 'Pendiente',
+      invitedAt: draft ? undefined : new Date().toISOString().slice(0, 16)
     };
 
     this.patch.emit({ managerAgreements: [...this.agreements(), nuevo] });
     this.inviteModalOpen.set(false);
+  }
+
+  /** Retira una invitación que todavía no ha salido del borrador. */
+  cancelInvitation(agreement: EventManagerAgreement): void {
+    if (agreement.status !== 'Sin Enviar') return;
+    this.patch.emit({ managerAgreements: this.agreements().filter(a => a.id !== agreement.id) });
   }
 
   /** Acción rápida para pruebas: cambia el estado de la solicitud entre Pendiente y Aceptado */
@@ -1757,8 +2128,14 @@ export class EventDetailModalComponent {
       case 'Aprobado': return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
       case 'Pendiente': return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
       case 'Rechazado': return 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+      case 'Sin Enviar': return 'bg-surface-container-highest text-outline border-outline-variant/40';
       default: return 'bg-surface-container-highest text-outline border-outline-variant/30';
     }
+  }
+
+  /** 'Sin Enviar' se lee como "por enviar": falta mandarla, no se descartó. */
+  lineupApprovalLabel(status: LineupApprovalStatus): string {
+    return status === 'Sin Enviar' ? 'Por enviar' : status;
   }
 
   /** Número de fase actual (1..n) para el contador "Fase X de Y". */
@@ -1837,6 +2214,78 @@ export class EventDetailModalComponent {
 
   report = computed(() => eventCompleteness(this.event() ?? ({} as EventItem)));
 
+  // ─── Reparto de pendientes ────────────────────────────────────────────────
+
+  /** True si el punto lo puede resolver el propio organizador. */
+  isOwnItem(item: CompletenessItem): boolean {
+    return item.pendingOwners.includes(this.report().organizer);
+  }
+
+  /** Managers distintos del organizador que bloquean un punto. */
+  foreignOwners(item: CompletenessItem): string[] {
+    const organizer = this.report().organizer;
+    return item.pendingOwners.filter(o => o !== organizer);
+  }
+
+  /**
+   * Lo que se lee al pasar por encima de un punto del checklist: si ya está,
+   * quién respondió por él; si falta, a quién le toca, si bloquea el envío y qué
+   * hay que hacer. Es la información que de otro modo obligaría a abrir el
+   * apartado correspondiente para averiguar quién debe moverse.
+   */
+  itemTooltip(item: CompletenessItem): string {
+    const organizer = this.report().organizer;
+    const nombres = (list: string[]) =>
+      list.map(o => (o === organizer ? 'tú' : o)).join(', ') || 'nadie';
+
+    if (item.done) {
+      return `${item.label}\n\n✓ Capturado. Responde por este dato: ${nombres(item.owners)}.`;
+    }
+
+    const lineas = [
+      item.label,
+      '',
+      item.required
+        ? '⚠ Obligatorio: sin esto no se puede enviar a revisión.'
+        : 'Recomendado: no bloquea el envío, pero deja la ficha del cliente incompleta.',
+      `Le toca a: ${nombres(item.pendingOwners)}.`
+    ];
+
+    // Cuando el pendiente es de otro manager, lo útil no es el "cómo se hace"
+    // —el organizador no puede hacerlo— sino si esa persona ya puede trabajar.
+    const ajenos = this.foreignOwners(item);
+    if (ajenos.length) {
+      lineas.push('', ajenos.map(o => `${o}: ${this.ownerAvailability(o)}`).join('\n'));
+    } else if (item.hint) {
+      lineas.push('', `Cómo cumplirlo: ${item.hint}`);
+    }
+
+    return lineas.join('\n');
+  }
+
+  /** En qué situación está un manager ajeno para poder capturar lo suyo. */
+  private ownerAvailability(managerName: string): string {
+    const invite = this.invitationOf(managerName);
+    if (!invite) return 'no co-organiza el evento; el dato sale del expediente de su grupo';
+    switch (invite.status) {
+      case 'Sin Enviar': return 'aún no recibe la invitación (sale al enviar a revisión)';
+      case 'Pendiente': return 'ya recibió la invitación y no ha respondido';
+      case 'Aceptado': return 'ya aceptó co-organizar; puede capturarlo cuando quiera';
+      default: return 'rechazó co-organizar el evento';
+    }
+  }
+
+  /** Acuerdo de un manager en este evento, si es que lo tiene. */
+  invitationOf(managerName: string): EventManagerAgreement | null {
+    return this.agreements().find(a => a.managerName === managerName) ?? null;
+  }
+
+  ownerRoleLabel(managerName: string): string {
+    const invite = this.invitationOf(managerName);
+    return invite ? 'Manager co-organizador' : 'Manager dueño del grupo';
+  }
+
+
   checklist = computed(() => {
     const e = this.event();
     return e ? completenessByGroup(e) : [];
@@ -1847,10 +2296,28 @@ export class EventDetailModalComponent {
     return e ? lineup(e) : [];
   });
 
-  /** Grupos aprobados para la vista previa del cliente (excluye pendientes). */
+  /** Grupos aprobados: los que el portal mostraría hoy, sin condiciones. */
   approvedSlots = computed(() =>
     this.slots().filter(s => !s.isExternal || s.approval === 'Aprobado')
   );
+
+  /**
+   * Cartel completo para la vista previa del cliente.
+   *
+   * Se muestran también los grupos ajenos que todavía no responden. Esconderlos
+   * daba una vista previa engañosa —el encargado veía una ficha vacía cuando en
+   * realidad tenía el cartel armado—, así que aparecen marcados como pendientes:
+   * así se ve cómo quedaría la ficha si aceptan, sin olvidar que podrían no
+   * aparecer si no lo hacen.
+   */
+  previewSlots = computed(() => this.slots());
+
+  /** Grupo que aparecerá en la ficha solo si su dueño acepta. */
+  isTentativeSlot(slot: EventLineupSlot): boolean {
+    return slot.isExternal && slot.approval !== 'Aprobado';
+  }
+
+  tentativeSlots = computed(() => this.slots().filter(s => this.isTentativeSlot(s)));
 
   /**
    * Colección estructurada de videos para la Vista Previa del Cliente:
@@ -1872,23 +2339,27 @@ export class EventDetailModalComponent {
       type: v.type
     }));
 
-    // 2. Videos de invitación capturados en los slots del cartel (slot.invitationVideos)
-    const groupVideosMap = new Map<string, VideoItem[]>();
-    for (const slot of this.approvedSlots()) {
+    // 2. Videos de invitación capturados en los slots del cartel. Se incluyen
+    //    los de grupos sin confirmar, marcados igual que en el line-up: su video
+    //    solo llegará al público si su dueño acepta.
+    const groupVideosMap = new Map<string, { videos: VideoItem[]; tentative: boolean }>();
+    for (const slot of this.previewSlots()) {
       if (slot.invitationVideos && slot.invitationVideos.length > 0) {
-        const list = groupVideosMap.get(slot.groupName) ?? [];
+        const entry = groupVideosMap.get(slot.groupName) ?? { videos: [], tentative: false };
         for (const v of slot.invitationVideos) {
-          if (!list.some(existing => existing.id === v.id)) {
-            list.push({ id: v.id, title: v.title, url: v.url, type: v.type });
+          if (!entry.videos.some(existing => existing.id === v.id)) {
+            entry.videos.push({ id: v.id, title: v.title, url: v.url, type: v.type });
           }
         }
-        groupVideosMap.set(slot.groupName, list);
+        entry.tentative = entry.tentative || this.isTentativeSlot(slot);
+        groupVideosMap.set(slot.groupName, entry);
       }
     }
 
-    const groupSections = [...groupVideosMap.entries()].map(([groupName, videos]) => ({
+    const groupSections = [...groupVideosMap.entries()].map(([groupName, entry]) => ({
       groupName,
-      videos
+      videos: entry.videos,
+      tentative: entry.tentative
     }));
 
     return { generalVideos, groupSections };

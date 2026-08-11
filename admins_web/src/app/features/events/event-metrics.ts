@@ -1,9 +1,16 @@
 ﻿import {
   EventItem,
   EventLineupSlot,
+  GroupSoundCheck,
   EventApproval,
+  EventCounterOffer,
+  EventManagerAgreement,
+  EventProductionItem,
+  EventProductionResponsibility,
   EventPublicProfile,
   EventReviewRound,
+  LineupEngagementKind,
+  ProductionCategory,
   TicketTier,
   emptyPublicProfile
 } from '../../core/models/event.models';
@@ -175,6 +182,70 @@ export function externalSlots(e: EventItem): EventLineupSlot[] {
   return lineup(e).filter(s => s.isExternal);
 }
 
+/**
+ * Vía por la que entró un grupo al cartel.
+ *
+ * Los eventos capturados antes de que la vía se guardara en el slot no traen
+ * `engagementKind`; para esos se reconstruye como se hacía entonces: un grupo
+ * ajeno cuyo manager tiene acuerdo en el evento entró co-organizando, y
+ * cualquier otro por cotización directa.
+ */
+export function slotEngagement(e: EventItem, slot: EventLineupSlot): LineupEngagementKind {
+  if (slot.engagementKind) return slot.engagementKind;
+  if (!slot.isExternal) return 'propio';
+  const coorganiza = (e.managerAgreements || []).some(
+    a => a.role === 'coorganizador' && a.managerName === slot.managerName
+  );
+  return coorganiza ? 'coorganizacion' : 'cotizacion';
+}
+
+export function isQuoteSlot(e: EventItem, slot: EventLineupSlot): boolean {
+  return slotEngagement(e, slot) === 'cotizacion';
+}
+
+export function isCoOrganizedSlot(e: EventItem, slot: EventLineupSlot): boolean {
+  return slotEngagement(e, slot) === 'coorganizacion';
+}
+
+/**
+ * Importe con el que sale la oferta al dueño del grupo: la contraoferta si el
+ * organizador hizo una, y si no, la tarifa que el dueño tiene publicada por las
+ * horas contratadas. Una contraoferta rechazada no cuenta — se vuelve a ofrecer
+ * la tarifa publicada.
+ */
+export function slotOfferAmount(slot: EventLineupSlot): number {
+  if (activeCounterOffer(slot)) return slotProposedFee(slot);
+  // Sin tarifa publicada el grupo no tiene precio de lista: se ofrece lo que
+  // sale de su desglose, que es lo mismo que ya cuesta en el cartel.
+  if (typeof slot.publishedFee !== 'number') return slotCost(slot);
+  return externalSlotFee(slot);
+}
+
+// ─── Lo que todavía no sale del borrador ──────────────────────────────────────
+
+/**
+ * Solicitudes de grupos ajenos que siguen sin enviarse.
+ *
+ * Existen porque el borrador no manda nada: el organizador arma el cartel
+ * completo, decide precios y contraofertas, y todo eso sale de golpe al enviar
+ * el evento a revisión.
+ */
+export function unsentLineupRequests(e: EventItem): EventLineupSlot[] {
+  return lineup(e).filter(s => s.isExternal && s.approval === 'Sin Enviar');
+}
+
+/** Invitaciones a co-organizar que todavía no le llegan a su manager. */
+export function unsentManagerInvites(e: EventItem): EventManagerAgreement[] {
+  return (e.managerAgreements || []).filter(a => a.status === 'Sin Enviar');
+}
+
+/** Cuántos avisos saldrán del evento en cuanto se envíe a revisión. */
+export function pendingOutboundCount(e: EventItem): number {
+  return unsentLineupRequests(e).length
+    + unsentManagerInvites(e).length
+    + unsentResponsibilities(e).length;
+}
+
 /** Costo propuesto por el dueño de un grupo, sumando su desglose. */
 export function slotCost(slot: EventLineupSlot): number {
   if (typeof slot.agreedTotal === 'number') return slot.agreedTotal;
@@ -183,11 +254,55 @@ export function slotCost(slot: EventLineupSlot): number {
   // horas contratadas. Una contraoferta solo manda cuando el dueño la aceptó;
   // mientras siga pendiente, lo pactado sigue siendo la tarifa publicada.
   if (slot.isExternal && typeof slot.publishedFee === 'number') {
-    if (slot.counterOffer?.status === 'Aceptada') return slot.counterOffer.amount;
+    if (slot.counterOffer?.status === 'Aceptada') return slotProposedFee(slot);
     return externalSlotFee(slot);
   }
 
   return (slot.costItems || []).reduce((sum, c) => sum + (c.amount || 0), 0);
+}
+
+/** Contraoferta que sigue viva; una rechazada ya no cuenta para nada. */
+export function activeCounterOffer(slot: EventLineupSlot): EventCounterOffer | null {
+  const co = slot.counterOffer;
+  return co && co.status !== 'Rechazada' ? co : null;
+}
+
+/**
+ * Lo que el organizador está proponiendo pagar por este grupo, ya escalado a las
+ * horas del evento.
+ *
+ * Cuando hay contraoferta viva, ella pasa a ser la tarifa base: se propuso un
+ * importe por unas horas, así que pedir más horas sube el total en la misma
+ * proporción — igual que con la tarifa publicada, pero partiendo de la cifra
+ * negociada y no de la de lista. Es lo que de verdad se va a pagar si el dueño
+ * acepta, y por eso es lo que manda en la captura de horas y totales.
+ */
+export function slotProposedFee(slot: EventLineupSlot): number {
+  const co = activeCounterOffer(slot);
+  if (!co) return externalSlotFee(slot);
+
+  // Sin horas de referencia la contraoferta es un importe cerrado, no una tarifa
+  // por hora: escalarla ahí multiplicaría el total por las horas del evento y
+  // daría una cifra absurda.
+  const baseHours = co.hours ?? slot.minimumHours ?? 0;
+  if (baseHours <= 0) return co.amount;
+
+  const hours = slot.contractedHours || baseHours;
+  if (hours <= baseHours) return co.amount;
+  return Math.round(co.amount * (hours / baseHours));
+}
+
+/**
+ * Lo que costaría el grupo a su tarifa de lista por esas mismas horas. Es la
+ * referencia contra la que se mide la contraoferta.
+ */
+export function slotPublishedTotal(slot: EventLineupSlot): number {
+  return typeof slot.publishedFee === 'number' ? externalSlotFee(slot) : slotCost(slot);
+}
+
+/** Cuánto se ahorra con la contraoferta; negativo si se está pagando de más. */
+export function counterOfferSavings(slot: EventLineupSlot): number {
+  return slotPublishedTotal(slot) - slotProposedFee(slot);
 }
 
 /**
@@ -210,9 +325,82 @@ export function lineupTotalCost(e: EventItem): number {
   return lineup(e).reduce((sum, s) => sum + slotCost(s), 0);
 }
 
-/** Costo del cartel más el equipo de sonido: el piso de gasto del evento. */
+// ─── Desglose de producción ───────────────────────────────────────────────────
+
+export function productionItems(e: EventItem): EventProductionItem[] {
+  return e.productionItems || [];
+}
+
+/** Lo capturado en el desglose de producción, sin el cartel ni el audio. */
+export function productionItemsCost(e: EventItem): number {
+  return productionItems(e).reduce((sum, i) => sum + (i.amount || 0), 0);
+}
+
+/**
+ * Gasto de producción por rubro, de mayor a menor.
+ *
+ * Ordenado por importe y no por el orden del catálogo porque la pregunta que
+ * responde es "¿en qué se nos fue el dinero?", y esa se contesta leyendo el
+ * primer renglón.
+ */
+export function productionCostByCategory(e: EventItem): { category: ProductionCategory; amount: number; count: number }[] {
+  const totals = new Map<ProductionCategory, { amount: number; count: number }>();
+  for (const item of productionItems(e)) {
+    const acc = totals.get(item.category) ?? { amount: 0, count: 0 };
+    totals.set(item.category, { amount: acc.amount + (item.amount || 0), count: acc.count + 1 });
+  }
+  return [...totals.entries()]
+    .map(([category, v]) => ({ category, ...v }))
+    .sort((a, b) => b.amount - a.amount);
+}
+
+/**
+ * Cuánto de lo desglosado ya es un compromiso firme.
+ *
+ * Un total lleno de partidas 'Estimado' es un presupuesto de servilleta; el
+ * mismo total en 'Contratado' es dinero que ya se debe. Distinguirlos evita la
+ * sorpresa de que el evento "salga caro de repente".
+ */
+export function productionCommittedCost(e: EventItem): number {
+  return productionItems(e)
+    .filter(i => i.status === 'Contratado' || i.status === 'Pagado')
+    .reduce((sum, i) => sum + (i.amount || 0), 0);
+}
+
+export function productionPaidCost(e: EventItem): number {
+  return productionItems(e)
+    .filter(i => i.status === 'Pagado')
+    .reduce((sum, i) => sum + (i.amount || 0), 0);
+}
+
+/** Costo total del evento: cartel + equipo de audio + desglose de producción. */
 export function productionCost(e: EventItem): number {
-  return lineupTotalCost(e) + (e.sound?.cost || 0);
+  return lineupTotalCost(e) + (e.sound?.cost || 0) + productionItemsCost(e);
+}
+
+// ─── Reparto de rubros entre managers ─────────────────────────────────────────
+
+export function productionResponsibilities(e: EventItem): EventProductionResponsibility[] {
+  return e.productionResponsibilities || [];
+}
+
+/** Encargo de un rubro, si es que se le pasó a alguien. */
+export function responsibilityFor(e: EventItem, category: ProductionCategory): EventProductionResponsibility | null {
+  return productionResponsibilities(e).find(r => r.category === category) ?? null;
+}
+
+/** Encargos decididos en el borrador que todavía no le llegan a su manager. */
+export function unsentResponsibilities(e: EventItem): EventProductionResponsibility[] {
+  return productionResponsibilities(e).filter(r => r.status === 'Sin Enviar');
+}
+
+/** Quién arma el evento y responde por él. */
+export function groupSoundChecks(e: EventItem): GroupSoundCheck[] {
+  return e.soundChecks || [];
+}
+
+export function organizerName(e: EventItem): string {
+  return e.ownerManagerName || e.createdBy || 'Organizador';
 }
 
 /** True si a algún grupo del cartel le falta su hora de entrada. */

@@ -210,7 +210,38 @@ export interface EventEvidence {
 
 // ─── Cartel: grupos, orden de entradas y costos ───────────────────────────────
 
-export type LineupApprovalStatus = 'No Requiere' | 'Pendiente' | 'Aprobado' | 'Rechazado';
+/**
+ * Estado de la solicitud que se le manda al dueño de un grupo ajeno.
+ *
+ * `Sin Enviar` es la clave del borrador: mientras el evento se está armando, el
+ * grupo ya está en el cartel pero su dueño todavía no sabe nada. Pedirle una
+ * cotización a alguien por un evento que quizá ni se arme sería quemar la
+ * relación en cada intento; la solicitud sale una sola vez, al enviar el evento
+ * a revisión.
+ */
+export type LineupApprovalStatus =
+  | 'No Requiere'
+  | 'Sin Enviar'
+  | 'Pendiente'
+  | 'Aprobado'
+  | 'Rechazado';
+
+/**
+ * Por qué vía entra un grupo al cartel. Es una decisión del organizador, no algo
+ * que se deduzca de quién es el dueño del grupo: el mismo grupo ajeno se puede
+ * traer de las dos maneras y cada una implica cosas muy distintas.
+ *
+ * - `propio`: el grupo es del organizador. No hay nada que negociar.
+ * - `cotizacion`: contratación directa. Se le paga al dueño del grupo una tarifa
+ *   por unas horas y ahí termina su participación: no entra al evento, no ve
+ *   boletaje ni ganancias y solo recibe lugar, hora de llegada, prueba de sonido
+ *   y duración. Es lo que permite al organizador ganar sin exponer sus números.
+ * - `coorganizacion`: el dueño del grupo entra al evento como co-organizador.
+ *   Ve casi todo (boletaje, precios, avance de venta) menos lo que ganan los
+ *   grupos del otro manager, y puede sugerir grupos — pero quien decide si
+ *   entran sigue siendo el organizador.
+ */
+export type LineupEngagementKind = 'propio' | 'cotizacion' | 'coorganizacion';
 
 /**
  * Contraoferta que el organizador manda al dueño de un grupo externo.
@@ -227,7 +258,14 @@ export interface EventCounterOffer {
   note?: string;
   proposedBy: string;
   proposedAt: string;
-  status: 'Pendiente' | 'Aceptada' | 'Rechazada';
+  /**
+   * `Sin Enviar` mientras el evento sigue en borrador: la contraoferta ya está
+   * decidida pero el dueño del grupo no la ha recibido. Viaja junto con la
+   * solicitud al enviar el evento a revisión.
+   */
+  status: 'Sin Enviar' | 'Pendiente' | 'Aceptada' | 'Rechazada';
+  /** Cuándo salió de verdad hacia el dueño del grupo. */
+  sentAt?: string;
 }
 
 /** Un concepto del costo que cobra un grupo, desglosado por el dueño del grupo. */
@@ -266,6 +304,15 @@ export interface EventLineupSlot {
 
   /** True si el grupo pertenece a otro encargado y por lo tanto requiere su visto bueno. */
   isExternal: boolean;
+  /**
+   * Vía por la que entra el grupo. Se guarda explícitamente porque es una
+   * elección del organizador: al mismo grupo ajeno se le puede pagar una
+   * cotización directa o traerlo invitando a su manager a co-organizar, y de
+   * quién sea el grupo no se puede deducir cuál de las dos eligió.
+   */
+  engagementKind?: LineupEngagementKind;
+  /** Cuándo salió la solicitud al dueño del grupo (al enviar a revisión). */
+  requestSentAt?: string;
   /** Encargado dueño del grupo (quien aprueba o rechaza en la fase de revisión). */
   managerName: string;
   managerEmail?: string;
@@ -322,7 +369,12 @@ export interface EventLineupSlot {
  */
 export type EventSettlementKind = 'porcentaje' | 'fijo';
 
-export type EventAgreementStatus = 'Aceptado' | 'Pendiente' | 'Rechazado';
+/**
+ * `Sin Enviar` es la invitación ya decidida dentro del borrador pero que el otro
+ * manager todavía no ha recibido: sale al enviar el evento a revisión, igual que
+ * las solicitudes de cotización directa.
+ */
+export type EventAgreementStatus = 'Sin Enviar' | 'Aceptado' | 'Pendiente' | 'Rechazado';
 
 /**
  * Manager que co-organiza el evento.
@@ -357,6 +409,17 @@ export type SoundProviderType =
   | 'Proveedor Externo'
   | 'Equipo del Recinto';
 
+export interface GroupSoundCheck {
+  id: string;
+  groupId: string;
+  groupName: string;
+  arrivalDateTime?: string;
+  startTime?: string;
+  endTime?: string;
+  departureTime?: string;
+  notes?: string;
+}
+
 export interface RiderCheckItem {
   id: string;
   label: string;
@@ -380,6 +443,110 @@ export interface EventSoundSetup {
   cost?: number;
   riderChecklist?: RiderCheckItem[];
   notes?: string;
+}
+
+// ─── Desglose de gastos de producción ────────────────────────────────────────
+
+/**
+ * Rubros en los que se va el dinero de un evento, además del cartel.
+ *
+ * La lista sale de lo que de verdad se contrata para montar un baile, un
+ * palenque o un concierto en México. Está cerrada a propósito: si cada evento
+ * inventara sus propias etiquetas, comparar dos eventos —o saber en qué se va
+ * siempre el dinero— sería imposible, que es justo para lo que existe este
+ * desglose. Lo que no encaje va a 'Otros' con su concepto escrito.
+ */
+export type ProductionCategory =
+  | 'Recinto'
+  | 'Audio'
+  | 'Iluminación'
+  | 'Video y Pantallas'
+  | 'Escenario y Estructuras'
+  | 'Energía'
+  | 'Backline'
+  | 'Mobiliario'
+  | 'Personal y Staff'
+  | 'Seguridad'
+  | 'Servicios Médicos'
+  | 'Permisos y Licencias'
+  | 'Seguros'
+  | 'Limpieza y Sanitarios'
+  | 'Transporte y Logística'
+  | 'Hospitalidad'
+  | 'Hospedaje'
+  | 'Publicidad'
+  | 'Boletaje'
+  | 'Otros';
+
+/**
+ * En qué punto está una partida.
+ *
+ * Importa para leer el total: un evento con todo 'Estimado' tiene un presupuesto
+ * de servilleta, y uno con todo 'Contratado' tiene un compromiso real. Sumar
+ * ambos como si fueran lo mismo es lo que hace que un evento "salga caro de
+ * repente".
+ */
+export type ProductionItemStatus = 'Estimado' | 'Cotizado' | 'Contratado' | 'Pagado';
+
+/**
+ * Estado de una tarea encargada a otro manager.
+ *
+ * Sigue la misma regla que el resto del expediente: lo que se decide en el
+ * borrador no sale hasta que el evento se manda a revisión.
+ */
+export type ProductionAssignmentStatus = 'Sin Enviar' | 'Pendiente' | 'Aceptada' | 'Rechazada';
+
+/**
+ * Una partida del desglose de producción: una cosa que se paga, cuánto cuesta y
+ * a quién se le paga.
+ *
+ * Todo el desglose es opcional. Existe para responder "¿en qué se nos fue el
+ * dinero?" al cerrar el evento, no para obligar a nadie a capturar: un evento
+ * puede publicarse con el desglose vacío y el checklist no lo exige.
+ */
+export interface EventProductionItem {
+  id: string;
+  category: ProductionCategory;
+  concept: string;
+  /** Detalle libre: modelo, especificación, alcance de lo contratado. */
+  detail?: string;
+  /** A quién se le paga. */
+  supplier?: string;
+  quantity?: number;
+  /** 'pieza', 'jornada', 'día', 'servicio', 'persona'… */
+  unit?: string;
+  unitCost?: number;
+  /** Importe total de la partida; manda sobre cantidad × unitario. */
+  amount: number;
+  status: ProductionItemStatus;
+  /** Manager que se hace cargo de esta partida, si se repartió el trabajo. */
+  assignedTo?: string;
+  notes?: string;
+  createdBy?: string;
+}
+
+/**
+ * Un rubro completo encargado a otro manager.
+ *
+ * Es el reparto de trabajo entre managers: "tú ves el sonido, yo veo el
+ * recinto". El encargado puede aceptar o rechazar, y una vez que acepta puede
+ * desglosar sus partidas o no hacerlo — muchas veces el acuerdo real se cierra
+ * por teléfono y aquí solo interesa que quede constancia de quién respondía por
+ * ese rubro y por cuánto.
+ */
+export interface EventProductionResponsibility {
+  id: string;
+  category: ProductionCategory;
+  managerName: string;
+  status: ProductionAssignmentStatus;
+  /** Tope de gasto pactado para el rubro, si se pactó alguno. */
+  budgetCap?: number;
+  /** Qué se le está pidiendo exactamente. */
+  brief?: string;
+  assignedAt?: string;
+  respondedAt?: string;
+  /** Obligatorio al rechazar: por qué no se hace cargo. */
+  reason?: string;
 }
 
 /** Corrida general del día del evento. */
@@ -579,7 +746,16 @@ export interface EventItem {
   croquisZones: CroquisZone[];
   lineup: EventLineupSlot[];
   sound: EventSoundSetup;
+  soundChecks?: GroupSoundCheck[];
   schedule: EventSchedule;
+
+  /**
+   * Desglose de gastos de producción. Opcional a propósito: sirve para saber en
+   * qué se fue el dinero, no para bloquear la publicación de un evento.
+   */
+  productionItems?: EventProductionItem[];
+  /** Rubros de producción repartidos entre los managers del evento. */
+  productionResponsibilities?: EventProductionResponsibility[];
 
   reviewRounds: EventReviewRound[];
   publication?: EventPublication;

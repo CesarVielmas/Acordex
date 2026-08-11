@@ -1481,17 +1481,25 @@ export class MockDataService {
           groupId: 'grp-5',
           groupName: 'Los Herederos del Regio',
           isExternal: true,
+          // Borrador: la solicitud está armada pero su dueño no sabe nada
+          // todavía. Sale al enviar el evento a revisión.
+          engagementKind: 'cotizacion',
           managerName: 'Lic. Gonzalo Garza',
           managerEmail: 'gonzalo@herederosregio.mx',
           order: 1,
           setStartTime: '20:30',
           setEndTime: '21:30',
           durationMinutes: 60,
+          // Tarifa de lista del grupo, congelada al agregarlo: es contra ella
+          // que se mide cualquier contraoferta.
+          publishedFee: 85000,
+          minimumHours: 3,
+          contractedHours: 3,
           costItems: [
             { id: 'c-101-1', concept: 'Honorarios de presentación', category: 'Honorarios', amount: 85000 }
           ],
           costProposedBy: 'Lic. Gonzalo Garza',
-          approval: 'Pendiente'
+          approval: 'Sin Enviar'
         },
         {
           id: 'ln-101-2',
@@ -1503,6 +1511,28 @@ export class MockDataService {
           isHeadliner: true,
           costItems: [],
           approval: 'No Requiere'
+        }
+      ],
+      soundChecks: [
+        {
+          id: 'sc-102-1',
+          groupId: 'grp-6',
+          groupName: 'Sonido Dinamita Urbano',
+          arrivalDateTime: '2026-10-03 16:00',
+          startTime: '17:00',
+          endTime: '18:00',
+          departureTime: '18:30',
+          notes: 'Prueba de sonido de apertura y nivelación de canales de DJ/Percusión.'
+        },
+        {
+          id: 'sc-102-2',
+          groupId: 'grp-3',
+          groupName: 'Banda La Imperial',
+          arrivalDateTime: '2026-10-03 17:30',
+          startTime: '18:30',
+          endTime: '20:00',
+          departureTime: '20:30',
+          notes: 'Prueba técnica estelar: ecualización de vientos (metales) y monitoreo IEM.'
         }
       ],
       sound: { providerType: 'Por Definir' },
@@ -1551,7 +1581,9 @@ export class MockDataService {
       coProductionPartner: 'Beto Ramírez (Sierreño Music)',
       managerAgreements: [
         { id: 'agr-102-1', managerName: 'Encargado Acordex', role: 'organizador', settlementKind: 'porcentaje', percent: 60, status: 'Aceptado' },
-        { id: 'agr-102-2', managerName: 'Beto Ramírez (Sierreño Music)', role: 'coorganizador', settlementKind: 'porcentaje', percent: 40, status: 'Pendiente', invitedAt: '2026-08-02T10:15', viewedAt: '2026-08-02T14:20' }
+        // Invitación decidida dentro del borrador: todavía no le llega. Sin
+        // fecha de envío ni de visto porque literalmente no ha salido.
+        { id: 'agr-102-2', managerName: 'Beto Ramírez (Sierreño Music)', role: 'coorganizador', settlementKind: 'porcentaje', percent: 40, status: 'Sin Enviar' }
       ],
       publicProfile: {
         coverUrl: 'https://images.unsplash.com/photo-1459749411177-042180ce673c?w=1400&auto=format&fit=crop&q=80',
@@ -1595,6 +1627,9 @@ export class MockDataService {
             }
           ],
           isExternal: true,
+          // Se contrata por cotización directa: su manager cobra y no entra al
+          // evento. Sigue 'Sin Enviar' porque el evento no ha salido de borrador.
+          engagementKind: 'cotizacion',
           managerName: 'DJ & Mtro. Samuel Vargas',
           managerEmail: 'samuel@dinamitaurbano.mx',
           managerPhone: '+52 33 1188 4400',
@@ -1604,12 +1639,15 @@ export class MockDataService {
           durationMinutes: 60,
           arrivalTime: '17:00',
           soundCheckTime: '17:30',
+          publishedFee: 71500,
+          minimumHours: 3,
+          contractedHours: 3,
           costItems: [
             { id: 'c-102-1', concept: 'Honorarios de presentación', category: 'Honorarios', amount: 62000 },
             { id: 'c-102-2', concept: 'Traslado de equipo y personal', category: 'Transporte', amount: 9500 }
           ],
           costProposedBy: 'DJ & Mtro. Samuel Vargas',
-          approval: 'Pendiente'
+          approval: 'Sin Enviar'
         },
         {
           id: 'ln-102-2',
@@ -1663,6 +1701,20 @@ export class MockDataService {
           { id: 'r-102-3', label: 'Camerinos con aire acondicionado', done: false, responsible: 'Recinto' }
         ]
       },
+      // Desglose parcial: así se ve un evento donde el manager sí quiso saber en
+      // qué se le iba el dinero. Es opcional; EVT-101 va sin nada capturado.
+      productionItems: [
+        { id: 'pi-102-1', category: 'Recinto', concept: 'Renta del recinto', supplier: 'Auditorio Telmex', quantity: 1, unit: 'servicio', unitCost: 260000, amount: 260000, status: 'Contratado' },
+        { id: 'pi-102-2', category: 'Recinto', concept: 'Depósito en garantía', supplier: 'Auditorio Telmex', quantity: 1, unit: 'servicio', unitCost: 40000, amount: 40000, status: 'Pagado' },
+        { id: 'pi-102-3', category: 'Iluminación', concept: 'Luces robóticas (móviles)', supplier: 'Lighting GDL', quantity: 24, unit: 'pieza', unitCost: 2200, amount: 52800, status: 'Cotizado' },
+        { id: 'pi-102-4', category: 'Mobiliario', concept: 'Mesas redondas', supplier: 'Renta Fiesta Jalisco', quantity: 120, unit: 'pieza', unitCost: 180, amount: 21600, status: 'Contratado' },
+        { id: 'pi-102-5', category: 'Mobiliario', concept: 'Sillas', supplier: 'Renta Fiesta Jalisco', quantity: 960, unit: 'pieza', unitCost: 35, amount: 33600, status: 'Contratado' },
+        { id: 'pi-102-6', category: 'Seguridad', concept: 'Seguridad privada', supplier: 'Grupo Vanguardia', quantity: 30, unit: 'persona', unitCost: 900, amount: 27000, status: 'Cotizado' },
+        { id: 'pi-102-7', category: 'Servicios Médicos', concept: 'Ambulancia con paramédicos', supplier: 'Cruz Ámbar', quantity: 1, unit: 'servicio', unitCost: 12000, amount: 12000, status: 'Contratado' },
+        { id: 'pi-102-8', category: 'Permisos y Licencias', concept: 'Visto bueno de Protección Civil', quantity: 1, unit: 'trámite', unitCost: 18000, amount: 18000, status: 'Pagado' },
+        { id: 'pi-102-9', category: 'Publicidad', concept: 'Spots de radio', supplier: 'Grupo Radiofónico GDL', quantity: 1, unit: 'campaña', unitCost: 85000, amount: 85000, status: 'Contratado' },
+        { id: 'pi-102-10', category: 'Energía', concept: 'Planta de luz / generador', supplier: 'Plantas del Occidente', quantity: 2, unit: 'jornada', unitCost: 9500, amount: 19000, status: 'Estimado' }
+      ],
       schedule: {
         crewCallAt: '2026-10-03T11:00',
         loadInAt: '2026-10-03T12:00',
@@ -3798,6 +3850,14 @@ export class MockDataService {
   /**
    * Envía un borrador a revisión y abre la ronda de aprobación.
    *
+   * Este es el único punto en el que el evento habla con el mundo exterior. Todo
+   * lo que se decidió en el borrador —solicitudes de cotización directa con su
+   * contraoferta, e invitaciones a otros managers para co-organizar— sale de
+   * golpe aquí. Mientras el evento fue borrador nadie de fuera recibió nada, y
+   * esa es la razón: el organizador puede armar el cartel, cambiar de opinión y
+   * renegociar consigo mismo sin quemar la relación mandando ofertas por un
+   * evento que quizá ni se arme.
+   *
    * La ronda se arma con un renglón por cada grupo del cartel que pertenece a
    * otro encargado: son ellos, y solo ellos, quienes tienen que dar el visto
    * bueno a la fecha, el horario y el costo antes de que el evento pueda
@@ -3809,6 +3869,11 @@ export class MockDataService {
       const externals = (ev.lineup || []).filter(s => s.isExternal);
       const round = (ev.reviewRounds?.length || 0) + 1;
       const sentAt = this.nowStamp();
+
+      // Lo que estaba esperando este momento, contado antes de marcarlo enviado.
+      const nuevasSolicitudes = externals.filter(s => s.approval === 'Sin Enviar').length;
+      const nuevasInvitaciones = (ev.managerAgreements || []).filter(a => a.status === 'Sin Enviar').length;
+      const nuevosEncargos = (ev.productionResponsibilities || []).filter(r => r.status === 'Sin Enviar').length;
 
       const newRound: EventReviewRound = {
         round,
@@ -3828,21 +3893,66 @@ export class MockDataService {
         ...ev,
         state: 'En Revisión',
         reviewRounds: [...(ev.reviewRounds || []), newRound],
-        lineup: (ev.lineup || []).map(s => (s.isExternal ? { ...s, approval: 'Pendiente' as const } : s))
+
+        // Las solicitudes salen ahora: cada grupo ajeno queda pendiente de la
+        // respuesta de su dueño, y la contraoferta que se preparó en el borrador
+        // viaja con esa misma solicitud.
+        lineup: (ev.lineup || []).map(s => {
+          if (!s.isExternal) return s;
+          return {
+            ...s,
+            approval: 'Pendiente' as const,
+            requestSentAt: s.requestSentAt || sentAt,
+            counterOffer: s.counterOffer?.status === 'Sin Enviar'
+              ? { ...s.counterOffer, status: 'Pendiente' as const, sentAt }
+              : s.counterOffer
+          };
+        }),
+
+        // Y con ellas, las invitaciones a co-organizar que seguían guardadas.
+        managerAgreements: ev.managerAgreements?.map(a =>
+          a.status === 'Sin Enviar'
+            ? { ...a, status: 'Pendiente' as const, invitedAt: a.invitedAt || sentAt }
+            : a
+        ),
+
+        // Y los rubros de producción que se le encargaron a otros managers.
+        productionResponsibilities: ev.productionResponsibilities?.map(r =>
+          r.status === 'Sin Enviar'
+            ? { ...r, status: 'Pendiente' as const, assignedAt: r.assignedAt || sentAt }
+            : r
+        )
       };
 
       return this.appendTimeline(withRound, {
         phaseNumber: 2,
         state: 'En Revisión',
         phaseName: `Revisión de Encargados (Ronda ${round})`,
-        summaryNote: externals.length > 0
-          ? `Enviado a revisión: ${externals.length} encargado(s) externo(s) deben aprobar horarios y costos.`
-          : 'Enviado a revisión. El cartel es propio, así que no requiere aprobaciones externas.',
+        summaryNote: this.reviewSubmissionNote(externals.length, nuevasSolicitudes, nuevasInvitaciones, nuevosEncargos),
         snapshot: { lineupCount: ev.lineup?.length || 0, approvalsCount: externals.length }
       });
     });
 
     this.addAudit('Envío a Revisión', 'Eventos', `Envió el evento ${eventId} a revisión de los encargados involucrados`);
+  }
+
+  /** Qué se mandó al enviar a revisión, para que la trazabilidad lo conserve. */
+  private reviewSubmissionNote(
+    externals: number,
+    solicitudes: number,
+    invitaciones: number,
+    encargos: number
+  ): string {
+    const salidas: string[] = [];
+    if (solicitudes > 0) salidas.push(`${solicitudes} solicitud(es) de grupo`);
+    if (invitaciones > 0) salidas.push(`${invitaciones} invitación(es) a co-organizar`);
+    if (encargos > 0) salidas.push(`${encargos} encargo(s) de producción`);
+    const cola = salidas.length ? ` Salieron ${salidas.join(', ')}.` : '';
+
+    if (externals === 0) {
+      return `Enviado a revisión. El cartel es propio, así que no requiere aprobaciones externas.${cola}`;
+    }
+    return `Enviado a revisión: ${externals} encargado(s) externo(s) deben aprobar horarios y costos.${cola}`;
   }
 
   /**
