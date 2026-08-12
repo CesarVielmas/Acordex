@@ -21,7 +21,7 @@ import { EventTabTasksComponent } from './detail/event-tab-tasks.component';
 import { EventTabActivityComponent } from './detail/event-tab-activity.component';
 import { CroquisEditorComponent } from '../croquis/components/croquis-editor.component';
 import { croquisCapacity } from '../croquis/croquis-metrics';
-import { resolveTasks } from '../event-tasks';
+import { managerWorkloads, ManagerWorkload, resolveTasks, ResolvedTask } from '../event-tasks';
 import { CompletenessItem, completenessByGroup, eventCompleteness } from '../event-completeness';
 import {
   approvals,
@@ -476,6 +476,134 @@ export type EventDetailTab =
                 </section>
               }
 
+              <!-- ─── QUIÉN CARGA CON QUÉ ───
+                   El bloque de arriba responde "de quién depende lo que falta
+                   del expediente". Este responde la otra mitad de la pregunta:
+                   qué lleva encima cada disquera en total —los puntos que se le
+                   encargaron, los encargos operativos y el dinero que movió—,
+                   que es lo que hay que mirar para saber a quién se le está
+                   cargando la mano y a quién hay que ir a buscar. -->
+              @if (workloads().length) {
+                <section class="p-6 rounded-3xl bg-gradient-to-br from-teal-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-teal-500/25 border-l-4 border-l-teal-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
+                  <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <h5 class="text-xs font-black uppercase tracking-wider text-teal-300 flex items-center gap-2.5">
+                      <span class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center material-symbols-outlined text-lg">groups</span>
+                      <span>Quién carga con qué</span>
+                    </h5>
+                    <button
+                      type="button"
+                      (click)="activeTab.set('tareas')"
+                      class="px-3 py-1.5 rounded-xl bg-teal-500/15 text-teal-200 border border-teal-500/30 hover:bg-teal-500 hover:text-black text-[10px] font-black transition-all flex items-center gap-1.5"
+                    >
+                      <span class="material-symbols-outlined text-[13px]">open_in_new</span> Abrir Tareas
+                    </button>
+                  </div>
+
+                  <p class="text-[11px] text-outline leading-relaxed">
+                    El reparto real del trabajo. Los <strong class="text-sky-300">puntos del expediente</strong> los cierra el sistema al capturar el dato;
+                    los <strong class="text-amber-300">encargos</strong> los confirma su responsable y su gasto es el que aparece en Producción.
+                  </p>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    @for (w of workloads(); track w.manager) {
+                      <div class="p-4 rounded-2xl border space-y-3"
+                        [class]="w.isOrganizer
+                          ? 'bg-amber-500/[0.06] border-amber-500/30'
+                          : 'bg-surface-container/70 border-outline-variant/25'">
+
+                        <div class="flex items-start justify-between gap-2.5 pb-2.5 border-b border-outline-variant/15">
+                          <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="w-9 h-9 rounded-xl border flex items-center justify-center material-symbols-outlined text-base shrink-0"
+                              [class]="w.isOrganizer
+                                ? 'bg-amber-500/15 border-amber-500/35 text-amber-300'
+                                : 'bg-sky-500/15 border-sky-500/30 text-sky-300'">
+                              {{ w.isOrganizer ? 'stars' : 'business' }}
+                            </span>
+                            <div class="min-w-0">
+                              <p class="text-xs font-black text-on-surface truncate">
+                                {{ w.manager }}{{ w.isOrganizer ? ' · organiza' : '' }}
+                              </p>
+                              <p class="text-[10px] text-outline">
+                                {{ w.required.length + w.optional.length }} responsabilidad(es)
+                              </p>
+                            </div>
+                          </div>
+
+                          @if (w.awaitingResponse > 0) {
+                            <span class="px-2 py-1 rounded-lg bg-amber-400 text-black text-[9px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1 animate-pulse">
+                              <span class="material-symbols-outlined text-[11px]">how_to_vote</span>
+                              {{ w.awaitingResponse }} por contestar
+                            </span>
+                          }
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2">
+                          <div class="p-2.5 rounded-xl bg-black/25 border border-white/5 text-center">
+                            <div class="text-base font-black font-mono"
+                              [class]="w.required.length && w.requiredDone === w.required.length ? 'text-emerald-400' : 'text-sky-300'">
+                              {{ w.requiredDone }}<span class="text-outline text-[11px]">/{{ w.required.length }}</span>
+                            </div>
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-outline">Expediente</span>
+                          </div>
+                          <div class="p-2.5 rounded-xl bg-black/25 border border-white/5 text-center">
+                            <div class="text-base font-black font-mono"
+                              [class]="w.optional.length && w.optionalDone === w.optional.length ? 'text-emerald-400' : 'text-amber-300'">
+                              {{ w.optionalDone }}<span class="text-outline text-[11px]">/{{ w.optional.length }}</span>
+                            </div>
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-outline">Encargos</span>
+                          </div>
+                          <div class="p-2.5 rounded-xl bg-black/25 border border-white/5 text-center">
+                            @if (roleService.canViewFinances()) {
+                              <div class="text-base font-black font-mono text-violet-300">{{ money(w.spend) }}</div>
+                              <span class="text-[9px] font-bold uppercase tracking-wider text-outline">{{ w.items }} partida(s)</span>
+                            } @else {
+                              <div class="text-base font-black font-mono text-violet-300">{{ w.items }}</div>
+                              <span class="text-[9px] font-bold uppercase tracking-wider text-outline">Partidas</span>
+                            }
+                          </div>
+                        </div>
+
+                        @if (pendingOf(w).length) {
+                          <ul class="space-y-1 pt-1">
+                            @for (t of pendingOf(w); track t.id) {
+                              <li class="text-[10px] flex items-start gap-1.5">
+                                <span class="material-symbols-outlined text-[12px] shrink-0 mt-0.5"
+                                  [class]="t.kind === 'externa' ? 'text-amber-400' : 'text-sky-400'">
+                                  {{ t.kind === 'externa' ? 'handyman' : 'fact_check' }}
+                                </span>
+                                <span class="text-on-surface-variant leading-snug">
+                                  {{ t.title }}
+                                  @if (t.delegate) {
+                                    <span class="text-violet-300"> · {{ t.delegate.name }}</span>
+                                  }
+                                </span>
+                              </li>
+                            }
+                            @if (pendingCountOf(w) > pendingOf(w).length) {
+                              <li class="text-[10px] text-outline pl-4">
+                                +{{ pendingCountOf(w) - pendingOf(w).length }} más
+                              </li>
+                            }
+                          </ul>
+                        } @else {
+                          <p class="text-[10px] text-emerald-300 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[13px]">check_circle</span>
+                            Sin pendientes de su parte
+                          </p>
+                        }
+
+                        @if (w.delegated > 0) {
+                          <p class="text-[10px] text-violet-300 flex items-center gap-1.5 pt-1 border-t border-outline-variant/15">
+                            <span class="material-symbols-outlined text-[13px]">groups</span>
+                            {{ w.delegated }} en manos de su staff
+                          </p>
+                        }
+                      </div>
+                    }
+                  </div>
+                </section>
+              }
+
               <!-- Cifras de un vistazo -->
               <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="p-5 rounded-3xl bg-gradient-to-br from-surface-container-high/90 to-surface-container/70 border border-outline-variant/30 shadow-xl backdrop-blur-xl space-y-1.5 hover:border-outline-variant/50 transition-all">
@@ -615,6 +743,7 @@ export type EventDetailTab =
           @if (activeTab() === 'tareas') {
             <app-event-tab-tasks
               [event]="e"
+              [canViewFinances]="roleService.canViewFinances()"
               (navigateTab)="activeTab.set($event)"
               (patch)="patch.emit($event)"
             />
@@ -1186,17 +1315,39 @@ export type EventDetailTab =
                     <span class="material-symbols-outlined text-lg shrink-0 text-emerald-400">verified</span>
                     <span>Todos los encargados han aprobado. Publicar es el punto de no retorno: el evento saldrá al público inmediatamente.</span>
                   </p>
+                  <!-- Aquí sí frena. Un evento sale al público con su fecha, su
+                       recinto y sus precios o no sale: el comprador no puede
+                       toparse con una ficha a medias, y publicar no se deshace. -->
                   @if (!report().canSubmitForReview) {
-                    <p class="text-xs text-amber-200 flex items-start gap-2">
-                      <span class="material-symbols-outlined text-lg shrink-0 text-amber-400">warning</span>
-                      <span>Antes de publicar, revisa la ficha: faltan {{ report().missingRequired.length }} punto(s) requeridos.</span>
-                    </p>
+                    <div class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-2">
+                      <p class="text-xs text-rose-200 flex items-start gap-2 font-bold">
+                        <span class="material-symbols-outlined text-lg shrink-0 text-rose-400">lock</span>
+                        <span>Faltan {{ report().missingRequired.length }} punto(s) obligatorios: hasta capturarlos no se puede publicar.</span>
+                      </p>
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        @for (m of report().missingRequired.slice(0, 6); track m.id) {
+                          <span class="px-2 py-0.5 rounded-lg bg-rose-500/15 text-rose-200 border border-rose-500/25 text-[10px] font-bold">{{ m.label }}</span>
+                        }
+                        @if (report().missingRequired.length > 6) {
+                          <span class="text-[10px] text-outline font-bold">+{{ report().missingRequired.length - 6 }} más</span>
+                        }
+                      </div>
+                      <button
+                        type="button"
+                        (click)="activeTab.set('tareas')"
+                        class="text-[11px] font-black text-rose-300 hover:text-rose-200 underline"
+                      >
+                        Ver quién responde por cada uno en Tareas
+                      </button>
+                    </div>
                   }
                   <div class="flex items-center gap-3 flex-wrap pt-1">
                     <button
                       type="button"
                       (click)="publish.emit({ event: e })"
-                      class="px-5 py-2.5 min-h-11 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-black shadow-lg shadow-blue-500/25 hover:scale-105 transition-all flex items-center gap-2"
+                      [disabled]="!report().canSubmitForReview"
+                      [title]="report().canSubmitForReview ? 'Publicar ahora' : 'Faltan puntos obligatorios del expediente'"
+                      class="px-5 py-2.5 min-h-11 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-black shadow-lg shadow-blue-500/25 hover:scale-105 transition-all disabled:opacity-40 disabled:pointer-events-none disabled:hover:scale-100 flex items-center gap-2"
                     >
                       <span class="material-symbols-outlined text-base">campaign</span> Publicar ahora
                     </button>
@@ -1208,7 +1359,7 @@ export type EventDetailTab =
                     <button
                       type="button"
                       (click)="publish.emit({ event: e, scheduledAt: scheduleAt })"
-                      [disabled]="!scheduleAt"
+                      [disabled]="!scheduleAt || !report().canSubmitForReview"
                       class="px-5 py-2.5 min-h-11 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold disabled:opacity-40 disabled:pointer-events-none flex items-center gap-2"
                     >
                       <span class="material-symbols-outlined text-base">schedule_send</span> Programar publicación
@@ -1468,16 +1619,26 @@ export type EventDetailTab =
                 Saldrán <strong class="text-amber-300">{{ outboundCount() }}</strong> aviso(s) a otros managers
               </span>
             }
+            <!-- Un borrador incompleto sí se manda a revisar: para eso es la
+                 revisión. Lo que falte se ve allá y se completa allá, con los
+                 encargados ya enterados en vez de esperando a que alguien acabe
+                 de capturar. El candado por puntos obligatorios está donde de
+                 verdad pesa —publicar—, que es el único momento irreversible. -->
+            @if (!report().canSubmitForReview) {
+              <span class="text-[11px] text-amber-300/90 flex items-center gap-1.5 mr-1">
+                <span class="material-symbols-outlined text-sm">pending_actions</span>
+                Se envía con <strong>{{ report().missingRequired.length }}</strong> punto(s) por capturar
+              </span>
+            }
             <button
               type="button"
               (click)="submitReview.emit(e)"
-              [disabled]="!report().canSubmitForReview"
               [title]="report().canSubmitForReview
                 ? (outboundCount() > 0
                   ? 'Cambia el evento a revisión y manda las ' + outboundCount() + ' solicitud(es) e invitación(es) guardadas'
                   : 'Enviar a los encargados involucrados')
-                : 'Faltan puntos obligatorios por capturar'"
-              class="px-6 py-3 min-h-11 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-xs shadow-xl shadow-amber-500/25 hover:scale-105 transition-all disabled:opacity-40 disabled:pointer-events-none flex items-center gap-2 border border-amber-300/40"
+                : 'Se manda a revisión tal como está. Los ' + report().missingRequired.length + ' punto(s) obligatorios que falten se capturan durante la revisión; sin ellos no se podrá publicar.'"
+              class="px-6 py-3 min-h-11 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-xs shadow-xl shadow-amber-500/25 hover:scale-105 transition-all flex items-center gap-2 border border-amber-300/40"
             >
               <span class="material-symbols-outlined text-base">send</span> Enviar a Revisión
             </button>
@@ -1487,7 +1648,11 @@ export type EventDetailTab =
             <button
               type="button"
               (click)="publish.emit({ event: e })"
-              class="px-6 py-3 min-h-11 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-black text-xs shadow-xl shadow-blue-500/25 hover:scale-105 transition-all flex items-center gap-2"
+              [disabled]="!report().canSubmitForReview"
+              [title]="report().canSubmitForReview
+                ? 'Publicar de inmediato'
+                : 'Faltan ' + report().missingRequired.length + ' punto(s) obligatorios del expediente'"
+              class="px-6 py-3 min-h-11 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-black text-xs shadow-xl shadow-blue-500/25 hover:scale-105 transition-all disabled:opacity-40 disabled:pointer-events-none disabled:hover:scale-100 flex items-center gap-2"
             >
               <span class="material-symbols-outlined text-base">campaign</span> Publicar de inmediato
             </button>
@@ -2404,6 +2569,29 @@ export class EventDetailModalComponent {
   });
 
   report = computed(() => eventCompleteness(this.event() ?? ({} as EventItem)));
+
+  // ─── Quién carga con qué ──────────────────────────────────────────────────
+
+  /**
+   * El reparto del trabajo por disquera.
+   *
+   * Se calcula del cruce de tareas y desglose porque ninguna de las dos cosas lo
+   * contesta sola: las tareas dicen quién se comprometió y el desglose cuánto
+   * costó cumplirlo. Antes había que leer las dos pestañas y juntarlas de cabeza.
+   */
+  workloads = computed(() => {
+    const e = this.event();
+    return e ? managerWorkloads(e) : [];
+  });
+
+  /** Lo que le falta a esta disquera, recortado a lo que cabe en la tarjeta. */
+  pendingOf(w: ManagerWorkload): ResolvedTask[] {
+    return [...w.required, ...w.optional].filter(t => !t.done).slice(0, 4);
+  }
+
+  pendingCountOf(w: ManagerWorkload): number {
+    return w.required.filter(t => !t.done).length + w.optional.filter(t => !t.done).length;
+  }
 
   // ─── Reparto de pendientes ────────────────────────────────────────────────
 

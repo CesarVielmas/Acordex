@@ -1,4 +1,4 @@
-import { Component, input, output, signal, computed } from '@angular/core';
+import { Component, input, output, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   EventItem,
@@ -42,10 +42,17 @@ import {
  * antes de comprar. Si falta cualquiera de los cuatro, algo sale incompleto —
  * en la página del cliente o en el escenario.
  */
+import { MandatoryTaskTagComponent } from '../../../../shared/ui/mandatory-task-tag/mandatory-task-tag.component';
+import { SessionService } from '../../../../core/services/session.service';
+import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-tasks';
+
+/**
+ * Cartel del evento, con un sub-apartado completo por grupo.
+ */
 @Component({
   selector: 'app-event-tab-lineup',
   standalone: true,
-  imports: [CommonModule, EditableFieldComponent],
+  imports: [CommonModule, EditableFieldComponent, MandatoryTaskTagComponent],
   host: { class: 'block' },
   template: `
     <div class="space-y-4">
@@ -65,17 +72,27 @@ import {
           </p>
         </div>
 
-        @if (canEdit()) {
-          <button
-            type="button"
-            (click)="addModalOpen.set(true)"
-            [disabled]="selectableGroups().length === 0"
-            class="px-3.5 py-2 min-h-10 rounded-xl bg-primary/20 text-primary border border-primary/40 hover:bg-primary hover:text-on-primary text-[11px] font-black transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-40 disabled:pointer-events-none"
-          >
-            <span class="material-symbols-outlined text-sm">group_add</span> Agregar grupo
-          </button>
-        }
+        <div class="flex items-center gap-3">
+          <app-mandatory-task-tag checklistItemId="lineup" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+          @if (canEdit()) {
+            <button
+              type="button"
+              (click)="addModalOpen.set(true)"
+              [disabled]="selectableGroups().length === 0 || !isTaskUnlocked('lineup')"
+              class="px-3.5 py-2 min-h-10 rounded-xl bg-primary/20 text-primary border border-primary/40 hover:bg-primary hover:text-on-primary text-[11px] font-black transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <span class="material-symbols-outlined text-sm">group_add</span> Agregar grupo
+            </button>
+          }
+        </div>
       </div>
+
+      @if (getProposalNotice('lineup')) {
+        <div class="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-bold leading-relaxed flex items-start gap-2.5 shadow-md">
+          <span class="material-symbols-outlined text-base text-amber-400 shrink-0 mt-0.5">info</span>
+          <span>{{ getProposalNotice('lineup') }}</span>
+        </div>
+      }
 
       <!-- Nada de lo que se decide aquí sale del borrador. Se dice explícito
            porque el encargado necesita saber que puede armar, cambiar de opinión
@@ -1563,5 +1580,97 @@ export class EventTabLineupComponent {
 
   removeVideo(slot: EventLineupSlot, video: EventInvitationVideo): void {
     this.patchSlot(slot, { invitationVideos: (slot.invitationVideos || []).filter(v => v.id !== video.id) });
+  }
+
+  private sessionService = inject(SessionService);
+
+  isTaskUnlocked(checklistItemId: string): boolean {
+    const actor = this.sessionService.actor();
+    return isTaskUnlockedForActor(this.event(), checklistItemId, actor.managerName);
+  }
+
+  onInterveneTask(task: ResolvedTask): void {
+    const actor = this.sessionService.actor();
+    const now = new Date().toISOString().slice(0, 16);
+
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          intervenedBy: actor,
+          completedBy: actor,
+          completedAt: now,
+          status: 'completada' as const
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ tasks: updatedTasks });
+  }
+
+  onAcceptProposalTask(task: ResolvedTask): void {
+    const prop = task.pendingChangeProposal;
+    if (!prop) return;
+
+    const patchData = prop.proposedChanges || {};
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          pendingChangeProposal: {
+            ...prop,
+            status: 'aceptada' as const,
+            respondedAt: new Date().toISOString()
+          }
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ ...patchData, tasks: updatedTasks });
+  }
+
+  onRejectProposalTask(task: ResolvedTask): void {
+    const prop = task.pendingChangeProposal;
+    if (!prop) return;
+
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          pendingChangeProposal: {
+            ...prop,
+            status: 'rechazada' as const,
+            respondedAt: new Date().toISOString()
+          }
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ tasks: updatedTasks });
+  }
+
+  getProposalNotice(checklistItemId: string): string | null {
+    const actorMgr = this.sessionService.actor().managerName;
+    const tasks = resolveTasks(this.event());
+    const task = tasks.find(t =>
+      t.checklistItemId === checklistItemId ||
+      t.formSectionRef === checklistItemId ||
+      t.id === `task-sys-${checklistItemId}` ||
+      (checklistItemId === 'lineup' && (t.checklistItemId === 'lineup' || t.formSectionRef === 'lineup' || t.formSectionRef === 'cartel'))
+    );
+
+    if (!task || !task.done) return null;
+
+    const ownerMgr = task.completedBy?.managerName || task.assignedManager || this.event().ownerManagerName || this.event().createdBy;
+    const isOwner = ownerMgr === actorMgr;
+
+    if (!isOwner) {
+      return `Esta tarea obligatoria fue completada por ${ownerMgr}. Si modificas este dato, se le enviará una propuesta de cambio que el encargado deberá aprobar o rechazar para que se aplique al expediente.`;
+    }
+
+    return null;
   }
 }

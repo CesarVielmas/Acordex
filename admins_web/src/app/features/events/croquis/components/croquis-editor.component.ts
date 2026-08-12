@@ -25,8 +25,9 @@ import {
   boxPoints, buildRows, buildTables, croquisId, defaultTableOptions, fanPoints,
   fitGrid, fitTables, inferNumbering, makeTable, nearestRow, nearestTable,
   orderRowSeats, renumberArea, renumberSeatsInRows, renumberTables,
-  renumberTableSeats, resizeTableSeats, rotatePoint, rowSlotFor, seatLocalPoint,
-  tableRadius, tableSeatLocalPoint, tableSlotFor
+  renumberTableSeats, resizeTableSeats, resolveRowSlots, resolveTableSlots,
+  rotatePoint, rowSlotFor, seatLocalPoint, tableRadius, tableSeatLocalPoint,
+  tableSlotFor
 } from '../croquis-geometry';
 import {
   areaCapacity, croquisIssues, planCapacity, planSeatCount, planSold,
@@ -293,6 +294,26 @@ export type CroquisLayer = 'cuadricula' | 'filas' | 'elementos' | 'numeros' | 'p
                 >{{ m.label }}</button>
               }
             </div>
+
+            <!-- ─── VER NUMERACIÓN ─── -->
+            <!-- Sale de las capas y se planta en la barra porque no es un dato
+                 más que enseñar: es con lo que se revisa que el croquis esté
+                 bien contado, y eso se enciende y se apaga veinte veces
+                 mientras se acomoda una zona. -->
+            <button
+              type="button"
+              (click)="toggleLayer('numeros')"
+              class="shrink-0 h-9 px-2.5 rounded-xl border flex items-center gap-1.5 transition-all"
+              [class]="layers().numeros
+                ? 'bg-primary text-black border-primary shadow-md'
+                : 'bg-surface-container-highest/60 border-outline-variant/25 text-on-surface-variant hover:text-on-surface hover:border-primary/40'"
+              [title]="layers().numeros
+                ? 'Ocultar la numeración dentro de cada lugar (N)'
+                : 'Ver el identificador dentro de cada lugar: A1, A2, B3… y el número de cada silla en las mesas (N)'"
+            >
+              <span class="material-symbols-outlined text-lg">{{ layers().numeros ? 'visibility' : 'visibility_off' }}</span>
+              <span class="text-[10px] font-black uppercase tracking-wider hidden xl:inline">Numeración</span>
+            </button>
 
             <!-- ─── CAPAS DE INFORMACIÓN ─── -->
             <div class="relative shrink-0">
@@ -766,7 +787,7 @@ export class CroquisEditorComponent {
 
     options.push(
       { key: 'ocupacion', label: 'Avance de venta por área', hint: 'Barra de vendidos y lugares libres sobre cada zona.' },
-      { key: 'numeros', label: 'Número de butaca', hint: 'Dibuja el número dentro de cada butaca. Pide zoom en zonas grandes.' },
+      { key: 'numeros', label: 'Numeración de los lugares', hint: 'El identificador dentro de cada butaca —A1, A2, B3— y el número de cada silla en las mesas. Pide zoom en zonas grandes.' },
       { key: 'filas', label: 'Letras de fila', hint: 'La letra a la izquierda de cada fila.' },
       { key: 'elementos', label: 'Elementos del recinto', hint: 'Escenario, pantallas, bocinas, barras y accesos.' },
       { key: 'cuadricula', label: 'Cuadrícula', hint: 'La rejilla de fondo a la que se imanta todo.' }
@@ -1426,8 +1447,15 @@ export class CroquisEditorComponent {
 
     /** Un lugar que viaja, con el punto del área donde se soltó. */
     interface Landing { seat: CroquisSeat; originKey: string; point: CroquisPoint }
-    /** Un lugar ya asentado en su fila o mesa, sin perder de dónde venía. */
-    interface Placed { seat: CroquisSeat; originKey: string; target?: CroquisPoint }
+    /**
+     * Un lugar ya asentado en su fila o mesa, sin perder de dónde venía.
+     *
+     * `target` es dónde lo soltó el cursor y `settle` si además tiene que caer
+     * en la casilla de la rejilla que le abra la fila: lo primero manda para
+     * decidir el orden —entre qué dos butacas se metió— y lo segundo para dónde
+     * acaba dibujado.
+     */
+    interface Placed { seat: CroquisSeat; originKey: string; target?: CroquisPoint; settle?: boolean }
 
     // ─── Filas ───
     const rowLandings: Landing[] = [];
@@ -1457,6 +1485,23 @@ export class CroquisEditorComponent {
 
     const touchedRows = new Set(rowLeaving.keys());
 
+    /**
+     * Qué filas siguen siendo una rejilla limpia una vez que salió lo que viaja.
+     *
+     * Es lo que decide si un lugar que llega se sienta en el renglón o se queda
+     * exactamente donde lo soltaron. En una fila de rejilla —que son casi todas—
+     * dejarlo en el punto exacto del cursor deja un croquis de butacas a dos
+     * unidades de distancia unas de otras que se ve torcido y que hay que
+     * enderezar a mano; se mete en su casilla y la fila se corre para hacerle
+     * sitio, igual que un acomodador metiendo una silla a media fila. En una que
+     * ya venía a mano —un anillo, un rincón— no hay renglón al que sentarse, y
+     * ahí sí manda el cursor.
+     */
+    const tidyRow = new Map<string, boolean>();
+    for (const [id, items] of rowDrafts) {
+      tidyRow.set(id, items.every(item => !item.seat.dx && !item.seat.dy));
+    }
+
     for (const landing of rowLandings) {
       // Los que viajan no cuentan al medir cercanía: si contaran, la fila de la
       // que sale un lugar seguiría pareciendo la más cercana por culpa de él
@@ -1469,7 +1514,8 @@ export class CroquisEditorComponent {
       draft.push({
         seat: { ...landing.seat, slot: rowSlotFor(row, landing.point), dx: undefined, dy: undefined },
         originKey: landing.originKey,
-        target: landing.point
+        target: landing.point,
+        settle: !move.free && tidyRow.get(row.id) !== false
       });
     }
 
@@ -1492,16 +1538,42 @@ export class CroquisEditorComponent {
           })
         };
 
+        // El orden se decide con la butaca en el punto exacto donde se soltó,
+        // incluso si después va a caer en la rejilla: es lo que distingue
+        // "la metí antes de la A3" de "la metí después", y la casilla más
+        // cercana es la misma en los dos casos.
         const { seats, from } = orderRowSeats(area, settled);
-        from.forEach((old, index) => remap.set(items[old].originKey, `${area.id}|${row.id}|${index}`));
+        const arrivals = new Set<number>();
+        const settling = new Set<number>();
+        from.forEach((old, index) => {
+          remap.set(items[old].originKey, `${area.id}|${row.id}|${index}`);
+          if (!items[old].target) return;
+          arrivals.add(index);
+          if (items[old].settle) settling.add(index);
+        });
 
-        return { ...settled, seats };
+        // Meter un lugar a media fila le abre su propia casilla y corre a las de
+        // su derecha. Sin esto los dos acababan apuntando a la misma posición de
+        // la rejilla: en pantalla se veían bien, y al pedir "volver a la rejilla"
+        // se montaban uno encima del otro.
+        const opened = resolveRowSlots(area, { ...settled, seats }, arrivals);
+        if (!settling.size) return opened;
+
+        // Y una vez abierta la casilla, el que llega se sienta en ella: el
+        // corrimiento con el que entró ya cumplió su función, que era decir
+        // entre qué dos butacas iba.
+        return {
+          ...opened,
+          seats: opened.seats.map((seat, i) =>
+            settling.has(i) ? { ...seat, dx: undefined, dy: undefined } : seat
+          )
+        };
       })
       // Una fila que se quedó sin nadie deja de existir: su letra ya no nombra
       // ningún lugar del recinto y dibujarla dejaría un renglón fantasma.
       .filter(row => row.seats.length > 0);
 
-    rows = renumberSeatsInRows(rows, numbering, touchedRows);
+    rows = renumberSeatsInRows(area, rows, numbering, touchedRows);
 
     // ─── Mesas ───
     const tableLandings: Landing[] = [];
@@ -1539,8 +1611,12 @@ export class CroquisEditorComponent {
       if (!table || !draft) continue;
 
       touchedTables.add(table.id);
-      const taken = new Set(draft.map(i => i.seat.slot || 0));
-      const slot = tableSlotFor(table, landing.point, taken);
+      // Sin marcar cuáles quedan ocupadas: la posición se decide por dónde cayó
+      // la silla y `resolveTableSlots` le abre hueco corriendo a las de al lado,
+      // igual que en una fila. Preferir una posición libre mandaba la silla al
+      // otro lado de la mesa —o, con la mesa llena, la devolvía a la que acababa
+      // de dejar— en vez de sentarla donde la soltaron.
+      const slot = tableSlotFor(table, landing.point);
 
       const base = tableSeatLocalPoint(table, { number: '', slot });
       const residual = rotatePoint(
@@ -1565,11 +1641,14 @@ export class CroquisEditorComponent {
       const items = tableDrafts.get(table.id) || [];
 
       // Mismo criterio que el renumerado: por el lugar que ocupan alrededor de
-      // la mesa, no por el orden en que llegaron al arreglo.
-      const order = [...items].sort((l, r) => (l.seat.slot || 0) - (r.seat.slot || 0));
-      order.forEach((item, index) => remap.set(item.originKey, `${area.id}|${table.id}|${index}`));
+      // la mesa, no por el orden en que llegaron al arreglo. Y quien reparte esos
+      // lugares es el mismo que renumera, así que la selección se remapea con lo
+      // que él decidió y no con una segunda cuenta que podría no coincidir.
+      const seated = resolveTableSlots({ ...table, seats: items.map(i => i.seat) });
+      seated.from.forEach((old, index) =>
+        remap.set(items[old].originKey, `${area.id}|${table.id}|${index}`));
 
-      return renumberTableSeats({ ...table, seats: items.map(i => i.seat) });
+      return renumberTableSeats(seated.table);
     });
 
     return {
@@ -1667,7 +1746,7 @@ export class CroquisEditorComponent {
         // números se vuelven a repartir igual que al arrastrar: si no, "repartir
         // parejo" dejaría la fila bien puesta y mal contada.
         return touched.size
-          ? { ...area, rows: renumberSeatsInRows(rows, inferNumbering(area), touched) }
+          ? { ...area, rows: renumberSeatsInRows(area, rows, inferNumbering(area), touched) }
           : area;
       })
     }));
@@ -1767,7 +1846,7 @@ export class CroquisEditorComponent {
           // generador cuando se le pide un pasillo: el pasillo se ve en el
           // plano pero no se lleva un número. Dejarlos como estaban acabaría
           // con filas que van 1, 2, 4, 5 sin que nada lo explique.
-          rows: touched.size ? renumberSeatsInRows(rows, inferNumbering(area), touched) : rows,
+          rows: touched.size ? renumberSeatsInRows(area, rows, inferNumbering(area), touched) : rows,
           // Una mesa sin sillas sí se queda: es un tablero que sigue ocupando su
           // sitio en el salón y al que se le pueden volver a poner lugares. Que
           // desapareciera al quitarle la última silla sería perder el montaje.
@@ -1925,6 +2004,15 @@ export class CroquisEditorComponent {
       else if (this.selectedTableId()) this.deleteTable();
       else if (this.selectedAreaId()) this.deleteArea();
       else if (this.selectedElementId()) this.deleteElement();
+      return;
+    }
+
+    // La numeración se enciende y se apaga constantemente mientras se acomoda
+    // una zona —se prende para revisar, se apaga para ver el plano limpio—, así
+    // que lleva tecla igual que las herramientas.
+    if (event.key.toLowerCase() === 'n' && !ctrl) {
+      event.preventDefault();
+      this.toggleLayer('numeros');
       return;
     }
 

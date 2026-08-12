@@ -1,4 +1,4 @@
-import { Component, input, output, computed, signal } from '@angular/core';
+import { Component, input, output, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CroquisPlan } from '../../../../core/models/croquis.models';
 import { EventItem, TicketTier } from '../../../../core/models/event.models';
@@ -14,11 +14,12 @@ import {
 } from '../../croquis/croquis-metrics';
 import { money, potentialTicketRevenue, serviceFee } from '../../event-metrics';
 
+import { MandatoryTaskTagComponent } from '../../../../shared/ui/mandatory-task-tag/mandatory-task-tag.component';
+import { SessionService } from '../../../../core/services/session.service';
+import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-tasks';
+
 /**
  * Boletaje & Croquis.
- *
- * La pestaña no captura el boletaje: lo resume. El boletaje se arma dibujando,
- * en el editor de croquis, y de ahí salen todos los números que se ven aquí.
  */
 @Component({
   selector: 'app-event-tab-tickets',
@@ -28,7 +29,8 @@ import { money, potentialTicketRevenue, serviceFee } from '../../event-metrics';
     EditableFieldComponent,
     CroquisCanvasComponent,
     CroquisTierDialogComponent,
-    CroquisSummaryComponent
+    CroquisSummaryComponent,
+    MandatoryTaskTagComponent
   ],
   host: { class: 'block' },
   template: `
@@ -170,24 +172,34 @@ import { money, potentialTicketRevenue, serviceFee } from '../../event-metrics';
               <span class="material-symbols-outlined text-xl">map</span>
             </div>
             <div>
-              <h5 class="font-['Epilogue'] font-black text-base text-on-surface tracking-tight">
-                Planos y Croquis del Evento
+              <h5 class="font-['Epilogue'] font-black text-base text-on-surface tracking-tight flex items-center gap-2">
+                <span>Planos y Croquis del Evento</span>
               </h5>
               <span class="text-xs text-outline font-mono">{{ plans().length }} zona(s) configurada(s)</span>
             </div>
           </div>
 
-          @if (canEdit() && plans().length) {
-            <button
-              type="button"
-              (click)="openEditor.emit(null)"
-              class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-black font-black text-xs transition-all shadow-[0_0_20px_rgba(6,182,212,0.25)] flex items-center gap-2 active:scale-95"
-            >
-              <span class="material-symbols-outlined text-base">edit_square</span>
-              <span>Abrir Editor Visual</span>
-            </button>
-          }
+          <div class="flex items-center gap-3">
+            <app-mandatory-task-tag checklistItemId="croquis" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+            @if (canEdit() && isTaskUnlocked('croquis') && plans().length) {
+              <button
+                type="button"
+                (click)="openEditor.emit(null)"
+                class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-black font-black text-xs transition-all shadow-[0_0_20px_rgba(6,182,212,0.25)] flex items-center gap-2 active:scale-95"
+              >
+                <span class="material-symbols-outlined text-base">edit_square</span>
+                <span>Abrir Editor Visual</span>
+              </button>
+            }
+          </div>
         </div>
+
+        @if (getProposalNotice('croquis')) {
+          <div class="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-bold leading-relaxed flex items-start gap-2.5 shadow-md">
+            <span class="material-symbols-outlined text-base text-amber-400 shrink-0 mt-0.5">info</span>
+            <span>{{ getProposalNotice('croquis') }}</span>
+          </div>
+        }
 
         @if (plans().length > 1) {
           <div class="p-3.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-200 text-xs flex items-start gap-2.5">
@@ -678,5 +690,98 @@ export class EventTabTicketsComponent {
         }))
       }))
     });
+  }
+
+  private sessionService = inject(SessionService);
+
+  isTaskUnlocked(checklistItemId: string): boolean {
+    const actor = this.sessionService.actor();
+    return isTaskUnlockedForActor(this.event(), checklistItemId, actor.managerName);
+  }
+
+  onInterveneTask(task: ResolvedTask): void {
+    const actor = this.sessionService.actor();
+    const now = new Date().toISOString().slice(0, 16);
+
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          intervenedBy: actor,
+          completedBy: actor,
+          completedAt: now,
+          status: 'completada' as const
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ tasks: updatedTasks });
+  }
+
+  onAcceptProposalTask(task: ResolvedTask): void {
+    const prop = task.pendingChangeProposal;
+    if (!prop) return;
+
+    const patchData = prop.proposedChanges || {};
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          pendingChangeProposal: {
+            ...prop,
+            status: 'aceptada' as const,
+            respondedAt: new Date().toISOString()
+          }
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ ...patchData, tasks: updatedTasks });
+  }
+
+  onRejectProposalTask(task: ResolvedTask): void {
+    const prop = task.pendingChangeProposal;
+    if (!prop) return;
+
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          pendingChangeProposal: {
+            ...prop,
+            status: 'rechazada' as const,
+            respondedAt: new Date().toISOString()
+          }
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ tasks: updatedTasks });
+  }
+
+  getProposalNotice(checklistItemId: string): string | null {
+    const actorMgr = this.sessionService.actor().managerName;
+    const tasks = resolveTasks(this.event());
+    const task = tasks.find(t =>
+      t.checklistItemId === checklistItemId ||
+      t.formSectionRef === checklistItemId ||
+      t.id === `task-sys-${checklistItemId}` ||
+      (checklistItemId === 'croquis' && (t.checklistItemId === 'croquis' || t.formSectionRef === 'croquis' || t.formSectionRef === 'plans')) ||
+      (checklistItemId === 'boletos' && (t.checklistItemId === 'boletos' || t.formSectionRef === 'ticketTiers' || t.formSectionRef === 'boletos'))
+    );
+
+    if (!task || !task.done) return null;
+
+    const ownerMgr = task.completedBy?.managerName || task.assignedManager || this.event().ownerManagerName || this.event().createdBy;
+    const isOwner = ownerMgr === actorMgr;
+
+    if (!isOwner) {
+      return `Esta tarea obligatoria fue completada por ${ownerMgr}. Si modificas este dato, se le enviará una propuesta de cambio que el encargado deberá aprobar o rechazar para que se aplique al expediente.`;
+    }
+
+    return null;
   }
 }

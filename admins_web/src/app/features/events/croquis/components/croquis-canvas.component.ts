@@ -93,6 +93,13 @@ export interface SeatMove {
   seats: SeatRef[];
   dx: number;
   dy: number;
+  /**
+   * Se arrastró con Alt: sin imantar a los vecinos y sin caer en la rejilla de
+   * la fila que lo reciba. Es la salida para las butacas que de verdad no van en
+   * ningún renglón —el anillo alrededor de la pista, el par de lugares metidos
+   * en un rincón—, que si se acomodaran solas no habría manera de dibujarlas.
+   */
+  free: boolean;
 }
 
 interface SeatVM {
@@ -106,6 +113,10 @@ interface SeatVM {
   opacity: number;
   /** Número impreso dentro de la butaca, con la capa de numeración activa. */
   number: string;
+  /** Tamaño de esa tinta; baja cuando el identificador es largo, para que quepa. */
+  numberSize: number;
+  /** Ancho al que el navegador tiene que apretarlo; nulo cuando ya cabe solo. */
+  numberWidth: number | null;
   /** Tinta que contrasta con el relleno de esta butaca en concreto. */
   numberFill: string;
   /** Franja inferior que imita el respaldo de la butaca, en la vista del cliente. */
@@ -229,6 +240,33 @@ function fitText(text: string, maxWidth: number, fontSize: number): string {
 
   const max = Math.max(1, Math.floor(maxWidth / (fontSize * 0.56)) - 1);
   return clean.slice(0, max).trimEnd() + '…';
+}
+
+/** Lo que puede ocupar el identificador dentro del cuadrito de la butaca. */
+const SEAT_LABEL_WIDTH = SEAT_SIZE - 2.6;
+
+/**
+ * Con qué tamaño y en qué ancho cabe el identificador dentro de la butaca.
+ *
+ * La butaca mide `SEAT_SIZE` de lado y el texto de un SVG no se recorta: "A10"
+ * con la letra de "A1" se sale del cuadrito y se encima con la butaca de al
+ * lado, y una fila entera así deja de leerse justo cuando más falta hace.
+ *
+ * Se hacen las dos cosas a la vez y no una sola porque cada una arregla la mitad
+ * del problema. Bajar la letra hasta que quepa a ojo depende de una estimación
+ * del ancho de la tipografía que en negritas se queda corta —medido, "M30" ocupa
+ * diecisiete unidades donde la cuenta decía trece—, así que además se le pone al
+ * navegador el ancho exacto y que sea él quien lo apriete: es la única medida que
+ * no puede fallar porque es la que él mismo va a pintar. Y apretar a secas, sin
+ * bajar la letra, dejaría "AA12" tan estrecho que no se leería; bajarla primero
+ * hace que lo que se aprieta sea poco.
+ */
+function seatLabelSize(label: string): number {
+  const chars = (label || '').length;
+  if (chars <= 2) return 7.5;
+  if (chars === 3) return 6.6;
+  if (chars === 4) return 5.6;
+  return 4.8;
 }
 
 /**
@@ -357,7 +395,9 @@ function readableOn(hex: string): string {
                 <text
                   [attr.x]="seat.x + seat.size / 2" [attr.y]="seat.y + seat.size / 2 + 0.5"
                   text-anchor="middle" dominant-baseline="central"
-                  font-size="7.5" font-weight="800"
+                  [attr.font-size]="seat.numberSize" font-weight="800"
+                  [attr.textLength]="seat.numberWidth"
+                  [attr.lengthAdjust]="seat.numberWidth ? 'spacingAndGlyphs' : null"
                   [attr.fill]="seat.numberFill"
                   [attr.opacity]="seat.opacity"
                   class="pointer-events-none"
@@ -428,7 +468,9 @@ function readableOn(hex: string): string {
                   <text
                     [attr.x]="seat.x + seat.size / 2" [attr.y]="seat.y + seat.size / 2 + 0.5"
                     text-anchor="middle" dominant-baseline="central"
-                    font-size="7.5" font-weight="800"
+                    [attr.font-size]="seat.numberSize" font-weight="800"
+                    [attr.textLength]="seat.numberWidth"
+                    [attr.lengthAdjust]="seat.numberWidth ? 'spacingAndGlyphs' : null"
                     [attr.fill]="seat.numberFill"
                     [attr.opacity]="seat.opacity"
                     class="pointer-events-none"
@@ -852,6 +894,18 @@ export class CroquisCanvasComponent {
     // En la vista del cliente el número siempre va: el comprador necesita saber
     // qué butaca está eligiendo, no solo dónde está.
     const numbersOn = (this.showSeatNumbers() || cliente) && !mini;
+    /**
+     * En el editor se dibuja el identificador completo —A1, A2, B12— y no el
+     * número pelado.
+     *
+     * Es la diferencia entre poder revisar el croquis y no poder. La numeración
+     * de una butaca solo tiene sentido junto a su fila: viendo "1, 2, 3" en tres
+     * renglones seguidos no hay manera de notar que la butaca que se arrastró de
+     * la B a la A se quedó contada en la B, que es justo el error que hay que
+     * cazar. Al comprador, en cambio, ya se le dice la fila aparte y meterla
+     * dentro del cuadrito solo la haría ilegible.
+     */
+    const fullLabels = this.showSeatNumbers() && this.mode() === 'editor';
     const picked = this.selectedSeats();
     const mine = this.mySeats();
     const activeTier = this.activeTierId();
@@ -893,6 +947,14 @@ export class CroquisCanvasComponent {
           : undefined;
         const paint = this.seatPaint(seat, ownTier?.color || color, porVenta, cliente, estado);
 
+        // La silla de una mesa se queda con su número a secas: el nombre de la
+        // mesa es "Mesa 12" y no cabe dentro de un cuadrito de dieciséis
+        // unidades. Ahí el identificador lo da la mesa, que lo lleva escrito
+        // encima en letra grande.
+        const label = numbersOn
+          ? (fullLabels && !atTable ? `${groupLabel}${seat.number}` : seat.number)
+          : '';
+
         return {
           key,
           ref: { areaId: area.id, rowId: groupId, index },
@@ -902,7 +964,9 @@ export class CroquisCanvasComponent {
           fill: paint.fill,
           stroke: paint.stroke,
           opacity: paint.opacity,
-          number: numbersOn ? seat.number : '',
+          number: label,
+          numberSize: seatLabelSize(label),
+          numberWidth: label.length > 2 ? SEAT_LABEL_WIDTH : null,
           numberFill: cliente
             ? (estado?.mia ? '#052e21' : estado?.seleccionada ? '#121212'
               : estado?.activa && seat.status !== 'vendido' && seat.status !== 'apartado'
@@ -1758,16 +1822,22 @@ export class CroquisCanvasComponent {
       y: point.y - move.startPlan.y
     });
 
+    // Alt en cualquier momento del gesto lo vuelve libre y así se queda: quien
+    // lo pulsa a medio arrastre es porque ya vio que el imán no lo lleva donde
+    // quiere, y soltarlo por levantar el dedo un instante lo devolvería a la
+    // fila de la que estaba intentando sacarlo.
+    const free = move.free || event.altKey;
+
     // Se imanta el lugar agarrado y el resto lo sigue: alinear cada uno por su
     // cuenta amontonaría el bloque contra la primera fila que se cruzara.
-    if (!move.free && !event.altKey) {
+    if (!free) {
       const target = { x: move.anchor.x + delta.x, y: move.anchor.y + delta.y };
       const snapped = alignToNeighbours(target, move.anchors);
       delta = { x: snapped.x - move.anchor.x, y: snapped.y - move.anchor.y };
     }
 
     delta = limitSeatDelta(area, move.origins, delta);
-    this.seatMove.set({ ...move, dx: delta.x, dy: delta.y });
+    this.seatMove.set({ ...move, free, dx: delta.x, dy: delta.y });
   }
 
   /** Mueve la mesa entera, frenándola cuando sus sillas llegan al borde. */
@@ -1819,7 +1889,13 @@ export class CroquisCanvasComponent {
     // historial cada vez que alguien selecciona una butaca con Shift puesto.
     if (Math.abs(move.dx) < 0.5 && Math.abs(move.dy) < 0.5) return true;
 
-    this.seatsMoved.emit({ areaId: move.areaId, seats: move.refs, dx: move.dx, dy: move.dy });
+    this.seatsMoved.emit({
+      areaId: move.areaId,
+      seats: move.refs,
+      dx: move.dx,
+      dy: move.dy,
+      free: move.free
+    });
     return true;
   }
 }

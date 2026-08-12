@@ -313,9 +313,8 @@ import {
               <button
                 type="button"
                 (click)="submitReview.emit(e)"
-                [disabled]="!canSubmit()"
-                [title]="canSubmit() ? 'Enviar a los encargados para su aprobación' : pendingLabel()"
-                class="px-3.5 py-2.5 min-h-11 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-40 disabled:pointer-events-none"
+                [title]="pendingLabel()"
+                class="px-3.5 py-2.5 min-h-11 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500 hover:text-black font-bold text-xs transition-all flex items-center justify-center gap-1.5 shrink-0"
               >
                 <span class="material-symbols-outlined text-sm">send</span> Enviar a Revisión
               </button>
@@ -393,10 +392,18 @@ export class EventCardComponent {
 
   canSubmit = computed(() => eventCompleteness(this.event()).canSubmitForReview);
 
+  /**
+   * Lo que se le dice a quien va a mandar el borrador a revisión.
+   *
+   * Ya no es la razón por la que el botón está apagado —un borrador se manda
+   * cuando su dueño quiere—, sino la advertencia de con qué se va: lo que falte
+   * se captura durante la revisión, pero sin eso el evento no se podrá publicar.
+   */
   pendingLabel = computed(() => {
     const missing = eventCompleteness(this.event()).missingRequired;
-    if (!missing.length) return 'Listo para enviarse';
-    return 'Faltan ' + missing.length + ' puntos obligatorios: ' + missing.slice(0, 3).map(m => m.label).join(', ');
+    if (!missing.length) return 'Listo para enviarse: el expediente está completo';
+    return `Se envía con ${missing.length} punto(s) obligatorios sin capturar (${missing.slice(0, 3).map(m => m.label).join(', ')}). `
+      + 'Se pueden completar durante la revisión; sin ellos no se podrá publicar.';
   });
 
   /** Cuenta regresiva del evento; se calla cuando el expediente ya está cerrado. */

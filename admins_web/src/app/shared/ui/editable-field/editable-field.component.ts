@@ -59,13 +59,27 @@ export interface EditableOption {
           </span>
 
           @if (!readonly()) {
-            <span
-              class="material-symbols-outlined text-sm text-amber-400 opacity-0 group-hover/field:opacity-100 transition-opacity shrink-0 p-1 rounded-lg bg-amber-500/10 border border-amber-500/20 shadow-sm"
-            >edit</span>
+            <div class="flex items-center gap-1.5 shrink-0">
+              @if (proposalWarning()) {
+                <span class="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <span class="material-symbols-outlined text-[11px]">warning</span> Propuesta
+                </span>
+              }
+              <span
+                class="material-symbols-outlined text-sm text-amber-400 opacity-0 group-hover/field:opacity-100 transition-opacity p-1 rounded-lg bg-amber-500/10 border border-amber-500/20 shadow-sm"
+              >edit</span>
+            </div>
           }
         </button>
       } @else {
-        <div class="space-y-1.5">
+        <div class="space-y-2">
+          @if (proposalWarning()) {
+            <div class="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-[10px] font-bold leading-relaxed flex items-start gap-2 shadow-md animate-fade-in">
+              <span class="material-symbols-outlined text-sm text-amber-400 shrink-0 mt-0.5">info</span>
+              <span>{{ proposalWarning() }}</span>
+            </div>
+          }
+
           @switch (type()) {
             @case ('textarea') {
               <textarea
@@ -105,9 +119,12 @@ export interface EditableOption {
             <button
               type="button"
               (click)="commit()"
-              class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-white text-[10px] font-black transition-all flex items-center gap-1"
+              [class]="proposalWarning()
+                ? 'px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 text-black text-[10px] font-black transition-all flex items-center gap-1.5 shadow-md active:scale-95'
+                : 'px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-white text-[10px] font-black transition-all flex items-center gap-1'"
             >
-              <span class="material-symbols-outlined text-[13px]">check</span> Guardar
+              <span class="material-symbols-outlined text-[13px]">{{ proposalWarning() ? 'send' : 'check' }}</span>
+              <span>{{ proposalWarning() ? 'Guardar y enviar propuesta' : 'Guardar' }}</span>
             </button>
             <button
               type="button"
@@ -122,6 +139,24 @@ export interface EditableOption {
           </div>
         </div>
       }
+
+      @if (proposedValue()) {
+        <div class="mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-amber-950/80 via-amber-900/60 to-amber-950/80 border border-amber-500/40 text-amber-200 text-[11px] font-medium leading-tight flex items-center justify-between gap-2 shadow-lg backdrop-blur-md animate-fade-in">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="material-symbols-outlined text-sm text-amber-400 shrink-0">pending_actions</span>
+            <span class="truncate">
+              <strong class="font-black text-amber-300 uppercase tracking-wider text-[9px] mr-1">Propuesta enviada:</strong>
+              <span class="font-bold underline decoration-amber-400/50">"{{ proposedValue() }}"</span>
+              @if (proposedBy()) {
+                <span class="text-[10px] text-amber-200/80 ml-1">· por {{ proposedBy() }}</span>
+              }
+            </span>
+          </div>
+          <span class="px-2 py-0.5 rounded-md bg-amber-500/25 text-amber-300 text-[9px] font-black uppercase tracking-wider shrink-0 border border-amber-500/40 shadow-sm">
+            Pendiente
+          </span>
+        </div>
+      }
     </div>
   `
 })
@@ -129,6 +164,9 @@ export class EditableFieldComponent {
   value = input<string | number | null | undefined>('');
   label = input<string>('');
   hint = input<string>('');
+  proposalWarning = input<string | null | undefined>(undefined);
+  proposedValue = input<string | number | null | undefined>(undefined);
+  proposedBy = input<string | null | undefined>(undefined);
   type = input<EditableType>('text');
   options = input<EditableOption[]>([]);
   placeholder = input<string>('');

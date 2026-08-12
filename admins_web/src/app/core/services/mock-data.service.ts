@@ -1713,13 +1713,248 @@ export class MockDataService {
         { id: 'pi-102-1', category: 'Recinto', concept: 'Renta del recinto', supplier: 'Auditorio Telmex', quantity: 1, unit: 'servicio', unitCost: 260000, amount: 260000, status: 'Contratado' },
         { id: 'pi-102-2', category: 'Recinto', concept: 'Depósito en garantía', supplier: 'Auditorio Telmex', quantity: 1, unit: 'servicio', unitCost: 40000, amount: 40000, status: 'Pagado' },
         { id: 'pi-102-3', category: 'Iluminación', concept: 'Luces robóticas (móviles)', supplier: 'Lighting GDL', quantity: 24, unit: 'pieza', unitCost: 2200, amount: 52800, status: 'Cotizado' },
-        { id: 'pi-102-4', category: 'Mobiliario', concept: 'Mesas redondas', supplier: 'Renta Fiesta Jalisco', quantity: 120, unit: 'pieza', unitCost: 180, amount: 21600, status: 'Contratado' },
-        { id: 'pi-102-5', category: 'Mobiliario', concept: 'Sillas', supplier: 'Renta Fiesta Jalisco', quantity: 960, unit: 'pieza', unitCost: 35, amount: 33600, status: 'Contratado' },
-        { id: 'pi-102-6', category: 'Seguridad', concept: 'Seguridad privada', supplier: 'Grupo Vanguardia', quantity: 30, unit: 'persona', unitCost: 900, amount: 27000, status: 'Cotizado' },
+        { id: 'pi-102-4', category: 'Mobiliario', concept: 'Mesas redondas y sillas VIP', supplier: 'Renta Fiesta Jalisco', quantity: 120, unit: 'pieza', unitCost: 180, amount: 21600, status: 'Contratado', taskId: 'task-ext-102-1' },
+        { id: 'pi-102-5', category: 'Mobiliario', concept: 'Sillas generales', supplier: 'Renta Fiesta Jalisco', quantity: 960, unit: 'pieza', unitCost: 35, amount: 33600, status: 'Contratado' },
+        { id: 'pi-102-6', category: 'Seguridad', concept: 'Seguridad privada para accesos', supplier: 'Grupo Vanguardia', quantity: 30, unit: 'persona', unitCost: 900, amount: 27000, status: 'Cotizado', taskId: 'task-ext-102-2' },
         { id: 'pi-102-7', category: 'Servicios Médicos', concept: 'Ambulancia con paramédicos', supplier: 'Cruz Ámbar', quantity: 1, unit: 'servicio', unitCost: 12000, amount: 12000, status: 'Contratado' },
         { id: 'pi-102-8', category: 'Permisos y Licencias', concept: 'Visto bueno de Protección Civil', quantity: 1, unit: 'trámite', unitCost: 18000, amount: 18000, status: 'Pagado' },
         { id: 'pi-102-9', category: 'Publicidad', concept: 'Spots de radio', supplier: 'Grupo Radiofónico GDL', quantity: 1, unit: 'campaña', unitCost: 85000, amount: 85000, status: 'Contratado' },
-        { id: 'pi-102-10', category: 'Energía', concept: 'Planta de luz / generador', supplier: 'Plantas del Occidente', quantity: 2, unit: 'jornada', unitCost: 9500, amount: 19000, status: 'Estimado' }
+        { id: 'pi-102-10', category: 'Energía', concept: 'Planta de luz / generador', supplier: 'Plantas del Occidente', quantity: 2, unit: 'jornada', unitCost: 9500, amount: 19000, status: 'Estimado' },
+        // Un encargo pagado en tres rubros distintos: es el caso que el modelo
+        // de una sola partida por tarea no sabía representar. Las tres cuelgan
+        // de 'task-ext-102-3' y en Producción salen agrupadas bajo ese encargo
+        // aunque cada una viva en su rubro.
+        { id: 'pi-102-11', category: 'Audio', concept: 'Line array y consolas digitales', supplier: 'Audio Norte Producciones', quantity: 1, unit: 'servicio', unitCost: 62000, amount: 62000, status: 'Contratado', assignedTo: 'Valentina Morales', taskId: 'task-ext-102-3' },
+        { id: 'pi-102-12', category: 'Audio', concept: 'Microfonía inalámbrica y monitores de piso', supplier: 'Audio Norte Producciones', quantity: 12, unit: 'pieza', unitCost: 1450, amount: 17400, status: 'Contratado', assignedTo: 'Valentina Morales', taskId: 'task-ext-102-3' },
+        { id: 'pi-102-13', category: 'Personal y Staff', concept: 'Ingeniero de audio para prueba y show', supplier: 'Audio Norte Producciones', quantity: 2, unit: 'jornada', unitCost: 6800, amount: 13600, status: 'Cotizado', assignedTo: 'Valentina Morales', taskId: 'task-ext-102-3' },
+        { id: 'pi-102-14', category: 'Transporte y Logística', concept: 'Fletes de backline ida y vuelta', supplier: 'Mudanzas del Bajío', quantity: 2, unit: 'servicio', unitCost: 8500, amount: 17000, status: 'Estimado', assignedTo: 'Encargado Acordex' },
+        { id: 'pi-102-15', category: 'Hospitalidad', concept: 'Catering de camerinos', supplier: 'Banquetes Doña Chuy', quantity: 45, unit: 'persona', unitCost: 260, amount: 11700, status: 'Cotizado', assignedTo: 'Encargado Acordex' }
+      ],
+      tasks: [
+        {
+          id: 'task-sys-identidad',
+          kind: 'sistema',
+          title: 'Nombre, Fecha y Recinto del Evento',
+          detail: 'Capturar título, fecha, recinto y ciudad base del evento',
+          group: 'Identidad',
+          checklistItemId: 'identidad',
+          formSectionRef: 'identidad',
+          assignedManager: 'Lic. Gonzalo Garza',
+          status: 'completada',
+          priority: 'Alta',
+          createdBy: { name: 'Sistema Acordex', managerName: 'sistema', rank: 'sistema' },
+          createdAt: '2026-07-30T09:00',
+          completedAt: '2026-07-30T09:30',
+          completedBy: { name: 'Lic. Gonzalo Garza', managerName: 'Lic. Gonzalo Garza', rank: 'manager' },
+          pendingChangeProposal: {
+            id: 'prop-demo-1',
+            proposedBy: { name: 'Don Raúl Treviño', managerName: 'Don Raúl Treviño', rank: 'manager' },
+            proposedAt: '2026-08-10T14:30',
+            fieldLabel: 'Nombre del evento',
+            proposedChanges: { title: 'Gran Baile Estelar 2026 — Edición Especial' },
+            previousValues: { title: 'Gran Baile de Gala' },
+            status: 'pendiente'
+          }
+        },
+        {
+          id: 'task-sys-coverUrl',
+          kind: 'sistema',
+          title: 'Imagen de Portada del Evento',
+          detail: 'Subir la imagen en alta resolución para la cartelera pública',
+          group: 'Identidad',
+          checklistItemId: 'portada',
+          formSectionRef: 'coverUrl',
+          assignedManager: 'Valentina Morales',
+          status: 'completada',
+          priority: 'Alta',
+          createdBy: { name: 'Sistema Acordex', managerName: 'sistema', rank: 'sistema' },
+          createdAt: '2026-07-30T09:40',
+          completedAt: '2026-07-30T10:15',
+          completedBy: { name: 'Valentina Morales', managerName: 'Valentina Morales', rank: 'manager' },
+          autoCompleted: true
+        },
+        {
+          id: 'task-sys-cartel-oficial',
+          kind: 'sistema',
+          title: 'Subir Cartel Vertical Oficial',
+          detail: 'Cargar el cartel gráfico vertical 3:4 para la lupa pública',
+          group: 'Cartelera Pública',
+          checklistItemId: 'cartel_oficial',
+          formSectionRef: 'posterUrl',
+          assignedManager: 'Lic. Gonzalo Garza',
+          status: 'completada',
+          priority: 'Alta',
+          createdBy: { name: 'Sistema Acordex', managerName: 'sistema', rank: 'sistema' },
+          createdAt: '2026-07-30T10:00',
+          completedAt: '2026-07-30T10:20',
+          completedBy: { name: 'Lic. Gonzalo Garza', managerName: 'Lic. Gonzalo Garza', rank: 'manager' }
+        },
+        {
+          id: 'task-sys-tagline',
+          kind: 'sistema',
+          title: 'Frase de Portada del Evento',
+          detail: 'Capturar la línea corta descriptiva que encabeza la ficha pública',
+          group: 'Cartelera Pública',
+          checklistItemId: 'tagline',
+          formSectionRef: 'tagline',
+          assignedManager: 'Valentina Morales',
+          status: 'completada',
+          priority: 'Alta',
+          createdBy: { name: 'Sistema Acordex', managerName: 'sistema', rank: 'sistema' },
+          createdAt: '2026-07-30T10:30',
+          completedAt: '2026-07-30T10:45',
+          completedBy: { name: 'Valentina Morales', managerName: 'Valentina Morales', rank: 'manager' },
+          pendingChangeProposal: {
+            id: 'prop-demo-2',
+            proposedBy: { name: 'Don Raúl Treviño', managerName: 'Don Raúl Treviño', rank: 'manager' },
+            proposedAt: '2026-08-11T16:20',
+            fieldLabel: 'Frase de portada',
+            proposedChanges: { publicProfile: { tagline: '¡La noche más épica del año — no te la pierdas!' } },
+            previousValues: {},
+            status: 'pendiente'
+          }
+        },
+        {
+          id: 'task-sys-about',
+          kind: 'sistema',
+          title: 'Información Detallada del Evento',
+          detail: 'Describir la experiencia y accesos que leerá el cliente antes de comprar',
+          group: 'Cartelera Pública',
+          checklistItemId: 'about_publico',
+          formSectionRef: 'about_publico',
+          assignedManager: 'Beto Ramírez (Sierreño Music)',
+          status: 'completada',
+          priority: 'Alta',
+          createdBy: { name: 'Sistema Acordex', managerName: 'sistema', rank: 'sistema' },
+          createdAt: '2026-07-30T11:00',
+          completedAt: '2026-07-30T11:15',
+          completedBy: { name: 'Beto Ramírez (Sierreño Music)', managerName: 'Beto Ramírez (Sierreño Music)', rank: 'manager' }
+        },
+        {
+          id: 'task-sys-soporte',
+          kind: 'sistema',
+          title: 'Teléfono de Compra y Soporte',
+          detail: 'Registrar número telefónico para atención y soporte al público',
+          group: 'Cartelera Pública',
+          checklistItemId: 'soporte',
+          formSectionRef: 'soporte',
+          assignedManager: 'Lic. Gonzalo Garza',
+          status: 'asignada',
+          priority: 'Media',
+          createdBy: { name: 'Sistema Acordex', managerName: 'sistema', rank: 'sistema' },
+          createdAt: '2026-07-30T11:30'
+        },
+        {
+          id: 'task-sys-croquis',
+          kind: 'sistema',
+          title: 'Asignación de Zonas y Croquis de Recinto',
+          detail: 'Definir el croquis con capacidades y precios para boletaje',
+          group: 'Boletaje',
+          checklistItemId: 'croquis',
+          formSectionRef: 'croquis',
+          assignedManager: 'Beto Ramírez (Sierreño Music)',
+          status: 'asignada',
+          priority: 'Alta',
+          createdBy: { name: 'Sistema Acordex', managerName: 'sistema', rank: 'sistema' },
+          createdAt: '2026-07-30T09:40'
+        },
+        {
+          id: 'task-ext-102-1',
+          kind: 'externa',
+          title: 'Renta de Mobiliario y Sillas VIP',
+          detail: 'Coordinar entrega y montaje de 120 mesas redondas y sillas para área preferente',
+          assignedManager: 'Encargado Acordex',
+          status: 'completada',
+          priority: 'Alta',
+          productionItemId: 'pi-102-4',
+          productionCategory: 'Mobiliario',
+          estimatedCost: 21600,
+          finalCost: 21600,
+          createdBy: { name: 'Encargado Acordex', managerName: 'Encargado Acordex', rank: 'manager' },
+          createdAt: '2026-07-31T11:00',
+          completedAt: '2026-08-01T14:30',
+          completionNote: 'Contratado y confirmado con Renta Fiesta Jalisco.'
+        },
+        {
+          id: 'task-ext-102-2',
+          kind: 'externa',
+          title: 'Servicio de Seguridad Privada e Inspección',
+          detail: 'Contratar 30 elementos certificados para control de accesos y puertas de emergencia',
+          assignedManager: 'Encargado Acordex',
+          status: 'asignada',
+          priority: 'Media',
+          productionItemId: 'pi-102-6',
+          productionCategory: 'Seguridad',
+          estimatedCost: 27000,
+          createdBy: { name: 'Encargado Acordex', managerName: 'Encargado Acordex', rank: 'manager' },
+          createdAt: '2026-08-02T09:00'
+        },
+        {
+          id: 'task-ext-102-3',
+          kind: 'externa',
+          title: 'Coordinación de Audio Estelar y Microfonía',
+          detail: 'Verificar la contratación del sistema line array JBL y consolas digitales para el recinto',
+          // La transferencia va dirigida a la disquera de la sesión de demo:
+          // solo el destino puede contestarla, así que dirigida a otro no se
+          // vería más que como "esperando respuesta".
+          assignedManager: 'Valentina Morales',
+          status: 'pendiente-aprobacion',
+          priority: 'Alta',
+          productionCategory: 'Audio',
+          estimatedCost: 92000,
+          pendingTransfer: {
+            id: 'tr-102-1',
+            fromManager: 'Valentina Morales',
+            toManager: 'Don Raúl Treviño',
+            reason: 'No contaremos con personal técnico local en Guadalajara esa semana; solicito apoyo para que tu equipo asuma la gestión directa del proveedor de audio.',
+            requestedAt: '2026-08-10T09:15',
+            status: 'pendiente'
+          },
+          createdBy: { name: 'Valentina Morales', managerName: 'Valentina Morales', rank: 'manager' },
+          createdAt: '2026-08-05T12:00'
+        },
+        {
+          // Encargo de la propia disquera de la sesión: es el que deja probar
+          // confirmar, delegar en el staff y desglosar el gasto.
+          id: 'task-ext-102-6',
+          kind: 'externa',
+          title: 'Renta de vallas y control de filas en accesos',
+          detail: 'Conseguir 80 metros de valla metálica y señalización de filas para las tres puertas de acceso',
+          assignedManager: 'Don Raúl Treviño',
+          status: 'asignada',
+          priority: 'Media',
+          productionCategory: 'Seguridad',
+          estimatedCost: 14000,
+          createdBy: { name: 'Encargado Acordex', managerName: 'Encargado Acordex', rank: 'manager' },
+          createdAt: '2026-08-08T16:20'
+        },
+        {
+          id: 'task-ext-102-4',
+          kind: 'externa',
+          title: 'Catering y Camerinos de Grupos Principales',
+          detail: 'Coordinar requerimientos de alimentos, bebidas y amenidades de camerinos VIP',
+          assignedManager: 'Beto Ramírez (Sierreño Music)',
+          status: 'asignada',
+          priority: 'Media',
+          productionCategory: 'Hospitalidad',
+          estimatedCost: 15000,
+          createdBy: { name: 'Beto Ramírez (Sierreño Music)', managerName: 'Beto Ramírez (Sierreño Music)', rank: 'manager' },
+          createdAt: '2026-08-06T14:00'
+        },
+        {
+          id: 'task-ext-102-5',
+          kind: 'externa',
+          title: 'Contratación de Ambulancia y Servicios Médicos',
+          detail: 'Asegurar presencia de 2 unidades paramédicas y puesto de primeros auxilios',
+          assignedManager: 'Encargado Acordex',
+          status: 'asignada',
+          priority: 'Alta',
+          delegate: { name: 'Luis Ibarra', rank: 'staff' },
+          productionCategory: 'Servicios Médicos',
+          estimatedCost: 12000,
+          createdBy: { name: 'Encargado Acordex', managerName: 'Encargado Acordex', rank: 'manager' },
+          createdAt: '2026-08-07T10:30'
+        }
       ],
       schedule: {
         crewCallAt: '2026-10-03T11:00',
@@ -3614,6 +3849,10 @@ export class MockDataService {
    * aprobaciones, venta y cierre). Lo que quedó guardado con la forma anterior
    * ya no es interpretable, así que se parte de los mocks nuevos en vez de
    * intentar migrar un dato que no tiene los campos que ahora se necesitan.
+   *
+   * `v4` es el mismo caso una versión más adelante: el desglose de producción
+   * pasó de una partida por tarea a varias, y los expedientes guardados con la
+   * forma vieja no traen los encargos repartidos con los que se prueba.
    */
   /**
    * Los eventos se normalizan al cargarse, una sola vez.
@@ -3629,7 +3868,7 @@ export class MockDataService {
    * ilegible.
    */
   readonly events = signal<EventItem[]>(
-    this.storage.getItem('acordex_events_v3', this.INITIAL_EVENTS).map(ev => {
+    this.storage.getItem('acordex_events_v4', this.INITIAL_EVENTS).map(ev => {
       const ticketTiers = distinguishTierColors(ev.ticketTiers || []);
       return { ...ev, ticketTiers, croquisPlans: ensureCroquisPlans({ ...ev, ticketTiers }) };
     })
@@ -3832,7 +4071,7 @@ export class MockDataService {
   /** Escribe un evento ya modificado y lo persiste. */
   private commitEvents(updated: EventItem[]): void {
     this.events.set(updated);
-    this.storage.setItem('acordex_events_v3', updated);
+    this.storage.setItem('acordex_events_v4', updated);
   }
 
   /** Aplica una transformación a un solo evento. */

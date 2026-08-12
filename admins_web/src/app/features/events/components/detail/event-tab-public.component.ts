@@ -1,9 +1,12 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EventItem, EventPublicProfile, EventRule, ArtistGreetingVideo } from '../../../../core/models/event.models';
 import { GroupItem } from '../../../../core/models/admin.models';
 import { EditableFieldComponent, EditableOption } from '../../../../shared/ui/editable-field/editable-field.component';
 import { EventTabLineupComponent } from './event-tab-lineup.component';
+import { MandatoryTaskTagComponent } from '../../../../shared/ui/mandatory-task-tag/mandatory-task-tag.component';
+import { SessionService } from '../../../../core/services/session.service';
+import { ResolvedTask, isTaskUnlockedForActor, interceptFieldSave, resolveTasks } from '../../event-tasks';
 import {
   publicProfile,
   lineup,
@@ -16,18 +19,11 @@ import {
 
 /**
  * Pestaña unificada "EVENTO": concentra toda la información pública del evento.
- *
- * Secciones:
- * 1. Encabezado con estado de la ficha y botón para alternar el Side Modal Window de vista previa.
- * 2. Datos Principales del Evento (Tarjetas de cristal con editores inline).
- * 3. Imágenes Oficiales (Portada 16:9 y Cartel 3:4).
- * 4. Textos de Difusión Pública, Reglas dinámicas y Teléfonos de soporte.
- * 5. Cartel & Alineación de grupos (Integrado con app-event-tab-lineup).
  */
 @Component({
   selector: 'app-event-tab-public',
   standalone: true,
-  imports: [CommonModule, EditableFieldComponent, EventTabLineupComponent],
+  imports: [CommonModule, EditableFieldComponent, EventTabLineupComponent, MandatoryTaskTagComponent],
   host: { class: 'block' },
   template: `
     <div class="space-y-6">
@@ -69,74 +65,125 @@ import {
             <span class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold material-symbols-outlined text-lg">event</span>
             <span>Datos principales del evento</span>
           </h5>
-          <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">Identidad Base</span>
+          <div class="flex items-center gap-2.5">
+            <app-mandatory-task-tag checklistItemId="identidad" [event]="event()" (intervene)="onInterveneTask($event)" />
+            <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">Identidad Base</span>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <app-editable-field
             label="Nombre del evento"
             [value]="event().title"
-            [readonly]="!canEditIdentity()"
-            (save)="patch.emit({ title: $event })"
+            [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
+            [proposalWarning]="getProposalNotice('identidad')"
+            [proposedValue]="getPendingProposal('identidad', 'title')?.proposedValue"
+            [proposedBy]="getPendingProposal('identidad', 'title')?.proposedBy"
+            (save)="saveWithProposalCheck('identidad', 'Nombre del evento', { title: $event })"
           />
           <app-editable-field
             label="Fecha del evento"
             type="date"
             [value]="event().date"
-            [readonly]="!canEditIdentity()"
-            (save)="patch.emit({ date: $event })"
+            [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
+            [proposalWarning]="getProposalNotice('identidad')"
+            [proposedValue]="getPendingProposal('identidad', 'date')?.proposedValue"
+            [proposedBy]="getPendingProposal('identidad', 'date')?.proposedBy"
+            (save)="saveWithProposalCheck('identidad', 'Fecha del evento', { date: $event })"
           />
           <app-editable-field
             label="Aforo del recinto"
             type="number"
             [value]="event().capacity ?? ''"
-            [readonly]="!canEditIdentity()"
-            (save)="patch.emit({ capacity: toNumber($event) })"
+            [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
+            [proposalWarning]="getProposalNotice('identidad')"
+            [proposedValue]="getPendingProposal('identidad', 'capacity')?.proposedValue"
+            [proposedBy]="getPendingProposal('identidad', 'capacity')?.proposedBy"
+            (save)="saveWithProposalCheck('identidad', 'Aforo del recinto', { capacity: toNumber($event) })"
           />
           <app-editable-field
             label="Recinto / Inmueble"
             [value]="event().venue"
-            [readonly]="!canEditIdentity()"
-            (save)="patch.emit({ venue: $event })"
+            [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
+            [proposalWarning]="getProposalNotice('identidad')"
+            [proposedValue]="getPendingProposal('identidad', 'venue')?.proposedValue"
+            [proposedBy]="getPendingProposal('identidad', 'venue')?.proposedBy"
+            (save)="saveWithProposalCheck('identidad', 'Recinto / Inmueble', { venue: $event })"
           />
           <app-editable-field
             label="Ciudad y estado"
             [value]="event().location"
-            [readonly]="!canEditIdentity()"
-            (save)="patch.emit({ location: $event })"
+            [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
+            [proposalWarning]="getProposalNotice('identidad')"
+            [proposedValue]="getPendingProposal('identidad', 'location')?.proposedValue"
+            [proposedBy]="getPendingProposal('identidad', 'location')?.proposedBy"
+            (save)="saveWithProposalCheck('identidad', 'Ciudad y estado', { location: $event })"
           />
           <app-editable-field
             label="Dirección del recinto"
             [value]="event().venueAddress || ''"
-            [readonly]="!canEditIdentity()"
-            (save)="patch.emit({ venueAddress: $event })"
+            [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
+            [proposalWarning]="getProposalNotice('identidad')"
+            [proposedValue]="getPendingProposal('identidad', 'venueAddress')?.proposedValue"
+            [proposedBy]="getPendingProposal('identidad', 'venueAddress')?.proposedBy"
+            (save)="saveWithProposalCheck('identidad', 'Dirección del recinto', { venueAddress: $event })"
           />
         </div>
 
-        <!-- Categoría como chips y no como <select>: son seis opciones fijas,
-             se ven todas de golpe y la elegida queda evidente. Es además el
-             dato que encabeza la ficha del cliente. -->
+        <!-- Categoría como chips -->
         <div class="space-y-2.5 pt-1">
           <div class="flex items-center justify-between gap-2 flex-wrap">
-            <label class="text-[10px] font-black uppercase tracking-wider text-outline">Categoría del evento</label>
+            <div class="flex items-center gap-2">
+              <label class="text-[10px] font-black uppercase tracking-wider text-outline">Categoría del evento</label>
+              <app-mandatory-task-tag checklistItemId="categoria" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+            </div>
             <span class="text-[10px] text-outline">Encabeza la ficha pública del cliente</span>
           </div>
+
+          @if (getProposalNotice('categoria')) {
+            <div class="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-[11px] font-bold leading-relaxed flex items-start gap-2.5 shadow-md">
+              <span class="material-symbols-outlined text-base text-amber-400 shrink-0 mt-0.5">info</span>
+              <span>{{ getProposalNotice('categoria') }}</span>
+            </div>
+          }
+
           <div class="flex items-center gap-2 flex-wrap">
             @for (c of categoryChips; track c.value) {
               <button
                 type="button"
-                [disabled]="!canEdit()"
-                (click)="patchProfile({ category: $any(c.value) })"
+                [disabled]="!canEdit() || !isTaskUnlocked('categoria')"
+                (click)="saveProfileWithProposalCheck('categoria', 'Categoría del Evento', { category: $any(c.value) })"
                 class="px-3.5 py-2 rounded-2xl border text-[11px] font-black transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 [class]="profile().category === c.value
                   ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black border-amber-300/60 shadow-[0_0_18px_-4px_rgba(245,158,11,0.8)] scale-[1.04]'
                   : 'bg-surface-container/60 text-outline border-outline-variant/25 hover:text-on-surface hover:border-amber-500/40'"
               >
                 <span class="material-symbols-outlined text-base">{{ c.icon }}</span>
-                {{ c.label }}
+                <span>{{ c.label }}</span>
+                @if (getProposalNotice('categoria') && profile().category !== c.value) {
+                  <span class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-950/90 text-amber-300 font-bold border border-amber-500/40 shadow-sm">Propuesta</span>
+                }
               </button>
             }
           </div>
+
+          @if (getPendingProposal('categoria', 'category')?.proposedValue) {
+            <div class="mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-amber-950/80 via-amber-900/60 to-amber-950/80 border border-amber-500/40 text-amber-200 text-[11px] font-medium leading-tight flex items-center justify-between gap-2 shadow-lg backdrop-blur-md animate-fade-in">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="material-symbols-outlined text-sm text-amber-400 shrink-0">pending_actions</span>
+                <span class="truncate">
+                  <strong class="font-black text-amber-300 uppercase tracking-wider text-[9px] mr-1">Propuesta enviada:</strong>
+                  <span class="font-bold underline decoration-amber-400/50">"Categoría {{ getPendingProposal('categoria', 'category')?.proposedValue }}"</span>
+                  @if (getPendingProposal('categoria', 'category')?.proposedBy) {
+                    <span class="text-[10px] text-amber-200/80 ml-1">· por {{ getPendingProposal('categoria', 'category')?.proposedBy }}</span>
+                  }
+                </span>
+              </div>
+              <span class="px-2 py-0.5 rounded-md bg-amber-500/25 text-amber-300 text-[9px] font-black uppercase tracking-wider shrink-0 border border-amber-500/40 shadow-sm">
+                En Revisión
+              </span>
+            </div>
+          }
         </div>
 
         <app-editable-field
@@ -168,7 +215,11 @@ import {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
           <!-- Portada Panorámica -->
-          <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/20 space-y-3 shadow-md">
+          <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/20 space-y-3 shadow-md relative">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-black uppercase text-outline tracking-wider">Portada (16:9)</span>
+              <app-mandatory-task-tag checklistItemId="coverUrl" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+            </div>
             <app-editable-field
               label="Portada panorámica (16:9)"
               hint="encabeza la ficha del portal"
@@ -176,8 +227,11 @@ import {
               placeholder="https://…"
               valueClass="text-xs font-mono text-on-surface break-all"
               [value]="profile().coverUrl"
-              [readonly]="!canEdit()"
-              (save)="patchProfile({ coverUrl: $event })"
+              [readonly]="!canEdit() || !isTaskUnlocked('coverUrl')"
+              [proposalWarning]="getProposalNotice('coverUrl')"
+              [proposedValue]="getPendingProposal('coverUrl', 'coverUrl')?.proposedValue"
+              [proposedBy]="getPendingProposal('coverUrl', 'coverUrl')?.proposedBy"
+              (save)="saveProfileWithProposalCheck('coverUrl', 'Portada Panorámica (16:9)', { coverUrl: $event })"
             />
             <div class="aspect-video rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/25 relative group shadow-lg">
               @if (profile().coverUrl) {
@@ -195,7 +249,11 @@ import {
           </div>
 
           <!-- Cartel Oficial Vertical -->
-          <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/20 space-y-3 shadow-md">
+          <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/20 space-y-3 shadow-md relative">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-black uppercase text-outline tracking-wider">Cartel (3:4)</span>
+              <app-mandatory-task-tag checklistItemId="posterUrl" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+            </div>
             <app-editable-field
               label="Cartel / flyer oficial (3:4)"
               hint="el que se amplía en la ficha del cliente"
@@ -203,7 +261,10 @@ import {
               placeholder="https://…"
               valueClass="text-xs font-mono text-on-surface break-all"
               [value]="profile().posterUrl"
-              [readonly]="!canEdit()"
+              [readonly]="!canEdit() || !isTaskUnlocked('posterUrl')"
+              [proposalWarning]="getProposalNotice('posterUrl')"
+              [proposedValue]="getPendingProposal('posterUrl', 'posterUrl')?.proposedValue"
+              [proposedBy]="getPendingProposal('posterUrl', 'posterUrl')?.proposedBy"
               (save)="savePoster($event)"
             />
             <div class="aspect-[3/4] max-h-52 rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/25 mx-auto relative group shadow-lg">
@@ -214,8 +275,8 @@ import {
                 </div>
               } @else {
                 <div class="w-full h-full flex flex-col items-center justify-center text-outline text-xs gap-1 text-center p-3">
-                  <span class="material-symbols-outlined text-2xl text-outline/60">imagesmode</span>
-                  <span class="font-semibold">Sin cartel vertical 3:4</span>
+                  <span class="material-symbols-outlined text-2xl text-outline/60">crop_portrait</span>
+                  <span class="font-semibold">Sin cartel oficial</span>
                 </div>
               }
             </div>
@@ -238,8 +299,9 @@ import {
             <span>Saludos y mensajes de los artistas</span>
           </h5>
           <div class="flex items-center gap-2.5">
+            <app-mandatory-task-tag checklistItemId="videos_grupos" [event]="event()" (intervene)="onInterveneTask($event)" />
             <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">{{ greetingVideos().length }} video(s)</span>
-            @if (canEdit()) {
+            @if (canEdit() && isTaskUnlocked('videos_grupos')) {
               <button
                 type="button"
                 (click)="addGreetingVideo()"
@@ -262,7 +324,7 @@ import {
                       : 'bg-sky-500/15 text-sky-300 border-sky-500/30'">
                     {{ v.type === 'youtube' ? 'YouTube' : 'MP4 subido' }}
                   </span>
-                  @if (canEdit()) {
+                  @if (canEdit() && isTaskUnlocked('videos_grupos')) {
                     <div class="flex items-center gap-1.5">
                       <button
                         type="button"
@@ -287,7 +349,8 @@ import {
                 <app-editable-field
                   label="Título del video"
                   [value]="v.title"
-                  [readonly]="!canEdit()"
+                  [readonly]="!canEdit() || !isTaskUnlocked('videos_grupos')"
+                  [proposalWarning]="getProposalNotice('videos_grupos')"
                   (save)="patchGreetingVideo(v, { title: $event })"
                 />
                 <app-editable-field
@@ -296,61 +359,85 @@ import {
                   placeholder="https://…"
                   valueClass="text-xs font-mono text-on-surface break-all"
                   [value]="v.url"
-                  [readonly]="!canEdit()"
+                  [readonly]="!canEdit() || !isTaskUnlocked('videos_grupos')"
+                  [proposalWarning]="getProposalNotice('videos_grupos')"
                   (save)="patchGreetingVideo(v, { url: $event })"
                 />
 
                 @if (!v.url.trim()) {
                   <p class="text-[11px] text-amber-300 flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-sm">warning</span>
-                    Sin enlace: este saludo no se le mostrará al público.
+                    <span>Sin enlace asignado. No se mostrará en el reproductor público.</span>
                   </p>
                 }
               </div>
             }
           </div>
         } @else {
-          <p class="p-5 text-center text-xs text-outline italic bg-surface-container/40 rounded-2xl border border-dashed border-outline-variant/30">
-            Todavía no hay saludos en video. El bloque "Saludos y Mensajes de los Artistas" no aparecerá en la ficha del cliente.
-          </p>
+          <div class="p-6 rounded-2xl bg-surface-container/40 border border-dashed border-outline-variant/30 text-center space-y-2">
+            <span class="material-symbols-outlined text-3xl text-rose-400/60">movie</span>
+            <p class="text-xs font-medium text-outline">No hay saludos de video capturados todavía.</p>
+          </div>
         }
       </section>
 
-      <!-- ─── SECCIÓN 3: TEXTOS DE DIFUSIÓN PÚBLICA & REGLAS ─── -->
-      <section class="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-emerald-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-emerald-500/25 border-l-4 border-l-emerald-500/70 shadow-2xl shadow-emerald-500/5 space-y-6 backdrop-blur-2xl">
-        <div class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-4">
-          <h5 class="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2.5">
-            <span class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold material-symbols-outlined text-lg">edit_note</span>
-            <span>Textos de la ficha pública & Reglas</span>
+      <!-- ─── SECCIÓN 3: CARTELERA, INFORMACIÓN Y REGLAS PÚBLICAS ─── -->
+      <section class="p-6 sm:p-7 rounded-3xl bg-surface-container-high/90 border border-outline-variant/30 shadow-2xl space-y-6 backdrop-blur-2xl">
+        <div class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-4 flex-wrap">
+          <h5 class="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center font-bold material-symbols-outlined text-lg">article</span>
+            <span>Cartelera, Descripción y Reglas para el Cliente</span>
           </h5>
-          <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">Contenido del Cliente</span>
+          @if (canEdit()) {
+            <span class="text-[11px] text-outline flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm text-amber-400">edit</span> Haz clic en cualquier texto para corregir
+            </span>
+          }
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="space-y-4">
+          <div class="space-y-1">
+            <div class="flex items-center justify-between gap-2">
+              <label class="text-[10px] font-black uppercase tracking-wider text-outline">Frase de Portada / Tagline</label>
+              <app-mandatory-task-tag checklistItemId="tagline" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+            </div>
+            <app-editable-field
+              label=""
+              hint="una línea bajo el título"
+              type="textarea"
+              [rows]="2"
+              placeholder="Ej. La tambora más potente del país, una sola noche."
+              valueClass="text-xs font-bold text-on-surface break-words"
+              [value]="profile().tagline"
+              [readonly]="!canEdit() || !isTaskUnlocked('tagline')"
+              [proposalWarning]="getProposalNotice('tagline')"
+              [proposedValue]="getPendingProposal('tagline', 'tagline')?.proposedValue"
+              [proposedBy]="getPendingProposal('tagline', 'tagline')?.proposedBy"
+              (save)="saveProfileWithProposalCheck('tagline', 'Frase de portada', { tagline: $event })"
+            />
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex items-center justify-between gap-2">
+            <label class="text-[10px] font-black uppercase tracking-wider text-outline">Información detallada del evento</label>
+            <app-mandatory-task-tag checklistItemId="about_publico" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+          </div>
           <app-editable-field
-            label="Frase de portada"
-            hint="una línea bajo el título"
+            label=""
+            hint="lo que el cliente lee antes de comprar"
             type="textarea"
-            [rows]="2"
-            placeholder="Ej. La tambora más potente del país, una sola noche."
-            valueClass="text-xs font-bold text-on-surface break-words"
-            [value]="profile().tagline"
-            [readonly]="!canEdit()"
-            (save)="patchProfile({ tagline: $event })"
+            [rows]="4"
+            placeholder="Describe la experiencia, accesos, amenidades y seguridad."
+            valueClass="text-xs font-medium text-on-surface-variant break-words leading-relaxed"
+            [value]="profile().about"
+            [readonly]="!canEdit() || !isTaskUnlocked('about_publico')"
+            [proposalWarning]="getProposalNotice('about_publico')"
+            [proposedValue]="getPendingProposal('about_publico', 'about')?.proposedValue"
+            [proposedBy]="getPendingProposal('about_publico', 'about')?.proposedBy"
+            (save)="saveProfileWithProposalCheck('about_publico', 'Información detallada del evento', { about: $event })"
           />
         </div>
-
-        <app-editable-field
-          label="Información detallada del evento"
-          hint="lo que el cliente lee antes de comprar"
-          type="textarea"
-          [rows]="4"
-          placeholder="Describe la experiencia, accesos, amenidades y seguridad."
-          valueClass="text-xs font-medium text-on-surface-variant break-words leading-relaxed"
-          [value]="profile().about"
-          [readonly]="!canEdit()"
-          (save)="patchProfile({ about: $event })"
-        />
 
         <!-- Reglas -->
         <div class="pt-4 border-t border-outline-variant/20 space-y-3">
@@ -358,9 +445,12 @@ import {
             <h6 class="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-2">
               <span class="material-symbols-outlined text-base text-primary">gavel</span> Reglas e Información Adicional
             </h6>
-            <span class="text-xs font-mono font-bold text-outline px-2.5 py-0.5 rounded-lg bg-surface-container border border-outline-variant/20">
-              {{ profile().rules.length }} regla(s)
-            </span>
+            <div class="flex items-center gap-2">
+              <app-mandatory-task-tag checklistItemId="reglas" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+              <span class="text-xs font-mono font-bold text-outline px-2.5 py-0.5 rounded-lg bg-surface-container border border-outline-variant/20">
+                {{ profile().rules.length }} regla(s)
+              </span>
+            </div>
           </div>
 
           <div class="space-y-2.5">
@@ -373,7 +463,10 @@ import {
                     type="textarea"
                     [rows]="2"
                     valueClass="text-xs font-medium text-on-surface-variant break-words"
-                    [readonly]="!canEdit()"
+                    [readonly]="!canEdit() || !isTaskUnlocked('reglas')"
+                    [proposalWarning]="getProposalNotice('reglas')"
+                    [proposedValue]="getPendingProposal('reglas')?.proposedValue"
+                    [proposedBy]="getPendingProposal('reglas')?.proposedBy"
                     (save)="patchRule(rule, $event)"
                   />
                 </div>
@@ -394,7 +487,7 @@ import {
             }
           </div>
 
-          @if (canEdit()) {
+          @if (canEdit() && isTaskUnlocked('reglas')) {
             <button
               type="button"
               (click)="addRule()"
@@ -412,32 +505,53 @@ import {
           </h6>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <app-editable-field
-              label="Teléfono de compra"
-              type="tel"
-              placeholder="+52 (81) 1234 5678"
-              [value]="profile().supportPhone || ''"
-              [readonly]="!canEdit()"
-              (save)="patchProfile({ supportPhone: $event })"
-            />
+            <div class="space-y-1">
+              <div class="flex items-center justify-between gap-1">
+                <span class="text-[10px] font-bold text-outline uppercase">Soporte</span>
+                <app-mandatory-task-tag checklistItemId="soporte" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+              </div>
+              <app-editable-field
+                label="Teléfono de compra"
+                type="tel"
+                placeholder="+52 (81) 1234 5678"
+                [value]="profile().supportPhone || ''"
+                [readonly]="!canEdit() || !isTaskUnlocked('soporte')"
+                [proposalWarning]="getProposalNotice('soporte')"
+                [proposedValue]="getPendingProposal('soporte', 'supportPhone')?.proposedValue"
+                [proposedBy]="getPendingProposal('soporte', 'supportPhone')?.proposedBy"
+                (save)="saveProfileWithProposalCheck('soporte', 'Teléfono de compra', { supportPhone: $event })"
+              />
+            </div>
             <app-editable-field
               label="WhatsApp"
               hint="solo dígitos"
               type="tel"
               placeholder="528112345678"
               [value]="profile().supportWhatsApp || ''"
-              [readonly]="!canEdit()"
-              (save)="patchProfile({ supportWhatsApp: $event })"
+              [readonly]="!canEdit() || !isTaskUnlocked('soporte')"
+              [proposalWarning]="getProposalNotice('soporte')"
+              [proposedValue]="getPendingProposal('soporte', 'supportWhatsApp')?.proposedValue"
+              [proposedBy]="getPendingProposal('soporte', 'supportWhatsApp')?.proposedBy"
+              (save)="saveProfileWithProposalCheck('soporte', 'WhatsApp', { supportWhatsApp: $event })"
             />
-            <app-editable-field
-              label="Cargo por servicio"
-              hint="por asiento"
-              type="number"
-              prefix="$"
-              [value]="profile().serviceFeePerSeat ?? 0"
-              [readonly]="!canEdit()"
-              (save)="patchProfile({ serviceFeePerSeat: toNumber($event) })"
-            />
+            <div class="space-y-1">
+              <div class="flex items-center justify-between gap-1">
+                <span class="text-[10px] font-bold text-outline uppercase">Cargo Servicio</span>
+                <app-mandatory-task-tag checklistItemId="cargo_servicio" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+              </div>
+              <app-editable-field
+                label="Cargo por servicio"
+                hint="por asiento"
+                type="number"
+                prefix="$"
+                [value]="profile().serviceFeePerSeat ?? 0"
+                [readonly]="!canEdit() || !isTaskUnlocked('cargo_servicio')"
+                [proposalWarning]="getProposalNotice('cargo_servicio')"
+                [proposedValue]="getPendingProposal('cargo_servicio', 'serviceFeePerSeat')?.proposedValue"
+                [proposedBy]="getPendingProposal('cargo_servicio', 'serviceFeePerSeat')?.proposedBy"
+                (save)="saveProfileWithProposalCheck('cargo_servicio', 'Cargo por servicio', { serviceFeePerSeat: toNumber($event) })"
+              />
+            </div>
             <app-editable-field
               label="Restricción de edad"
               placeholder="Mayores de 15 años"
@@ -491,6 +605,19 @@ import {
           (patch)="patch.emit($event)"
         />
       </section>
+
+      <!-- Toast de Aviso de Propuesta Registrada -->
+      @if (proposalNoticeToast()) {
+        <div class="fixed bottom-6 right-6 z-[99999] max-w-md p-5 rounded-3xl bg-amber-950/95 border border-amber-500/60 text-amber-200 text-xs shadow-[0_0_50px_rgba(245,158,11,0.4)] backdrop-blur-2xl space-y-1.5 animate-slide-up">
+          <div class="flex items-center gap-2 font-black text-amber-300">
+            <span class="material-symbols-outlined text-base">rate_review</span>
+            <span>Propuesta de Modificación Registrada</span>
+          </div>
+          <p class="text-[11px] leading-relaxed text-amber-100/90">
+            {{ proposalNoticeToast() }}
+          </p>
+        </div>
+      }
 
     </div>
   `
@@ -556,6 +683,26 @@ export class EventTabPublicComponent {
     return Number(String(value).replace(/[^0-9.-]/g, '')) || 0;
   }
 
+  proposalNoticeToast = signal<string | null>(null);
+
+  saveWithProposalCheck(checklistItemId: string, fieldLabel: string, patchData: Partial<EventItem>): void {
+    const actor = this.sessionService.actor();
+    const res = interceptFieldSave(this.event(), checklistItemId, fieldLabel, actor, patchData);
+
+    if (res.isProposalCreated) {
+      this.proposalNoticeToast.set(res.message);
+      setTimeout(() => this.proposalNoticeToast.set(null), 6000);
+      this.patch.emit(res.updatedEvent);
+    } else {
+      this.patch.emit(res.updatedEvent);
+    }
+  }
+
+  saveProfileWithProposalCheck(checklistItemId: string, fieldLabel: string, profileChanges: Partial<EventPublicProfile>): void {
+    const patchObj = { publicProfile: { ...this.profile(), ...profileChanges } };
+    this.saveWithProposalCheck(checklistItemId, fieldLabel, patchObj);
+  }
+
   patchProfile(changes: Partial<EventPublicProfile>): void {
     this.patch.emit({ publicProfile: { ...this.profile(), ...changes } });
   }
@@ -567,10 +714,11 @@ export class EventTabPublicComponent {
    * desincronizadas.
    */
   savePoster(url: string): void {
-    this.patch.emit({
+    const patchObj = {
       publicProfile: { ...this.profile(), posterUrl: url },
       flyerUrl: url
-    });
+    };
+    this.saveWithProposalCheck('posterUrl', 'Cartel / Flyer Oficial (3:4)', patchObj);
   }
 
   addGreetingVideo(): void {
@@ -581,30 +729,180 @@ export class EventTabPublicComponent {
       url: '',
       type: 'youtube'
     };
-    this.patchProfile({ greetingVideos: [...this.greetingVideos(), video] });
+    this.saveProfileWithProposalCheck('videos_grupos', 'Saludos en Video', { greetingVideos: [...this.greetingVideos(), video] });
   }
 
   patchGreetingVideo(video: ArtistGreetingVideo, changes: Partial<ArtistGreetingVideo>): void {
-    this.patchProfile({
-      greetingVideos: this.greetingVideos().map(v => (v.id === video.id ? { ...v, ...changes } : v))
-    });
+    const updated = this.greetingVideos().map(v => (v.id === video.id ? { ...v, ...changes } : v));
+    this.saveProfileWithProposalCheck('videos_grupos', 'Saludos en Video', { greetingVideos: updated });
   }
 
   removeGreetingVideo(video: ArtistGreetingVideo): void {
-    this.patchProfile({ greetingVideos: this.greetingVideos().filter(v => v.id !== video.id) });
+    const updated = this.greetingVideos().filter(v => v.id !== video.id);
+    this.saveProfileWithProposalCheck('videos_grupos', 'Saludos en Video', { greetingVideos: updated });
   }
 
   addRule(): void {
     const rule: EventRule = { id: 'r-' + this.event().id + '-' + Date.now(), text: 'Nueva regla del evento' };
-    this.patchProfile({ rules: [...this.profile().rules, rule] });
+    this.saveProfileWithProposalCheck('reglas', 'Reglas del Evento', { rules: [...this.profile().rules, rule] });
   }
 
   patchRule(rule: EventRule, text: string): void {
-    this.patchProfile({ rules: this.profile().rules.map(r => (r.id === rule.id ? { ...r, text } : r)) });
+    const updated = this.profile().rules.map(r => (r.id === rule.id ? { ...r, text } : r));
+    this.saveProfileWithProposalCheck('reglas', 'Reglas del Evento', { rules: updated });
   }
 
   removeRule(rule: EventRule): void {
-    this.patchProfile({ rules: this.profile().rules.filter(r => r.id !== rule.id) });
+    const updated = this.profile().rules.filter(r => r.id !== rule.id);
+    this.saveProfileWithProposalCheck('reglas', 'Reglas del Evento', { rules: updated });
+  }
+
+  getProposalNotice(checklistItemId: string): string | null {
+    const actorMgr = this.sessionService.actor().managerName;
+    const tasks = resolveTasks(this.event());
+    const task = tasks.find(t =>
+      t.checklistItemId === checklistItemId ||
+      t.formSectionRef === checklistItemId ||
+      t.id === `task-sys-${checklistItemId}` ||
+      (checklistItemId === 'coverUrl' && (t.checklistItemId === 'portada' || t.formSectionRef === 'coverUrl')) ||
+      (checklistItemId === 'posterUrl' && (t.checklistItemId === 'cartel_oficial' || t.formSectionRef === 'posterUrl')) ||
+      (checklistItemId === 'ticketTiers' && (t.checklistItemId === 'boletos' || t.formSectionRef === 'ticketTiers')) ||
+      (checklistItemId === 'schedule' && (t.checklistItemId === 'corrida' || t.checklistItemId === 'orden' || t.formSectionRef === 'schedule')) ||
+      (checklistItemId === 'sound' && (t.checklistItemId === 'sonido' || t.formSectionRef === 'sound')) ||
+      (checklistItemId === 'videos_grupos' && (t.checklistItemId === 'videos_grupos' || t.formSectionRef === 'videos_grupos' || t.formSectionRef === 'greetingVideos'))
+    );
+
+    if (!task || !task.done) return null;
+
+    const ownerMgr = task.completedBy?.managerName || task.assignedManager || this.event().ownerManagerName || this.event().createdBy;
+    const isOwner = ownerMgr === actorMgr;
+
+    if (!isOwner) {
+      return `Esta tarea obligatoria fue completada por ${ownerMgr}. Si modificas este dato, se le enviará una propuesta de cambio que el encargado deberá aprobar o rechazar para que se aplique al expediente.`;
+    }
+
+    return null;
+  }
+
+  getPendingProposal(checklistItemId: string, fieldPropKey?: string): { proposedValue: string; proposedBy: string } | null {
+    const tasks = resolveTasks(this.event());
+    const task = tasks.find(t =>
+      t.checklistItemId === checklistItemId ||
+      t.formSectionRef === checklistItemId ||
+      t.id === `task-sys-${checklistItemId}` ||
+      (checklistItemId === 'coverUrl' && (t.checklistItemId === 'portada' || t.formSectionRef === 'coverUrl')) ||
+      (checklistItemId === 'posterUrl' && (t.checklistItemId === 'cartel_oficial' || t.formSectionRef === 'posterUrl')) ||
+      (checklistItemId === 'ticketTiers' && (t.checklistItemId === 'boletos' || t.formSectionRef === 'ticketTiers')) ||
+      (checklistItemId === 'schedule' && (t.checklistItemId === 'corrida' || t.checklistItemId === 'orden' || t.formSectionRef === 'schedule')) ||
+      (checklistItemId === 'sound' && (t.checklistItemId === 'sonido' || t.formSectionRef === 'sound')) ||
+      (checklistItemId === 'videos_grupos' && (t.checklistItemId === 'videos_grupos' || t.formSectionRef === 'videos_grupos' || t.formSectionRef === 'greetingVideos'))
+    );
+
+    // DEBUG: trazar exactamente qué pasa
+    if (checklistItemId === 'identidad' && fieldPropKey === 'title') {
+      console.log('[getPendingProposal] identidad/title', {
+        taskFound: !!task,
+        taskId: task?.id,
+        checklistItemId: task?.checklistItemId,
+        hasPendingProposal: !!task?.pendingChangeProposal,
+        proposalStatus: task?.pendingChangeProposal?.status,
+        proposalChanges: task?.pendingChangeProposal?.proposedChanges,
+        rawEventTasks: this.event().tasks?.map(t => ({ id: t.id, cid: t.checklistItemId, hasProp: !!t.pendingChangeProposal }))
+      });
+    }
+
+    if (!task || !task.pendingChangeProposal || task.pendingChangeProposal.status !== 'pendiente') {
+      return null;
+    }
+
+    const prop = task.pendingChangeProposal;
+    const changes = prop.proposedChanges || {};
+    const flat = (changes as any).publicProfile ? { ...changes, ...(changes as any).publicProfile } : changes;
+
+    let val: any;
+    if (fieldPropKey && (flat as any)[fieldPropKey] !== undefined) {
+      val = (flat as any)[fieldPropKey];
+    } else {
+      const keys = Object.keys(flat).filter(k => k !== 'publicProfile');
+      val = keys.length ? (flat as any)[keys[0]] : null;
+    }
+
+    if (val === undefined || val === null || val === '') return null;
+
+    return {
+      proposedValue: String(val),
+      proposedBy: prop.proposedBy?.name || prop.proposedBy?.managerName || 'Manager'
+    };
+  }
+
+  private sessionService = inject(SessionService);
+
+  isTaskUnlocked(checklistItemId: string): boolean {
+    const actor = this.sessionService.actor();
+    return isTaskUnlockedForActor(this.event(), checklistItemId, actor.managerName);
+  }
+
+  onInterveneTask(task: ResolvedTask): void {
+    const actor = this.sessionService.actor();
+    const now = new Date().toISOString().slice(0, 16);
+
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          intervenedBy: actor,
+          completedBy: actor,
+          completedAt: now,
+          status: 'completada' as const
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ tasks: updatedTasks });
+  }
+
+  onAcceptProposalTask(task: ResolvedTask): void {
+    const prop = task.pendingChangeProposal;
+    if (!prop) return;
+
+    const patchData = prop.proposedChanges || {};
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          pendingChangeProposal: {
+            ...prop,
+            status: 'aceptada' as const,
+            respondedAt: new Date().toISOString()
+          }
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ ...patchData, tasks: updatedTasks });
+  }
+
+  onRejectProposalTask(task: ResolvedTask): void {
+    const prop = task.pendingChangeProposal;
+    if (!prop) return;
+
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          pendingChangeProposal: {
+            ...prop,
+            status: 'rechazada' as const,
+            respondedAt: new Date().toISOString()
+          }
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ tasks: updatedTasks });
   }
 }
 

@@ -1,4 +1,4 @@
-import { Component, input, output, computed, signal } from '@angular/core';
+import { Component, input, output, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   EventItem,
@@ -30,17 +30,18 @@ import {
   productionCategoryMeta
 } from '../../production-catalog';
 
+import { MandatoryTaskTagComponent } from '../../../../shared/ui/mandatory-task-tag/mandatory-task-tag.component';
+import { SessionService } from '../../../../core/services/session.service';
+import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-tasks';
+
 /**
  * Producción: desglose de gastos, reparto de rubros entre managers,
  * orden de entradas con horarios de escenario y sound checks detallados por grupo.
- *
- * Incluye herramientas de llenado rápido de 1-clic (Auto-calcular horarios en cadena,
- * auto-generación de soundchecks, ajustes rápidos de duración y duplicación).
  */
 @Component({
   selector: 'app-event-tab-production',
   standalone: true,
-  imports: [CommonModule, EditableFieldComponent],
+  imports: [CommonModule, EditableFieldComponent, MandatoryTaskTagComponent],
   host: { class: 'block' },
   template: `
     <div class="space-y-6">
@@ -253,6 +254,125 @@ import {
         </section>
       }
 
+      <!-- ─── GASTO QUE SALIÓ DE UN ENCARGO ─── -->
+      <!-- El desglose por rubro contesta "¿en qué se fue el dinero?" y este
+           contesta "¿quién lo gastó y a cuenta de qué se lo encargamos?". Son la
+           misma plata mirada por dos lados: un encargo como "contratar el audio"
+           se paga en tres rubros distintos —la consola, las bocinas, el
+           operador— y leído por rubro se pierde de vista que fue una sola
+           contratación con un solo responsable. -->
+      @if (taskGroups().length) {
+        <section class="p-6 rounded-3xl bg-gradient-to-br from-amber-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-amber-500/25 border-l-4 border-l-amber-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
+          <div class="flex items-center justify-between gap-3 flex-wrap border-b border-outline-variant/20 pb-4">
+            <h5 class="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center material-symbols-outlined text-lg">handyman</span>
+              <span>Gasto por encargo operativo</span>
+            </h5>
+            <span class="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/35 text-[11px] font-mono font-black text-amber-200">
+              {{ taskGroups().length }} encargo(s) · {{ money(taskGroupsTotal()) }}
+            </span>
+          </div>
+
+          <p class="text-[11px] text-outline leading-relaxed">
+            Cada bloque es una tarea opcional de la pestaña <strong class="text-amber-300">Tareas</strong> con lo que su responsable contrató para cumplirla.
+            Es el mismo desglose de abajo, agrupado por quién respondió en vez de por rubro.
+          </p>
+
+          <div class="space-y-3">
+            @for (g of taskGroups(); track g.task.id) {
+              <div class="rounded-2xl border overflow-hidden"
+                [class]="g.task.done
+                  ? 'bg-emerald-500/[0.04] border-emerald-500/25'
+                  : 'bg-surface-container/60 border-amber-500/25'">
+
+                <!-- Cabecera del bloque: el encargo y quién respondió por él -->
+                <div class="px-4 py-3.5 flex items-start justify-between gap-4 flex-wrap border-b"
+                  [class]="g.task.done ? 'border-emerald-500/20 bg-emerald-500/[0.04]' : 'border-amber-500/20 bg-amber-500/[0.05]'">
+                  <div class="flex items-start gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl border flex items-center justify-center shrink-0"
+                      [class]="g.task.done
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400'
+                        : 'bg-amber-500/15 border-amber-500/40 text-amber-400'">
+                      <span class="material-symbols-outlined text-lg">{{ g.task.done ? 'task_alt' : 'pending_actions' }}</span>
+                    </div>
+                    <div class="min-w-0 space-y-1">
+                      <h6 class="text-sm font-black text-on-surface leading-tight">{{ g.task.title }}</h6>
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[9px] font-bold text-outline flex items-center gap-1">
+                          <span class="material-symbols-outlined text-[11px]">business</span>
+                          {{ g.task.assignedManager || organizerLabel() }}
+                        </span>
+                        @if (g.task.delegate) {
+                          <span class="px-2 py-0.5 rounded-lg bg-violet-500/15 border border-violet-500/30 text-[9px] font-bold text-violet-300 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">badge</span>
+                            {{ g.task.delegate.name }}
+                          </span>
+                        }
+                        <span class="px-2 py-0.5 rounded-lg text-[9px] font-black border"
+                          [class]="g.task.done
+                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'
+                            : 'bg-white/5 text-outline border-white/10'">
+                          {{ g.task.done ? 'Confirmado' : 'Sin confirmar' }}
+                        </span>
+                        @if (g.task.completedAt) {
+                          <span class="text-[9px] font-mono text-outline">{{ g.task.completedAt }}</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="text-right shrink-0">
+                    <div class="text-lg font-black font-mono"
+                      [class]="g.task.done ? 'text-emerald-300' : 'text-amber-200'">{{ money(g.total) }}</div>
+                    <span class="text-[9px] text-outline font-bold uppercase tracking-wider">
+                      {{ g.items.length }} partida(s)
+                    </span>
+                    @if (g.task.estimatedCost) {
+                      <div class="text-[9px] font-mono"
+                        [class]="g.total > g.task.estimatedCost ? 'text-rose-300' : 'text-outline'">
+                        Estimado {{ money(g.task.estimatedCost) }}
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Las partidas del encargo -->
+                <div class="divide-y divide-white/5">
+                  @for (p of g.items; track p.id) {
+                    @let meta = categoryMeta(p.category);
+                    <div class="px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap hover:bg-white/[0.02] transition-colors">
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="material-symbols-outlined text-base shrink-0" [class]="meta.textColor">{{ meta.icon }}</span>
+                        <div class="min-w-0">
+                          <span class="text-[11px] font-bold text-on-surface block truncate">{{ p.concept }}</span>
+                          <span class="text-[9px] text-outline">
+                            {{ p.category }}@if (p.supplier) { · {{ p.supplier }} }@if (p.quantity && p.unit) { · {{ p.quantity }} {{ p.unit }} }
+                          </span>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                        <span class="px-2 py-0.5 rounded-md text-[9px] font-black border" [class]="itemStatusClass(p.status)">{{ p.status }}</span>
+                        <span class="font-mono font-black text-[11px] text-violet-200 w-24 text-right">{{ money(p.amount) }}</span>
+                        @if (canEdit()) {
+                          <button
+                            type="button"
+                            (click)="unlinkItemFromTask(p)"
+                            title="Sacarla de este encargo; la partida sigue en su rubro"
+                            class="w-6 h-6 rounded-lg bg-white/5 border border-white/10 text-outline hover:text-amber-300 hover:border-amber-400/40 flex items-center justify-center transition-all"
+                          >
+                            <span class="material-symbols-outlined text-[13px]">link_off</span>
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
       <!-- ─── DESGLOSE POR RUBRO ─── -->
       <section class="p-6 rounded-3xl bg-gradient-to-br from-violet-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-violet-500/25 border-l-4 border-l-violet-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
         <div class="flex items-center justify-between gap-3 flex-wrap border-b border-outline-variant/20 pb-4">
@@ -433,6 +553,44 @@ import {
                             [readonly]="!canEdit()"
                             (save)="patchItem(item, { detail: $event })"
                           />
+
+                          <!-- Vinculación Bidireccional con Tareas Opcionales -->
+                          <div class="pt-2 border-t border-outline-variant/15 flex items-center justify-between gap-3 flex-wrap text-xs">
+                            @if (item.taskId && getLinkedTaskTitle(item.taskId)) {
+                              <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1">
+                                  <span class="material-symbols-outlined text-[12px]">link</span>
+                                  Tarea Vinculada: {{ getLinkedTaskTitle(item.taskId) }}
+                                </span>
+                              </div>
+                              @if (canEdit()) {
+                                <button
+                                  type="button"
+                                  (click)="unlinkItemFromTask(item)"
+                                  class="text-[10px] text-rose-400 hover:text-rose-300 underline font-semibold"
+                                >
+                                  Desvincular tarea
+                                </button>
+                              }
+                            } @else if (canEdit()) {
+                              <div class="flex items-center gap-2 flex-wrap w-full">
+                                <span class="text-[10px] font-bold text-amber-300 flex items-center gap-1">
+                                  <span class="material-symbols-outlined text-[13px]">link</span>
+                                  Vincular a Tarea Opcional (de este manager):
+                                </span>
+                                <select
+                                  [value]="item.taskId || ''"
+                                  (change)="linkItemToTask(item, $any($event.target).value)"
+                                  class="bg-black/50 border border-amber-500/30 text-on-surface rounded-xl px-2.5 py-1 text-[10px] font-bold focus:outline-none focus:border-amber-400 flex-1 min-w-[200px]"
+                                >
+                                  <option value="">-- Sin vincular a tarea --</option>
+                                  @for (t of availableOptionalTasksForManager(item); track t.id) {
+                                    <option [value]="t.id">{{ t.title }} ({{ t.assignedManager }})</option>
+                                  }
+                                </select>
+                              </div>
+                            }
+                          </div>
                         </div>
 
                         @if (canEdit()) {
@@ -492,12 +650,15 @@ import {
           <div class="flex items-center gap-2.5">
             <span class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center material-symbols-outlined text-lg">queue_music</span>
             <div>
-              <h5 class="text-xs font-black uppercase tracking-wider text-amber-300">Orden de Entradas y Horarios en Escenario</h5>
+              <h5 class="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
+                <span>Orden de Entradas y Horarios en Escenario</span>
+              </h5>
               <p class="text-[11px] text-outline">Llenado rápido: ingresa los horarios de inicio y término o usa el calculador automático.</p>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            @if (canEdit() && slots().length > 0) {
+            <app-mandatory-task-tag checklistItemId="schedule" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+            @if (canEdit() && isTaskUnlocked('schedule') && slots().length > 0) {
               <button
                 type="button"
                 (click)="autoScheduleOpen.set(!autoScheduleOpen())"
@@ -511,6 +672,13 @@ import {
             </span>
           </div>
         </div>
+
+        @if (getProposalNotice('schedule')) {
+          <div class="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-bold leading-relaxed flex items-start gap-2.5 shadow-md">
+            <span class="material-symbols-outlined text-base text-amber-400 shrink-0 mt-0.5">info</span>
+            <span>{{ getProposalNotice('schedule') }}</span>
+          </div>
+        }
 
         <!-- Panel de auto-calculador de horarios -->
         @if (autoScheduleOpen()) {
@@ -676,7 +844,8 @@ import {
             </div>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            @if (canEdit() && slots().length > 0) {
+            <app-mandatory-task-tag checklistItemId="sound" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+            @if (canEdit() && isTaskUnlocked('sound') && slots().length > 0) {
               <button
                 type="button"
                 (click)="autoGenerateSoundChecks()"
@@ -695,6 +864,13 @@ import {
             }
           </div>
         </div>
+
+        @if (getProposalNotice('sound')) {
+          <div class="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-bold leading-relaxed flex items-start gap-2.5 shadow-md">
+            <span class="material-symbols-outlined text-base text-amber-400 shrink-0 mt-0.5">info</span>
+            <span>{{ getProposalNotice('sound') }}</span>
+          </div>
+        }
 
         <div class="space-y-3">
           @for (sc of soundChecks(); track sc.id) {
@@ -1361,5 +1537,206 @@ export class EventTabProductionComponent {
 
   toNumber(value: string): number {
     return Math.max(0, Number(String(value).replace(/[^0-9.-]/g, '')) || 0);
+  }
+
+  // ─── Vinculación Bidireccional con Tareas Opcionales ──────────────────────
+
+  availableOptionalTasks = computed(() => resolveTasks(this.event()).filter(t => t.kind === 'externa'));
+
+  /**
+   * Los encargos con gasto capturado, cada uno con sus partidas.
+   *
+   * Un encargo puede pagarse en varios rubros a la vez, así que las partidas se
+   * ordenan por importe y no por rubro: lo primero que se quiere ver de un
+   * encargo de audio es que la consola fueron sesenta mil, no que empieza por A.
+   */
+  taskGroups = computed(() => {
+    const items = this.items();
+    return this.availableOptionalTasks()
+      .map(task => {
+        const own = items
+          .filter(p => p.taskId === task.id || (!!task.productionItemId && p.id === task.productionItemId))
+          .sort((l, r) => (r.amount || 0) - (l.amount || 0));
+        return { task, items: own, total: own.reduce((s, p) => s + (p.amount || 0), 0) };
+      })
+      .filter(g => g.items.length > 0)
+      .sort((l, r) => r.total - l.total);
+  });
+
+  taskGroupsTotal = computed(() => this.taskGroups().reduce((s, g) => s + g.total, 0));
+
+  readonly categoryMeta = productionCategoryMeta;
+
+  itemStatusClass(status: string): string {
+    switch (status) {
+      case 'Pagado': return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35';
+      case 'Contratado': return 'bg-sky-500/15 text-sky-300 border-sky-500/35';
+      case 'Cotizado': return 'bg-amber-500/15 text-amber-300 border-amber-500/35';
+      default: return 'bg-white/5 text-outline border-white/10';
+    }
+  }
+
+  /**
+   * Los encargos a los que se puede colgar esta partida.
+   *
+   * Se ofrecen los de la disquera que responde por la partida y los del
+   * organizador, que responde por todo lo que no se repartió. Colgarla de un
+   * encargo ajeno le adjudicaría a otra disquera un gasto que no contrató.
+   */
+  availableOptionalTasksForManager(item: EventProductionItem) {
+    const itemManager = item.assignedTo || this.organizer();
+    return this.availableOptionalTasks().filter(t =>
+      !t.assignedManager || t.assignedManager === itemManager || t.assignedManager === this.organizer());
+  }
+
+  getLinkedTaskTitle(taskId?: string): string {
+    if (!taskId) return '';
+    const match = this.availableOptionalTasks().find(t => t.id === taskId);
+    return match ? match.title : '';
+  }
+
+  linkItemToTask(item: EventProductionItem, taskId: string): void {
+    if (!taskId) {
+      this.unlinkItemFromTask(item);
+      return;
+    }
+
+    const updatedProdItems = this.items().map(i => {
+      if (i.id === item.id) {
+        return { ...i, taskId };
+      }
+      return i;
+    });
+
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === taskId) {
+        return {
+          ...t,
+          productionItemId: item.id,
+          productionCategory: item.category,
+          finalCost: item.amount
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ productionItems: updatedProdItems, tasks: updatedTasks });
+  }
+
+  unlinkItemFromTask(item: EventProductionItem): void {
+    const taskId = item.taskId;
+
+    const updatedProdItems = this.items().map(i => {
+      if (i.id === item.id) {
+        return { ...i, taskId: undefined };
+      }
+      return i;
+    });
+
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.productionItemId === item.id || (taskId && t.id === taskId)) {
+        return {
+          ...t,
+          productionItemId: undefined,
+          productionCategory: undefined
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ productionItems: updatedProdItems, tasks: updatedTasks });
+  }
+
+  private sessionService = inject(SessionService);
+
+  isTaskUnlocked(checklistItemId: string): boolean {
+    const actor = this.sessionService.actor();
+    return isTaskUnlockedForActor(this.event(), checklistItemId, actor.managerName);
+  }
+
+  onInterveneTask(task: ResolvedTask): void {
+    const actor = this.sessionService.actor();
+    const now = new Date().toISOString().slice(0, 16);
+
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          intervenedBy: actor,
+          completedBy: actor,
+          completedAt: now,
+          status: 'completada' as const
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ tasks: updatedTasks });
+  }
+
+  onAcceptProposalTask(task: ResolvedTask): void {
+    const prop = task.pendingChangeProposal;
+    if (!prop) return;
+
+    const patchData = prop.proposedChanges || {};
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          pendingChangeProposal: {
+            ...prop,
+            status: 'aceptada' as const,
+            respondedAt: new Date().toISOString()
+          }
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ ...patchData, tasks: updatedTasks });
+  }
+
+  onRejectProposalTask(task: ResolvedTask): void {
+    const prop = task.pendingChangeProposal;
+    if (!prop) return;
+
+    const updatedTasks = (this.event().tasks || []).map(t => {
+      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
+        return {
+          ...t,
+          pendingChangeProposal: {
+            ...prop,
+            status: 'rechazada' as const,
+            respondedAt: new Date().toISOString()
+          }
+        };
+      }
+      return t;
+    });
+
+    this.patch.emit({ tasks: updatedTasks });
+  }
+
+  getProposalNotice(checklistItemId: string): string | null {
+    const actorMgr = this.sessionService.actor().managerName;
+    const tasks = resolveTasks(this.event());
+    const task = tasks.find(t =>
+      t.checklistItemId === checklistItemId ||
+      t.formSectionRef === checklistItemId ||
+      t.id === `task-sys-${checklistItemId}` ||
+      (checklistItemId === 'schedule' && (t.checklistItemId === 'corrida' || t.checklistItemId === 'orden' || t.formSectionRef === 'schedule')) ||
+      (checklistItemId === 'sound' && (t.checklistItemId === 'sonido' || t.formSectionRef === 'sound'))
+    );
+
+    if (!task || !task.done) return null;
+
+    const ownerMgr = task.completedBy?.managerName || task.assignedManager || this.event().ownerManagerName || this.event().createdBy;
+    const isOwner = ownerMgr === actorMgr;
+
+    if (!isOwner) {
+      return `Esta tarea obligatoria fue completada por ${ownerMgr}. Si modificas este dato, se le enviará una propuesta de cambio que el encargado deberá aprobar o rechazar para que se aplique al expediente.`;
+    }
+
+    return null;
   }
 }

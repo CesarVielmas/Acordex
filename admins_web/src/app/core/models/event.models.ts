@@ -69,7 +69,31 @@ export type EventTaskStatus =
   | 'asignada'      // el manager ya la recibió
   | 'aceptada'      // se hizo cargo
   | 'completada'
-  | 'rechazada';
+  | 'rechazada'
+  | 'pendiente-aprobacion'; // transferencia a otro manager pendiente de respuesta
+
+export interface EventTaskTransfer {
+  id: string;
+  fromManager: string;
+  toManager: string;
+  reason: string;
+  requestedAt: string;
+  status: 'pendiente' | 'aceptada' | 'rechazada';
+  respondedAt?: string;
+  rejectionReason?: string;
+}
+
+export interface EventTaskChangeProposal {
+  id: string;
+  proposedBy: ActorRef;
+  proposedAt: string;
+  fieldLabel: string;
+  proposedChanges: Record<string, any>;
+  previousValues: Record<string, any>;
+  status: 'pendiente' | 'aceptada' | 'rechazada';
+  respondedAt?: string;
+  rejectionReason?: string;
+}
 
 export interface EventTask {
   id: string;
@@ -90,11 +114,31 @@ export interface EventTask {
   priority: 'Alta' | 'Media' | 'Baja';
   dueDate?: string;
 
-  /** Solo en 'externa': liga opcional con el desglose de gastos. */
+  /**
+   * Liga con el desglose de gastos, en los croquis viejos de una sola partida.
+   *
+   * La liga viva es la de enfrente: `EventProductionItem.taskId`. Una tarea como
+   * "contratar el audio" casi nunca es un solo gasto —es la consola, las bocinas
+   * y el operador— y con el apuntador de este lado solo cabía uno, así que el
+   * segundo desglose no tenía dónde colgarse. Esto se queda para no perder las
+   * tareas que ya se guardaron con una partida; `resolveTasks` las junta con las
+   * que apuntan hacia acá y devuelve la lista completa.
+   */
   productionItemId?: string;
   productionCategory?: string;
+  /** Lo que se calculó que iba a costar, antes de contratar nada. */
   estimatedCost?: number;
+  /** Se cuenta del desglose. Solo se guarda cuando no hay partidas que sumar. */
   finalCost?: number;
+
+  /** Transferencia de tarea entre Managers pendiente de aprobación */
+  pendingTransfer?: EventTaskTransfer;
+  /** Propuesta de modificación a tarea obligatoria completada */
+  pendingChangeProposal?: EventTaskChangeProposal;
+  /** Historial de transferencias de la tarea */
+  transferHistory?: EventTaskTransfer[];
+  /** Referencia del campo/sección del formulario vinculado */
+  formSectionRef?: string;
 
   createdBy: ActorRef;
   createdAt: string;
@@ -102,6 +146,8 @@ export interface EventTask {
   acceptedAt?: string;
   completedAt?: string;
   completedBy?: ActorRef;
+  /** Manager que intervino para completar la tarea si era de otro Manager */
+  intervenedBy?: ActorRef;
   /** Obligatoria en las externas: es la única prueba de que se hizo. */
   completionNote?: string;
   rejectedReason?: string;
@@ -644,6 +690,16 @@ export interface EventProductionItem {
   assignedTo?: string;
   notes?: string;
   createdBy?: string;
+  /**
+   * La tarea opcional de la que salió este gasto.
+   *
+   * Es la liga que convierte "se gastaron 92,000 en audio" en "a Valentina se le
+   * encargó el audio y esto es lo que contrató". Varias partidas pueden apuntar a
+   * la misma tarea —la consola, las bocinas y el operador son tres gastos de un
+   * solo encargo— y por eso la liga vive aquí y no del lado de la tarea: del otro
+   * lado solo cabría una.
+   */
+  taskId?: string;
 }
 
 /**

@@ -3,9 +3,9 @@ import {
   RowLabeling
 } from '../../../core/models/croquis.models';
 import {
-  areaPolygon, inferNumbering, orderRowSeats, renumberSeatsInRows,
-  renumberTableSeats, rowLabelAt, seatFitsInArea, seatLocalPoint,
-  tableSeatLocalPoint
+  areaPolygon, inferNumbering, orderRows, orderRowSeats, regroupRows,
+  renumberSeatsInRows, renumberTableSeats, resolveRowSlots, rowLabelAt,
+  seatFitsInArea, seatLocalPoint, tableSeatLocalPoint
 } from './croquis-geometry';
 
 /**
@@ -34,6 +34,8 @@ import {
 export interface CroquisFixes {
   /** Butacas cuyo número no correspondía a su posición. */
   renumbered: number;
+  /** Butacas que estaban dibujadas en una fila y guardadas en otra. */
+  regrouped: number;
   /** Filas cuya letra no seguía el orden del recinto. */
   relabelled: number;
   /** Filas que se habían quedado sin ninguna butaca. */
@@ -47,16 +49,18 @@ export interface CroquisFixes {
 }
 
 export const NO_FIXES: CroquisFixes = {
-  renumbered: 0, relabelled: 0, emptyRows: 0, tables: 0, pulledIn: 0, cleaned: 0
+  renumbered: 0, regrouped: 0, relabelled: 0, emptyRows: 0, tables: 0, pulledIn: 0, cleaned: 0
 };
 
 export function totalFixes(fixes: CroquisFixes): number {
-  return fixes.renumbered + fixes.relabelled + fixes.emptyRows + fixes.tables + fixes.pulledIn + fixes.cleaned;
+  return fixes.renumbered + fixes.regrouped + fixes.relabelled + fixes.emptyRows
+    + fixes.tables + fixes.pulledIn + fixes.cleaned;
 }
 
 /** Resumen en una línea de lo que se corrigió, para decírselo a quien dibuja. */
 export function describeFixes(fixes: CroquisFixes): string {
   const partes: string[] = [];
+  if (fixes.regrouped) partes.push(`${fixes.regrouped} butaca(s) devuelta(s) a su fila`);
   if (fixes.renumbered) partes.push(`${fixes.renumbered} butaca(s) renumerada(s)`);
   if (fixes.relabelled) partes.push(`${fixes.relabelled} fila(s) reetiquetada(s)`);
   if (fixes.emptyRows) partes.push(`${fixes.emptyRows} fila(s) vacía(s) eliminada(s)`);
@@ -151,14 +155,20 @@ function cleanOffset(seat: CroquisSeat): { seat: CroquisSeat; cleaned: boolean }
 export function normalizeArea(area: CroquisArea, fixes: CroquisFixes): CroquisArea {
   if (area.kind === 'general') return area;
 
-  // 1. Filas sin nadie: su letra ya no nombra ningún lugar del recinto.
-  const alive = area.rows.filter(row => row.seats.length > 0);
-  fixes.emptyRows += area.rows.length - alive.length;
+  // 1. Cada butaca a la fila donde está dibujada. Va primero porque cambia de
+  //    quién es cada lugar, y todo lo que viene después —qué filas quedan
+  //    vacías, cómo se ordenan, qué letra y qué número les toca— depende de eso.
+  const regrouped = regroupRows(area);
+  fixes.regrouped += regrouped.moved;
 
-  // 2. De adelante hacia atrás, que es como se cuenta un recinto.
-  const ordered = [...alive].sort((l, r) => l.y - r.y || l.x - r.x);
+  // 2. Filas sin nadie: su letra ya no nombra ningún lugar del recinto.
+  const alive = regrouped.rows.filter(row => row.seats.length > 0);
+  fixes.emptyRows += regrouped.rows.length - alive.length;
 
-  // 3. Lugares fuera del área y corrimientos de ruido.
+  // 3. De adelante hacia atrás, que es como se cuenta un recinto.
+  const ordered = orderRows(area, alive);
+
+  // 4. Lugares fuera del área y corrimientos de ruido.
   let rows: CroquisRow[] = ordered.map(row => {
     const seats = row.seats.map((seat, index) => {
       const point = seatLocalPoint(area, row, index);
@@ -181,11 +191,15 @@ export function normalizeArea(area: CroquisArea, fixes: CroquisFixes): CroquisAr
       return limpio.seat;
     });
 
-    // 4. Orden de detección: el arreglo tiene que ir como va el recinto.
-    return { ...row, seats: orderRowSeats(area, { ...row, seats }).seats };
+    // 5. Orden de detección: el arreglo tiene que ir como va el recinto, y las
+    //    casillas de la rejilla detrás de él —dos butacas en la misma casilla
+    //    son dos boletos para el mismo asiento en cuanto alguien las devuelve a
+    //    la rejilla.
+    const acomodada = { ...row, seats: orderRowSeats(area, { ...row, seats }).seats };
+    return resolveRowSlots(area, acomodada);
   });
 
-  // 5. Las letras siguen el orden del recinto, salvo que alguien las escribiera.
+  // 6. Las letras siguen el orden del recinto, salvo que alguien las escribiera.
   const labelling = labellingOf(area, rows);
   if (labelling) {
     rows = rows.map((row, index) => {
@@ -196,12 +210,12 @@ export function normalizeArea(area: CroquisArea, fixes: CroquisFixes): CroquisAr
     });
   }
 
-  // 6. Y los números, la posición que ocupa cada butaca en su fila.
+  // 7. Y los números, la posición que ocupa cada butaca en su fila.
   const numbering = inferNumbering({ ...area, rows });
   const antes = new Map<string, string>();
   for (const row of rows) for (let i = 0; i < row.seats.length; i++) antes.set(`${row.id}|${i}`, row.seats[i].number);
 
-  rows = renumberSeatsInRows(rows, numbering, new Set(rows.map(r => r.id)));
+  rows = renumberSeatsInRows(area, rows, numbering, new Set(rows.map(r => r.id)));
   for (const row of rows) {
     for (let i = 0; i < row.seats.length; i++) {
       if (antes.get(`${row.id}|${i}`) !== row.seats[i].number) fixes.renumbered += 1;
@@ -228,70 +242,39 @@ function normalizeTables(area: CroquisArea, fixes: CroquisFixes): CroquisTable[]
   const renombrables = ordered.every(t => MESA_POR_DEFECTO.test(t.label));
 
   return ordered.map((table, index) => {
-    let cambiada = false;
-
-    // Las posiciones alrededor de la mesa tienen que alcanzar para las sillas
-    // que hay: si no, dos acabarían sentadas en el mismo sitio.
-    const maxSlot = table.seats.reduce((max, s) => Math.max(max, s.slot || 0), 0);
-    const slots = Math.max(1, table.slots || 0, maxSlot + 1, table.seats.length);
-    if (slots !== table.slots) cambiada = true;
-
-    // Y dos sillas no pueden ocupar la misma: pasa al arrastrar una hacia una
-    // mesa llena, y mientras siga así la mesa no se puede contar —dos lugares
-    // con el mismo sitio son dos boletos para la misma silla.
-    const ocupadas = new Set<number>();
-    const sentadas: CroquisSeat[] = [...table.seats]
-      .sort((l, r) => (l.slot || 0) - (r.slot || 0))
-      .map(seat => {
-        const slot = seat.slot || 0;
-        if (!ocupadas.has(slot) && slot < slots) {
-          ocupadas.add(slot);
-          return seat;
-        }
-
-        // Se busca hacia los dos lados: la silla de más se queda junto a donde
-        // la soltaron, no al final de la mesa.
-        let libre = slot;
-        for (let paso = 1; paso <= slots; paso++) {
-          const derecha = (slot + paso) % slots;
-          const izquierda = ((slot - paso) % slots + slots) % slots;
-          if (!ocupadas.has(derecha)) { libre = derecha; break; }
-          if (!ocupadas.has(izquierda)) { libre = izquierda; break; }
-        }
-
-        ocupadas.add(libre);
-        cambiada = true;
-        // El corrimiento medía contra el sitio viejo; en el nuevo no significa
-        // nada, así que la silla vuelve limpia a su lugar alrededor de la mesa.
-        return { ...seat, slot: libre, dx: undefined, dy: undefined };
-      });
-
-    const seats = sentadas.map(seat => {
+    const seats = table.seats.map(seat => {
       const point = tableSeatLocalPoint(table, seat);
       const inside = pullInside(area, point);
       if (!inside) {
         const limpio = cleanOffset(seat);
-        if (limpio.cleaned) { fixes.cleaned += 1; cambiada = true; }
+        if (limpio.cleaned) fixes.cleaned += 1;
         return limpio.seat;
       }
 
       fixes.pulledIn += 1;
-      cambiada = true;
       // La silla vuelve a su posición limpia alrededor de la mesa: si la mesa
       // cabe, el lugar de la rejilla cabe, y arrastrarla al borde solo dejaría
       // una silla apretada contra la pared.
       return { ...seat, dx: undefined, dy: undefined };
     });
 
-    // Se compara por posición alrededor de la mesa y no por índice: renumerar
-    // reordena el arreglo, y comparar índice contra índice contaría como cambio
-    // de número lo que solo fue un cambio de orden.
-    const numerada = renumberTableSeats({ ...table, slots, seats });
-    const antes = new Map(seats.map(s => [s.slot || 0, s.number]));
-    if (numerada.seats.some(s => antes.get(s.slot || 0) !== s.number)) cambiada = true;
+    // Sentarlas y contarlas es cosa de `renumberTableSeats`: reparte las
+    // posiciones por dónde está dibujada cada silla, así que de paso deshace las
+    // dos que quedaron en el mismo sitio —dos boletos para la misma silla— y las
+    // que apuntaban a una posición que la mesa ya no tiene.
+    const numerada = renumberTableSeats({ ...table, seats });
 
     const label = renombrables ? `Mesa ${index + 1}` : table.label;
-    if (label !== table.label) cambiada = true;
+
+    // Se compara la mesa entera y no silla contra silla por índice: sentarlas
+    // reordena el arreglo, y comparar índice contra índice contaría como cambio
+    // lo que solo fue un cambio de orden.
+    const firma = (t: CroquisTable) =>
+      t.slots + '·' + [...t.seats]
+        .map(s => `${s.slot || 0}:${s.number}:${s.dx || 0}:${s.dy || 0}`)
+        .sort()
+        .join(',');
+    const cambiada = firma({ ...table, seats }) !== firma(numerada) || label !== table.label;
 
     if (cambiada) fixes.tables += 1;
     return { ...numerada, label };
