@@ -1,6 +1,16 @@
 // Solo el tipo: `admin.models` reexporta este módulo, así que un import de
 // valor cerraría un ciclo real. Con `import type` el ciclo se borra al compilar.
 import type { Role } from './admin.models';
+import type { CroquisPlan } from './croquis.models';
+
+export type {
+  CroquisPlan,
+  CroquisArea,
+  CroquisRow,
+  CroquisSeat,
+  CroquisElement,
+  CroquisElementKind
+} from './croquis.models';
 
 /**
  * Modelo de dominio de un evento público de Acordex.
@@ -163,7 +173,7 @@ export interface TicketTier {
   totalSeats: number;
   soldSeats: number;
   color: string;
-  /** Zona del croquis a la que pertenece esta categoría de boleto. */
+  /** @deprecated Zona del modelo anterior; hoy el área del croquis apunta a la categoría. */
   zoneId?: string;
   /** Boletos apartados que no salen a la venta (prensa, cortesías, invitados). */
   heldSeats?: number;
@@ -175,14 +185,28 @@ export interface TicketTier {
   /** Ícono de Material Symbols con el que el portal pinta la categoría. */
   icon?: string;
   /**
-   * Filas que ocupa esta categoría en el mapa de asientos ('A', 'B', 'C'...).
-   * El selector de asientos del cliente genera la butaquería con estas filas y
-   * `seatsPerRow`: sin ellas, la categoría no se puede sentar.
+   * Retícula de butacas del modelo anterior: filas ('A', 'B', 'C'…) y butacas
+   * por fila. Se conserva para leer expedientes viejos —de aquí sale el ancho
+   * de fila al migrarlos a un croquis— pero ya no manda: la butaquería la define
+   * el plano, butaca por butaca, y `totalSeats` se cuenta de ahí.
+   *
+   * @deprecated Usa `EventItem.croquisPlans`.
    */
   rowLabels?: string[];
+  /** @deprecated Ver `rowLabels`. */
   seatsPerRow?: number;
 }
 
+/**
+ * Zona del modelo anterior al editor de croquis.
+ *
+ * Describía el recinto con puros números —capacidad, filas, butacas por fila— y
+ * eso deja fuera lo único que importa al comprar: dónde queda el lugar. Se
+ * conserva porque hay expedientes capturados así; al abrirlos, `croquisPlans`
+ * se genera a partir de estas zonas y a partir de ahí el plano es el que manda.
+ *
+ * @deprecated Usa `EventItem.croquisPlans`.
+ */
 export interface CroquisZone {
   id: string;
   name: string;
@@ -743,7 +767,19 @@ export interface EventItem {
   capacity?: number;
 
   ticketTiers: TicketTier[];
+
+  /**
+   * Croquis del evento, uno por zona física.
+   *
+   * Es la fuente de verdad del boletaje: los lugares a la venta de cada
+   * categoría se cuentan del plano, no se capturan. Un evento con tres
+   * escenarios simultáneos lleva tres croquis y el cliente cambia entre ellos.
+   */
+  croquisPlans?: CroquisPlan[];
+
+  /** @deprecated Zonas del modelo anterior; se migran a `croquisPlans` al abrir. */
   croquisZones: CroquisZone[];
+
   lineup: EventLineupSlot[];
   sound: EventSoundSetup;
   soundChecks?: GroupSoundCheck[];

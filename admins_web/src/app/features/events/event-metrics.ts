@@ -125,25 +125,11 @@ export function serviceFee(e: EventItem): number {
   return publicProfile(e).serviceFeePerSeat ?? 45;
 }
 
-/** Lugares que genera el mapa de asientos de una categoría (filas × butacas). */
-export function seatMapSeats(tier: TicketTier): number {
-  const rows = tier.rowLabels?.length || 0;
-  return rows * (tier.seatsPerRow || 0);
-}
-
-/** True cuando la categoría no puede sentarse: le falta la retícula de butacas. */
-export function lacksSeatMap(tier: TicketTier): boolean {
-  return seatMapSeats(tier) <= 0;
-}
-
-/**
- * Categorías cuyo mapa de asientos no cuadra con los lugares a la venta. El
- * cliente elige butaca sobre esa retícula, así que un descuadre significa
- * vender un boleto sin asiento que darle.
- */
-export function tiersWithSeatMismatch(e: EventItem): TicketTier[] {
-  return (e.ticketTiers || []).filter(t => seatMapSeats(t) > 0 && seatMapSeats(t) !== t.totalSeats);
-}
+// La retícula de butacas de cada categoría (`rowLabels` × `seatsPerRow`) vivía
+// aquí junto con su validador de "cuadra / no cuadra". Ya no existe: la
+// butaquería la define el croquis y los lugares de cada categoría se cuentan del
+// plano, así que no hay dos números que puedan descuadrar. Lo que se contaba
+// aquí ahora se cuenta en `croquis/croquis-metrics.ts`.
 
 /** Grupos del cartel a los que les falta algún dato que el portal muestra. */
 export function slotsMissingPublicData(e: EventItem): EventLineupSlot[] {

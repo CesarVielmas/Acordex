@@ -17,6 +17,7 @@ import { EventTabLineupComponent } from './detail/event-tab-lineup.component';
 import { EventTabProductionComponent } from './detail/event-tab-production.component';
 import { EventTabTicketsComponent } from './detail/event-tab-tickets.component';
 import { EventTabClosureComponent } from './detail/event-tab-closure.component';
+import { CroquisEditorComponent } from '../croquis/components/croquis-editor.component';
 import { CompletenessItem, completenessByGroup, eventCompleteness } from '../event-completeness';
 import {
   approvals,
@@ -70,7 +71,8 @@ export type EventDetailTab =
     EventTabLineupComponent,
     EventTabProductionComponent,
     EventTabTicketsComponent,
-    EventTabClosureComponent
+    EventTabClosureComponent,
+    CroquisEditorComponent
   ],
   template: `
     @if (event(); as e) {
@@ -599,6 +601,7 @@ export type EventDetailTab =
               [canEdit]="policy().tickets"
               [canViewFinances]="roleService.canViewFinances()"
               (patch)="patch.emit($event)"
+              (openEditor)="openCroquisEditor($event)"
             />
           }
 
@@ -1386,6 +1389,20 @@ export type EventDetailTab =
 
       </app-modal-shell>
 
+      <!-- ─── EDITOR DE CROQUIS ─── -->
+      <!-- Fuera del modal a propósito: el editor necesita la pantalla completa y
+           dentro del expediente quedaría atrapado en su caja. -->
+      @if (croquisEditorOpen()) {
+        <app-croquis-editor
+          [event]="e"
+          [canEdit]="policy().tickets"
+          [canViewFinances]="roleService.canViewFinances()"
+          [initialPlanId]="croquisEditorPlanId()"
+          (patch)="patch.emit($event)"
+          (closed)="croquisEditorOpen.set(false)"
+        />
+      }
+
       <!-- Ventana Modal Window Lateral Independiente para Vista Previa del Cliente -->
       <!-- ─── MODAL: INVITAR MANAGER A CO-ORGANIZAR ─── -->
       @if (inviteModalOpen()) {
@@ -1828,6 +1845,15 @@ export class EventDetailModalComponent {
 
   activeTab = signal<EventDetailTab>('evento');
   showLivePreview = signal(false);
+
+  croquisEditorOpen = signal(false);
+  croquisEditorPlanId = signal<string | null>(null);
+
+  /** Abre el editor de croquis, opcionalmente en un croquis concreto. */
+  openCroquisEditor(planId: string | null): void {
+    this.croquisEditorPlanId.set(planId);
+    this.croquisEditorOpen.set(true);
+  }
 
   publicProfile = publicProfile;
   shortDate = shortDate;

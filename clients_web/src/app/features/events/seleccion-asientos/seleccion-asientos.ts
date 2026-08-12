@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EventService, CalendarEvent, TicketPurchase, PurchasedSeat } from '../../../core/services/event.service';
 import { LayoutService } from '../../../core/services/layout.service';
+import { croquisForEvent } from '../../../core/services/croquis.mock';
+import { CroquisPlan, EventCroquis } from '../../../core/models/croquis.model';
+import { CroquisMapComponent, CroquisSeatHit, SeatVisualState } from './croquis-map.component';
 
 interface Seat {
   id: string; // e.g. A-3
@@ -11,11 +14,13 @@ interface Seat {
   category: string;
   price: number;
   status: 'available' | 'sold' | 'selected' | 'purchased';
+  /** Zona del croquis en la que está la butaca. */
+  areaId: string;
 }
 
 @Component({
   selector: 'app-seleccion-asientos',
-  imports: [CommonModule],
+  imports: [CommonModule, CroquisMapComponent],
   templateUrl: './seleccion-asientos.html',
   styleUrl: './seleccion-asientos.scss'
 })
@@ -70,12 +75,115 @@ export class SeleccionAsientos implements OnInit {
   // Refund checkboxes selection map (for partial/total refund)
   refundSeats = signal<Record<string, boolean>>({});
 
-  categoryDetails = [
-    { name: 'VIP Oro', price: 2200, color: '#F2CA50', rows: ['A', 'B', 'C', 'D'], cols: 6 },
-    { name: 'Preferente', price: 1200, color: '#3B82F6', rows: ['E', 'F', 'G', 'H', 'I'], cols: 8 },
-    { name: 'General A', price: 650, color: '#10B981', rows: ['J', 'K', 'L', 'M', 'N', 'O'], cols: 10 },
-    { name: 'Grada General', price: 350, color: '#F97316', rows: ['P', 'Q', 'R', 'S', 'T', 'U'], cols: 12 }
-  ];
+  /**
+   * El croquis publicado del evento.
+   *
+   * Antes el recinto estaba escrito a mano aquí dentro: cuatro categorías fijas
+   * con sus filas y sus columnas. Eso obligaba a que cada evento se vendiera en
+   * el mismo recinto imaginario. Ahora el plano llega desde el evento y esta
+   * pantalla solo lo dibuja; lo demás —elegir, comprar, cambiar y reembolsar—
+   * funciona exactamente igual que antes.
+   */
+  croquis = signal<EventCroquis | null>(null);
+  activePlanId = signal<string>('');
+
+  plans = computed<CroquisPlan[]>(() => this.croquis()?.plans || []);
+
+  activePlan = computed<CroquisPlan | null>(() =>
+    this.plans().find(p => p.id === this.activePlanId()) || this.plans()[0] || null);
+
+  /** Cargo por boleto que fija la taquilla del evento. */
+  serviceFee = computed(() => this.croquis()?.serviceFee ?? 45);
+
+  /** Las categorías del selector, con la forma que ya usaba la vista. */
+  categoryDetails = computed(() => {
+    const plan = this.activePlan();
+    const croquis = this.croquis();
+    if (!plan || !croquis) return [] as { name: string; price: number; color: string; description?: string }[];
+
+    // Solo las que tienen lugares en esta zona: ofrecer una categoría que aquí
+    // no se vende manda al comprador a un mapa donde no puede elegir nada.
+    const used = new Set(plan.areas.map(a => a.tierId));
+    return croquis.tiers
+      .filter(t => used.has(t.id))
+      .map(t => ({ name: t.name, price: t.price, color: t.color, description: t.description }));
+  });
+
+  /** Zonas de entrada libre: no tienen butaca que elegir, solo aforo. */
+  generalAreas = computed(() => {
+    const plan = this.activePlan();
+    const croquis = this.croquis();
+    if (!plan || !croquis) return [];
+
+    return plan.areas.filter(a => !a.numbered).map(a => {
+      const tier = croquis.tiers.find(t => t.id === a.tierId);
+      return {
+        id: a.id,
+        name: a.name,
+        tierName: tier?.name || '',
+        price: tier?.price || 0,
+        color: tier?.color || '#ffffff',
+        capacity: a.capacity || 0,
+        available: Math.max(0, (a.capacity || 0) - (a.sold || 0)),
+        accessNote: a.accessNote || ''
+      };
+    });
+  });
+
+  /**
+   * Cómo debe pintarse cada butaca en el mapa.
+   *
+   * Se deriva de `seats`, que es donde vive el estado real: así el croquis
+   * refleja la selección, la compra y el reembolso sin que el visor tenga que
+   * saber nada de carritos.
+   */
+  seatStates = computed<Record<string, SeatVisualState>>(() => {
+    const active = this.selectedCategory();
+    const map: Record<string, SeatVisualState> = {};
+
+    this.seats().forEach(s => {
+      if (s.status === 'sold') map[s.id] = 'sold';
+      else if (s.status === 'selected') map[s.id] = 'selected';
+      else if (s.status === 'purchased') map[s.id] = 'purchased';
+      else map[s.id] = active && s.category !== active ? 'muted' : 'available';
+    });
+
+    return map;
+  });
+
+  /** Escenarios de un croquis, para el selector de zonas. */
+  planStages(plan: CroquisPlan): string {
+    return plan.elements.filter(e => e.kind === 'escenario').map(e => e.label).join(' · ');
+  }
+
+  /** Un toque en el croquis se traduce al asiento que ya conocía la vista. */
+  onSeatPicked(hit: CroquisSeatHit) {
+    const seat = this.seats().find(s => s.id === hit.id);
+    if (seat) this.toggleSeat(seat);
+  }
+
+  /** Referencias del recinto (pantallas, barra, accesos…). */
+  references = computed(() => {
+    const plan = this.activePlan();
+    if (!plan) return [] as { icon: string; label: string; color: string }[];
+
+    // Se agrupan por tipo: "Sonido ×4" no le aporta nada a nadie.
+    const seen = new Map<string, { icon: string; label: string; color: string }>();
+    plan.elements
+      .filter(e => e.kind !== 'escenario' && e.kind !== 'texto')
+      .forEach(e => {
+        if (!seen.has(e.kind)) seen.set(e.kind, { icon: e.icon, label: e.label, color: e.color });
+      });
+    return [...seen.values()];
+  });
+
+  /** Nombre del escenario para el arco superior del mapa. */
+  stageLabel = computed(() => {
+    const names = (this.activePlan()?.elements || [])
+      .filter(e => e.kind === 'escenario')
+      .map(e => e.label);
+    return names.length ? names.join(' · ') : 'Escenario Principal';
+  });
 
   selectedSeats = computed(() => {
     return Object.values(this.selectedSeatsMap());
@@ -88,10 +196,11 @@ export class SeleccionAsientos implements OnInit {
   // Group seats by row to render them row-by-row centered in the template
   seatsByRow = computed(() => {
     const map: Record<string, { row: string, categoryName: string, color: string, seats: Seat[] }> = {};
-    
+    const cats = this.categoryDetails();
+
     this.seats().forEach(s => {
       if (!map[s.row]) {
-        const catConfig = this.categoryDetails.find(c => c.name === s.category);
+        const catConfig = cats.find(c => c.name === s.category);
         map[s.row] = {
           row: s.row,
           categoryName: s.category,
@@ -105,14 +214,61 @@ export class SeleccionAsientos implements OnInit {
     return Object.values(map);
   });
 
+  /**
+   * Las butacas agrupadas por zona y, dentro de cada zona, por fila.
+   *
+   * El mapa se dibujaba como una sola columna de filas corridas, y eso funciona
+   * mientras el recinto sea uno solo. Con el croquis del evento hay zonas con
+   * nombre, precio y disponibilidad propios, y no distinguirlas dejaría al
+   * comprador adivinando dónde termina el VIP y empieza la general.
+   */
+  seatedAreas = computed(() => {
+    const plan = this.activePlan();
+    const croquis = this.croquis();
+    if (!plan || !croquis) return [];
+
+    const byArea = new Map<string, Seat[]>();
+    this.seats().forEach(s => {
+      if (!byArea.has(s.areaId)) byArea.set(s.areaId, []);
+      byArea.get(s.areaId)!.push(s);
+    });
+
+    return plan.areas.filter(a => a.numbered).map(area => {
+      const tier = croquis.tiers.find(t => t.id === area.tierId);
+      const seats = byArea.get(area.id) || [];
+
+      const rows: { row: string; color: string; seats: Seat[] }[] = [];
+      const index = new Map<string, number>();
+      seats.forEach(s => {
+        if (!index.has(s.row)) {
+          index.set(s.row, rows.length);
+          rows.push({ row: s.row, color: tier?.color || '#ffffff', seats: [] });
+        }
+        rows[index.get(s.row)!].seats.push(s);
+      });
+
+      return {
+        id: area.id,
+        name: area.name,
+        tierName: tier?.name || '',
+        price: tier?.price || 0,
+        color: tier?.color || '#ffffff',
+        accessNote: area.accessNote || '',
+        available: seats.filter(s => s.status === 'available').length,
+        total: seats.length,
+        rows
+      };
+    });
+  });
+
   // Original ticket counts and values
   originalSeatsCount = computed(() => this.existingPurchase()?.seats.length || 0);
   originalPrice = computed(() => this.existingPurchase()?.totalPrice || 0);
-  originalCharges = computed(() => this.originalSeatsCount() * 45);
+  originalCharges = computed(() => this.originalSeatsCount() * this.serviceFee());
   originalTotal = computed(() => this.originalPrice() + this.originalCharges());
 
   // New ticket counts and values
-  newCharges = computed(() => this.selectedSeats().length * 45);
+  newCharges = computed(() => this.selectedSeats().length * this.serviceFee());
   newTotal = computed(() => this.totalPrice() + this.newCharges());
 
   // Price difference to pay (can be signed)
@@ -147,7 +303,7 @@ export class SeleccionAsientos implements OnInit {
     selectedToRefund.forEach(seatId => {
       const s = existing.seats.find(x => x.id === seatId);
       if (s) {
-        amount += s.price + 45; // price + charge
+        amount += s.price + this.serviceFee(); // price + charge
       }
     });
     return amount;
@@ -162,6 +318,12 @@ export class SeleccionAsientos implements OnInit {
         const id = parseInt(idParam, 10);
         const resolvedEvent = this.eventService.getEventById(id) || this.getFallbackEventById(id);
         this.event.set(resolvedEvent);
+
+        // El croquis primero: de él salen las categorías y las butacas, así que
+        // todo lo que viene después ya trabaja sobre el recinto real.
+        const croquis = croquisForEvent(id);
+        this.croquis.set(croquis);
+        this.activePlanId.set(croquis.plans[0]?.id || '');
         
         // Check for existing purchase for this event
         const purchases = this.eventService.getPurchasesForEvent(id);
@@ -175,7 +337,7 @@ export class SeleccionAsientos implements OnInit {
             map[s.id] = { id: s.id, categoryName: s.categoryName, price: s.price, isOriginal: true };
           });
           this.selectedSeatsMap.set(map);
-          this.selectedCategory.set(firstPurchase.seats[0]?.categoryName || 'VIP Oro');
+          this.selectedCategory.set(firstPurchase.seats[0]?.categoryName || this.categoryDetails()[0]?.name || '');
           
           this.isEditing.set(true);
           this.initRefundSeats();
@@ -207,42 +369,64 @@ export class SeleccionAsientos implements OnInit {
     }));
   }
 
-  // Generate ALL seats across ALL categories on load
+  /**
+   * Arma la butaquería a partir del croquis publicado.
+   *
+   * Las butacas ya no se inventan con una fórmula: son las que el organizador
+   * dibujó, con su fila, su número, su categoría y su estado de venta. Lo que se
+   * mantiene intacto es la forma del dato, para que la selección, la compra y los
+   * reembolsos sigan funcionando sin enterarse del cambio.
+   */
   generateAllSeats() {
+    const plan = this.activePlan();
+    const croquis = this.croquis();
+    if (!plan || !croquis) {
+      this.seats.set([]);
+      return;
+    }
+
     const list: Seat[] = [];
     const currentSelections = this.selectedSeatsMap();
 
-    this.categoryDetails.forEach(config => {
-      config.rows.forEach(row => {
-        for (let col = 1; col <= config.cols; col++) {
-          const seatId = `${row}-${col}`;
-          
-          // Determine status
+    plan.areas.filter(a => a.numbered).forEach(area => {
+      const areaTier = croquis.tiers.find(t => t.id === area.tierId);
+
+      area.rows.forEach(row => {
+        row.seats.forEach(seat => {
+          const seatId = `${row.label}-${seat.number}`;
+          const tier = seat.tierId
+            ? croquis.tiers.find(t => t.id === seat.tierId) || areaTier
+            : areaTier;
+
           let status: 'available' | 'sold' | 'selected' | 'purchased' = 'available';
-          
           if (currentSelections[seatId]) {
             status = currentSelections[seatId].isOriginal ? 'purchased' : 'selected';
-          } else {
-            // Prepopulate some seats as sold deterministically based on seed
-            const seed = (row.charCodeAt(0) * col * 17) % 100;
-            if (seed > 65) {
-              status = 'sold';
-            }
+          } else if (seat.state) {
+            status = 'sold';
           }
 
           list.push({
             id: seatId,
-            row,
-            number: col,
-            category: config.name,
-            price: config.price,
-            status
+            row: row.label,
+            number: seat.number,
+            category: tier?.name || '',
+            price: tier?.price || 0,
+            status,
+            areaId: area.id
           });
-        }
+        });
       });
     });
 
     this.seats.set(list);
+  }
+
+  /** Cambia de zona del evento: cada croquis trae su propio boletaje. */
+  selectPlan(planId: string) {
+    if (planId === this.activePlanId()) return;
+    this.activePlanId.set(planId);
+    this.selectedCategory.set(this.categoryDetails()[0]?.name || '');
+    this.generateAllSeats();
   }
 
   selectCategory(name: string) {
@@ -253,18 +437,33 @@ export class SeleccionAsientos implements OnInit {
 
   refreshSeatStatuses() {
     const currentSelections = this.selectedSeatsMap();
+    // Lo vendido lo dice el croquis, no una fórmula: recalcularlo con una semilla
+    // haría que un lugar ocupado se liberara solo al deseleccionar otro.
+    const sold = this.soldSeatIds();
+
     this.seats.update(list => list.map(s => {
       let status: 'available' | 'sold' | 'selected' | 'purchased' = 'available';
       if (currentSelections[s.id]) {
         status = currentSelections[s.id].isOriginal ? 'purchased' : 'selected';
-      } else {
-        const seed = (s.row.charCodeAt(0) * s.number * 17) % 100;
-        if (seed > 65) {
-          status = 'sold';
-        }
+      } else if (sold.has(s.id)) {
+        status = 'sold';
       }
       return { ...s, status };
     }));
+  }
+
+  /** Lugares que el croquis marca como vendidos o apartados. */
+  private soldSeatIds(): Set<string> {
+    const plan = this.activePlan();
+    const ids = new Set<string>();
+    if (!plan) return ids;
+
+    plan.areas.forEach(area => area.rows.forEach(row =>
+      row.seats.forEach(seat => {
+        if (seat.state) ids.add(`${row.label}-${seat.number}`);
+      })
+    ));
+    return ids;
   }
 
   toggleSeat(seat: Seat) {

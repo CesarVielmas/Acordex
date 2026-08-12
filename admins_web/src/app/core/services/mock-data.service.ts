@@ -23,6 +23,7 @@ import {
   EventTimelineStep,
   NewEventDraft
 } from '../models/event.models';
+import { distinguishTierColors, ensureCroquisPlans } from '../../features/events/croquis/croquis-metrics';
 
 const ACTIVE_DISQUERA_ID = 'acordex-records';
 
@@ -3609,8 +3610,24 @@ export class MockDataService {
    * ya no es interpretable, así que se parte de los mocks nuevos en vez de
    * intentar migrar un dato que no tiene los campos que ahora se necesitan.
    */
+  /**
+   * Los eventos se normalizan al cargarse, una sola vez.
+   *
+   * `ensureCroquisPlans` arma el croquis a partir de las zonas numéricas del
+   * modelo anterior, con las que se sembraron los expedientes. Si eso corriera
+   * al leer, cada render generaría ids nuevos y el editor perdería la selección
+   * en cada cambio.
+   *
+   * `distinguishTierColors` separa las categorías que se capturaron con colores
+   * casi iguales. Daba igual cuando el color era un adorno de la ficha; ahora es
+   * lo que pinta cada butaca del croquis y dos dorados parecidos lo vuelven
+   * ilegible.
+   */
   readonly events = signal<EventItem[]>(
-    this.storage.getItem('acordex_events_v2', this.INITIAL_EVENTS)
+    this.storage.getItem('acordex_events_v3', this.INITIAL_EVENTS).map(ev => {
+      const ticketTiers = distinguishTierColors(ev.ticketTiers || []);
+      return { ...ev, ticketTiers, croquisPlans: ensureCroquisPlans({ ...ev, ticketTiers }) };
+    })
   );
 
   readonly pressEvents = signal<PressEvent[]>(
@@ -3810,7 +3827,7 @@ export class MockDataService {
   /** Escribe un evento ya modificado y lo persiste. */
   private commitEvents(updated: EventItem[]): void {
     this.events.set(updated);
-    this.storage.setItem('acordex_events_v2', updated);
+    this.storage.setItem('acordex_events_v3', updated);
   }
 
   /** Aplica una transformación a un solo evento. */

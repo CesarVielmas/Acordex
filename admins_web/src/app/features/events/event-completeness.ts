@@ -3,12 +3,14 @@ import {
   isCoOrganizedSlot,
   lineup,
   organizerName,
-  totalSeats,
   slotCost,
-  publicProfile,
-  lacksSeatMap,
-  tiersWithSeatMismatch
+  publicProfile
 } from './event-metrics';
+import {
+  croquisCapacity,
+  planStages,
+  tierCroquisSummary
+} from './croquis/croquis-metrics';
 
 /**
  * Qué le falta a un evento para poder salir de 'Borrador'.
@@ -83,8 +85,12 @@ export interface CompletenessReport {
 export function eventCompleteness(e: EventItem): CompletenessReport {
   const slots = lineup(e);
   const tiers = e.ticketTiers || [];
-  const zones = e.croquisZones || [];
-  const zoneIds = new Set(zones.map(z => z.id));
+  // El croquis es la fuente de verdad del boletaje: los lugares de cada
+  // categoría se cuentan del plano, así que el checklist mide el plano.
+  const plans = e.croquisPlans || [];
+  const areas = plans.flatMap(p => p.areas);
+  const tierIds = new Set(tiers.map(t => t.id).filter(Boolean) as string[]);
+  const croquisPorTier = tierCroquisSummary(plans);
   const publico = publicProfile(e);
   const organizer = organizerName(e);
 
@@ -345,54 +351,57 @@ export function eventCompleteness(e: EventItem): CompletenessReport {
     },
 
     // --- Boletaje ---
+    // El punto de "el mapa de butacas cuadra con los lugares a la venta"
+    // desapareció de esta lista y no se le extraña: era la consecuencia de tener
+    // dos fuentes de verdad. Con el croquis como única fuente, no hay nada que
+    // pueda dejar de cuadrar.
     {
-      id: 'zonas',
+      id: 'croquis',
       group: 'Boletaje',
-      label: 'Zonas del croquis definidas',
-      hint: 'Divide el recinto en zonas con su capacidad',
+      label: 'Croquis del evento dibujado',
+      hint: 'Dibuja el plano del recinto con sus áreas: es lo que define qué se vende',
       required: true,
-      done: zones.length > 0 && zones.every(z => (z.capacity || 0) > 0)
+      done: plans.length > 0 && plans.every(p => p.areas.length > 0)
+    },
+    {
+      id: 'croquis_escenario',
+      group: 'Boletaje',
+      label: 'Escenario marcado en cada croquis',
+      hint: 'Sin escenario el cliente no sabe hacia dónde mira el lugar que compra',
+      required: true,
+      done: plans.length > 0 && plans.every(p => planStages(p).length > 0)
     },
     {
       id: 'boletos',
       group: 'Boletaje',
-      label: 'Categorías de boleto con precio y lugares',
-      hint: 'Cada categoría necesita precio y número de lugares',
+      label: 'Categorías de boleto con precio',
+      hint: 'Cada categoría necesita su precio de venta',
       required: true,
-      done: tiers.length > 0 && tiers.every(t => (t.price || 0) > 0 && (t.totalSeats || 0) > 0)
+      done: tiers.length > 0 && tiers.every(t => (t.price || 0) > 0)
     },
     {
-      id: 'boletos_zona',
+      id: 'areas_categoria',
       group: 'Boletaje',
-      label: 'Cada categoría ligada a una zona del croquis',
-      hint: 'Sin esta liga el cliente no sabe dónde se sienta lo que compra',
+      label: 'Cada área del croquis ligada a una categoría',
+      hint: 'Un área sin categoría no tiene precio ni color: no se puede vender',
       required: true,
-      done: tiers.length > 0 && tiers.every(t => !!t.zoneId && zoneIds.has(t.zoneId))
+      done: areas.length > 0 && areas.every(a => !!a.tierId && tierIds.has(a.tierId))
+    },
+    {
+      id: 'boletos_lugares',
+      group: 'Boletaje',
+      label: 'Cada categoría con lugares en el croquis',
+      hint: 'Asigna la categoría a un área del plano; si no, no puede vender nada',
+      required: true,
+      done: tiers.length > 0 && tiers.every(t => (croquisPorTier.get(t.id || '')?.capacity || 0) > 0)
     },
     {
       id: 'aforo',
       group: 'Boletaje',
-      label: 'El boletaje cabe en el aforo de las zonas',
-      hint: 'Los lugares a la venta no pueden superar la capacidad de las zonas',
+      label: 'El boletaje cabe en el aforo del recinto',
+      hint: 'Los lugares dibujados no pueden superar el aforo declarado del recinto',
       required: true,
-      done: zones.length > 0 && totalSeats(e) > 0 &&
-        totalSeats(e) <= zones.reduce((sum, z) => sum + (z.capacity || 0), 0)
-    },
-    {
-      id: 'butacas',
-      group: 'Boletaje',
-      label: 'Mapa de butacas de cada categoría (filas y asientos)',
-      hint: 'Sin filas y butacas por fila el cliente no puede elegir asiento',
-      required: true,
-      done: tiers.length > 0 && tiers.every(t => !lacksSeatMap(t))
-    },
-    {
-      id: 'butacas_cuadran',
-      group: 'Boletaje',
-      label: 'El mapa de butacas cuadra con los lugares a la venta',
-      hint: 'Filas × asientos por fila debe dar exactamente los lugares de la categoría',
-      required: true,
-      done: tiers.length > 0 && tiersWithSeatMismatch(e).length === 0
+      done: croquisCapacity(e) > 0 && (!e.capacity || croquisCapacity(e) <= e.capacity)
     },
     {
       id: 'descripcion_boletos',

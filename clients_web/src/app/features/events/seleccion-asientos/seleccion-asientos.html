@@ -23,6 +23,21 @@
         <!-- LEFT COLUMN: Seat Layout Selections -->
         <div class="lg:col-span-8 flex flex-col gap-6">
             
+            <!-- Zone Selector (only when the event has several croquis) -->
+            <div *ngIf="plans().length > 1" class="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 shadow-inner">
+                <span class="text-[8px] uppercase tracking-widest font-black text-white/35">Elige la zona del evento</span>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3.5">
+                    <button *ngFor="let plan of plans()"
+                            (click)="selectPlan(plan.id)"
+                            [ngClass]="plan.id === activePlanId() ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
+                            class="flex flex-col items-center justify-center gap-1.5 py-3 px-2 border rounded-2xl transition-all duration-300 active:scale-95 text-center min-w-0">
+                        <span class="text-[10px] font-black uppercase tracking-wider font-['Epilogue'] truncate max-w-full">{{ plan.name }}</span>
+                        <span class="text-[9px] font-bold text-white/50 font-['Epilogue'] truncate max-w-full">{{ planStages(plan) }}</span>
+                    </button>
+                </div>
+                <p *ngIf="activePlan()?.description as desc" class="text-[11px] text-white/45 font-light leading-relaxed mt-3">{{ desc }}</p>
+            </div>
+
             <!-- Category Tabs (Recinto Zones Selection) -->
             <div class="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 shadow-inner">
                 <div class="flex justify-between items-center">
@@ -31,7 +46,7 @@
                 </div>
                 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3.5">
-                    <button *ngFor="let tier of categoryDetails" 
+                    <button *ngFor="let tier of categoryDetails()" 
                             (click)="selectCategory(tier.name)"
                             [ngClass]="selectedCategory() === tier.name ? 'border-primary bg-primary/10 text-primary shadow-[0_2px_15px_rgba(242,202,80,0.08)]' : 'border-white/[0.08] bg-[#181818] text-white/60 hover:text-white hover:bg-white/[0.02]'"
                             class="flex flex-col items-center justify-center gap-1.5 py-3 border rounded-2xl transition-all duration-300 active:scale-95 text-center">
@@ -44,47 +59,51 @@
             <!-- Seat Picker View Canvas Card -->
             <div class="bg-white/[0.02] border border-white/[0.06] rounded-3xl p-6 shadow-inner flex flex-col items-center overflow-hidden relative">
                 
-                <!-- Realistic Curved Stage & Spotlights -->
-                <div class="w-[85%] mx-auto mb-16 text-center relative pt-4">
-                    <!-- Glowing Stage Light Arc -->
-                    <div class="h-6 bg-gradient-to-b from-primary/20 via-primary/5 to-transparent rounded-[50%] blur-md absolute inset-0 -top-2"></div>
-                    
-                    <!-- Curved Stage Line representing real venue space -->
-                    <div class="w-full h-8 border-b-2 border-primary/45 rounded-b-[40%] shadow-[0_8px_25px_rgba(242,202,80,0.15)] bg-gradient-to-t from-primary/5 to-transparent flex items-center justify-center">
-                        <span class="text-[9px] uppercase font-black tracking-[0.35em] text-primary drop-shadow-[0_2px_8px_rgba(242,202,80,0.5)]">ESCENARIO PRINCIPAL</span>
+                <!-- The croquis exactly as it was designed: every zone where the
+                     organiser placed it. Re-flowing it here would show the buyer
+                     a venue that doesn't exist. -->
+                <div class="w-full h-[58vh] min-h-[380px] rounded-2xl overflow-hidden bg-[#0f0f0f] border border-white/[0.04]">
+                    <app-croquis-map *ngIf="activePlan() as plan"
+                                     [plan]="plan"
+                                     [tiers]="croquis()?.tiers || []"
+                                     [states]="seatStates()"
+                                     (seatPicked)="onSeatPicked($event)" />
+                </div>
+                <p class="text-[9px] text-white/30 font-light mt-2 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[11px]">pinch_zoom_out</span>
+                    Acerca con la rueda y arrastra para moverte por el plano.
+                </p>
+
+                <!-- Free-admission zones: no seat to pick, only capacity -->
+                <div *ngIf="generalAreas().length" class="w-full grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-5">
+                    <div *ngFor="let area of generalAreas()"
+                         class="rounded-2xl border border-dashed p-4 flex flex-col items-center gap-1 text-center min-w-0"
+                         [style.border-color]="area.color + '55'"
+                         [style.background-color]="area.color + '0d'">
+                        <span class="material-symbols-outlined text-base" [style.color]="area.color">groups</span>
+                        <span class="text-[10px] font-black uppercase tracking-wider font-['Epilogue'] truncate max-w-full" [style.color]="area.color">{{ area.name }}</span>
+                        <span class="text-[9px] text-white/45 font-light">{{ area.tierName }} · ${{ area.price }} MXN · entrada libre</span>
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-lg border"
+                              [ngClass]="area.available > 0 ? 'text-emerald-400/90 border-emerald-500/20 bg-emerald-500/5' : 'text-white/25 border-white/5 bg-white/[0.02]'">
+                            {{ area.available > 0 ? area.available + ' disponibles' : 'Agotada' }}
+                        </span>
+                        <span *ngIf="area.accessNote" class="text-[9px] text-white/35 font-light flex items-center gap-1 mt-1">
+                            <span class="material-symbols-outlined text-[11px] text-primary/70">login</span>
+                            {{ area.accessNote }}
+                        </span>
                     </div>
                 </div>
 
-                <!-- Seating Grid layout (Realistic Trapezoidal centering) -->
-                <div class="w-full flex flex-col items-center gap-2.5 md:gap-3.5 overflow-x-auto py-6 px-4">
-                    <div *ngFor="let rowGroup of seatsByRow()" 
-                         class="flex items-center gap-3 md:gap-5 shrink-0 justify-center">
-                        
-                        <!-- Row letter label on the left (Colored by category) -->
-                        <span [style.color]="rowGroup.color" class="w-5 text-[9px] font-black uppercase flex items-center justify-center opacity-65">{{ rowGroup.row }}</span>
-                        
-                        <!-- Seat buttons in this row -->
-                        <div class="flex gap-1.5 md:gap-2">
-                            <button *ngFor="let seat of rowGroup.seats" 
-                                    [disabled]="isSeatDisabled(seat)"
-                                    (click)="toggleSeat(seat)"
-                                    [ngClass]="getSeatColor(seat)"
-                                    [title]="seat.id + ' - ' + seat.category + ' ($' + seat.price + ' MXN)'"
-                                    class="w-6 h-6 md:w-8 md:h-8 flex items-center justify-center text-[7.5px] font-black rounded-t-lg rounded-b-[4px] border transition-all duration-200 active:scale-90 select-none shadow-sm relative group/btn">
-                                {{ seat.number }}
-                                
-                                <!-- Seat back cushion styling effect -->
-                                <div class="absolute bottom-0.5 inset-x-1 h-1.5 bg-black/20 rounded-[2px] opacity-75"></div>
-                            </button>
-                        </div>
-                        
-                        <!-- Row letter label on the right -->
-                        <span [style.color]="rowGroup.color" class="w-5 text-[9px] font-black uppercase flex items-center justify-center opacity-65">{{ rowGroup.row }}</span>
+                <!-- Venue references from the croquis -->
+                <div *ngIf="references().length" class="flex flex-wrap items-center justify-center gap-4 mt-8 border-t border-white/5 pt-6 w-full text-[10px] text-white/40">
+                    <div *ngFor="let ref of references()" class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[13px]" [style.color]="ref.color">{{ ref.icon }}</span>
+                        <span>{{ ref.label }}</span>
                     </div>
                 </div>
 
                 <!-- Legend of Statuses -->
-                <div class="flex flex-wrap items-center justify-center gap-5 mt-10 border-t border-white/5 pt-6 w-full text-[10px] text-white/40">
+                <div class="flex flex-wrap items-center justify-center gap-5 mt-6 border-t border-white/5 pt-6 w-full text-[10px] text-white/40">
                     <div class="flex items-center gap-1.5">
                         <div class="w-4 h-4 rounded-t border border-white/20"></div>
                         <span>Disponible</span>
