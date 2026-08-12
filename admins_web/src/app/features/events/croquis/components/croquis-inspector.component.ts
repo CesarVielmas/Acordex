@@ -1,13 +1,13 @@
 import { Component, ChangeDetectionStrategy, computed, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  CroquisArea, CroquisElement, CroquisPlan, RowLabeling,
-  SeatGridOptions, SeatNumbering
+  CroquisArea, CroquisElement, CroquisPlan, CroquisTable,
+  CroquisTableShape, RowLabeling, SeatGridOptions, SeatNumbering, TableGridOptions
 } from '../../../../core/models/croquis.models';
 import { EventItem, TicketTier } from '../../../../core/models/event.models';
 import { CROQUIS_ELEMENTS, elementMeta } from '../croquis-catalog';
-import { defaultGridOptions, fitGrid } from '../croquis-geometry';
-import { areaBlocked, areaCapacity, areaHeld, areaSold } from '../croquis-metrics';
+import { defaultGridOptions, defaultTableOptions, fitGrid, fitTables } from '../croquis-geometry';
+import { areaBlocked, areaCapacity, areaHeld, areaSold, areaTables } from '../croquis-metrics';
 import { AreaInsight, SelectionInsight } from '../croquis-insights';
 import { money } from '../../event-metrics';
 
@@ -24,6 +24,14 @@ import { money } from '../../event-metrics';
  */
 
 export type SeatBatchAction = 'disponible' | 'vendido' | 'apartado' | 'bloqueado' | 'quitar' | 'accesible';
+
+/**
+ * Lo que se hace con lugares que se movieron a mano.
+ *
+ * Son el remate del arrastre: mover butacas sueltas siempre deja algo dos
+ * unidades chueco, y a ojo eso no se corrige.
+ */
+export type SeatLayoutAction = 'alinear' | 'repartir' | 'rejilla';
 
 @Component({
   selector: 'app-croquis-inspector',
@@ -137,6 +145,41 @@ export type SeatBatchAction = 'disponible' | 'vendido' | 'apartado' | 'bloqueado
             </p>
           </div>
 
+          <!-- ─── ACOMODO ─── -->
+          <!-- Aparece con dos o más lugares porque alinear uno solo no
+               significa nada: se alinea *contra* los demás. -->
+          @if (seatCount() > 1) {
+            <div>
+              <span class="block text-[9px] font-black uppercase tracking-wider text-outline mb-1.5">
+                Acomodar lo que moviste
+              </span>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" (click)="seatLayout.emit('alinear')"
+                  title="Deja todas a la altura de la primera de su fila"
+                  class="px-1.5 py-1.5 rounded-lg bg-surface-container text-on-surface-variant border border-outline-variant/35 hover:border-primary/50 hover:text-on-surface text-[10px] font-black transition-all flex flex-col items-center gap-0.5">
+                  <span class="material-symbols-outlined text-[14px]">align_horizontal_left</span>
+                  Alinear
+                </button>
+                <button type="button" (click)="seatLayout.emit('repartir')"
+                  title="Reparte la separación pareja entre la primera y la última"
+                  class="px-1.5 py-1.5 rounded-lg bg-surface-container text-on-surface-variant border border-outline-variant/35 hover:border-primary/50 hover:text-on-surface text-[10px] font-black transition-all flex flex-col items-center gap-0.5">
+                  <span class="material-symbols-outlined text-[14px]">horizontal_distribute</span>
+                  Repartir
+                </button>
+                <button type="button" (click)="seatLayout.emit('rejilla')"
+                  title="Deshace lo movido a mano y las devuelve a su lugar de origen"
+                  class="px-1.5 py-1.5 rounded-lg bg-surface-container text-on-surface-variant border border-outline-variant/35 hover:border-primary/50 hover:text-on-surface text-[10px] font-black transition-all flex flex-col items-center gap-0.5">
+                  <span class="material-symbols-outlined text-[14px]">grid_on</span>
+                  A la rejilla
+                </button>
+              </div>
+              <p class="text-[9px] text-outline mt-1.5 leading-snug">
+                <strong class="text-on-surface-variant">Shift + arrastrar</strong> una butaca la mueve dentro de su área;
+                con Alt se mueve libre, sin imantarse a las vecinas.
+              </p>
+            </div>
+          }
+
           <div class="flex gap-1.5">
             <button type="button" (click)="seatAction.emit('accesible')"
               class="flex-1 px-2 py-1.5 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/35 hover:bg-sky-500 hover:text-black text-[10px] font-black transition-all flex items-center justify-center gap-1">
@@ -155,11 +198,13 @@ export type SeatBatchAction = 'disponible' | 'vendido' | 'apartado' | 'bloqueado
         <section class="p-4 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 space-y-3.5">
           <div class="flex items-center justify-between gap-2">
             <h6 class="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[14px]">{{ a.kind === 'butacas' ? 'event_seat' : 'groups' }}</span>
+              <span class="material-symbols-outlined text-[14px]">
+                {{ a.kind === 'butacas' ? 'event_seat' : a.kind === 'mesas' ? 'table_restaurant' : 'groups' }}
+              </span>
               Área seleccionada
             </h6>
             <span class="px-2 py-0.5 rounded-lg bg-surface-container text-[9px] font-black text-outline border border-outline-variant/30">
-              {{ a.kind === 'butacas' ? 'Butacas' : 'Aforo libre' }}
+              {{ a.kind === 'butacas' ? 'Butacas' : a.kind === 'mesas' ? 'Mesas' : 'Aforo libre' }}
             </span>
           </div>
 
@@ -208,11 +253,169 @@ export type SeatBatchAction = 'disponible' | 'vendido' | 'apartado' | 'bloqueado
                   (change)="patchArea.emit({ soldCount: num($event) })" [class]="inputClass" />
               </label>
             </div>
-            <button type="button" (click)="convertArea.emit('butacas')"
-              class="w-full px-2 py-2 rounded-xl bg-cyan-500/15 text-cyan-300 border border-cyan-500/35 hover:bg-cyan-500 hover:text-black text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
-              <span class="material-symbols-outlined text-[14px]">grid_on</span>
-              Convertir a butacas numeradas
+            <div class="grid grid-cols-2 gap-1.5">
+              <button type="button" (click)="convertArea.emit('butacas')"
+                class="px-2 py-2 rounded-xl bg-cyan-500/15 text-cyan-300 border border-cyan-500/35 hover:bg-cyan-500 hover:text-black text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px]">grid_on</span>
+                A butacas
+              </button>
+              <button type="button" (click)="convertArea.emit('mesas')"
+                class="px-2 py-2 rounded-xl bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/35 hover:bg-fuchsia-500 hover:text-black text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px]">table_restaurant</span>
+                A mesas
+              </button>
+            </div>
+          } @else if (a.kind === 'mesas') {
+
+            <!-- ─── ÁREA DE MESAS ─── -->
+            <div class="grid grid-cols-2 gap-2">
+              <div class="p-2.5 rounded-xl bg-surface-container/70 border border-outline-variant/25">
+                <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Mesas</span>
+                <span class="text-sm font-black font-mono text-fuchsia-300">{{ tableCount().toLocaleString('es-MX') }}</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-surface-container/70 border border-outline-variant/25">
+                <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Lugares</span>
+                <span class="text-sm font-black font-mono text-on-surface">{{ capacity().toLocaleString('es-MX') }}</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-surface-container/70 border border-outline-variant/25">
+                <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Vendidos</span>
+                <span class="text-sm font-black font-mono text-emerald-400">{{ sold().toLocaleString('es-MX') }}</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-surface-container/70 border border-outline-variant/25">
+                <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Apartadas</span>
+                <span class="text-sm font-black font-mono text-amber-300">{{ held().toLocaleString('es-MX') }}</span>
+              </div>
+            </div>
+
+            @if (canViewFinances() && areaEconomics(); as eco) {
+              @if (eco.potential > 0) {
+                <div class="p-2.5 rounded-xl bg-primary/[0.07] border border-primary/25 flex items-baseline justify-between gap-2">
+                  <span class="text-[9px] font-black uppercase tracking-wider text-outline">Taquilla del área</span>
+                  <span class="text-sm font-black font-mono text-primary truncate" [title]="money(eco.potential)">
+                    {{ money(eco.potential) }}
+                  </span>
+                </div>
+              }
+            }
+
+            <!-- ─── Asistente de montaje ─── -->
+            <div class="p-3 rounded-xl bg-surface-container/60 border border-fuchsia-500/25 space-y-2.5">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[9px] font-black uppercase tracking-wider text-fuchsia-300 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">table_restaurant</span> Montar el salón
+                </span>
+                <button type="button" (click)="autoFillTables(a)"
+                  class="text-[9px] font-black text-fuchsia-300 hover:text-fuchsia-200 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">auto_fix_high</span> Las que quepan
+                </button>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <label class="block">
+                  <span [class]="labelClass">Hileras</span>
+                  <input type="number" min="1" max="30" [value]="tableGrid().rows"
+                    (input)="setTables({ rows: num($event) })" [class]="inputClass" />
+                </label>
+                <label class="block">
+                  <span [class]="labelClass">Mesas por hilera</span>
+                  <input type="number" min="1" max="30" [value]="tableGrid().perRow"
+                    (input)="setTables({ perRow: num($event) })" [class]="inputClass" />
+                </label>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <label class="block">
+                  <span [class]="labelClass">Lugares por mesa</span>
+                  <input type="number" min="1" max="24" [value]="tableGrid().seatsPerTable"
+                    (input)="setTables({ seatsPerTable: num($event) })" [class]="inputClass" />
+                </label>
+                <label class="block">
+                  <span [class]="labelClass">Forma</span>
+                  <select [value]="tableGrid().shape" (change)="setTableShape($event)" [class]="inputClass">
+                    <option value="redonda">Redonda</option>
+                    <option value="rectangular">Rectangular</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <label class="block">
+                  <span [class]="labelClass">{{ tableGrid().shape === 'redonda' ? 'Diámetro' : 'Ancho' }}</span>
+                  <input type="number" min="24" max="400" [value]="tableGrid().size"
+                    (input)="setTables({ size: num($event) })" [class]="inputClass" />
+                </label>
+                @if (tableGrid().shape === 'rectangular') {
+                  <label class="block">
+                    <span [class]="labelClass">Alto</span>
+                    <input type="number" min="24" max="400" [value]="tableGrid().height"
+                      (input)="setTables({ height: num($event) })" [class]="inputClass" />
+                  </label>
+                } @else {
+                  <label class="block">
+                    <span [class]="labelClass">Empieza en</span>
+                    <input [value]="tableGrid().startLabel || '1'"
+                      (change)="setTables({ startLabel: value($event) })" [class]="inputClass" />
+                  </label>
+                }
+              </div>
+
+              <div>
+                <span [class]="labelClass">Cómo se rentan</span>
+                <div class="grid grid-cols-2 gap-1.5">
+                  <button type="button" (click)="setTables({ rental: 'completa' })"
+                    [class]="chipClass(tableGrid().rental === 'completa')">
+                    Mesa completa
+                  </button>
+                  <button type="button" (click)="setTables({ rental: 'sillas' })"
+                    [class]="chipClass(tableGrid().rental === 'sillas')">
+                    Lugares sueltos
+                  </button>
+                </div>
+              </div>
+
+              @if (tableGrid().rental === 'sillas') {
+                <label class="block">
+                  <span [class]="labelClass">Mínimo de lugares por compra</span>
+                  <input type="number" min="1" max="24" [value]="tableGrid().minSeats"
+                    (input)="setTables({ minSeats: num($event) })" [class]="inputClass" />
+                </label>
+              }
+
+              <button type="button" (click)="regenerateTables.emit(tableGrid())"
+                class="w-full px-2 py-2 rounded-xl bg-fuchsia-500/20 text-fuchsia-200 border border-fuchsia-500/40 hover:bg-fuchsia-500 hover:text-black text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px]">refresh</span>
+                Montar {{ tableGrid().rows * tableGrid().perRow }} mesas
+                ({{ tableGrid().rows * tableGrid().perRow * tableGrid().seatsPerTable }} lugares)
+              </button>
+              <p class="text-[9px] text-amber-300/90 leading-snug flex items-start gap-1">
+                <span class="material-symbols-outlined text-[11px] mt-0.5">warning</span>
+                Montar de nuevo reemplaza las mesas del área: se pierden las que moviste a mano y sus ventas.
+              </p>
+            </div>
+
+            <button type="button" (click)="addTable.emit()"
+              class="w-full px-2 py-2 rounded-xl bg-surface-container text-on-surface-variant border border-outline-variant/35 hover:border-fuchsia-500/50 hover:text-on-surface text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-[14px]">add_circle</span>
+              Agregar una mesa suelta
             </button>
+
+            <p class="text-[9px] text-outline leading-snug">
+              Arrastra el tablero de una mesa para moverla; haz clic en él para editarla.
+            </p>
+
+            <div class="grid grid-cols-2 gap-1.5">
+              <button type="button" (click)="convertArea.emit('butacas')"
+                class="px-2 py-2 rounded-xl bg-surface-container text-outline border border-outline-variant/35 hover:text-on-surface text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px]">grid_on</span>
+                A butacas
+              </button>
+              <button type="button" (click)="convertArea.emit('general')"
+                class="px-2 py-2 rounded-xl bg-surface-container text-outline border border-outline-variant/35 hover:text-on-surface text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px]">groups</span>
+                A aforo libre
+              </button>
+            </div>
+
           } @else {
             <!-- Resumen de la butaquería. Son los números que el organizador
                  revisa al vender: cuántas hay, cuántas quedan y cuántas se
@@ -341,11 +544,28 @@ export type SeatBatchAction = 'disponible' | 'vendido' | 'apartado' | 'bloqueado
               </p>
             </div>
 
-            <button type="button" (click)="convertArea.emit('general')"
-              class="w-full px-2 py-2 rounded-xl bg-surface-container text-outline border border-outline-variant/35 hover:text-on-surface text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
-              <span class="material-symbols-outlined text-[14px]">groups</span>
-              Convertir a aforo libre
+            <!-- Cierra el ciclo de mover butacas a mano: acomoda las filas de
+                 adelante hacia atrás y reparte los números con el esquema con el
+                 que se generó el área, para que el boleto siga mandando al
+                 lugar correcto. -->
+            <button type="button" (click)="renumberArea.emit()"
+              class="w-full px-2 py-2 rounded-xl bg-amber-500/12 text-amber-200 border border-amber-500/35 hover:bg-amber-500 hover:text-black text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-[14px]">sort</span>
+              Reacomodar y renumerar el área
             </button>
+
+            <div class="grid grid-cols-2 gap-1.5">
+              <button type="button" (click)="convertArea.emit('mesas')"
+                class="px-2 py-2 rounded-xl bg-surface-container text-outline border border-outline-variant/35 hover:text-on-surface text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px]">table_restaurant</span>
+                A mesas
+              </button>
+              <button type="button" (click)="convertArea.emit('general')"
+                class="px-2 py-2 rounded-xl bg-surface-container text-outline border border-outline-variant/35 hover:text-on-surface text-[10px] font-black transition-all flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[14px]">groups</span>
+                A aforo libre
+              </button>
+            </div>
           }
 
           <!-- Forma y posición -->
@@ -390,6 +610,166 @@ export type SeatBatchAction = 'disponible' | 'vendido' | 'apartado' | 'bloqueado
               <span class="material-symbols-outlined text-[13px]">content_copy</span> Duplicar
             </button>
             <button type="button" (click)="deleteArea.emit()"
+              class="flex-1 px-2 py-2 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/35 hover:bg-rose-500 hover:text-white text-[10px] font-black transition-all flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-[13px]">delete</span> Eliminar
+            </button>
+          </div>
+        </section>
+      }
+
+      <!-- ─── MESA SELECCIONADA ─── -->
+      @if (table(); as t) {
+        <section class="p-4 rounded-2xl bg-gradient-to-br from-fuchsia-500/[0.09] to-surface-container-high/90 border border-fuchsia-500/35 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h6 class="text-[10px] font-black uppercase tracking-widest text-fuchsia-300 flex items-center gap-1.5 min-w-0">
+              <span class="material-symbols-outlined text-[14px] shrink-0">table_restaurant</span>
+              <span class="truncate">{{ t.label }}</span>
+            </h6>
+            <span class="px-2 py-0.5 rounded-lg bg-surface-container text-[9px] font-black text-outline border border-outline-variant/30 shrink-0">
+              {{ t.seats.length }} lugares
+            </span>
+          </div>
+
+          <label class="block">
+            <span [class]="labelClass">Nombre que va en el boleto</span>
+            <input [value]="t.label" (change)="patchTable.emit({ label: value($event) })" [class]="inputClass" />
+          </label>
+
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block">
+              <span [class]="labelClass">Lugares alrededor</span>
+              <input type="number" min="1" max="24" [value]="t.slots"
+                (change)="patchTable.emit({ slots: num($event) })" [class]="inputClass" />
+            </label>
+            <label class="block">
+              <span [class]="labelClass">Forma</span>
+              <select [value]="t.shape" (change)="patchTable.emit({ shape: tableShape($event) })" [class]="inputClass">
+                <option value="redonda">Redonda</option>
+                <option value="rectangular">Rectangular</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block">
+              <span [class]="labelClass">{{ t.shape === 'redonda' ? 'Diámetro' : 'Ancho' }}</span>
+              <input type="number" min="24" [value]="t.width"
+                (change)="patchTable.emit({ width: num($event) })" [class]="inputClass" />
+            </label>
+            @if (t.shape === 'rectangular') {
+              <label class="block">
+                <span [class]="labelClass">Alto</span>
+                <input type="number" min="24" [value]="t.height"
+                  (change)="patchTable.emit({ height: num($event) })" [class]="inputClass" />
+              </label>
+            } @else {
+              <div>
+                <span [class]="labelClass">Giro · {{ t.rotation || 0 }}°</span>
+                <input type="range" min="-180" max="180" step="5" [value]="t.rotation || 0"
+                  (input)="patchTable.emit({ rotation: num($event) })" class="w-full accent-primary" />
+              </div>
+            }
+          </div>
+
+          @if (t.shape === 'rectangular') {
+            <div>
+              <span [class]="labelClass">Giro · {{ t.rotation || 0 }}°</span>
+              <input type="range" min="-180" max="180" step="5" [value]="t.rotation || 0"
+                (input)="patchTable.emit({ rotation: num($event) })" class="w-full accent-primary" />
+            </div>
+          }
+
+          <!-- ─── CÓMO SE RENTA ─── -->
+          <!-- Es la decisión que de verdad define una mesa. Una mesa de boda se
+               renta completa y punto; una cena de gala con boletos individuales
+               se vende lugar por lugar, y ahí el mínimo es lo que evita que
+               alguien ocupe una mesa de diez comprando uno. -->
+          <div>
+            <span [class]="labelClass">Cómo se renta</span>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button type="button" (click)="patchTable.emit({ rental: 'completa' })"
+                [class]="chipClass(t.rental === 'completa')">
+                Mesa completa
+              </button>
+              <button type="button" (click)="patchTable.emit({ rental: 'sillas' })"
+                [class]="chipClass(t.rental === 'sillas')">
+                Lugares sueltos
+              </button>
+            </div>
+            <p class="text-[9px] text-outline mt-1.5 leading-snug">
+              {{ t.rental === 'completa'
+                ? 'El cliente se lleva la mesa entera y nadie más se sienta con su grupo.'
+                : 'El cliente elige cuántos lugares quiere de esta mesa.' }}
+            </p>
+          </div>
+
+          @if (t.rental === 'sillas') {
+            <label class="block">
+              <span [class]="labelClass">Mínimo de lugares por compra</span>
+              <input type="number" min="1" [max]="t.seats.length" [value]="t.minSeats || 1"
+                (change)="patchTable.emit({ minSeats: num($event) })" [class]="inputClass" />
+            </label>
+          }
+
+          <div>
+            <span [class]="labelClass">Categoría de la mesa</span>
+            <div class="flex flex-wrap gap-1.5">
+              @for (tier of tiers(); track tier.id) {
+                <button type="button" (click)="patchTable.emit({ tierId: tier.id })"
+                  [title]="tier.name + ' · $' + (tier.price || 0).toLocaleString('es-MX')"
+                  class="px-2 py-1 max-w-full min-w-0 rounded-lg border text-[10px] font-black flex items-center gap-1.5 transition-all"
+                  [class.ring-2]="t.tierId === tier.id"
+                  [style.background-color]="tier.color + (t.tierId === tier.id ? '44' : '18')"
+                  [style.border-color]="tier.color + '99'"
+                  [style.color]="tier.color"
+                  [style.--tw-ring-color]="tier.color"
+                >
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0" [style.background-color]="tier.color"></span>
+                  <span class="truncate">{{ tier.name }}</span>
+                </button>
+              }
+              <button type="button" (click)="patchTable.emit({ tierId: undefined })"
+                class="px-2 py-1 rounded-lg border border-outline-variant/40 text-[10px] font-black text-outline hover:text-on-surface transition-all">
+                Heredar del área
+              </button>
+            </div>
+          </div>
+
+          @if (canViewFinances()) {
+            <label class="block">
+              <span [class]="labelClass">Precio de la mesa completa (opcional)</span>
+              <input type="number" min="0" [value]="t.price || 0" placeholder="Se cobra lugar por lugar"
+                (change)="patchTable.emit({ price: num($event) || undefined })" [class]="inputClass" />
+              <span class="text-[9px] text-outline block mt-1 leading-snug">
+                Déjalo en cero y la mesa vale la suma de sus lugares. Se usa para mesas de patrocinador,
+                que valen un monto redondo.
+              </span>
+            </label>
+          }
+
+          <div>
+            <span [class]="labelClass">Estado de la mesa</span>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" (click)="tableStatus.emit(undefined)" [class]="chipClass(!t.status)">Libre</button>
+              <button type="button" (click)="tableStatus.emit('reservada')" [class]="chipClass(t.status === 'reservada')">Apartada</button>
+              <button type="button" (click)="tableStatus.emit('bloqueada')" [class]="chipClass(t.status === 'bloqueada')">Bloqueada</button>
+            </div>
+          </div>
+
+          @if (t.status === 'reservada') {
+            <label class="block">
+              <span [class]="labelClass">A nombre de</span>
+              <input [value]="t.holder || ''" placeholder="Familia Rentería"
+                (change)="patchTable.emit({ holder: value($event) })" [class]="inputClass" />
+            </label>
+          }
+
+          <div class="flex gap-1.5 pt-1">
+            <button type="button" (click)="duplicateTable.emit()"
+              class="flex-1 px-2 py-2 rounded-xl bg-surface-container text-on-surface-variant border border-outline-variant/35 hover:text-on-surface text-[10px] font-black transition-all flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-[13px]">content_copy</span> Duplicar
+            </button>
+            <button type="button" (click)="deleteTable.emit()"
               class="flex-1 px-2 py-2 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/35 hover:bg-rose-500 hover:text-white text-[10px] font-black transition-all flex items-center justify-center gap-1">
               <span class="material-symbols-outlined text-[13px]">delete</span> Eliminar
             </button>
@@ -450,7 +830,7 @@ export type SeatBatchAction = 'disponible' | 'vendido' | 'apartado' | 'bloqueado
       }
 
       <!-- ─── NADA SELECCIONADO: PROPIEDADES DEL CROQUIS ─── -->
-      @if (!area() && !element() && seatCount() === 0) {
+      @if (!area() && !element() && !table() && seatCount() === 0) {
         <section class="p-4 rounded-2xl bg-surface-container-high/90 border border-outline-variant/30 space-y-3">
           <h6 class="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
             <span class="material-symbols-outlined text-[14px]">map</span> Este croquis
@@ -484,8 +864,10 @@ export type SeatBatchAction = 'disponible' | 'vendido' | 'apartado' | 'bloqueado
             <p class="text-on-surface-variant font-bold">Cómo se maneja el croquis</p>
             <p><strong class="text-on-surface">Clic</strong> en un área o elemento para editarlo aquí.</p>
             <p><strong class="text-on-surface">Arrastra</strong> sobre las butacas para seleccionarlas en bloque; Ctrl suma a la selección.</p>
+            <p><strong class="text-on-surface">Shift + arrastrar una butaca</strong> la mueve dentro de su área, imantándose a las vecinas; con Alt, libre.</p>
+            <p><strong class="text-on-surface">El tablero</strong> de una mesa la mueve y la selecciona.</p>
             <p><strong class="text-on-surface">La etiqueta</strong> de cada área es su tirador: arrástrala para moverla.</p>
-            <p><strong class="text-on-surface">Shift + arrastrar</strong> mueve el plano y la rueda hace zoom.</p>
+            <p><strong class="text-on-surface">Shift + arrastrar el fondo</strong> mueve el plano y la rueda hace zoom.</p>
           </div>
         </section>
       }
@@ -590,6 +972,7 @@ export class CroquisInspectorComponent {
   plan = input.required<CroquisPlan>();
   area = input<CroquisArea | null>(null);
   element = input<CroquisElement | null>(null);
+  table = input<CroquisTable | null>(null);
   tiers = input<TicketTier[]>([]);
   seatCount = input<number>(0);
   /** Desglose de las butacas seleccionadas; lo calcula el editor. */
@@ -603,15 +986,23 @@ export class CroquisInspectorComponent {
   patchPlan = output<Partial<CroquisPlan>>();
   patchArea = output<Partial<CroquisArea>>();
   patchElement = output<Partial<CroquisElement>>();
+  patchTable = output<Partial<CroquisTable>>();
   deleteArea = output<void>();
   duplicateArea = output<void>();
   deleteElement = output<void>();
-  convertArea = output<'butacas' | 'general'>();
+  convertArea = output<CroquisArea['kind']>();
   setFan = output<void>();
   regenerate = output<SeatGridOptions>();
+  regenerateTables = output<TableGridOptions>();
+  addTable = output<void>();
+  duplicateTable = output<void>();
+  deleteTable = output<void>();
+  tableStatus = output<CroquisTable['status']>();
+  renumberArea = output<void>();
 
   assignSeatTier = output<string>();
   seatAction = output<SeatBatchAction>();
+  seatLayout = output<SeatLayoutAction>();
   clearSeats = output<void>();
 
   addTier = output<void>();
@@ -635,10 +1026,15 @@ export class CroquisInspectorComponent {
   private gridDraft = signal<SeatGridOptions>(defaultGridOptions());
   grid = computed(() => this.gridDraft());
 
+  /** Lo mismo, para el montaje de mesas. */
+  private tableDraft = signal<TableGridOptions>(defaultTableOptions());
+  tableGrid = computed(() => this.tableDraft());
+
   capacity = computed(() => (this.area() ? areaCapacity(this.area()!) : 0));
   sold = computed(() => (this.area() ? areaSold(this.area()!) : 0));
   held = computed(() => (this.area() ? areaHeld(this.area()!) : 0));
   blocked = computed(() => (this.area() ? areaBlocked(this.area()!) : 0));
+  tableCount = computed(() => (this.area() ? areaTables(this.area()!).length : 0));
 
   lineupOptions = computed(() =>
     (this.event()?.lineup || []).map(s => ({ id: s.id, name: s.groupName }))
@@ -696,6 +1092,25 @@ export class CroquisInspectorComponent {
     const g = this.gridDraft();
     const fit = fitGrid(area.width, area.height, g.gap, g.rowGap);
     this.setGrid(fit);
+  }
+
+  setTables(changes: Partial<TableGridOptions>): void {
+    this.tableDraft.update(t => ({ ...t, ...changes }));
+  }
+
+  setTableShape(event: Event): void {
+    this.setTables({ shape: this.value(event) as CroquisTableShape });
+  }
+
+  /** Convierte el `<select>` de forma en algo que el modelo entiende. */
+  tableShape(event: Event): CroquisTableShape {
+    return this.value(event) as CroquisTableShape;
+  }
+
+  /** Cuántas mesas de este tamaño caben en el área tal como está dibujada. */
+  autoFillTables(area: CroquisArea): void {
+    const t = this.tableDraft();
+    this.setTables(fitTables(area.width, area.height, t.gap, t.rowGap));
   }
 
   chipClass(active: boolean): string {

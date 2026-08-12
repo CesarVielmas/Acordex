@@ -20,14 +20,61 @@ export interface CroquisSeat {
   /** Número impreso en el boleto. */
   number: number;
   /**
-   * Posición en la rejilla de la fila. No es el índice del arreglo: los huecos
-   * entre `slot`s son los pasillos reales del recinto.
+   * Posición en la rejilla de la fila —o alrededor de la mesa. No es el índice
+   * del arreglo: los huecos entre `slot`s son los pasillos reales del recinto.
    */
   slot: number;
+  /**
+   * Corrimiento respecto del lugar que le tocaba en la rejilla.
+   *
+   * El organizador puede sacar lugares del renglón —un anillo alrededor de la
+   * pista, un par de butacas metidas en un rincón— y el comprador tiene que
+   * verlos donde de verdad están. Sin esto, el mapa enderezaría el recinto y
+   * mandaría a alguien a una butaca que no existe donde la buscó.
+   */
+  dx?: number;
+  dy?: number;
   state?: CroquisSeatState;
   /** Categoría distinta a la del área, para lugares sueltos. */
   tierId?: string;
   accessible?: boolean;
+}
+
+/** Redonda es la mesa de banquete; rectangular, la imperial. */
+export type CroquisTableShape = 'redonda' | 'rectangular';
+
+/**
+ * Cómo se renta la mesa.
+ *
+ * `completa` se lleva la mesa entera y nadie más se sienta con el grupo.
+ * `sillas` deja comprar lugares sueltos, con el mínimo que puso el organizador.
+ */
+export type CroquisTableRental = 'completa' | 'sillas';
+
+/** Una mesa con sus sillas alrededor. */
+export interface CroquisTable {
+  id: string;
+  /** Nombre impreso en el boleto: 'Mesa 1'. */
+  label: string;
+  /** Centro de la mesa, relativo a la esquina superior izquierda de la zona. */
+  x: number;
+  y: number;
+  shape: CroquisTableShape;
+  /** Diámetro si es redonda; ancho si es rectangular. */
+  width: number;
+  height: number;
+  rotation: number;
+  /** Posiciones de silla alrededor; de ahí sale el ángulo de cada una. */
+  slots: number;
+  seats: CroquisSeat[];
+  rental: CroquisTableRental;
+  /** Mínimo de lugares que hay que llevarse cuando se venden sueltos. */
+  minSeats?: number;
+  tierId?: string;
+  /** Precio de la mesa completa; sin él se cobra lugar por lugar. */
+  price?: number;
+  /** Apartada o fuera de la venta. */
+  state?: 'reservada' | 'bloqueada';
 }
 
 export interface CroquisRow {
@@ -75,6 +122,8 @@ export interface CroquisArea {
   accessNote?: string;
 
   rows: CroquisRow[];
+  /** Mesas de la zona; vacío en las que no las tienen. */
+  tables?: CroquisTable[];
 }
 
 /** Referencia del recinto: escenario, pantallas, barras, accesos, sanitarios. */
@@ -126,3 +175,5 @@ export interface EventCroquis {
 
 /** Lado de la butaca en unidades de croquis. */
 export const SEAT_SIZE = 16;
+/** Hueco entre el borde de la mesa y el centro de la silla. */
+export const TABLE_SEAT_OFFSET = 13;

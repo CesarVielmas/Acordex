@@ -5,11 +5,13 @@ import {
 import { CommonModule } from '@angular/common';
 import {
   CroquisArea, CroquisElement, CroquisPlan, CroquisPoint, CroquisSeat,
-  CroquisTier, SEAT_SIZE
+  CroquisTable, CroquisTier, SEAT_SIZE
 } from '../../../../core/models/croquis.models';
 import {
-  areaPath, areaTransform, boxFromDrag, elementTransform,
-  planBounds, pointInBox, seatLocalPoint, seatPlanPoint, snap
+  alignToNeighbours, areaPath, areaTransform, boxFromDrag, elementTransform,
+  limitSeatDelta, planBounds, planDeltaToAreaLocal, pointInBox, rotatePoint,
+  seatLocalPoint, seatPlanPoint, snap, tableSeatLocalPoint, tableSeatOffset,
+  tableSeatPlanPoint, tableTransform
 } from '../croquis-geometry';
 import { areaCapacity, areaSold } from '../croquis-metrics';
 import { areaInsight, compactMoney } from '../croquis-insights';
@@ -41,16 +43,23 @@ export type CroquisColorBy = 'categoria' | 'venta';
 export type CroquisTool =
   | 'seleccionar'
   | 'area-butacas'
+  | 'area-mesas'
   | 'area-general'
   | 'elemento'
   | 'pintar'
   | 'quitar-butacas';
 
-/** Referencia a una butaca concreta dentro del plano. */
+/**
+ * Referencia a un lugar concreto dentro del plano.
+ *
+ * `rowId` es la fila o la mesa a la que pertenece —los identificadores no se
+ * repiten entre unas y otras—, así que una silla de mesa se selecciona, se
+ * pinta y se vende con la misma maquinaria que una butaca de luneta.
+ */
 export interface SeatRef {
   areaId: string;
   rowId: string;
-  /** Índice dentro de la fila. */
+  /** Índice dentro de la fila o de la mesa. */
   index: number;
 }
 
@@ -65,11 +74,25 @@ export interface BoxChange {
 }
 
 export interface AreaDraft {
-  kind: 'butacas' | 'general';
+  kind: 'butacas' | 'mesas' | 'general';
   x: number;
   y: number;
   width: number;
   height: number;
+}
+
+/**
+ * Arrastre de lugares terminado.
+ *
+ * El desplazamiento va en coordenadas del área ya sin girar y de una sola vez al
+ * soltar, no en cada movimiento del mouse: así arrastrar treinta butacas por
+ * medio croquis deja un solo paso que deshacer en vez de doscientos.
+ */
+export interface SeatMove {
+  areaId: string;
+  seats: SeatRef[];
+  dx: number;
+  dy: number;
 }
 
 interface SeatVM {
@@ -99,6 +122,34 @@ interface RowVM {
   seats: SeatVM[];
 }
 
+/**
+ * Una mesa dibujada.
+ *
+ * Las sillas van en coordenadas del centro de la mesa: se pintan dentro del
+ * grupo de la mesa para que girarla las lleve consigo, que es lo que uno espera
+ * al girar una mesa imperial para que quede a lo largo del salón.
+ */
+interface TableVM {
+  table: CroquisTable;
+  transform: string;
+  fill: string;
+  stroke: string;
+  color: string;
+  /** Redonda: radio. Rectangular: 0, y se usa la caja. */
+  radius: number;
+  boxX: number;
+  boxY: number;
+  label: string;
+  labelSize: number;
+  /** Lugares libres sobre el total, dentro de la mesa. */
+  badge: string;
+  /** Se renta completa: se dibuja el aro que la ata. */
+  whole: boolean;
+  dimmed: boolean;
+  seats: SeatVM[];
+  title: string;
+}
+
 interface AreaVM {
   area: CroquisArea;
   transform: string;
@@ -111,6 +162,7 @@ interface AreaVM {
   /** Alto al que se ancla la etiqueta: arriba de la caja si hay lugar. */
   labelY: number;
   rows: RowVM[];
+  tables: TableVM[];
 
   // --- Capas opcionales del chip. Vacías cuando la capa está apagada, y
   //     entonces el chip conserva su alto de siempre. ---
@@ -312,6 +364,99 @@ function readableOn(hex: string): string {
                 >{{ seat.number }}</text>
               }
             }
+          }
+
+          <!-- ─── MESAS ─── -->
+          @for (t of vm.tables; track t.table.id) {
+            <g [attr.transform]="t.transform">
+
+              <!-- El aro de la mesa que se renta completa. Es lo único que
+                   distingue de un vistazo "estas diez sillas van juntas" de
+                   "aquí hay diez lugares sueltos", y de eso depende el precio. -->
+              @if (t.whole) {
+                @if (t.radius) {
+                  <circle cx="0" cy="0" [attr.r]="t.radius + 21"
+                    fill="none" [attr.stroke]="t.color" stroke-width="1.2"
+                    stroke-dasharray="3 5" opacity="0.5" class="pointer-events-none" />
+                } @else {
+                  <rect
+                    [attr.x]="t.boxX - 21" [attr.y]="t.boxY - 21"
+                    [attr.width]="t.table.width + 42" [attr.height]="t.table.height + 42"
+                    rx="16" fill="none" [attr.stroke]="t.color" stroke-width="1.2"
+                    stroke-dasharray="3 5" opacity="0.5" class="pointer-events-none" />
+                }
+              }
+
+              <!-- El tablero -->
+              @if (t.radius) {
+                <circle
+                  cx="0" cy="0" [attr.r]="t.radius"
+                  [attr.fill]="t.fill" [attr.stroke]="t.stroke"
+                  [attr.stroke-width]="selectedTableId() === t.table.id ? 3 : 1.6"
+                  [attr.opacity]="t.dimmed ? 0.4 : 1"
+                  [class.cursor-pointer]="seatsClickable()"
+                  (pointerdown)="onTablePointerDown($event, vm.area, t.table)"
+                ><title>{{ t.title }}</title></circle>
+              } @else {
+                <rect
+                  [attr.x]="t.boxX" [attr.y]="t.boxY"
+                  [attr.width]="t.table.width" [attr.height]="t.table.height"
+                  rx="7"
+                  [attr.fill]="t.fill" [attr.stroke]="t.stroke"
+                  [attr.stroke-width]="selectedTableId() === t.table.id ? 3 : 1.6"
+                  [attr.opacity]="t.dimmed ? 0.4 : 1"
+                  [class.cursor-pointer]="seatsClickable()"
+                  (pointerdown)="onTablePointerDown($event, vm.area, t.table)"
+                ><title>{{ t.title }}</title></rect>
+              }
+
+              <!-- Sillas -->
+              @for (seat of t.seats; track seat.key) {
+                <rect
+                  [attr.x]="seat.x" [attr.y]="seat.y"
+                  [attr.width]="seat.size" [attr.height]="seat.size"
+                  rx="5"
+                  [attr.fill]="seat.fill"
+                  [attr.stroke]="seat.stroke"
+                  stroke-width="1"
+                  [attr.opacity]="seat.opacity"
+                  [class.cursor-pointer]="seatsClickable()"
+                  (pointerdown)="onSeatPointerDown($event, seat.ref)"
+                  (pointerenter)="onSeatEnter($event, seat.ref)"
+                ><title>{{ seat.title }}</title></rect>
+                @if (seat.number) {
+                  <text
+                    [attr.x]="seat.x + seat.size / 2" [attr.y]="seat.y + seat.size / 2 + 0.5"
+                    text-anchor="middle" dominant-baseline="central"
+                    font-size="7.5" font-weight="800"
+                    [attr.fill]="seat.numberFill"
+                    [attr.opacity]="seat.opacity"
+                    class="pointer-events-none"
+                  >{{ seat.number }}</text>
+                }
+              }
+
+              <!-- El nombre va dentro del tablero: es donde lo busca quien llega
+                   con su boleto, y fuera chocaría con las sillas. -->
+              @if (showLabels()) {
+                <text
+                  x="0" [attr.y]="t.badge ? -3 : 1"
+                  text-anchor="middle" dominant-baseline="middle"
+                  [attr.font-size]="t.labelSize" font-weight="900"
+                  [attr.fill]="t.color"
+                  class="pointer-events-none"
+                >{{ t.label }}</text>
+                @if (t.badge) {
+                  <text
+                    x="0" y="9"
+                    text-anchor="middle" dominant-baseline="middle"
+                    font-size="7.5" font-weight="700"
+                    fill="rgba(208,197,175,0.8)"
+                    class="pointer-events-none"
+                  >{{ t.badge }}</text>
+                }
+              }
+            </g>
           }
 
           <!-- Nombre del área. Va por fuera de la caja siempre que quepa: dentro
@@ -544,6 +689,7 @@ export class CroquisCanvasComponent {
 
   selectedAreaId = input<string | null>(null);
   selectedElementId = input<string | null>(null);
+  selectedTableId = input<string | null>(null);
   selectedSeats = input<Set<string>>(new Set<string>());
 
   // ─── Capas de información ───
@@ -578,8 +724,16 @@ export class CroquisCanvasComponent {
   elementDropped = output<CroquisPoint>();
   areaMoved = output<BoxChange>();
   elementMoved = output<BoxChange>();
+  /** Lugares arrastrados a mano dentro de su área. */
+  seatsMoved = output<SeatMove>();
+  /** Mesa seleccionada en el editor. */
+  selectTable = output<{ areaId: string; tableId: string } | null>();
+  /** Mesa arrastrada a otro sitio del área. */
+  tableMoved = output<{ areaId: string; tableId: string; dx: number; dy: number }>();
   /** Clic de compra en la vista del cliente. */
   seatActivated = output<SeatRef>();
+  /** Clic sobre la mesa en la vista del cliente: se renta completa. */
+  tableActivated = output<{ areaId: string; tableId: string }>();
 
   @ViewChild('svg') private svgRef?: ElementRef<SVGSVGElement>;
 
@@ -599,6 +753,53 @@ export class CroquisCanvasComponent {
 
   /** Verdadero mientras se pinta o se borran butacas arrastrando. */
   private painting = signal(false);
+
+  /**
+   * Arrastre de lugares en curso.
+   *
+   * El corrimiento vive aquí y no en el croquis mientras dura el gesto: la
+   * escena lo suma al pintar, así que la butaca sigue al cursor sin que el plano
+   * se toque ni una sola vez hasta que se suelta. Antes de esto la única forma
+   * de mover algo era emitir un cambio por cada movimiento del mouse, que es lo
+   * que hacen las áreas —y por eso deshacer una arrastrada de área cuesta
+   * cincuenta pasos.
+   *
+   * `origins` y `anchors` se calculan una vez al empezar: son los lugares que se
+   * mueven y los que se quedan quietos, que es contra lo que se imanta.
+   */
+  private seatMove = signal<{
+    areaId: string;
+    refs: SeatRef[];
+    keys: Set<string>;
+    /** Posición local de cada lugar que se mueve, al empezar el gesto. */
+    origins: CroquisPoint[];
+    /** Lugar agarrado con el cursor; es el que se imanta. */
+    anchor: CroquisPoint;
+    /** Lugares del área que no se mueven; contra ellos se alinea. */
+    anchors: CroquisPoint[];
+    startPlan: CroquisPoint;
+    /** Con Alt se mueve libre, sin imantado. */
+    free: boolean;
+    dx: number;
+    dy: number;
+  } | null>(null);
+
+  /**
+   * Arrastre de una mesa completa, con sus sillas detrás.
+   *
+   * Mismo trato que el de los lugares y por la misma razón: acomodar un salón
+   * son treinta arrastres seguidos, y si cada movimiento del mouse fuera un
+   * cambio guardado, deshacer uno solo costaría cien Ctrl+Z.
+   */
+  private tableMove = signal<{
+    areaId: string;
+    tableId: string;
+    startPlan: CroquisPoint;
+    /** Sillas de la mesa al empezar; son las que no pueden salirse del área. */
+    origins: CroquisPoint[];
+    dx: number;
+    dy: number;
+  } | null>(null);
 
   interactive = computed(() => this.mode() === 'editor');
   /**
@@ -657,62 +858,156 @@ export class CroquisCanvasComponent {
     const dinero = this.showPrices() && this.canViewFinances() && !mini;
     const ocupacion = this.showOccupancy() && !mini;
 
+    const moving = this.seatMove();
+
     const areas: AreaVM[] = plan.areas.map(area => {
       const tier = area.tierId ? tiers.get(area.tierId) : undefined;
       const color = tier?.color || '#99907c';
 
+      // Corrimiento en vivo del arrastre. Solo aplica al área agarrada: mover
+      // lugares de dos zonas a la vez no significaría nada, porque cada área
+      // numera los suyos.
+      const shift = moving && moving.areaId === area.id ? moving : null;
+
+      /** Un lugar pintado, venga de una fila o de una mesa. */
+      const paintSeat = (
+        seat: CroquisSeat,
+        groupId: string,
+        groupLabel: string,
+        index: number,
+        point: CroquisPoint,
+        ownTier: CroquisTier | undefined,
+        atTable = false
+      ): SeatVM | null => {
+        // En la vista del cliente una butaca bloqueada no existe: no es un
+        // lugar "no disponible", es piso del recinto.
+        if (cliente && seat.status === 'bloqueado') return null;
+
+        const key = `${area.id}|${groupId}|${index}`;
+        const estado = cliente
+          ? {
+              seleccionada: picked.has(key),
+              mia: mine.has(key),
+              activa: !activeTier || (ownTier?.id || '') === activeTier
+            }
+          : undefined;
+        const paint = this.seatPaint(seat, ownTier?.color || color, porVenta, cliente, estado);
+
+        return {
+          key,
+          ref: { areaId: area.id, rowId: groupId, index },
+          x: point.x - SEAT_SIZE / 2,
+          y: point.y - SEAT_SIZE / 2,
+          size: SEAT_SIZE,
+          fill: paint.fill,
+          stroke: paint.stroke,
+          opacity: paint.opacity,
+          number: numbersOn ? seat.number : '',
+          numberFill: cliente
+            ? (estado?.mia ? '#052e21' : estado?.seleccionada ? '#121212'
+              : estado?.activa && seat.status !== 'vendido' && seat.status !== 'apartado'
+                ? (ownTier?.color || color) : 'rgba(255,255,255,0.18)')
+            : readableOn(paint.fill),
+          cushion: cliente && seat.status !== 'vendido' && seat.status !== 'apartado',
+          title: this.seatTitle(area, groupLabel, seat, ownTier, atTable)
+        };
+      };
+
       const rows: RowVM[] = area.kind === 'butacas'
         ? area.rows.map(row => {
-            const first = row.seats.length ? seatLocalPoint(area, row, 0) : { x: row.x, y: row.y };
             const seats: SeatVM[] = [];
+            // La letra se ancla al lugar más a la izquierda y no al primero del
+            // arreglo: con butacas movidas a mano el primero puede haber
+            // acabado en la otra punta, y la letra se iría con él.
+            let anchorX = Infinity;
+            let anchorY = row.y;
 
             for (let i = 0; i < row.seats.length; i++) {
               const seat = row.seats[i];
-              // En la vista del cliente una butaca bloqueada no existe: no es un
-              // lugar "no disponible", es piso del recinto.
-              if (cliente && seat.status === 'bloqueado') continue;
+              const base = seatLocalPoint(area, row, i);
+              const p = shift?.keys.has(`${area.id}|${row.id}|${i}`)
+                ? { x: base.x + shift.dx, y: base.y + shift.dy }
+                : base;
 
-              const p = seatLocalPoint(area, row, i);
-              const key = `${area.id}|${row.id}|${i}`;
-              const seatTier = seat.tierId ? tiers.get(seat.tierId) : tier;
-              const estado = cliente
-                ? {
-                    seleccionada: picked.has(key),
-                    mia: mine.has(key),
-                    activa: !activeTier || (seatTier?.id || '') === activeTier
-                  }
-                : undefined;
-              const paint = this.seatPaint(seat, seatTier?.color || color, porVenta, cliente, estado);
+              const vm = paintSeat(seat, row.id, row.label, i, p, seat.tierId ? tiers.get(seat.tierId) : tier);
+              if (!vm) continue;
 
-              seats.push({
-                key,
-                ref: { areaId: area.id, rowId: row.id, index: i },
-                x: p.x - SEAT_SIZE / 2,
-                y: p.y - SEAT_SIZE / 2,
-                size: SEAT_SIZE,
-                fill: paint.fill,
-                stroke: paint.stroke,
-                opacity: paint.opacity,
-                number: numbersOn ? seat.number : '',
-                numberFill: cliente
-                  ? (estado?.mia ? '#052e21' : estado?.seleccionada ? '#121212'
-                    : estado?.activa && seat.status !== 'vendido' && seat.status !== 'apartado'
-                      ? (seatTier?.color || color) : 'rgba(255,255,255,0.18)')
-                  : readableOn(paint.fill),
-                cushion: cliente && seat.status !== 'vendido' && seat.status !== 'apartado',
-                title: this.seatTitle(area, row.label, seat, seatTier)
-              });
+              if (p.x < anchorX) { anchorX = p.x; anchorY = p.y; }
+              seats.push(vm);
             }
 
             return {
               id: row.id,
               label: row.label,
-              labelX: first.x - SEAT_SIZE,
-              labelY: first.y,
+              labelX: (anchorX === Infinity ? row.x : anchorX) - SEAT_SIZE,
+              labelY: anchorY,
               seats
             };
           })
         : [];
+
+      const dragging = this.tableMove();
+      const tableShift = dragging && dragging.areaId === area.id ? dragging : null;
+
+      const tables: TableVM[] = (area.tables || []).map(table => {
+        // El corrimiento del arrastre llega en coordenadas del área; dentro del
+        // grupo de la mesa hay que deshacerle el giro o una mesa torcida
+        // mandaría la silla en diagonal respecto del cursor.
+        const localShift = shift
+          ? rotatePoint({ x: shift.dx, y: shift.dy }, { x: 0, y: 0 }, -(table.rotation || 0))
+          : null;
+
+        const tableTier = table.tierId ? tiers.get(table.tierId) : tier;
+        const tableColor = tableTier?.color || color;
+        const oculta = cliente && table.status === 'bloqueada';
+
+        const seats: SeatVM[] = [];
+        for (let i = 0; i < table.seats.length; i++) {
+          if (oculta) break;
+          const seat = table.seats[i];
+          const base = tableSeatOffset(table, seat);
+          const p = localShift && shift?.keys.has(`${area.id}|${table.id}|${i}`)
+            ? { x: base.x + localShift.x, y: base.y + localShift.y }
+            : base;
+
+          const vm = paintSeat(
+            seat, table.id, table.label, i, p,
+            seat.tierId ? tiers.get(seat.tierId) : tableTier,
+            true
+          );
+          if (vm) seats.push(vm);
+        }
+
+        const vendibles = table.seats.filter(s => s.status !== 'bloqueado');
+        const libres = vendibles.filter(s => !s.status).length;
+        const half = table.shape === 'rectangular' ? 0 : table.width / 2;
+
+        const puesta = tableShift?.tableId === table.id
+          ? { ...table, x: table.x + tableShift.dx, y: table.y + tableShift.dy }
+          : table;
+
+        return {
+          table,
+          transform: tableTransform(puesta),
+          fill: tableColor + (table.status ? '14' : '2e'),
+          stroke: tableColor + (table.status ? '55' : 'bb'),
+          color: tableColor,
+          radius: half,
+          boxX: -table.width / 2,
+          boxY: -table.height / 2,
+          label: fitText(table.label, table.width - 8, 9),
+          labelSize: 9,
+          badge: mini || !this.showLabels()
+            ? ''
+            : (table.status === 'bloqueada' ? 'Bloqueada'
+              : table.status === 'reservada' ? 'Apartada'
+              : `${libres}/${vendibles.length}`),
+          whole: table.rental === 'completa',
+          dimmed: !!table.status,
+          seats,
+          title: this.tableTitle(table, tableTier, libres, vendibles.length)
+        };
+      });
 
       const info = dinero || ocupacion ? areaInsight(area, tiers) : null;
 
@@ -751,6 +1046,7 @@ export class CroquisCanvasComponent {
           ? 6
           : (area.y > chipHeight + 12 ? -(chipHeight + 4) : 6),
         rows,
+        tables,
         moneyLine,
         occupancyLine,
         occupancyPercent: info?.occupancy ?? 0,
@@ -814,14 +1110,36 @@ export class CroquisCanvasComponent {
     const picked = this.selectedSeats();
     if (!picked.size) return [] as { key: string; x: number; y: number; size: number }[];
 
+    // El corrimiento del arrastre en curso también se aplica aquí: si no, el
+    // recuadro dorado se quedaría clavado donde estaba la butaca mientras la
+    // butaca ya va con el cursor.
+    const moving = this.seatMove();
+
     const out: { key: string; x: number; y: number; size: number }[] = [];
+    const mark = (key: string, p: CroquisPoint) =>
+      out.push({ key, x: p.x - SEAT_SIZE / 2 - 2, y: p.y - SEAT_SIZE / 2 - 2, size: SEAT_SIZE + 4 });
+
     for (const area of this.plan().areas) {
+      const shift = moving && moving.areaId === area.id ? moving : null;
+      const nudge = (p: CroquisPoint, key: string) => {
+        if (!shift?.keys.has(key)) return p;
+        const d = rotatePoint({ x: shift.dx, y: shift.dy }, { x: 0, y: 0 }, area.rotation || 0);
+        return { x: p.x + d.x, y: p.y + d.y };
+      };
+
       for (const row of area.rows) {
         for (let i = 0; i < row.seats.length; i++) {
           const key = `${area.id}|${row.id}|${i}`;
           if (!picked.has(key)) continue;
-          const p = seatPlanPoint(area, row, i);
-          out.push({ key, x: p.x - SEAT_SIZE / 2 - 2, y: p.y - SEAT_SIZE / 2 - 2, size: SEAT_SIZE + 4 });
+          mark(key, nudge(seatPlanPoint(area, row, i), key));
+        }
+      }
+
+      for (const table of area.tables || []) {
+        for (let i = 0; i < table.seats.length; i++) {
+          const key = `${area.id}|${table.id}|${i}`;
+          if (!picked.has(key)) continue;
+          mark(key, nudge(tableSeatPlanPoint(area, table, table.seats[i]), key));
         }
       }
     }
@@ -897,20 +1215,44 @@ export class CroquisCanvasComponent {
     return { fill: color, stroke: '#131313', opacity: 1 };
   }
 
-  private seatTitle(area: CroquisArea, rowLabel: string, seat: CroquisSeat, tier?: CroquisTier): string {
+  private seatTitle(area: CroquisArea, groupLabel: string, seat: CroquisSeat, tier: CroquisTier | undefined, atTable: boolean): string {
     const estado = seat.status === 'vendido' ? 'Vendido'
       : seat.status === 'apartado' ? 'Apartado'
       : seat.status === 'bloqueado' ? 'Bloqueado (no se vende)'
       : 'Disponible';
     const precio = tier ? ` · $${(tier.price || 0).toLocaleString('es-MX')}` : '';
-    return `${area.name} · Fila ${rowLabel}, Butaca ${seat.number}\n${tier?.name || 'Sin categoría'}${precio} · ${estado}`;
+    // La silla de una mesa se pide por su mesa y su lugar, no por fila y butaca:
+    // es lo que dice el boleto y lo que pregunta quien llega al salón.
+    const donde = atTable
+      ? `${groupLabel}, lugar ${seat.number}`
+      : `Fila ${groupLabel}, Butaca ${seat.number}`;
+    return `${area.name} · ${donde}\n${tier?.name || 'Sin categoría'}${precio} · ${estado}`;
+  }
+
+  private tableTitle(table: CroquisTable, tier: CroquisTier | undefined, libres: number, total: number): string {
+    const venta = table.rental === 'completa'
+      ? 'Se renta completa'
+      : `Se venden sillas sueltas (mínimo ${Math.max(1, table.minSeats || 1)})`;
+    const estado = table.status === 'bloqueada' ? 'Fuera de la venta'
+      : table.status === 'reservada' ? `Apartada${table.holder ? ` · ${table.holder}` : ''}`
+      : `${libres} de ${total} lugares libres`;
+    const precio = table.price
+      ? ` · $${table.price.toLocaleString('es-MX')} la mesa`
+      : tier ? ` · $${(tier.price || 0).toLocaleString('es-MX')} por lugar` : '';
+    return `${table.label} · ${total} lugares\n${venta}${precio}\n${estado}`;
   }
 
   private areaSubtitle(area: CroquisArea, tier?: CroquisTier): string {
     const cap = areaCapacity(area).toLocaleString('es-MX');
-    const kind = area.kind === 'general' ? 'aforo libre' : 'butacas';
     const sold = areaSold(area);
     const precio = tier ? ` · $${(tier.price || 0).toLocaleString('es-MX')}` : ' · sin categoría';
+
+    if (area.kind === 'mesas') {
+      const mesas = (area.tables || []).length;
+      return `${mesas} mesa(s) · ${cap} lugares${sold ? ` · ${sold} vendidos` : ''}${precio}`;
+    }
+
+    const kind = area.kind === 'general' ? 'aforo libre' : 'butacas';
     return `${cap} ${kind}${sold ? ` · ${sold} vendidos` : ''}${precio}`;
   }
 
@@ -1043,7 +1385,7 @@ export class CroquisCanvasComponent {
       return;
     }
 
-    if (tool === 'area-butacas' || tool === 'area-general') {
+    if (tool === 'area-butacas' || tool === 'area-mesas' || tool === 'area-general') {
       this.drag.set({ kind: 'dibujar-area', startPlan: this.snapped(point), startClient, origin, additive: false });
       this.marquee.set({ x: point.x, y: point.y, width: 0, height: 0 });
       return;
@@ -1057,11 +1399,21 @@ export class CroquisCanvasComponent {
     if (!(event.ctrlKey || event.metaKey)) {
       this.selectArea.emit(null);
       this.selectElement.emit(null);
+      this.selectTable.emit(null);
       this.seatsPicked.emit({ seats: [], additive: false });
     }
   }
 
   onPointerMove(event: PointerEvent): void {
+    if (this.seatMove()) {
+      this.updateSeatMove(event);
+      return;
+    }
+    if (this.tableMove()) {
+      this.updateTableMove(event);
+      return;
+    }
+
     const drag = this.drag();
     if (!drag) return;
 
@@ -1117,6 +1469,11 @@ export class CroquisCanvasComponent {
   }
 
   onPointerUp(event: PointerEvent): void {
+    if (this.endSeatMove() || this.endTableMove()) {
+      this.painting.set(false);
+      return;
+    }
+
     const drag = this.drag();
     this.painting.set(false);
     this.drag.set(null);
@@ -1127,8 +1484,9 @@ export class CroquisCanvasComponent {
 
     if (drag.kind === 'dibujar-area') {
       if (box.width < 60 || box.height < 50) return;
+      const tool = this.tool();
       this.areaDrawn.emit({
-        kind: this.tool() === 'area-general' ? 'general' : 'butacas',
+        kind: tool === 'area-general' ? 'general' : tool === 'area-mesas' ? 'mesas' : 'butacas',
         x: box.x, y: box.y, width: box.width, height: box.height
       });
       return;
@@ -1140,7 +1498,7 @@ export class CroquisCanvasComponent {
     }
   }
 
-  /** Butacas que cayeron dentro del marco, en coordenadas del plano. */
+  /** Lugares que cayeron dentro del marco, en coordenadas del plano. */
   private seatsInBox(box: { x: number; y: number; width: number; height: number }): SeatRef[] {
     const out: SeatRef[] = [];
     for (const area of this.plan().areas) {
@@ -1148,6 +1506,13 @@ export class CroquisCanvasComponent {
         for (let i = 0; i < row.seats.length; i++) {
           if (pointInBox(seatPlanPoint(area, row, i), box)) {
             out.push({ areaId: area.id, rowId: row.id, index: i });
+          }
+        }
+      }
+      for (const table of area.tables || []) {
+        for (let i = 0; i < table.seats.length; i++) {
+          if (pointInBox(tableSeatPlanPoint(area, table, table.seats[i]), box)) {
+            out.push({ areaId: area.id, rowId: table.id, index: i });
           }
         }
       }
@@ -1172,6 +1537,7 @@ export class CroquisCanvasComponent {
 
     this.selectArea.emit(area.id);
     this.selectElement.emit(null);
+    this.selectTable.emit(null);
     this.capture(event);
 
     const point = this.toPlan(event);
@@ -1192,6 +1558,7 @@ export class CroquisCanvasComponent {
 
     this.selectArea.emit(area.id);
     this.selectElement.emit(null);
+    this.selectTable.emit(null);
     this.capture(event);
     this.drag.set({
       kind: 'mover-area',
@@ -1209,6 +1576,7 @@ export class CroquisCanvasComponent {
 
     this.selectElement.emit(el.id);
     this.selectArea.emit(null);
+    this.selectTable.emit(null);
     this.capture(event);
     this.drag.set({
       kind: 'mover-elemento',
@@ -1243,6 +1611,15 @@ export class CroquisCanvasComponent {
     }
 
     event.stopPropagation();
+
+    // Shift sobre un lugar lo arrastra. Sobre el piso del croquis Shift sigue
+    // moviendo el plano, que es lo que uno espera del fondo; aquí el gesto es
+    // sobre la butaca en concreto y no hay ninguna ambigüedad.
+    if (event.shiftKey && this.tool() === 'seleccionar' && event.button === 0) {
+      this.startSeatMove(event, ref);
+      return;
+    }
+
     // Pintar y quitar butacas funcionan arrastrando: es la única forma cómoda de
     // tocar cincuenta butacas seguidas sin dar cincuenta clics.
     this.painting.set(this.tool() === 'pintar' || this.tool() === 'quitar-butacas');
@@ -1252,5 +1629,197 @@ export class CroquisCanvasComponent {
   onSeatEnter(event: PointerEvent, ref: SeatRef): void {
     if (!this.painting()) return;
     this.seatsPicked.emit({ seats: [ref], additive: true });
+  }
+
+  /**
+   * Clic sobre el tablero de una mesa.
+   *
+   * En el editor la selecciona para editarla; en la vista del cliente la renta,
+   * pero solo cuando se vende completa: si sus sillas se venden sueltas, tocar
+   * el tablero no puede significar "me llevo las diez".
+   */
+  onTablePointerDown(event: PointerEvent, area: CroquisArea, table: CroquisTable): void {
+    if (this.mode() === 'miniatura') return;
+
+    if (this.mode() === 'cliente') {
+      // Con las sillas a la venta por separado, tocar el tablero no puede
+      // significar "me llevo las diez": se deja pasar para que el gesto siga
+      // sirviendo para moverse por el plano.
+      if (table.rental !== 'completa' || table.status) return;
+      event.stopPropagation();
+      this.tableActivated.emit({ areaId: area.id, tableId: table.id });
+      return;
+    }
+
+    if (this.tool() !== 'seleccionar') return;
+    event.stopPropagation();
+    this.selectTable.emit({ areaId: area.id, tableId: table.id });
+    this.selectArea.emit(area.id);
+    this.selectElement.emit(null);
+
+    // El tablero es el tirador de la mesa. Al revés que las áreas —cuyo interior
+    // se reserva para seleccionar butacas—, aquí no hay nada dentro que
+    // seleccionar: la mesa es un objeto que se acomoda, y acomodarla es
+    // justamente lo que se hace todo el rato al montar un salón.
+    this.capture(event);
+    this.tableMove.set({
+      areaId: area.id,
+      tableId: table.id,
+      startPlan: this.toPlan(event),
+      origins: table.seats.map(seat => tableSeatLocalPoint(table, seat)),
+      dx: 0,
+      dy: 0
+    });
+  }
+
+  // ─── Arrastre de lugares ───────────────────────────────────────────────────
+
+  /**
+   * Prepara el arrastre de uno o varios lugares.
+   *
+   * Si la butaca agarrada ya estaba seleccionada se mueve la selección entera —es
+   * como se recorre media fila de un jalón—; si no, se selecciona esa sola y se
+   * mueve ella. Los lugares de otras áreas se quedan fuera aunque estén
+   * seleccionados: cada área numera los suyos y sacarlos a otra los dejaría sin
+   * fila, sin número y sin precio.
+   */
+  private startSeatMove(event: PointerEvent, ref: SeatRef): void {
+    const area = this.plan().areas.find(a => a.id === ref.areaId);
+    if (!area) return;
+
+    const grabbed = seatKey(ref);
+    const selected = this.selectedSeats();
+    const keys = selected.has(grabbed)
+      ? new Set([...selected].filter(k => k.startsWith(`${area.id}|`)))
+      : new Set([grabbed]);
+
+    if (!selected.has(grabbed)) {
+      this.seatsPicked.emit({ seats: [ref], additive: false });
+    }
+
+    // Lo que se mueve y lo que se queda quieto, de una vez: el imantado compara
+    // contra los lugares que no viajan, y recalcularlos en cada movimiento del
+    // mouse haría que arrastrar en un área de mil butacas se sintiera pegajoso.
+    const refs: SeatRef[] = [];
+    const origins: CroquisPoint[] = [];
+    const anchors: CroquisPoint[] = [];
+    let anchor: CroquisPoint | null = null;
+
+    const consider = (key: string, index: number, groupId: string, point: CroquisPoint) => {
+      if (!keys.has(key)) {
+        anchors.push(point);
+        return;
+      }
+      refs.push({ areaId: area.id, rowId: groupId, index });
+      origins.push(point);
+      if (key === grabbed) anchor = point;
+    };
+
+    for (const row of area.rows) {
+      for (let i = 0; i < row.seats.length; i++) {
+        consider(`${area.id}|${row.id}|${i}`, i, row.id, seatLocalPoint(area, row, i));
+      }
+    }
+    for (const table of area.tables || []) {
+      for (let i = 0; i < table.seats.length; i++) {
+        consider(`${area.id}|${table.id}|${i}`, i, table.id, tableSeatLocalPoint(table, table.seats[i]));
+      }
+    }
+
+    if (!refs.length || !anchor) return;
+
+    this.capture(event);
+    this.painting.set(false);
+    this.seatMove.set({
+      areaId: area.id,
+      refs,
+      keys,
+      origins,
+      anchor,
+      anchors,
+      startPlan: this.toPlan(event),
+      free: event.altKey,
+      dx: 0,
+      dy: 0
+    });
+  }
+
+  /** Sigue el cursor, imanta a los vecinos y frena en el borde del área. */
+  private updateSeatMove(event: PointerEvent): void {
+    const move = this.seatMove();
+    if (!move) return;
+
+    const area = this.plan().areas.find(a => a.id === move.areaId);
+    if (!area) return;
+
+    const point = this.toPlan(event);
+    let delta = planDeltaToAreaLocal(area, {
+      x: point.x - move.startPlan.x,
+      y: point.y - move.startPlan.y
+    });
+
+    // Se imanta el lugar agarrado y el resto lo sigue: alinear cada uno por su
+    // cuenta amontonaría el bloque contra la primera fila que se cruzara.
+    if (!move.free && !event.altKey) {
+      const target = { x: move.anchor.x + delta.x, y: move.anchor.y + delta.y };
+      const snapped = alignToNeighbours(target, move.anchors);
+      delta = { x: snapped.x - move.anchor.x, y: snapped.y - move.anchor.y };
+    }
+
+    delta = limitSeatDelta(area, move.origins, delta);
+    this.seatMove.set({ ...move, dx: delta.x, dy: delta.y });
+  }
+
+  /** Mueve la mesa entera, frenándola cuando sus sillas llegan al borde. */
+  private updateTableMove(event: PointerEvent): void {
+    const move = this.tableMove();
+    if (!move) return;
+
+    const area = this.plan().areas.find(a => a.id === move.areaId);
+    if (!area) return;
+
+    const point = this.toPlan(event);
+    const raw = planDeltaToAreaLocal(area, {
+      x: point.x - move.startPlan.x,
+      y: point.y - move.startPlan.y
+    });
+
+    const g = this.gridSize();
+    const delta = limitSeatDelta(area, move.origins, {
+      x: g > 0 && !event.altKey ? snap(raw.x, g) : raw.x,
+      y: g > 0 && !event.altKey ? snap(raw.y, g) : raw.y
+    });
+
+    this.tableMove.set({ ...move, dx: delta.x, dy: delta.y });
+  }
+
+  private endTableMove(): boolean {
+    const move = this.tableMove();
+    if (!move) return false;
+
+    this.tableMove.set(null);
+    if (Math.abs(move.dx) < 0.5 && Math.abs(move.dy) < 0.5) return true;
+
+    this.tableMoved.emit({
+      areaId: move.areaId,
+      tableId: move.tableId,
+      dx: move.dx,
+      dy: move.dy
+    });
+    return true;
+  }
+
+  /** Suelta el arrastre y lo manda al croquis en un solo cambio. */
+  private endSeatMove(): boolean {
+    const move = this.seatMove();
+    if (!move) return false;
+
+    this.seatMove.set(null);
+    // Un temblor de medio píxel no es un movimiento: emitirlo dejaría un paso de
+    // historial cada vez que alguien selecciona una butaca con Shift puesto.
+    if (Math.abs(move.dx) < 0.5 && Math.abs(move.dy) < 0.5) return true;
+
+    this.seatsMoved.emit({ areaId: move.areaId, seats: move.refs, dx: move.dx, dy: move.dy });
+    return true;
   }
 }

@@ -1,5 +1,6 @@
 import {
-  CroquisArea, CroquisElement, CroquisPlan, CroquisRow, CroquisSeat, EventCroquis
+  CroquisArea, CroquisElement, CroquisPlan, CroquisRow, CroquisSeat, CroquisTable,
+  CroquisTableRental, EventCroquis
 } from '../models/croquis.model';
 
 /**
@@ -12,7 +13,7 @@ import {
  */
 
 const PLAN_WIDTH = 1200;
-const PLAN_HEIGHT = 860;
+const PLAN_HEIGHT = 1090;
 const SEAT_GAP = 21;
 const ROW_GAP = 24;
 
@@ -73,6 +74,59 @@ function generalArea(
   };
 }
 
+/**
+ * Área de mesas de ejemplo.
+ *
+ * Va en el croquis de prueba a propósito: sin una mesa dibujada no hay forma de
+ * comprobar que rentar completa y comprar lugares sueltos se comportan distinto,
+ * que es justo lo que se rompe en silencio.
+ */
+function tableArea(
+  id: string, name: string, tierId: string,
+  box: { x: number; y: number; width: number; height: number },
+  layout: { rows: number; perRow: number; seats: number; rental: CroquisTableRental; minSeats?: number },
+  startAt = 1
+): CroquisArea {
+  const size = 58;
+  const gapX = box.width / layout.perRow;
+  const gapY = box.height / layout.rows;
+  const tables: CroquisTable[] = [];
+
+  for (let r = 0; r < layout.rows; r++) {
+    for (let c = 0; c < layout.perRow; c++) {
+      const n = startAt + r * layout.perRow + c;
+      // Un par de mesas ya apartadas, de forma estable: el mapa tiene que verse
+      // igual en cada carga o el comprador creería que perdió la suya.
+      const reservada = n % 5 === 0;
+
+      tables.push({
+        id: `${id}-t${n}`,
+        label: `Mesa ${n}`,
+        x: gapX * (c + 0.5),
+        y: gapY * (r + 0.5),
+        shape: 'redonda',
+        width: size,
+        height: size,
+        rotation: 0,
+        slots: layout.seats,
+        seats: Array.from({ length: layout.seats }, (_, i) => ({
+          number: i + 1,
+          slot: i,
+          state: reservada ? ('apartado' as const) : undefined
+        })),
+        rental: layout.rental,
+        minSeats: layout.minSeats,
+        state: reservada ? 'reservada' : undefined
+      });
+    }
+  }
+
+  return {
+    id, name, numbered: true, tierId, ...box,
+    rotation: 0, rows: [], tables
+  };
+}
+
 const el = (
   kind: string, label: string, icon: string, color: string,
   x: number, y: number, width: number, height: number
@@ -115,8 +169,16 @@ export function croquisForEvent(_eventId: number): EventCroquis {
         { x: 250, y: 530, width: 700, height: 175 },
         ['J', 'K', 'L', 'M', 'N', 'O'], 22, { curve: 0.2 }),
 
+      tableArea('a-mesas', 'Mesas Palco', 'mesa-completa',
+        { x: 250, y: 730, width: 700, height: 200 },
+        { rows: 2, perRow: 5, seats: 8, rental: 'completa' }),
+
+      tableArea('a-mesas-sueltas', 'Mesas Compartidas', 'mesa-suelta',
+        { x: 60, y: 730, width: 170, height: 200 },
+        { rows: 2, perRow: 1, seats: 6, rental: 'sillas', minSeats: 2 }, 11),
+
       generalArea('a-pista', 'Pista General', 'grada',
-        { x: 200, y: 730, width: 800, height: 105 },
+        { x: 200, y: 960, width: 800, height: 105 },
         2500, 940, 'Acceso por puerta 4')
     ],
     elements: [
@@ -129,7 +191,7 @@ export function croquisForEvent(_eventId: number): EventCroquis {
       el('alimentos', 'Alimentos', 'restaurant', '#fbbf24', 30, 650, 140, 60),
       el('sanitarios', 'Sanitarios', 'wc', '#34d399', 1030, 560, 130, 70),
       el('acceso', 'Puerta 1', 'login', '#22d3ee', 40, 210, 90, 36),
-      el('acceso', 'Puerta 4', 'login', '#22d3ee', 545, 840, 110, 36)
+      el('acceso', 'Puerta 4', 'login', '#22d3ee', 545, 1070, 110, 36)
     ]
   };
 
@@ -139,6 +201,8 @@ export function croquisForEvent(_eventId: number): EventCroquis {
       { id: 'vip', name: 'VIP Oro', price: 2200, color: '#F2CA50', description: 'Primeras filas, acceso prioritario y bebida de cortesía.' },
       { id: 'preferente', name: 'Preferente', price: 1200, color: '#38BDF8', description: 'Vista central con asiento numerado.' },
       { id: 'general-a', name: 'General A', price: 650, color: '#4ADE80', description: 'Asiento numerado en la zona media del recinto.' },
+      { id: 'mesa-completa', name: 'Mesa Palco', price: 1500, color: '#E879F9', description: 'Mesa de ocho lugares para tu grupo; se renta completa.' },
+      { id: 'mesa-suelta', name: 'Lugar en Mesa', price: 900, color: '#2DD4BF', description: 'Lugares sueltos en mesa compartida; mínimo dos por compra.' },
       { id: 'grada', name: 'Grada General', price: 350, color: '#FB923C', description: 'Entrada libre a la pista, sin lugar asignado.' }
     ],
     plans: [plan]

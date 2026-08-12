@@ -1,5 +1,5 @@
 import {
-  CroquisArea, CroquisPlan, CroquisSeat, CroquisTier,
+  CroquisArea, CroquisPlan, CroquisSeat, CroquisTable, CroquisTier,
   PLAN_HEIGHT, PLAN_WIDTH, ROW_GAP, SEAT_SIZE, SEAT_WARN_THRESHOLD
 } from '../../../core/models/croquis.models';
 import { EventItem, TicketTier } from '../../../core/models/event.models';
@@ -18,15 +18,36 @@ import { colorsAreClose, makeGeneralArea, makeSeatedArea, nextTierColor } from '
 
 // ─── Conteos por área ─────────────────────────────────────────────────────────
 
-/** Butacas dibujadas en el área (las bloqueadas cuentan como lugar existente). */
+/** Mesas del área; vacío en las que no las tienen. */
+export function areaTables(area: CroquisArea): CroquisTable[] {
+  return area.tables || [];
+}
+
+/**
+ * Lugares dibujados en el área, vengan de una fila o de una mesa.
+ *
+ * Las bloqueadas cuentan como lugar existente; las sillas de una mesa bloqueada
+ * no cuentan para nada, porque una mesa fuera de la venta no es una mesa con
+ * sillas apagadas: es espacio del salón que no se vende.
+ */
 export function areaSeats(area: CroquisArea): CroquisSeat[] {
-  return area.rows.flatMap(r => r.seats);
+  return [
+    ...area.rows.flatMap(r => r.seats),
+    ...areaTables(area).filter(t => t.status !== 'bloqueada').flatMap(t => t.seats)
+  ];
 }
 
 /** Lugares que el área pone a la venta. */
 export function areaCapacity(area: CroquisArea): number {
   if (area.kind === 'general') return Math.max(0, area.capacity || 0);
   return areaSeats(area).filter(s => s.status !== 'bloqueado').length;
+}
+
+/** Mesas del área que todavía tienen algún lugar libre. */
+export function areaTablesFree(area: CroquisArea): number {
+  return areaTables(area).filter(
+    t => t.status !== 'bloqueada' && t.status !== 'reservada' && t.seats.some(s => !s.status)
+  ).length;
 }
 
 export function areaSold(area: CroquisArea): number {
@@ -42,6 +63,30 @@ export function areaHeld(area: CroquisArea): number {
 export function areaBlocked(area: CroquisArea): number {
   if (area.kind === 'general') return 0;
   return areaSeats(area).filter(s => s.status === 'bloqueado').length;
+}
+
+/**
+ * Cada lugar del área con la categoría que de verdad le toca.
+ *
+ * La categoría cae en cascada —la del lugar, si no la de su mesa, si no la del
+ * área— y hay tres o cuatro sitios que necesitan exactamente esa cuenta. Tenerla
+ * en un solo lugar evita que uno de ellos se olvide de las mesas y reporte un
+ * aforo distinto que los demás.
+ */
+export function areaSeatEntries(area: CroquisArea): { seat: CroquisSeat; tierId?: string }[] {
+  const out: { seat: CroquisSeat; tierId?: string }[] = [];
+
+  for (const row of area.rows) {
+    for (const seat of row.seats) out.push({ seat, tierId: seat.tierId || area.tierId });
+  }
+  for (const table of areaTables(area)) {
+    if (table.status === 'bloqueada') continue;
+    for (const seat of table.seats) {
+      out.push({ seat, tierId: seat.tierId || table.tierId || area.tierId });
+    }
+  }
+
+  return out;
 }
 
 export function areaOccupancy(area: CroquisArea): number {
@@ -60,7 +105,12 @@ export function planSold(plan: CroquisPlan): number {
 }
 
 export function planSeatCount(plan: CroquisPlan): number {
-  return plan.areas.reduce((sum, a) => sum + (a.kind === 'butacas' ? areaSeats(a).length : 0), 0);
+  return plan.areas.reduce((sum, a) => sum + (a.kind === 'general' ? 0 : areaSeats(a).length), 0);
+}
+
+/** Mesas dibujadas en el plano, sumando todas sus áreas. */
+export function planTableCount(plan: CroquisPlan): number {
+  return plan.areas.reduce((sum, a) => sum + areaTables(a).length, 0);
 }
 
 export function planOccupancy(plan: CroquisPlan): number {
@@ -124,19 +174,17 @@ export function tierCroquisSummary(plans: CroquisPlan[]): Map<string, TierCroqui
         continue;
       }
 
-      // Área de butacas: cada butaca puede traer su propia categoría, así que se
-      // cuenta una por una en vez de multiplicar el total por la del área.
+      // Área de butacas o de mesas: cada lugar puede traer su propia categoría,
+      // así que se cuenta uno por uno en vez de multiplicar el total por la del
+      // área.
       let touched = false;
-      for (const row of area.rows) {
-        for (const seat of row.seats) {
-          const tierId = seat.tierId || area.tierId;
-          if (!tierId) continue;
-          const entry = bucket(tierId, plan.name);
-          touched = touched || tierId === area.tierId;
-          if (seat.status !== 'bloqueado') entry.capacity += 1;
-          if (seat.status === 'vendido') entry.sold += 1;
-          if (seat.status === 'apartado') entry.held += 1;
-        }
+      for (const { seat, tierId } of areaSeatEntries(area)) {
+        if (!tierId) continue;
+        const entry = bucket(tierId, plan.name);
+        touched = touched || tierId === area.tierId;
+        if (seat.status !== 'bloqueado') entry.capacity += 1;
+        if (seat.status === 'vendido') entry.sold += 1;
+        if (seat.status === 'apartado') entry.held += 1;
       }
       if (touched && area.tierId) bucket(area.tierId, plan.name).areaCount += 1;
     }
@@ -300,6 +348,44 @@ export function croquisIssues(e: EventItem): CroquisIssue[] {
           message: `"${area.name}" no tiene ninguna butaca disponible.`,
           fix: 'Genera su butaquería o cámbiala a área de aforo libre.'
         });
+      }
+
+      if (area.kind === 'mesas') {
+        if (!areaTables(area).length) {
+          issues.push({
+            level: 'error',
+            planId: plan.id,
+            planName: plan.name,
+            areaId: area.id,
+            message: `"${area.name}" es de mesas pero no tiene ninguna.`,
+            fix: 'Genera las mesas del área o cámbiala a butacas o a aforo libre.'
+          });
+        } else if (areaCapacity(area) <= 0) {
+          issues.push({
+            level: 'error',
+            planId: plan.id,
+            planName: plan.name,
+            areaId: area.id,
+            message: `Ninguna mesa de "${area.name}" tiene lugares disponibles.`,
+            fix: 'Súbele sillas a las mesas o desbloquéalas: hoy no puede vender nada.'
+          });
+        }
+
+        // Un mínimo mayor que la mesa deja la mesa invendible sin decirlo: el
+        // portal no la ofrece y en el croquis se sigue viendo llena de sillas.
+        const imposibles = areaTables(area).filter(
+          t => t.rental === 'sillas' && (t.minSeats || 1) > t.seats.filter(s => s.status !== 'bloqueado').length
+        );
+        if (imposibles.length) {
+          issues.push({
+            level: 'error',
+            planId: plan.id,
+            planName: plan.name,
+            areaId: area.id,
+            message: `${imposibles.length} mesa(s) de "${area.name}" piden más sillas de las que tienen.`,
+            fix: 'Baja el mínimo de sillas a comprar o súbeles lugares a esas mesas.'
+          });
+        }
       }
     }
 

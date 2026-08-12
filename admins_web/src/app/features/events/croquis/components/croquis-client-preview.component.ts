@@ -5,6 +5,7 @@ import { CroquisCanvasComponent, SeatRef, seatKey } from './croquis-canvas.compo
 import { clientReferences, clientTiers, stageNames } from '../croquis-client-layout';
 import { areaCapacity, areaHeld, areaSold } from '../croquis-metrics';
 
+
 /**
  * Lo que verá el comprador.
  *
@@ -113,6 +114,7 @@ import { areaCapacity, areaHeld, areaSold } from '../croquis-metrics';
                   [activeTierId]="activeTierId()"
                   [selectedSeats]="selection()"
                   (seatActivated)="onSeatActivated($event)"
+                  (tableActivated)="onTableActivated($event)"
                 />
               }
             </div>
@@ -202,16 +204,29 @@ import { areaCapacity, areaHeld, areaSold } from '../croquis-metrics';
 
               @if (picked().length) {
                 <div class="flex flex-wrap gap-1.5">
-                  @for (seat of picked(); track seat.id) {
+                  @for (seat of picked(); track seat.key) {
                     <span class="bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex flex-col items-start gap-0.5">
                       <span class="flex items-center gap-0.5">
-                        <span class="material-symbols-outlined text-[10px]">chair</span>
+                        <span class="material-symbols-outlined text-[10px]">{{ seat.atTable ? 'table_restaurant' : 'chair' }}</span>
                         <strong>{{ seat.id }}</strong>
                       </span>
                       <span class="text-[7px] text-white/60 lowercase font-light">{{ seat.tierName }}</span>
                     </span>
                   }
                 </div>
+
+                <!-- Mesas incompletas: el mínimo del organizador es lo que
+                     impide que alguien ocupe una mesa de diez llevándose uno. -->
+                @if (shortTables().length) {
+                  <p class="text-[10px] text-amber-300/90 leading-snug flex items-start gap-1.5">
+                    <span class="material-symbols-outlined text-[12px] mt-0.5 shrink-0">info</span>
+                    <span>
+                      @for (t of shortTables(); track t.label) {
+                        {{ t.label }} pide mínimo {{ t.min }} lugares y llevas {{ t.taken }}.
+                      }
+                    </span>
+                  </p>
+                }
               } @else {
                 <div class="text-xs text-white/30 italic py-2">
                   Por favor selecciona uno o más asientos en el plano.
@@ -311,16 +326,13 @@ export class CroquisClientPreviewComponent {
     return names.join(' · ');
   });
 
-  capacityOf = (p: CroquisPlan) =>
-    p.areas.reduce((sum, a) => sum + (a.kind === 'general'
-      ? Math.max(0, a.capacity || 0)
-      : a.rows.reduce((s, r) => s + r.seats.filter(x => x.status !== 'bloqueado').length, 0)), 0);
+  capacityOf = (p: CroquisPlan) => p.areas.reduce((sum, a) => sum + areaCapacity(a), 0);
 
   picked = computed(() => {
     const chosen = this.selection();
     const plan = this.plan();
     const index = new Map(this.tiers().map(t => [t.id || '', t]));
-    const out: { key: string; id: string; tierName: string; price: number }[] = [];
+    const out: { key: string; id: string; tierName: string; price: number; atTable: string }[] = [];
     if (!plan) return out;
 
     for (const area of plan.areas) {
@@ -334,9 +346,50 @@ export class CroquisClientPreviewComponent {
             key,
             id: `${row.label}-${seat.number}`,
             tierName: tier?.name || 'Sin categoría',
-            price: tier?.price || 0
+            price: tier?.price || 0,
+            atTable: ''
           });
         }
+      }
+
+      for (const table of area.tables || []) {
+        for (let i = 0; i < table.seats.length; i++) {
+          const key = `${area.id}|${table.id}|${i}`;
+          if (!chosen.has(key)) continue;
+          const seat = table.seats[i];
+          const tier = index.get(seat.tierId || table.tierId || area.tierId || '');
+          out.push({
+            key,
+            id: `${table.label} · lugar ${seat.number}`,
+            tierName: tier?.name || 'Sin categoría',
+            price: tier?.price || 0,
+            atTable: table.id
+          });
+        }
+      }
+    }
+    return out;
+  });
+
+  /**
+   * Mesas de las que se llevan menos lugares de los que pide el organizador.
+   *
+   * Se avisa aquí y no al pagar porque es una regla del croquis, no del carrito:
+   * si se descubriera al final, el comprador ya habría elegido sus lugares y
+   * tendría que volver al mapa a adivinar cuántos le faltan.
+   */
+  shortTables = computed(() => {
+    const plan = this.plan();
+    const chosen = this.selection();
+    if (!plan) return [] as { label: string; min: number; taken: number }[];
+
+    const out: { label: string; min: number; taken: number }[] = [];
+    for (const area of plan.areas) {
+      for (const table of area.tables || []) {
+        if (table.rental !== 'sillas') continue;
+        const min = Math.max(1, table.minSeats || 1);
+        const taken = table.seats.filter((_, i) => chosen.has(`${area.id}|${table.id}|${i}`)).length;
+        if (taken > 0 && taken < min) out.push({ label: table.label, min, taken });
       }
     }
     return out;
@@ -368,12 +421,24 @@ export class CroquisClientPreviewComponent {
     if (!plan) return;
 
     const area = plan.areas.find(a => a.id === ref.areaId);
-    const row = area?.rows.find(r => r.id === ref.rowId);
-    const seat = row?.seats[ref.index];
-    if (!area || !seat) return;
+    if (!area) return;
+
+    const row = area.rows.find(r => r.id === ref.rowId);
+    const table = (area.tables || []).find(t => t.id === ref.rowId);
+    const seat = (row?.seats || table?.seats || [])[ref.index];
+    if (!seat) return;
     if (seat.status === 'vendido' || seat.status === 'apartado' || seat.status === 'bloqueado') return;
 
-    const tierId = seat.tierId || area.tierId || '';
+    // Una silla de mesa que se renta completa no se elige suelta: el gesto es
+    // sobre la mesa, y dejar que se despedace aquí contradiría lo que el
+    // organizador decidió al montarla.
+    if (table && table.rental === 'completa') {
+      this.onTableActivated({ areaId: area.id, tableId: table.id });
+      return;
+    }
+    if (table?.status) return;
+
+    const tierId = seat.tierId || table?.tierId || area.tierId || '';
     const active = this.activeTierId();
     // Igual que en el portal: no se mezclan categorías sin cambiar antes el tipo
     // de boleto, para que nadie arme un carrito de cuatro zonas sin notarlo.
@@ -387,7 +452,72 @@ export class CroquisClientPreviewComponent {
     });
   }
 
-  subtotal = computed(() => this.picked().reduce((sum, s) => sum + s.price, 0));
+  /**
+   * Rentar la mesa completa: entran o salen todos sus lugares libres de golpe.
+   *
+   * Es todo o nada por definición —quien renta una mesa la renta para que no se
+   * siente nadie más—, así que dejar la mitad seleccionada sería ofrecer algo
+   * que el organizador no puso a la venta.
+   */
+  onTableActivated(pick: { areaId: string; tableId: string }): void {
+    const plan = this.plan();
+    const area = plan?.areas.find(a => a.id === pick.areaId);
+    const table = area?.tables?.find(t => t.id === pick.tableId);
+    if (!area || !table || table.status) return;
+
+    const libres = table.seats
+      .map((seat, i) => ({ seat, key: `${area.id}|${table.id}|${i}` }))
+      .filter(({ seat }) => !seat.status);
+    if (!libres.length) return;
+
+    const tierId = table.tierId || area.tierId || '';
+    const active = this.activeTierId();
+    const yaPuesta = libres.every(({ key }) => this.selection().has(key));
+
+    if (!yaPuesta) {
+      if (active && tierId !== active) return;
+      if (!active) this.activeTierId.set(tierId);
+    }
+
+    this.selection.update(set => {
+      const next = new Set(set);
+      for (const { key } of libres) yaPuesta ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+
+  /**
+   * Lo que cuesta lo elegido.
+   *
+   * Una mesa con precio propio se cobra de corrido y no lugar por lugar: se
+   * descuenta lo que sumaron sus sillas y se pone el precio de la mesa. Sin
+   * esto, una mesa de patrocinador de treinta mil se cobraría como diez lugares
+   * de mil.
+   */
+  subtotal = computed(() => {
+    let total = this.picked().reduce((sum, s) => sum + s.price, 0);
+    const plan = this.plan();
+    const chosen = this.selection();
+    if (!plan) return total;
+
+    for (const area of plan.areas) {
+      for (const table of area.tables || []) {
+        if (!table.price) continue;
+        const libres = table.seats
+          .map((seat, i) => ({ seat, key: `${area.id}|${table.id}|${i}` }))
+          .filter(({ seat }) => seat.status !== 'bloqueado');
+        if (!libres.length || !libres.every(({ key }) => chosen.has(key))) continue;
+
+        const index = new Map(this.tiers().map(t => [t.id || '', t]));
+        const porSilla = libres.reduce(
+          (sum, { seat }) => sum + (index.get(seat.tierId || table.tierId || area.tierId || '')?.price || 0),
+          0
+        );
+        total += table.price - porSilla;
+      }
+    }
+    return total;
+  });
   charges = computed(() => this.picked().length * this.serviceFee());
   total = computed(() => this.subtotal() + this.charges());
 

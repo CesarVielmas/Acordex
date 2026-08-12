@@ -137,7 +137,7 @@ import { money } from '../../event-metrics';
                     <td class="px-3 py-2 min-w-0 max-w-[16rem]">
                       <span class="font-black text-on-surface truncate block" [title]="row.plan.name">{{ row.plan.name }}</span>
                       <span class="block text-[9px] text-outline truncate">
-                        {{ row.seatedAreas }} con butacas · {{ row.generalAreas }} de aforo libre
+                        {{ row.seatedAreas }} con lugar asignado · {{ row.generalAreas }} de aforo libre@if (row.tableCount) { · {{ row.tableCount }} mesas }
                       </span>
                     </td>
                     <td class="text-right px-2 py-2 font-mono text-on-surface-variant">{{ row.plan.areas.length }}</td>

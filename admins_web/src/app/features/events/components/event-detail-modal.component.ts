@@ -17,7 +17,11 @@ import { EventTabLineupComponent } from './detail/event-tab-lineup.component';
 import { EventTabProductionComponent } from './detail/event-tab-production.component';
 import { EventTabTicketsComponent } from './detail/event-tab-tickets.component';
 import { EventTabClosureComponent } from './detail/event-tab-closure.component';
+import { EventTabTasksComponent } from './detail/event-tab-tasks.component';
+import { EventTabActivityComponent } from './detail/event-tab-activity.component';
 import { CroquisEditorComponent } from '../croquis/components/croquis-editor.component';
+import { croquisCapacity } from '../croquis/croquis-metrics';
+import { resolveTasks } from '../event-tasks';
 import { CompletenessItem, completenessByGroup, eventCompleteness } from '../event-completeness';
 import {
   approvals,
@@ -48,7 +52,7 @@ import {
 
 export type EventDetailTab =
   | 'resumen' | 'evento' | 'cartel' | 'produccion' | 'boletaje'
-  | 'acuerdos' | 'revision' | 'venta' | 'cierre' | 'trazabilidad';
+  | 'tareas' | 'acuerdos' | 'revision' | 'venta' | 'cierre' | 'trazabilidad';
 
 /**
  * Expediente del evento.
@@ -72,6 +76,8 @@ export type EventDetailTab =
     EventTabProductionComponent,
     EventTabTicketsComponent,
     EventTabClosureComponent,
+    EventTabTasksComponent,
+    EventTabActivityComponent,
     CroquisEditorComponent
   ],
   template: `
@@ -605,6 +611,15 @@ export type EventDetailTab =
             />
           }
 
+          <!-- ─── TAREAS ─── -->
+          @if (activeTab() === 'tareas') {
+            <app-event-tab-tasks
+              [event]="e"
+              (navigateTab)="activeTab.set($event)"
+              (patch)="patch.emit($event)"
+            />
+          }
+
           <!-- ─── ACUERDOS ─── -->
           @if (activeTab() === 'acuerdos') {
             <div class="space-y-6">
@@ -613,7 +628,7 @@ export type EventDetailTab =
                    decidió aquí sigue guardado: sale de una sola vez al enviar el
                    evento a revisión, no conforme se va armando. -->
               @if (isDraft() && outboundCount() > 0) {
-                <section class="p-6 rounded-3xl bg-gradient-to-br from-amber-500/[0.08] via-surface-container-high/90 to-surface-container-high/90 border border-amber-500/30 border-l-4 border-l-amber-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
+                <section class="p-6 rounded-3xl bg-gradient-to-br from-amber-500/10 via-black/40 to-black/60 border border-amber-500/30 border-l-4 border-l-amber-500/70 shadow-[0_0_40px_rgba(245,158,11,0.15)] space-y-4 backdrop-blur-3xl">
                   <div class="flex items-center justify-between gap-3 flex-wrap">
                     <h5 class="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2.5">
                       <span class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center justify-center material-symbols-outlined text-lg">outbox</span>
@@ -632,7 +647,7 @@ export type EventDetailTab =
 
                   <div class="space-y-2.5">
                     @for (a of unsentInvites(); track a.id) {
-                      <div class="p-3.5 rounded-2xl bg-surface-container/60 border border-outline-variant/25 flex items-center justify-between gap-3 flex-wrap">
+                      <div class="p-3.5 rounded-2xl bg-black/20 border border-white/5 flex items-center justify-between gap-3 flex-wrap backdrop-blur-md">
                         <div class="flex items-center gap-2.5 min-w-0">
                           <span class="material-symbols-outlined text-base text-sky-300 shrink-0">person_add</span>
                           <span class="text-[11px] text-on-surface-variant min-w-0">
@@ -650,7 +665,7 @@ export type EventDetailTab =
                     }
 
                     @for (s of unsentRequests(); track s.id) {
-                      <div class="p-3.5 rounded-2xl bg-surface-container/60 border border-outline-variant/25 flex items-center justify-between gap-3 flex-wrap">
+                      <div class="p-3.5 rounded-2xl bg-black/20 border border-white/5 flex items-center justify-between gap-3 flex-wrap backdrop-blur-md">
                         <div class="flex items-center gap-2.5 min-w-0">
                           <span class="material-symbols-outlined text-base shrink-0"
                             [class]="engagementOf(s) === 'coorganizacion' ? 'text-sky-300' : 'text-amber-300'">
@@ -674,7 +689,7 @@ export type EventDetailTab =
                     }
 
                     @for (r of unsentAssignments(); track r.id) {
-                      <div class="p-3.5 rounded-2xl bg-surface-container/60 border border-outline-variant/25 flex items-center justify-between gap-3 flex-wrap">
+                      <div class="p-3.5 rounded-2xl bg-black/20 border border-white/5 flex items-center justify-between gap-3 flex-wrap backdrop-blur-md">
                         <div class="flex items-center gap-2.5 min-w-0">
                           <span class="material-symbols-outlined text-base text-violet-300 shrink-0">assignment_ind</span>
                           <span class="text-[11px] text-on-surface-variant min-w-0">
@@ -693,7 +708,7 @@ export type EventDetailTab =
               }
 
               <!-- Reparto entre managers -->
-              <section class="p-6 rounded-3xl bg-gradient-to-br from-teal-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-teal-500/25 border-l-4 border-l-teal-500/70 shadow-2xl shadow-teal-500/5 space-y-5 backdrop-blur-2xl">
+              <section class="p-6 rounded-3xl bg-gradient-to-br from-teal-500/10 via-black/40 to-black/60 border border-teal-500/25 border-l-4 border-l-teal-500/70 shadow-[0_0_40px_rgba(20,184,166,0.15)] space-y-5 backdrop-blur-3xl">
                 <div class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-4 flex-wrap">
                   <h5 class="text-xs font-black uppercase tracking-wider text-teal-300 flex items-center gap-2.5">
                     <span class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center material-symbols-outlined text-lg">handshake</span>
@@ -717,7 +732,7 @@ export type EventDetailTab =
 
                 <!-- Por privacidad, entre managers solo se comparte el total del
                      evento: los costos de los grupos de cada quien no se exponen. -->
-                <div class="p-3.5 rounded-2xl bg-surface-container/70 border border-outline-variant/25 text-[11px] text-outline flex items-start gap-2.5">
+                <div class="p-3.5 rounded-2xl bg-black/20 border border-white/5 text-[11px] text-outline flex items-start gap-2.5 backdrop-blur-md">
                   <span class="material-symbols-outlined text-base shrink-0 text-teal-300 mt-0.5">lock</span>
                   <span>
                     Entre managers solo se comparte la <strong class="text-on-surface">ganancia total del evento</strong>.
@@ -726,18 +741,18 @@ export type EventDetailTab =
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                  <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/25">
+                  <div class="p-4 rounded-2xl bg-black/20 border border-white/5 backdrop-blur-md">
                     <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Repartido por porcentaje</span>
                     <span class="font-black text-xl font-mono"
                       [class]="percentMismatch() ? 'text-rose-300' : 'text-emerald-400'">
                       {{ agreedPercentTotal() }}%
                     </span>
                   </div>
-                  <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/25">
+                  <div class="p-4 rounded-2xl bg-black/20 border border-white/5 backdrop-blur-md">
                     <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Comprometido en montos fijos</span>
                     <span class="font-black text-xl text-amber-300 font-mono">{{ money(agreedFixedTotal()) }}</span>
                   </div>
-                  <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/25">
+                  <div class="p-4 rounded-2xl bg-black/20 border border-white/5 backdrop-blur-md">
                     <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Pendientes de aceptar</span>
                     <span class="font-black text-xl font-mono"
                       [class]="pendingAgreements().length ? 'text-amber-300' : 'text-emerald-400'">
@@ -752,7 +767,7 @@ export type EventDetailTab =
                 </div>
 
                 @if (percentMismatch()) {
-                  <div class="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs flex items-start gap-2.5">
+                  <div class="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs flex items-start gap-2.5 backdrop-blur-xl">
                     <span class="material-symbols-outlined text-lg shrink-0">error</span>
                     <span>
                       Los porcentajes suman {{ agreedPercentTotal() }}% y no 100%.
@@ -765,9 +780,9 @@ export type EventDetailTab =
                   </div>
                 }
 
-                <div class="space-y-3">
+                <div class="space-y-4">
                   @for (a of agreements(); track a.id) {
-                    <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/25 space-y-3 shadow-md">
+                    <div class="p-5 sm:p-6 rounded-3xl bg-black/20 border border-teal-500/30 shadow-2xl backdrop-blur-3xl space-y-4 hover:border-teal-400/50 hover:bg-white/5 transition-all duration-300 group">
                       <div class="flex items-center justify-between gap-4 flex-wrap">
                         <div class="flex items-center gap-3 min-w-0">
                           <span class="w-10 h-10 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center material-symbols-outlined text-lg shrink-0">
@@ -792,6 +807,97 @@ export type EventDetailTab =
                           <span [class]="agreementStatusClass(a.status)" class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border">
                             {{ agreementStatusLabel(a.status) }}
                           </span>
+                        </div>
+                      </div>
+
+                      <!-- 1. Sus grupos en el cartel -->
+                      <div class="p-3.5 rounded-xl bg-black/20 border border-white/5 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                          <span class="text-[10px] font-bold uppercase text-outline flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs text-indigo-400">groups</span>
+                            Grupos en el cartel ({{ managerLineupSlots(a.managerName).length }})
+                          </span>
+                          @if (policy().lineup) {
+                            <button
+                              type="button"
+                              (click)="activeTab.set('cartel')"
+                              class="text-[10px] font-bold text-indigo-300 hover:underline"
+                            >
+                              + Agregar grupo
+                            </button>
+                          }
+                        </div>
+                        @if (managerLineupSlots(a.managerName).length > 0) {
+                          <div class="space-y-1.5 text-xs">
+                            @for (slot of managerLineupSlots(a.managerName); track slot.id) {
+                              <div class="flex items-center justify-between text-on-surface p-2 rounded-lg bg-surface-container/50">
+                                <span class="font-bold">{{ slot.groupName }}</span>
+                                <span class="text-[10px] text-outline font-mono">{{ slot.setStartTime || 'Horario por definir' }}</span>
+                              </div>
+                            }
+                          </div>
+                        } @else {
+                          <p class="text-[11px] text-outline italic">Sin grupos asignados en el cartel aún.</p>
+                        }
+                      </div>
+
+                      <!-- 2. Sus tareas -->
+                      @let taskInfo = managerTasksMetrics(a.managerName);
+                      <div class="p-3.5 rounded-xl bg-black/20 border border-white/5 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                          <span class="text-[10px] font-bold uppercase text-outline flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs text-amber-400">assignment</span>
+                            Tareas ({{ taskInfo.pending }} pendientes · {{ taskInfo.completed }} completadas)
+                          </span>
+                          <button
+                            type="button"
+                            (click)="activeTab.set('tareas')"
+                            class="text-[10px] font-bold text-amber-300 hover:underline"
+                          >
+                            Ver en Tareas
+                          </button>
+                        </div>
+                        @if (taskInfo.top3.length > 0) {
+                          <div class="space-y-1">
+                            @for (t of taskInfo.top3; track t.id) {
+                              <div class="flex items-center justify-between text-xs p-1.5 rounded-lg bg-surface-container/30">
+                                <span class="text-on-surface font-medium truncate max-w-[200px]">{{ t.title }}</span>
+                                @if (t.blocking) {
+                                  <span class="text-[9px] font-bold text-rose-300 uppercase">Bloqueante</span>
+                                }
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+
+                      <!-- 3. Ventas y Rendimiento -->
+                      <div class="p-3.5 rounded-xl bg-black/20 border border-white/5 space-y-2 text-xs">
+                        <div class="flex items-center justify-between gap-2">
+                          <span class="text-[10px] font-bold uppercase text-outline flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs text-emerald-400">payments</span>
+                            Rendimiento y Ocupación
+                          </span>
+                          @if (isDraft()) {
+                            <span class="text-[10px] text-amber-300 font-bold">
+                              estimado, sin ventas todavía
+                            </span>
+                          }
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+                          <div>
+                            <span class="text-outline block">Aforo total:</span>
+                            <strong class="text-on-surface font-mono">{{ croquisCapacityHelper(e) }} lugares</strong>
+                          </div>
+                          <div>
+                            <span class="text-outline block">Boletos vendidos:</span>
+                            <strong class="text-on-surface font-mono">0 (0%)</strong>
+                          </div>
+                          <div>
+                            <span class="text-outline block">Participación estimada:</span>
+                            <strong class="text-emerald-400 font-mono">{{ estimatedShareLabel(a) }}</strong>
+                          </div>
                         </div>
                       </div>
 
@@ -877,7 +983,7 @@ export type EventDetailTab =
               </section>
 
               <!-- Grupos contratados a otros managers -->
-              <section class="p-6 rounded-3xl bg-gradient-to-br from-teal-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-teal-500/25 border-l-4 border-l-teal-500/70 shadow-2xl shadow-teal-500/5 space-y-4 backdrop-blur-2xl">
+              <section class="p-6 rounded-3xl bg-gradient-to-br from-teal-500/10 via-black/40 to-black/60 border border-teal-500/25 border-l-4 border-l-teal-500/70 shadow-[0_0_40px_rgba(20,184,166,0.15)] space-y-4 backdrop-blur-3xl">
                 <div class="flex items-center justify-between gap-3 border-b border-outline-variant/20 pb-4 flex-wrap">
                   <h5 class="text-xs font-black uppercase tracking-wider text-teal-300 flex items-center gap-2.5">
                     <span class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center material-symbols-outlined text-lg">groups</span>
@@ -889,7 +995,7 @@ export type EventDetailTab =
                 </div>
 
                 @for (s of externalSlots(); track s.id) {
-                  <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/25 flex items-center justify-between gap-4 flex-wrap shadow-md">
+                  <div class="p-4 rounded-2xl bg-black/20 border border-white/5 flex items-center justify-between gap-4 flex-wrap shadow-md backdrop-blur-md hover:bg-white/5 transition-colors">
                     <div class="min-w-0">
                       <div class="flex items-center gap-2 flex-wrap">
                         <p class="text-sm font-black text-on-surface truncate">{{ s.groupName }}</p>
@@ -1305,6 +1411,15 @@ export type EventDetailTab =
                     <li class="text-xs text-outline italic">Sin movimientos registrados.</li>
                   }
                 </ol>
+              </section>
+
+              <!-- Bitácora Fina de Movimientos -->
+              <section class="space-y-3">
+                <h5 class="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-base">history</span>
+                  Bitácora de movimientos del expediente
+                </h5>
+                <app-event-tab-activity [event]="e" />
               </section>
             </div>
           }
@@ -1924,6 +2039,7 @@ export class EventDetailModalComponent {
     resumen:      { accentActiveClass: 'bg-gradient-to-r from-sky-400 to-sky-500 text-black shadow-sky-500/30 border-sky-300/50',          accentIdleClass: 'text-sky-300/80' },
     produccion:   { accentActiveClass: 'bg-gradient-to-r from-violet-400 to-violet-500 text-black shadow-violet-500/30 border-violet-300/50', accentIdleClass: 'text-violet-300/80' },
     boletaje:     { accentActiveClass: 'bg-gradient-to-r from-cyan-400 to-cyan-500 text-black shadow-cyan-500/30 border-cyan-300/50',      accentIdleClass: 'text-cyan-300/80' },
+    tareas:       { accentActiveClass: 'bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-amber-500/30 border-amber-300/50',   accentIdleClass: 'text-amber-300/80' },
     revision:     { accentActiveClass: 'bg-gradient-to-r from-orange-400 to-orange-500 text-black shadow-orange-500/30 border-orange-300/50', accentIdleClass: 'text-orange-300/80' },
     venta:        { accentActiveClass: 'bg-gradient-to-r from-emerald-400 to-emerald-500 text-black shadow-emerald-500/30 border-emerald-300/50', accentIdleClass: 'text-emerald-300/80' },
     cierre:       { accentActiveClass: 'bg-gradient-to-r from-purple-400 to-purple-500 text-black shadow-purple-500/30 border-purple-300/50', accentIdleClass: 'text-purple-300/80' },
@@ -2149,6 +2265,46 @@ export class EventDetailModalComponent {
     return (slot.costItems ?? []).reduce((sum, item) => sum + (item.amount || 0), 0);
   }
 
+  croquisCapacityHelper(e: EventItem): number {
+    return croquisCapacity(e);
+  }
+
+  managerLineupSlots(managerName: string): EventLineupSlot[] {
+    const e = this.event();
+    if (!e) return [];
+    return (e.lineup || []).filter(s => s.managerName === managerName);
+  }
+
+  managerTasks(managerName: string) {
+    const e = this.event();
+    if (!e) return [];
+    return resolveTasks(e).filter(t => t.assignedManager === managerName);
+  }
+
+  managerTasksMetrics(managerName: string) {
+    const tasks = this.managerTasks(managerName);
+    const pending = tasks.filter(t => !t.done).length;
+    const blocking = tasks.filter(t => t.blocking && !t.done).length;
+    const completed = tasks.filter(t => t.done).length;
+    const top3 = tasks.filter(t => !t.done).slice(0, 3);
+    return { pending, blocking, completed, top3 };
+  }
+
+  estimatedShareLabel(a: EventManagerAgreement): string {
+    const e = this.event();
+    if (!e) return '$0';
+    const potentialRevenue = potentialTicketRevenue(e);
+    const prod = productionCost(e);
+    const net = Math.max(0, potentialRevenue - prod);
+
+    if (a.settlementKind === 'porcentaje') {
+      const share = net * ((a.percent || 0) / 100);
+      return money(share);
+    } else {
+      return money(a.fixedAmount || 0);
+    }
+  }
+
   lineupApprovalClass(status: LineupApprovalStatus): string {
     switch (status) {
       case 'Aprobado': return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
@@ -2211,6 +2367,15 @@ export class EventDetailModalComponent {
       { value: 'boletaje', label: 'Boletaje & Croquis', icon: 'confirmation_number',
         ...EventDetailModalComponent.TAB_ACCENT['boletaje'] }
     ];
+
+    const pendingTasks = resolveTasks(e).filter(t => !t.done).length;
+    list.push({
+      value: 'tareas',
+      label: 'Tareas',
+      icon: 'assignment',
+      badge: pendingTasks > 0 ? String(pendingTasks) : undefined,
+      ...EventDetailModalComponent.TAB_ACCENT['tareas']
+    });
 
     list.push({ value: 'acuerdos', label: 'Acuerdos', icon: 'handshake',
       badge: this.agreements().length ? String(this.agreements().length) : undefined,

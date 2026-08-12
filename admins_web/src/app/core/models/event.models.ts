@@ -2,6 +2,9 @@
 // valor cerraría un ciclo real. Con `import type` el ciclo se borra al compilar.
 import type { Role } from './admin.models';
 import type { CroquisPlan } from './croquis.models';
+import type { ActorRef, OrgRank } from './org.models';
+
+export type { ActorRef, OrgRank };
 
 export type {
   CroquisPlan,
@@ -11,6 +14,100 @@ export type {
   CroquisElement,
   CroquisElementKind
 } from './croquis.models';
+
+// ─── Trazabilidad y Bitácora ──────────────────────────────────────────────────
+
+export type ActivityChannel =
+  | 'evento' | 'cartelera' | 'cartel' | 'produccion' | 'boletaje'
+  | 'croquis' | 'acuerdos' | 'tareas' | 'revision'
+  | 'venta' | 'cierre';
+
+export type ActivityKind =
+  | 'creacion' | 'edicion' | 'alta' | 'baja'
+  | 'invitacion' | 'respuesta' | 'asignacion' | 'delegacion'
+  | 'completada' | 'reapertura' | 'estado' | 'archivo';
+
+export interface ActivityChange {
+  /** Ruta técnica: 'publicProfile.tagline', 'ticketTiers[VIP].price'. */
+  field: string;
+  /** Cómo se llama para quien lo lee: 'Frase de portada'. */
+  label: string;
+  before?: string;
+  after?: string;
+}
+
+export interface EventActivity {
+  id: string;
+  at: string;                // ISO con hora y minuto
+  actor: ActorRef;
+  channel: ActivityChannel;
+  kind: ActivityKind;
+  /** Frase ya redactada: "Subió el precio de VIP Oro de $1,800 a $2,200". */
+  summary: string;
+  changes?: ActivityChange[];
+  /** A qué apunta: id de tarea, de acuerdo, de grupo. */
+  targetId?: string;
+  targetLabel?: string;
+  /** Cuántos movimientos se agruparon en esta entrada. */
+  mergedCount?: number;
+}
+
+// ─── Tareas del Evento ────────────────────────────────────────────────────────
+
+export type CompletenessGroup = 'Identidad' | 'Cartelera Pública' | 'Cartel' | 'Producción' | 'Boletaje';
+
+export type EventTaskKind = 'sistema' | 'externa';
+
+/**
+ * `sin-enviar` es la asignación decidida en el borrador que el otro manager
+ * todavía no recibe: sale al enviar el evento a revisión, igual que las
+ * invitaciones y las cotizaciones.
+ */
+export type EventTaskStatus =
+  | 'abierta'       // existe, nadie la tiene
+  | 'sin-enviar'    // asignada dentro del borrador
+  | 'asignada'      // el manager ya la recibió
+  | 'aceptada'      // se hizo cargo
+  | 'completada'
+  | 'rechazada';
+
+export interface EventTask {
+  id: string;
+  kind: EventTaskKind;
+  title: string;
+  detail?: string;
+
+  /** Solo en 'sistema': el punto del checklist que la cierra. */
+  checklistItemId?: string;
+  group?: CompletenessGroup;
+
+  /** A qué disquera se le encargó. La responsabilidad es suya. */
+  assignedManager?: string;
+  /** Quién la ejecuta dentro de esa disquera, si se delegó. */
+  delegate?: { name: string; rank: OrgRank };
+
+  status: EventTaskStatus;
+  priority: 'Alta' | 'Media' | 'Baja';
+  dueDate?: string;
+
+  /** Solo en 'externa': liga opcional con el desglose de gastos. */
+  productionItemId?: string;
+  productionCategory?: string;
+  estimatedCost?: number;
+  finalCost?: number;
+
+  createdBy: ActorRef;
+  createdAt: string;
+  assignedAt?: string;
+  acceptedAt?: string;
+  completedAt?: string;
+  completedBy?: ActorRef;
+  /** Obligatoria en las externas: es la única prueba de que se hizo. */
+  completionNote?: string;
+  rejectedReason?: string;
+  /** True cuando la cerró el sistema al detectar el dato. */
+  autoCompleted?: boolean;
+}
 
 /**
  * Modelo de dominio de un evento público de Acordex.
@@ -816,6 +913,12 @@ export interface EventItem {
    * capturarlos.
    */
   managerAgreements?: EventManagerAgreement[];
+
+  /** Bitácora fina de trazabilidad del evento. */
+  activity?: EventActivity[];
+
+  /** Tareas y encargas del evento (sistema y externas). */
+  tasks?: EventTask[];
 }
 
 /**

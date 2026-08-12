@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { RoleService } from '../../core/services/role.service';
+import { SessionService } from '../../core/services/session.service';
 import { LayoutStateService } from '../../core/services/layout_state.service';
 import { Role } from '../../core/models/admin.models';
 import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.component';
@@ -139,6 +140,7 @@ import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.com
 })
 export class HeaderComponent {
   roleService = inject(RoleService);
+  sessionService = inject(SessionService);
   layoutState = inject(LayoutStateService);
 
   showNotifications = signal(false);
@@ -155,6 +157,7 @@ export class HeaderComponent {
 
   setRole(role: Role): void {
     this.roleService.setRole(role);
+    this.sessionService.syncWithRole(role);
   }
 
   getUserName(): string {

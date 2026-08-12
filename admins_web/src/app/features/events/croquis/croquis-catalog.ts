@@ -5,10 +5,12 @@ import {
   CroquisPlan,
   PLAN_HEIGHT,
   PLAN_WIDTH,
-  ROW_GAP,
-  SEAT_GAP
+  TableGridOptions
 } from '../../../core/models/croquis.models';
-import { boxPoints, buildRows, croquisId, defaultGridOptions, fanPoints } from './croquis-geometry';
+import {
+  boxPoints, buildRows, buildTables, croquisId, defaultGridOptions,
+  defaultTableOptions, fanPoints
+} from './croquis-geometry';
 
 /**
  * Catálogo del editor: qué elementos se pueden poner en un plano, con qué se
@@ -278,6 +280,8 @@ export function makeSeatedArea(
   rows: number, seatsPerRow: number,
   options: Partial<ReturnType<typeof defaultGridOptions>> = {}
 ): CroquisArea {
+  const grid = { ...defaultGridOptions(), ...options, rows, seatsPerRow };
+
   const area: CroquisArea = {
     id: croquisId('ar'),
     name,
@@ -287,10 +291,48 @@ export function makeSeatedArea(
     rotation: 0,
     points: boxPoints(),
     rows: [],
+    // Se recuerda cómo se numeró para poder renumerar más tarde sin volver a
+    // preguntarlo: después de mover butacas a mano, el reacomodo tiene que
+    // devolver los mismos números que puso el asistente.
+    numbering: grid.numbering,
+    labeling: grid.labeling,
+    startLabel: grid.startLabel,
     curve: options.curve ?? 0
   };
 
-  area.rows = buildRows(area, { ...defaultGridOptions(), ...options, rows, seatsPerRow }, area.id);
+  area.rows = buildRows(area, grid, area.id);
+  return area;
+}
+
+/**
+ * Área de mesas ya montada.
+ *
+ * Nace con las mesas puestas por lo mismo que el área de butacas nace llena:
+ * dibujar un rectángulo y que aparezca el montaje es lo que la gente espera, y
+ * corregir cuántas mesas caben es mucho más fácil sobre algo que ya se ve.
+ */
+export function makeTableArea(
+  name: string,
+  x: number, y: number, width: number, height: number,
+  options: Partial<TableGridOptions> = {}
+): CroquisArea {
+  const setup = { ...defaultTableOptions(), ...options };
+
+  const area: CroquisArea = {
+    id: croquisId('ar'),
+    name,
+    kind: 'mesas',
+    shape: 'rect',
+    x, y, width, height,
+    rotation: 0,
+    points: boxPoints(),
+    rows: [],
+    tables: [],
+    labeling: setup.labeling,
+    startLabel: setup.startLabel
+  };
+
+  area.tables = buildTables(area, setup, area.id);
   return area;
 }
 
@@ -426,25 +468,43 @@ export const CROQUIS_TEMPLATES: CroquisTemplate[] = [
     id: 'salon',
     name: 'Salón con mesas',
     icon: 'table_restaurant',
-    description: 'Mesas redondas numeradas frente a una pista de baile.',
-    hint: '≈ 30 mesas de 10',
+    description: 'Mesas redondas de diez que se rentan completas, frente a una pista de baile.',
+    hint: '≈ 15 mesas de 10',
     build: name => {
-      const mesas = makeSeatedArea('Mesas', 180, 380, 840, 340, 6, 15, { labeling: 'numeros', startLabel: '1', gap: SEAT_GAP + 34, rowGap: ROW_GAP + 32 });
-      mesas.name = 'Mesas';
-      const pista = makeGeneralArea('Pista de Baile', 380, 220, 440, 130, 200);
+      const mesas = makeTableArea('Mesas', 150, 360, 900, 400, {
+        rows: 3,
+        perRow: 5,
+        seatsPerTable: 10,
+        shape: 'redonda',
+        rental: 'completa',
+        size: 66
+      });
+      const honor = makeTableArea('Mesa de Honor', 430, 230, 340, 110, {
+        rows: 1,
+        perRow: 1,
+        seatsPerTable: 8,
+        shape: 'rectangular',
+        rental: 'completa',
+        size: 190,
+        height: 54
+      });
+      // La imperial del frente no se llama "Mesa 1": tiene nombre propio y es lo
+      // que va impreso en el boleto de quien se sienta ahí.
+      if (honor.tables?.[0]) honor.tables[0].label = 'Mesa de Honor';
+      const pista = makeGeneralArea('Pista de Baile', 830, 210, 250, 130, 150);
 
       return plan(
         name,
-        [mesas, pista],
+        [honor, mesas, pista],
         [
           stage('Templete', 400, 70, 400, 90),
           { id: croquisId('el'), kind: 'bocina', label: 'PA Izq.', x: 350, y: 80, width: 40, height: 70, rotation: 0 },
           { id: croquisId('el'), kind: 'bocina', label: 'PA Der.', x: 810, y: 80, width: 40, height: 70, rotation: 0 },
           { id: croquisId('el'), kind: 'barra', label: 'Barra', x: 60, y: 220, width: 130, height: 46, rotation: 0 },
-          { id: croquisId('el'), kind: 'alimentos', label: 'Buffet', x: 1010, y: 220, width: 130, height: 56, rotation: 0 },
-          { id: croquisId('el'), kind: 'acceso', label: 'Entrada', x: 545, y: 742, width: 110, height: 34, rotation: 0 }
+          { id: croquisId('el'), kind: 'alimentos', label: 'Buffet', x: 1010, y: 90, width: 130, height: 56, rotation: 0 },
+          { id: croquisId('el'), kind: 'acceso', label: 'Entrada', x: 545, y: 772, width: 110, height: 34, rotation: 0 }
         ],
-        'Cada lugar es una silla de mesa; la mesa es la fila.'
+        'Se renta la mesa completa; el comprador se lleva los diez lugares.'
       );
     }
   }

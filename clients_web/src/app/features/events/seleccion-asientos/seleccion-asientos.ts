@@ -5,7 +5,7 @@ import { EventService, CalendarEvent, TicketPurchase, PurchasedSeat } from '../.
 import { LayoutService } from '../../../core/services/layout.service';
 import { croquisForEvent } from '../../../core/services/croquis.mock';
 import { CroquisPlan, EventCroquis } from '../../../core/models/croquis.model';
-import { CroquisMapComponent, CroquisSeatHit, SeatVisualState } from './croquis-map.component';
+import { CroquisMapComponent, CroquisSeatHit, CroquisTableHit, SeatVisualState } from './croquis-map.component';
 
 interface Seat {
   id: string; // e.g. A-3
@@ -16,6 +16,20 @@ interface Seat {
   status: 'available' | 'sold' | 'selected' | 'purchased';
   /** Zona del croquis en la que está la butaca. */
   areaId: string;
+  /**
+   * Mesa a la que pertenece el lugar, cuando lo es.
+   *
+   * Va en el propio asiento y no en una lista aparte porque todo lo demás de
+   * esta pantalla —el carrito, el reembolso, el cambio de zona— trabaja sobre
+   * la lista de asientos, y una mesa no es otra cosa que un grupo de lugares
+   * que se venden juntos.
+   */
+  tableId?: string;
+  tableLabel?: string;
+  /** Cómo se renta la mesa; sin mesa, no aplica. */
+  rental?: 'completa' | 'sillas';
+  /** Mínimo de lugares que hay que llevarse de esa mesa. */
+  minSeats?: number;
 }
 
 @Component({
@@ -189,8 +203,35 @@ export class SeleccionAsientos implements OnInit {
     return Object.values(this.selectedSeatsMap());
   });
 
+  /**
+   * Lo que cuestan los lugares elegidos.
+   *
+   * Una mesa con precio propio se cobra de corrido y no lugar por lugar: se
+   * descuenta lo que sumaron sus sillas y se pone el precio de la mesa. Sin
+   * esto, una mesa de patrocinador de treinta mil se cobraría como diez lugares
+   * de mil, y el organizador se enteraría al cuadrar la taquilla.
+   */
   totalPrice = computed(() => {
-    return this.selectedSeats().reduce((sum, s) => sum + s.price, 0);
+    let total = this.selectedSeats().reduce((sum, s) => sum + s.price, 0);
+
+    const chosen = this.selectedSeatsMap();
+    for (const area of this.activePlan()?.areas || []) {
+      for (const table of area.tables || []) {
+        if (!table.price || table.state === 'bloqueada') continue;
+
+        const sillas = table.seats.filter(s => s.state !== 'bloqueado');
+        if (!sillas.length) continue;
+        if (!sillas.every(s => chosen[`${table.label}-${s.number}`])) continue;
+
+        const porSilla = sillas.reduce(
+          (sum, s) => sum + (chosen[`${table.label}-${s.number}`]?.price || 0),
+          0
+        );
+        total += table.price - porSilla;
+      }
+    }
+
+    return total;
   });
 
   // Group seats by row to render them row-by-row centered in the template
@@ -416,10 +457,109 @@ export class SeleccionAsientos implements OnInit {
           });
         });
       });
+
+      // Las sillas de mesa entran a la misma lista: para el carrito y para el
+      // reembolso son lugares como cualquier otro, y lo único que cambia es que
+      // saben de qué mesa vienen.
+      (area.tables || []).forEach(table => {
+        if (table.state === 'bloqueada') return;
+        const tableTier = table.tierId
+          ? croquis.tiers.find(t => t.id === table.tierId) || areaTier
+          : areaTier;
+
+        table.seats.forEach(seat => {
+          const seatId = `${table.label}-${seat.number}`;
+          const tier = seat.tierId
+            ? croquis.tiers.find(t => t.id === seat.tierId) || tableTier
+            : tableTier;
+
+          let status: 'available' | 'sold' | 'selected' | 'purchased' = 'available';
+          if (currentSelections[seatId]) {
+            status = currentSelections[seatId].isOriginal ? 'purchased' : 'selected';
+          } else if (seat.state || table.state) {
+            status = 'sold';
+          }
+
+          list.push({
+            id: seatId,
+            row: table.label,
+            number: seat.number,
+            category: tier?.name || '',
+            price: tier?.price || 0,
+            status,
+            areaId: area.id,
+            tableId: table.id,
+            tableLabel: table.label,
+            rental: table.rental,
+            minSeats: Math.max(1, table.minSeats || 1)
+          });
+        });
+      });
     });
 
     this.seats.set(list);
   }
+
+  /**
+   * Rentar una mesa completa: entran o salen todos sus lugares libres de golpe.
+   *
+   * Es todo o nada porque así la puso a la venta el organizador —quien renta una
+   * mesa la renta para que no se siente nadie más—, y dejar la mitad en el
+   * carrito sería vender algo que no existe.
+   */
+  onTablePicked(hit: CroquisTableHit) {
+    const libres = this.seats().filter(
+      s => s.tableId === hit.tableId && (s.status === 'available' || s.status === 'selected' || s.status === 'purchased')
+    );
+    if (!libres.length) return;
+
+    const category = libres[0].category;
+    if (this.selectedCategory() && category !== this.selectedCategory()) {
+      this.errorMessage.set(`${hit.label} se vende como ${category}. Cambia el tipo de boleto para poder apartarla.`);
+      setTimeout(() => this.errorMessage.set(''), 5000);
+      return;
+    }
+
+    const puesta = libres.every(s => this.selectedSeatsMap()[s.id]);
+
+    this.selectedSeatsMap.update(map => {
+      const next = { ...map };
+      for (const seat of libres) {
+        // Los lugares que ya venían comprados no se sueltan desde aquí: para
+        // eso está el reembolso, que es una operación con dinero de por medio.
+        if (next[seat.id]?.isOriginal) continue;
+        if (puesta) delete next[seat.id];
+        else next[seat.id] = { id: seat.id, categoryName: seat.category, price: seat.price };
+      }
+      return next;
+    });
+
+    this.refreshSeatStatuses();
+  }
+
+  /**
+   * Mesas de las que se llevan menos lugares de los que pide el organizador.
+   *
+   * Se avisa mientras se elige y no al pagar: descubierto al final, el comprador
+   * ya habría armado su carrito y tendría que volver al mapa a adivinar cuántos
+   * lugares le faltan.
+   */
+  shortTables = computed(() => {
+    const chosen = this.selectedSeatsMap();
+    const byTable = new Map<string, { label: string; min: number; taken: number }>();
+
+    for (const seat of this.seats()) {
+      if (!seat.tableId || seat.rental !== 'sillas') continue;
+      if (!chosen[seat.id]) continue;
+
+      const entry = byTable.get(seat.tableId)
+        || { label: seat.tableLabel || '', min: seat.minSeats || 1, taken: 0 };
+      entry.taken += 1;
+      byTable.set(seat.tableId, entry);
+    }
+
+    return [...byTable.values()].filter(t => t.taken < t.min);
+  });
 
   /** Cambia de zona del evento: cada croquis trae su propio boletaje. */
   selectPlan(planId: string) {
@@ -458,16 +598,30 @@ export class SeleccionAsientos implements OnInit {
     const ids = new Set<string>();
     if (!plan) return ids;
 
-    plan.areas.forEach(area => area.rows.forEach(row =>
-      row.seats.forEach(seat => {
-        if (seat.state) ids.add(`${row.label}-${seat.number}`);
-      })
-    ));
+    plan.areas.forEach(area => {
+      area.rows.forEach(row =>
+        row.seats.forEach(seat => {
+          if (seat.state) ids.add(`${row.label}-${seat.number}`);
+        })
+      );
+      (area.tables || []).forEach(table =>
+        table.seats.forEach(seat => {
+          if (seat.state || table.state) ids.add(`${table.label}-${seat.number}`);
+        })
+      );
+    });
     return ids;
   }
 
   toggleSeat(seat: Seat) {
     if (this.isSeatDisabled(seat)) return;
+
+    // Un lugar de una mesa que se renta completa no se elige solo: el gesto es
+    // sobre la mesa entera.
+    if (seat.tableId && seat.rental === 'completa') {
+      this.onTablePicked({ areaId: seat.areaId, tableId: seat.tableId, label: seat.tableLabel || '' });
+      return;
+    }
 
     this.selectedSeatsMap.update(map => {
       const next = { ...map };
@@ -522,7 +676,17 @@ export class SeleccionAsientos implements OnInit {
 
   onProceed() {
     const selectedCount = this.selectedSeats().length;
-    
+
+    // El mínimo por mesa es una regla del recinto, no del carrito: dejar pasar
+    // una mesa a medias vendería un lugar que el organizador no puso a la venta.
+    const cortas = this.shortTables();
+    if (cortas.length) {
+      const t = cortas[0];
+      this.errorMessage.set(`${t.label} pide mínimo ${t.min} lugares y llevas ${t.taken}. Agrega los que faltan o quítalos.`);
+      setTimeout(() => this.errorMessage.set(''), 7000);
+      return;
+    }
+
     // Validation: if editing, they CANNOT reduce seats count from this view (must use refund modal)
     if (this.isEditing()) {
       const origCount = this.originalSeatsCount();

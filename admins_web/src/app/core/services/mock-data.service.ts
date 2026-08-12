@@ -1,6 +1,9 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { StorageService } from './storage.service';
 import { RoleService } from './role.service';
+import { SessionService } from './session.service';
+import { describeEventPatch } from '../../features/events/event-activity';
+import { reconcileTasks } from '../../features/events/event-tasks';
 import {
   Quote,
   QuoteState,
@@ -21,7 +24,8 @@ import {
 import {
   EventReviewRound,
   EventTimelineStep,
-  NewEventDraft
+  NewEventDraft,
+  EventActivity
 } from '../models/event.models';
 import { distinguishTierColors, ensureCroquisPlans } from '../../features/events/croquis/croquis-metrics';
 
@@ -53,6 +57,7 @@ function seatRows(count: number, startAt = 0): string[] {
 export class MockDataService {
   private storage = inject(StorageService);
   private roleService = inject(RoleService);
+  private session = inject(SessionService);
 
   // --- SEED DATA DEFINITIONS ---
 
@@ -3831,6 +3836,10 @@ export class MockDataService {
   }
 
   /** Aplica una transformación a un solo evento. */
+  eventById(id: string): EventItem | undefined {
+    return this.events().find(ev => ev.id === id);
+  }
+
   private patchEvent(eventId: string, patch: (ev: EventItem) => EventItem): void {
     this.commitEvents(this.events().map(ev => (ev.id === eventId ? patch(ev) : ev)));
   }
@@ -3859,27 +3868,91 @@ export class MockDataService {
     return { ...ev, timeline: [...(ev.timeline || []), entry] };
   }
 
+  /** Agrega entradas a la bitácora del evento con defensa de agrupamiento por ventana de 10 minutos. */
+  appendActivity(eventId: string, entradas: EventActivity[]): void {
+    if (!entradas || !entradas.length) return;
+    this.patchEvent(eventId, ev => {
+      const existing = [...(ev.activity || [])];
+      let updated = [...existing];
+
+      for (const newEnt of entradas) {
+        const last = updated[updated.length - 1];
+        if (
+          last &&
+          last.actor?.name === newEnt.actor?.name &&
+          last.channel === newEnt.channel &&
+          (last.targetId === newEnt.targetId || (!last.targetId && !newEnt.targetId))
+        ) {
+          const tLast = new Date(last.at).getTime();
+          const tNew = new Date(newEnt.at).getTime();
+          const diffMinutes = Math.abs(tNew - tLast) / (1000 * 60);
+
+          if (diffMinutes <= 10) {
+            const mergedChanges = [...(last.changes || [])];
+            for (const ch of newEnt.changes || []) {
+              const existingChIdx = mergedChanges.findIndex(c => c.field === ch.field);
+              if (existingChIdx >= 0) {
+                mergedChanges[existingChIdx] = {
+                  ...mergedChanges[existingChIdx],
+                  after: ch.after
+                };
+              } else {
+                mergedChanges.push(ch);
+              }
+            }
+
+            const count = (last.mergedCount || 1) + (newEnt.mergedCount || 1);
+            updated[updated.length - 1] = {
+              ...last,
+              summary: last.channel === 'croquis'
+                ? `Editó el croquis · ${count} cambios`
+                : last.summary,
+              changes: mergedChanges,
+              mergedCount: count
+            };
+            continue;
+          }
+        }
+
+        updated.push(newEnt);
+      }
+
+      return { ...ev, activity: updated };
+    });
+  }
+
   updateEventDetails(eventId: string, updates: Partial<EventItem>): void {
+    const before = this.eventById(eventId);
     this.patchEvent(eventId, ev => ({ ...ev, ...updates }));
+    const after = this.eventById(eventId);
+
+    if (before && after) {
+      const actor = this.session.actor();
+
+      // 1. Bitácora del cambio (Diff Engine)
+      const diffEntries = describeEventPatch(before, after, actor);
+      if (diffEntries.length) {
+        this.appendActivity(eventId, diffEntries);
+      }
+
+      // 2. Reconciliación de tareas de sistema
+      const recon = reconcileTasks(before, after, actor);
+      if (recon) {
+        this.patchEvent(eventId, ev => ({
+          ...ev,
+          tasks: recon.tasks
+        }));
+        if (recon.activity?.length) {
+          this.appendActivity(eventId, recon.activity);
+        }
+      }
+    }
+
     this.addAudit('Edición de Evento', 'Eventos', `Actualizó el expediente del evento ${eventId}`);
   }
 
   /**
    * Envía un borrador a revisión y abre la ronda de aprobación.
-   *
-   * Este es el único punto en el que el evento habla con el mundo exterior. Todo
-   * lo que se decidió en el borrador —solicitudes de cotización directa con su
-   * contraoferta, e invitaciones a otros managers para co-organizar— sale de
-   * golpe aquí. Mientras el evento fue borrador nadie de fuera recibió nada, y
-   * esa es la razón: el organizador puede armar el cartel, cambiar de opinión y
-   * renegociar consigo mismo sin quemar la relación mandando ofertas por un
-   * evento que quizá ni se arme.
-   *
-   * La ronda se arma con un renglón por cada grupo del cartel que pertenece a
-   * otro encargado: son ellos, y solo ellos, quienes tienen que dar el visto
-   * bueno a la fecha, el horario y el costo antes de que el evento pueda
-   * publicarse. Si el cartel es todo propio, no hay a quién preguntarle y el
-   * evento queda aprobado de una vez.
    */
   submitEventForReview(eventId: string, note?: string): void {
     this.patchEvent(eventId, ev => {
@@ -3911,9 +3984,7 @@ export class MockDataService {
         state: 'En Revisión',
         reviewRounds: [...(ev.reviewRounds || []), newRound],
 
-        // Las solicitudes salen ahora: cada grupo ajeno queda pendiente de la
-        // respuesta de su dueño, y la contraoferta que se preparó en el borrador
-        // viaja con esa misma solicitud.
+        // Las solicitudes salen ahora
         lineup: (ev.lineup || []).map(s => {
           if (!s.isExternal) return s;
           return {
@@ -3926,18 +3997,25 @@ export class MockDataService {
           };
         }),
 
-        // Y con ellas, las invitaciones a co-organizar que seguían guardadas.
+        // Y las invitaciones a co-organizar
         managerAgreements: ev.managerAgreements?.map(a =>
           a.status === 'Sin Enviar'
             ? { ...a, status: 'Pendiente' as const, invitedAt: a.invitedAt || sentAt }
             : a
         ),
 
-        // Y los rubros de producción que se le encargaron a otros managers.
+        // Y los encargos de producción
         productionResponsibilities: ev.productionResponsibilities?.map(r =>
           r.status === 'Sin Enviar'
             ? { ...r, status: 'Pendiente' as const, assignedAt: r.assignedAt || sentAt }
             : r
+        ),
+
+        // Y las asignaciones de tareas que nacieron en sin-enviar
+        tasks: ev.tasks?.map(t =>
+          t.status === 'sin-enviar'
+            ? { ...t, status: 'asignada' as const, assignedAt: t.assignedAt || sentAt }
+            : t
         )
       };
 

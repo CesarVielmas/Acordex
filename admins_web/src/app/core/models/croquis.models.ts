@@ -17,10 +17,12 @@
  *   1. `CroquisPlan`  — un plano por área física del evento. Un festival con tres
  *      escenarios simultáneos lleva tres planos, cada uno con su propio lienzo y
  *      su propio boletaje. El cliente los cambia con un selector.
- *   2. `CroquisArea`  — una región del plano. O tiene butacas numeradas, o es de
- *      aforo libre (una pista, una explanada, gradas generales).
- *   3. `CroquisSeat`  — la butaca. Existe solo si está dibujada; quitarla del
- *      croquis es literalmente quitarla de la venta.
+ *   2. `CroquisArea`  — una región del plano. O tiene butacas numeradas, o mesas
+ *      con sillas alrededor, o es de aforo libre (una pista, una explanada,
+ *      gradas generales).
+ *   3. `CroquisSeat`  — el lugar. Existe solo si está dibujado; quitarlo del
+ *      croquis es literalmente quitarlo de la venta. Da igual que cuelgue de una
+ *      fila de butacas o de una mesa: es el mismo lugar vendible.
  *
  * Los elementos (`CroquisElement`) no se venden: son las referencias que hacen
  * legible el plano —escenario, pantallas, bocinas, barras, accesos— y sin ellas
@@ -70,11 +72,27 @@ export interface CroquisSeat {
   /** Número impreso en el boleto: '1', '12', '12A'. */
   number: string;
   /**
-   * Posición dentro de la rejilla de la fila. No es el índice del arreglo: los
-   * huecos entre `slot`s son pasillos reales del recinto. Quitar la butaca 8 de
-   * una fila de 20 deja el pasillo dibujado, no recorre las butacas 9 a 20.
+   * Posición dentro de la rejilla de la fila —o alrededor de la mesa, cuando la
+   * butaca es una silla. No es el índice del arreglo: los huecos entre `slot`s
+   * son pasillos reales del recinto. Quitar la butaca 8 de una fila de 20 deja
+   * el pasillo dibujado, no recorre las butacas 9 a 20.
    */
   slot: number;
+  /**
+   * Corrimiento respecto del lugar que le tocaba en la rejilla, en unidades de
+   * croquis y en coordenadas del área sin girar.
+   *
+   * La rejilla resuelve el 95% de los recintos y por eso sigue siendo la base:
+   * mover una fila de sesenta lugares son dos números. Pero un recinto real
+   * tiene butacas que no caen en ninguna rejilla —un anillo alrededor de la
+   * pista, un par de lugares metidos en un rincón, la fila que se recorre para
+   * esquivar una columna— y sin esto habría que partir el área en pedazos hasta
+   * que cada pedazo volviera a ser una rejilla. El corrimiento se guarda aparte
+   * del origen de la fila justamente para que re-espaciar o re-numerar el área
+   * no se lo lleve por delante.
+   */
+  dx?: number;
+  dy?: number;
   status?: CroquisSeatStatus;
   /**
    * Categoría distinta a la del área. Sirve para butacas sueltas —la primera
@@ -107,15 +125,94 @@ export interface CroquisRow {
   seats: CroquisSeat[];
 }
 
+// ─── Mesas ────────────────────────────────────────────────────────────────────
+
+/** Redonda es la mesa de banquete de siempre; rectangular, la imperial o la de junta. */
+export type CroquisTableShape = 'redonda' | 'rectangular';
+
+/**
+ * Cómo se renta la mesa.
+ *
+ * `completa` es la venta clásica de banquete: la mesa se aparta entera y no se
+ * sientan extraños con el grupo, cueste lo que cueste dejar sillas vacías.
+ * `sillas` deja que cada quien compre los lugares que necesita —lo normal en una
+ * cena de gala con boletos individuales—, con el mínimo que ponga el
+ * organizador para que nadie ocupe una mesa de diez comprando un solo lugar.
+ */
+export type CroquisTableRental = 'completa' | 'sillas';
+
+/** Estado de venta de la mesa completa. Sin estado = libre. */
+export type CroquisTableStatus = 'reservada' | 'bloqueada';
+
+/**
+ * Una mesa con sus sillas alrededor.
+ *
+ * Es su propia entidad y no una fila disfrazada. Antes las mesas se dibujaban
+ * como filas muy separadas —la plantilla de salón hacía exactamente eso— y el
+ * resultado era una hilera de sillas en línea recta que ni se ve como una mesa
+ * ni se vende como una: no hay nada que decir "estas diez sillas van juntas",
+ * que es la única cosa que de verdad define una mesa a la hora de rentarla.
+ *
+ * Las sillas son `CroquisSeat` normales a propósito. Una silla de mesa se vende,
+ * se aparta, se bloquea y se pinta de una categoría igual que una butaca de
+ * luneta; inventarle un tipo aparte habría duplicado toda la maquinaria de
+ * venta para no ganar nada.
+ */
+export interface CroquisTable {
+  id: string;
+  /** Nombre impreso en el boleto: 'Mesa 1', 'Mesa de honor'. */
+  label: string;
+  /** Centro de la mesa, relativo a la esquina superior izquierda del área. */
+  x: number;
+  y: number;
+  shape: CroquisTableShape;
+  /** Diámetro si es redonda; ancho si es rectangular. */
+  width: number;
+  /** Alto de la mesa rectangular. En la redonda no se usa. */
+  height: number;
+  /** Giro de la mesa en grados; arrastra a sus sillas. */
+  rotation: number;
+
+  /**
+   * Posiciones de silla alrededor de la mesa.
+   *
+   * Es el máximo que cabe, no cuántas hay: las sillas se reparten sobre estas
+   * posiciones y quitar una deja el hueco donde estaba, igual que el pasillo de
+   * una fila. Sin esto, quitar una silla de una mesa de diez repartiría las
+   * nueve restantes y la mesa entera giraría sola.
+   */
+  slots: number;
+  seats: CroquisSeat[];
+
+  rental: CroquisTableRental;
+  /** Mínimo de sillas que hay que llevarse cuando se venden sueltas. */
+  minSeats?: number;
+
+  /** Categoría de la mesa; las sillas la heredan si no traen la suya. */
+  tierId?: string;
+  /**
+   * Precio de la mesa completa. Sin esto se cobra silla por silla, que es lo
+   * normal; se usa cuando la mesa vale un monto redondo que no es el precio de
+   * la silla por el número de sillas —una mesa de patrocinador, por ejemplo.
+   */
+  price?: number;
+
+  status?: CroquisTableStatus;
+  /** A nombre de quién quedó apartada; lo ve el organizador, no el comprador. */
+  holder?: string;
+}
+
 // ─── Áreas ────────────────────────────────────────────────────────────────────
 
 /**
  * `butacas` obliga a elegir lugar y se cuenta butaca por butaca.
+ * `mesas` es lo mismo pero agrupado: el lugar es una silla y la mesa es lo que
+ * se renta.
  * `general` es entrada libre dentro del área: no hay nada que numerar, solo un
  * aforo. Una pista de pie o unas gradas generales son esto; forzarlas a tener
  * butacas numeradas sería inventar lugares que en el recinto no existen.
  */
-export type CroquisAreaKind = 'butacas' | 'general';
+export type CroquisAreaKind = 'butacas' | 'mesas' | 'general';
 
 /** Rectángulo o polígono libre, para recintos que no son cajas. */
 export type CroquisShape = 'rect' | 'polygon';
@@ -150,6 +247,20 @@ export interface CroquisArea {
   soldCount?: number;
 
   rows: CroquisRow[];
+  /** Mesas del área. Vacío en las áreas que no son de mesas. */
+  tables?: CroquisTable[];
+
+  /**
+   * Cómo se numeró el área la última vez.
+   *
+   * Se guarda para poder volver a numerar después de mover lugares a mano sin
+   * preguntar de nuevo el esquema: sin esto, reacomodar una zona de teatro la
+   * dejaría numerada de izquierda a derecha y el boleto diría otra cosa que la
+   * butaca.
+   */
+  numbering?: SeatNumbering;
+  labeling?: RowLabeling;
+  startLabel?: string;
 
   /**
    * Curvatura de las filas hacia el escenario, de 0 (rectas) a 1 (abanico).
@@ -238,6 +349,17 @@ export const SEAT_SIZE = 16;
 export const SEAT_GAP = 21;
 /** Separación entre filas. */
 export const ROW_GAP = 24;
+/** Diámetro con el que nace una mesa redonda. */
+export const TABLE_SIZE = 62;
+/**
+ * Hueco entre el borde de la mesa y el centro de la silla.
+ *
+ * Es lo que hace que la mesa se lea como una mesa: pegadas al canto las sillas
+ * parecen un solo bulto, y muy separadas parecen un corro de gente de pie.
+ */
+export const TABLE_SEAT_OFFSET = 13;
+/** Separación entre centros de mesa cuando el asistente las acomoda en rejilla. */
+export const TABLE_GAP = 120;
 /** Lienzo por defecto de un plano nuevo. */
 export const PLAN_WIDTH = 1200;
 export const PLAN_HEIGHT = 820;
@@ -285,4 +407,33 @@ export interface SeatGridOptions {
    * slot en vez de dibujando una línea encima.
    */
   aisles?: number[];
+}
+
+/**
+ * Parámetros del asistente que acomoda las mesas de un área.
+ *
+ * Se acomodan en rejilla porque así se montan los salones —hileras de mesas con
+ * su pasillo entre ellas—, y una vez puestas cada mesa se arrastra a donde toque
+ * si el montaje real no es tan ordenado.
+ */
+export interface TableGridOptions {
+  /** Hileras de mesas y mesas por hilera. */
+  rows: number;
+  perRow: number;
+  /** Sillas alrededor de cada mesa. */
+  seatsPerTable: number;
+  shape: CroquisTableShape;
+  /** Cómo se venden todas las mesas que genere el asistente. */
+  rental: CroquisTableRental;
+  /** Mínimo de sillas a comprar cuando se venden sueltas. */
+  minSeats: number;
+  /** Tamaño de la mesa: diámetro si es redonda, ancho y alto si no. */
+  size: number;
+  height: number;
+  /** Separación entre centros de mesa. */
+  gap: number;
+  rowGap: number;
+  /** Con qué número o letra arranca la primera mesa. */
+  startLabel?: string;
+  labeling: RowLabeling;
 }

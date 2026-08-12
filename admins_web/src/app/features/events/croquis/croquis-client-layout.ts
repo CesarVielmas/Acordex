@@ -79,13 +79,23 @@ export function clientAreas(
     const tier = area.tierId ? index.get(area.tierId) : undefined;
     const color = tier?.color || '#99907c';
 
-    const rows: ClientRow[] = area.rows.map(row => {
+    // Las mesas se leen como una fila más: para el portal "Mesa 3, lugar 7" y
+    // "Fila C, butaca 7" son la misma cosa —un lugar con nombre— y tratarlas
+    // distinto obligaría a duplicar toda la lista de asientos.
+    const grupos: { label: string; seats: typeof area.rows[number]['seats']; tierId?: string }[] = [
+      ...area.rows.map(r => ({ label: r.label, seats: r.seats, tierId: undefined as string | undefined })),
+      ...(area.tables || [])
+        .filter(t => t.status !== 'bloqueada')
+        .map(t => ({ label: t.label, seats: t.seats, tierId: t.tierId }))
+    ];
+
+    const rows: ClientRow[] = grupos.map(row => {
       const seats: ClientSeat[] = [];
 
       for (const seat of row.seats) {
         if (seat.status === 'bloqueado') continue;
 
-        const seatTier = seat.tierId ? index.get(seat.tierId) : tier;
+        const seatTier = index.get(seat.tierId || row.tierId || area.tierId || '') || tier;
         const id = `${row.label}-${seat.number}`;
         const status: ClientSeatStatus =
           mine.has(id) ? 'mia'
@@ -112,7 +122,7 @@ export function clientAreas(
     return {
       id: area.id,
       name: area.name,
-      numbered: area.kind === 'butacas',
+      numbered: area.kind !== 'general',
       tierName: tier?.name || 'Sin categoría',
       price: tier?.price || 0,
       color,
@@ -170,6 +180,10 @@ export function clientTiers(plan: CroquisPlan, tiers: CroquisTier[]): CroquisTie
     if (area.tierId) used.add(area.tierId);
     for (const row of area.rows) {
       for (const seat of row.seats) if (seat.tierId) used.add(seat.tierId);
+    }
+    for (const table of area.tables || []) {
+      if (table.tierId) used.add(table.tierId);
+      for (const seat of table.seats) if (seat.tierId) used.add(seat.tierId);
     }
   }
 

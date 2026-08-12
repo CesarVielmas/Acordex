@@ -19,14 +19,6 @@ import { money, potentialTicketRevenue, serviceFee } from '../../event-metrics';
  *
  * La pestaña no captura el boletaje: lo resume. El boletaje se arma dibujando,
  * en el editor de croquis, y de ahí salen todos los números que se ven aquí.
- *
- * Antes esto era al revés —se capturaban lugares, filas y butacas por fila a
- * mano y el croquis era un dato aparte— y por eso hacía falta un validador que
- * avisara cuando las dos cosas no coincidían. Con el plano como única fuente de
- * verdad ese error deja de existir: lo que está dibujado es lo que se vende.
- *
- * Lo que sí se captura aquí es lo que el croquis no puede saber: cuánto cuesta
- * cada categoría, qué incluye y con qué ícono se anuncia.
  */
 @Component({
   selector: 'app-event-tab-tickets',
@@ -40,186 +32,240 @@ import { money, potentialTicketRevenue, serviceFee } from '../../event-metrics';
   ],
   host: { class: 'block' },
   template: `
-    <div class="space-y-5">
+    <div class="space-y-6">
 
-      <!-- ─── AFORO Y AVANCE DE VENTA ─── -->
-      <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-cyan-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-cyan-500/25 border-l-4 border-l-cyan-500/70 shadow-2xl shadow-cyan-500/5 space-y-4 backdrop-blur-2xl">
-        <div class="flex items-end justify-between gap-4 flex-wrap">
-          <div>
-            <span class="text-[10px] font-black uppercase tracking-widest text-cyan-400 block">Aforo a la venta</span>
-            <span class="font-black text-on-surface text-2xl sm:text-3xl font-mono leading-tight">
-              {{ capacity().toLocaleString('es-MX') }}
+      <!-- ─── HERO HEADER GLASSMORPHIC: AFORO Y AVANCE DE VENTA ─── -->
+      <section class="relative overflow-hidden p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-cyan-500/20 via-black/40 to-black/60 border border-cyan-500/30 shadow-[0_0_40px_rgba(6,182,212,0.15)] backdrop-blur-3xl space-y-6">
+
+        <!-- Halo brillante de fondo -->
+        <div class="absolute -right-20 -top-20 w-72 h-72 rounded-full bg-cyan-400/10 blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex items-end justify-between gap-4 flex-wrap">
+          <div class="space-y-1">
+            <span class="text-[10px] font-black uppercase tracking-widest text-cyan-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+              Aforo Total a la Venta
             </span>
-            <span class="text-[11px] text-outline block">contados del croquis, no capturados a mano</span>
+            <div class="flex items-baseline gap-2">
+              <span class="font-['Epilogue'] font-black text-on-surface text-3xl sm:text-4xl font-mono leading-tight tracking-tight">
+                {{ capacity().toLocaleString('es-MX') }}
+              </span>
+              <span class="text-xs text-outline font-medium">lugares en croquis</span>
+            </div>
+            <p class="text-[11px] text-outline">Calculados dinámicamente desde el plano del evento</p>
           </div>
 
-          <div class="text-right">
-            <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">Vendidos</span>
-            <span class="font-black text-emerald-400 text-2xl sm:text-3xl font-mono leading-tight">
-              {{ occupancy() }}%
-            </span>
-            <span class="text-[11px] text-outline block">
-              {{ sold().toLocaleString('es-MX') }} de {{ capacity().toLocaleString('es-MX') }}
+          <div class="text-right space-y-1 bg-black/30 p-3.5 rounded-2xl border border-white/10 backdrop-blur-md">
+            <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">Avance de Ventas</span>
+            <div class="flex items-baseline justify-end gap-1.5">
+              <span class="font-['Epilogue'] font-black text-emerald-400 text-3xl sm:text-4xl font-mono leading-tight">
+                {{ occupancy() }}%
+              </span>
+            </div>
+            <span class="text-[11px] font-mono text-outline block">
+              {{ sold().toLocaleString('es-MX') }} / {{ capacity().toLocaleString('es-MX') }} boletos
             </span>
           </div>
         </div>
 
-        <div class="h-2.5 rounded-full bg-surface-container-highest/80 overflow-hidden">
+        <!-- Barra de progreso con rastro brillante -->
+        <div class="relative z-10 h-3 rounded-full bg-surface-container-highest/80 overflow-hidden p-0.5 border border-white/10">
           <div
-            class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.5)] transition-all duration-500"
+            class="h-full rounded-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-400 shadow-[0_0_15px_rgba(16,185,129,0.6)] transition-all duration-700 ease-out"
             [style.width.%]="occupancy()"
           ></div>
         </div>
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div class="p-3 rounded-2xl bg-surface-container/60 border border-outline-variant/25">
-            <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Croquis del evento</span>
-            <span class="font-black text-on-surface text-sm">{{ plans().length }} zona(s)</span>
+        <!-- 4 KPI CARDS EN GRILLA DE CRISTAL -->
+        <div class="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+          <div class="p-3.5 rounded-2xl bg-black/30 border border-white/10 shadow-lg space-y-1 backdrop-blur-2xl hover:bg-white/5 hover:border-cyan-400/30 transition-colors">
+            <span class="text-[9px] font-black uppercase tracking-wider text-outline block flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs text-cyan-400">layers</span> Zonas del Croquis
+            </span>
+            <span class="font-black text-on-surface text-base sm:text-lg font-mono">{{ plans().length }} zona(s)</span>
           </div>
-          <div class="p-3 rounded-2xl bg-surface-container/60 border border-outline-variant/25">
-            <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Butacas numeradas</span>
-            <span class="font-black text-on-surface text-sm">{{ seatCount().toLocaleString('es-MX') }}</span>
+
+          <div class="p-3.5 rounded-2xl bg-black/30 border border-white/10 shadow-lg space-y-1 backdrop-blur-2xl hover:bg-white/5 hover:border-cyan-400/30 transition-colors">
+            <span class="text-[9px] font-black uppercase tracking-wider text-outline block flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs text-indigo-400">event_seat</span> Butacas Numeradas
+            </span>
+            <span class="font-black text-on-surface text-base sm:text-lg font-mono">{{ seatCount().toLocaleString('es-MX') }}</span>
           </div>
+
           @if (canViewFinances()) {
-            <div class="p-3 rounded-2xl bg-surface-container/60 border border-outline-variant/25">
-              <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Taquilla potencial</span>
-              <span class="font-black text-on-surface text-sm">{{ potential() }}</span>
+            <div class="p-3.5 rounded-2xl bg-black/30 border border-white/10 shadow-lg space-y-1 backdrop-blur-2xl hover:bg-white/5 hover:border-emerald-400/30 transition-colors">
+              <span class="text-[9px] font-black uppercase tracking-wider text-outline block flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs text-emerald-400">payments</span> Taquilla Potencial
+              </span>
+              <span class="font-black text-emerald-400 text-base sm:text-lg font-mono">{{ potential() }}</span>
             </div>
           }
-          <div class="p-3 rounded-2xl bg-surface-container/60 border border-outline-variant/25">
-            <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Cargo por servicio</span>
-            <span class="font-black text-on-surface text-sm">&#36;{{ fee() }}</span>
+
+          <div class="p-3.5 rounded-2xl bg-black/30 border border-white/10 shadow-lg space-y-1 backdrop-blur-2xl hover:bg-white/5 hover:border-amber-400/30 transition-colors">
+            <span class="text-[9px] font-black uppercase tracking-wider text-outline block flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs text-amber-400">receipt_long</span> Cargo por Servicio
+            </span>
+            <span class="font-black text-amber-300 text-base sm:text-lg font-mono">&#36;{{ fee() }}</span>
           </div>
         </div>
+
       </section>
 
-      <!-- ─── QUÉ FALTA ─── -->
+      <!-- ─── ALERTA DE VALIDACIÓN Y DETALLES PENDIENTES ─── -->
       @if (issues().length) {
-        <section class="p-4 sm:p-5 rounded-3xl border space-y-2.5 backdrop-blur-xl"
+        <section
+          class="p-5 rounded-3xl border space-y-3 backdrop-blur-2xl shadow-xl transition-all"
           [class]="errors().length
-            ? 'bg-rose-500/[0.07] border-rose-500/30'
-            : 'bg-amber-500/[0.06] border-amber-500/30'">
-          <div class="flex items-center justify-between gap-2 flex-wrap">
-            <h5 class="text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5"
+            ? 'bg-rose-500/10 border-rose-500/40 shadow-rose-500/5'
+            : 'bg-amber-500/10 border-amber-500/40 shadow-amber-500/5'"
+        >
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <h5 class="text-xs font-black uppercase tracking-wider flex items-center gap-2"
               [class]="errors().length ? 'text-rose-300' : 'text-amber-300'">
-              <span class="material-symbols-outlined text-[14px]">{{ errors().length ? 'error' : 'info' }}</span>
-              {{ errors().length ? errors().length + ' cosa(s) impiden vender' : issues().length + ' detalle(s) por pulir' }}
+              <span class="material-symbols-outlined text-base">{{ errors().length ? 'error' : 'info' }}</span>
+              {{ errors().length ? errors().length + ' detalle(s) impiden poner a la venta' : issues().length + ' recomendación(es) para el boletaje' }}
             </h5>
             @if (canEdit()) {
-              <button type="button" (click)="openEditor.emit(null)"
-                class="px-2.5 py-1.5 rounded-xl bg-surface-container-high text-on-surface border border-outline-variant/35 hover:border-primary/50 text-[10px] font-black transition-all flex items-center gap-1">
-                <span class="material-symbols-outlined text-[13px]">edit</span> Resolver en el croquis
+              <button
+                type="button"
+                (click)="openEditor.emit(null)"
+                class="px-3.5 py-2 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface border border-white/10 hover:border-cyan-400/40 text-xs font-black transition-all flex items-center gap-1.5 shadow-md active:scale-95"
+              >
+                <span class="material-symbols-outlined text-sm text-cyan-300">edit_square</span>
+                <span>Resolver en el croquis</span>
               </button>
             }
           </div>
 
-          <ul class="space-y-1.5">
+          <ul class="space-y-2 pt-1">
             @for (issue of visibleIssues(); track issue.message) {
-              <li class="flex items-start gap-2 text-[11px]">
-                <span class="material-symbols-outlined text-[13px] shrink-0 mt-0.5"
+              <li class="flex items-start gap-2.5 text-xs p-2.5 rounded-xl bg-black/20 border border-white/5">
+                <span class="material-symbols-outlined text-sm shrink-0 mt-0.5"
                   [class]="issue.level === 'error' ? 'text-rose-400' : 'text-amber-400'">
-                  {{ issue.level === 'error' ? 'priority_high' : 'remove' }}
+                  {{ issue.level === 'error' ? 'priority_high' : 'info' }}
                 </span>
-                <span class="min-w-0">
+                <div class="min-w-0 flex-1">
                   <span class="text-on-surface font-bold">{{ issue.message }}</span>
-                  <span class="text-outline"> {{ issue.fix }}</span>
-                </span>
+                  <span class="text-outline block text-[11px] mt-0.5">{{ issue.fix }}</span>
+                </div>
               </li>
             }
           </ul>
 
           @if (issues().length > visibleIssues().length) {
-            <p class="text-[10px] text-outline italic">
-              y {{ issues().length - visibleIssues().length }} más.
+            <p class="text-[10px] text-outline italic pl-1">
+              y {{ issues().length - visibleIssues().length }} observación(es) adicional(es).
             </p>
           }
         </section>
       }
 
-      <!-- ─── CROQUIS DEL EVENTO ─── -->
-      <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-cyan-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-cyan-500/25 border-l-4 border-l-cyan-500/70 shadow-2xl shadow-cyan-500/5 space-y-4 backdrop-blur-2xl">
-        <div class="flex items-center justify-between gap-3 flex-wrap border-b border-outline-variant/20 pb-4">
-          <h5 class="text-xs font-black uppercase tracking-wider text-cyan-300 flex items-center gap-2.5">
-            <span class="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 flex items-center justify-center material-symbols-outlined text-lg">map</span>
-            <span>Croquis del evento ({{ plans().length }})</span>
-          </h5>
+      <!-- ─── ZONAS Y CROQUIS DEL EVENTO ─── -->
+      <section class="p-6 sm:p-7 rounded-3xl bg-black/20 border border-white/10 shadow-2xl backdrop-blur-3xl space-y-6">
+
+        <!-- Cabecera de la sección -->
+        <div class="flex items-center justify-between gap-4 flex-wrap border-b border-white/10 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center justify-center shadow-lg">
+              <span class="material-symbols-outlined text-xl">map</span>
+            </div>
+            <div>
+              <h5 class="font-['Epilogue'] font-black text-base text-on-surface tracking-tight">
+                Planos y Croquis del Evento
+              </h5>
+              <span class="text-xs text-outline font-mono">{{ plans().length }} zona(s) configurada(s)</span>
+            </div>
+          </div>
 
           @if (canEdit() && plans().length) {
-            <button type="button" (click)="openEditor.emit(null)"
-              class="px-3.5 py-2 rounded-xl bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 hover:bg-cyan-500 hover:text-black text-[11px] font-black transition-all shadow-md active:scale-95 flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-sm">edit_square</span> Abrir editor
+            <button
+              type="button"
+              (click)="openEditor.emit(null)"
+              class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-black font-black text-xs transition-all shadow-[0_0_20px_rgba(6,182,212,0.25)] flex items-center gap-2 active:scale-95"
+            >
+              <span class="material-symbols-outlined text-base">edit_square</span>
+              <span>Abrir Editor Visual</span>
             </button>
           }
         </div>
 
         @if (plans().length > 1) {
-          <p class="text-[11px] text-outline leading-relaxed flex items-start gap-2">
-            <span class="material-symbols-outlined text-sm shrink-0 mt-0.5 text-cyan-300">layers</span>
+          <div class="p-3.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-200 text-xs flex items-start gap-2.5">
+            <span class="material-symbols-outlined text-lg shrink-0 text-cyan-300 mt-0.5">layers</span>
             <span>
-              Este evento tiene <strong class="text-on-surface">{{ plans().length }} zonas con croquis propio</strong>.
-              El cliente las cambia con un selector y compra dentro de la que le interesa, con su propio boletaje
-              y sus propios escenarios.
+              Este evento cuenta con <strong class="text-on-surface">{{ plans().length }} zonas independientes con croquis propio</strong>.
+              El público podrá intercalar entre zonas durante su compra.
             </span>
-          </p>
+          </div>
         }
 
+        <!-- Grilla de Miniaturas de Zonas -->
         @if (plans().length) {
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             @for (plan of plans(); track plan.id) {
-              <div class="rounded-3xl bg-surface-container/70 border border-outline-variant/25 overflow-hidden shadow-lg hover:border-cyan-500/40 transition-all group">
-                <!-- Miniatura viva: es el mismo dibujo del editor, a escala. -->
+              <div class="rounded-3xl bg-white/5 border border-white/10 overflow-hidden shadow-xl hover:bg-white/10 hover:border-cyan-400/40 transition-all duration-300 backdrop-blur-2xl group flex flex-col">
+
+                <!-- Canvas Miniatura Viva -->
                 <button
                   type="button"
                   (click)="canEdit() ? openEditor.emit(plan.id) : null"
-                  class="block w-full h-44 bg-[#141414] border-b border-outline-variant/20 relative"
+                  class="block w-full h-48 bg-[#0b0e14] border-b border-white/10 relative overflow-hidden text-left"
                   [class.cursor-default]="!canEdit()"
                 >
                   <app-croquis-canvas [plan]="plan" [tiers]="tiers()" [lineup]="lineupOptions()" mode="miniatura" />
+
+                  <!-- Hover Overlay -->
                   @if (canEdit()) {
-                    <span class="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span class="px-3 py-1.5 rounded-xl bg-primary text-black text-[11px] font-black flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-sm">edit</span> Editar croquis
+                    <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center backdrop-blur-xs">
+                      <span class="px-4 py-2 rounded-xl bg-cyan-400 text-black text-xs font-black shadow-lg flex items-center gap-2 scale-95 group-hover:scale-100 transition-transform">
+                        <span class="material-symbols-outlined text-sm">edit</span> Editar este croquis
                       </span>
-                    </span>
+                    </div>
                   }
                 </button>
 
-                <div class="p-4 space-y-2.5">
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="min-w-0">
-                      <p class="text-xs font-black text-on-surface truncate">{{ plan.name }}</p>
-                      <p class="text-[10px] text-outline font-mono">
-                        {{ capacityOf(plan).toLocaleString('es-MX') }} lugares · {{ plan.areas.length }} área(s)
-                      </p>
+                <!-- Detalle de la Zona -->
+                <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                  <div class="space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="min-w-0">
+                        <h6 class="text-sm font-black text-on-surface truncate">{{ plan.name }}</h6>
+                        <span class="text-[10px] text-outline font-mono block">
+                          {{ capacityOf(plan).toLocaleString('es-MX') }} aforo · {{ plan.areas.length }} área(s)
+                        </span>
+                      </div>
+                      @if (soldOf(plan) > 0) {
+                        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black shrink-0">
+                          {{ soldOf(plan).toLocaleString('es-MX') }} vendidos
+                        </span>
+                      }
                     </div>
-                    @if (soldOf(plan) > 0) {
-                      <span class="px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[9px] font-black shrink-0">
-                        {{ soldOf(plan).toLocaleString('es-MX') }} vendidos
-                      </span>
+
+                    @if (plan.description) {
+                      <p class="text-xs text-outline leading-snug line-clamp-2">{{ plan.description }}</p>
                     }
+
+                    <!-- Escenarios -->
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      @for (stage of stagesOf(plan); track stage.id) {
+                        <span class="px-2.5 py-1 rounded-lg bg-primary/15 text-primary border border-primary/30 text-[10px] font-black flex items-center gap-1">
+                          <span class="material-symbols-outlined text-xs">theater_comedy</span>
+                          {{ groupOnStage(stage.lineupSlotId) || stage.label }}
+                        </span>
+                      } @empty {
+                        <span class="px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30 text-[10px] font-bold">
+                          Sin escenario asignado
+                        </span>
+                      }
+                    </div>
                   </div>
 
-                  @if (plan.description) {
-                    <p class="text-[11px] text-on-surface-variant leading-snug line-clamp-2">{{ plan.description }}</p>
-                  }
-
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    @for (stage of stagesOf(plan); track stage.id) {
-                      <span class="px-2 py-0.5 rounded-lg bg-primary/12 text-primary border border-primary/25 text-[9px] font-black flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[11px]">theater_comedy</span>
-                        {{ groupOnStage(stage.lineupSlotId) || stage.label }}
-                      </span>
-                    } @empty {
-                      <span class="px-2 py-0.5 rounded-lg bg-rose-500/12 text-rose-300 border border-rose-500/25 text-[9px] font-black">
-                        Sin escenario marcado
-                      </span>
-                    }
-                  </div>
-
-                  <div class="flex items-center gap-1 flex-wrap pt-1 border-t border-outline-variant/15">
+                  <!-- Categorías Presentes -->
+                  <div class="flex items-center gap-1.5 flex-wrap pt-2 border-t border-white/10">
                     @for (row of tiersOfPlan(plan); track row.tier.id) {
-                      <span class="px-2 py-0.5 rounded-lg text-[9px] font-black border flex items-center gap-1"
-                        [style.background-color]="row.tier.color + '1f'"
+                      <span
+                        class="px-2.5 py-1 rounded-lg text-[10px] font-black border flex items-center gap-1 shadow-sm"
+                        [style.background-color]="row.tier.color + '22'"
                         [style.border-color]="row.tier.color + '66'"
                         [style.color]="row.tier.color"
                       >
@@ -229,39 +275,47 @@ import { money, potentialTicketRevenue, serviceFee } from '../../event-metrics';
                     }
                   </div>
                 </div>
+
               </div>
             }
           </div>
         } @else {
-          <!-- Sin croquis: empezar por una plantilla, no por un lienzo en blanco -->
-          <div class="p-5 rounded-2xl bg-surface-container/50 border border-dashed border-outline-variant/35 space-y-4">
-            <div class="text-center">
-              <span class="material-symbols-outlined text-3xl text-outline block mb-1">map</span>
-              <p class="text-xs font-black text-on-surface">Este evento todavía no tiene croquis</p>
-              <p class="text-[11px] text-outline max-w-lg mx-auto leading-relaxed mt-1">
-                El croquis define qué se vende: las zonas, las butacas y a qué categoría de boleto pertenece cada
-                lugar. Sin él no hay nada que poner a la venta.
+          <!-- Sin Croquis: Selector de Plantillas -->
+          <div class="p-6 rounded-3xl bg-white/5 backdrop-blur-2xl border border-dashed border-white/15 space-y-5 text-center">
+            <div class="max-w-md mx-auto space-y-2">
+              <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center justify-center mx-auto shadow-lg">
+                <span class="material-symbols-outlined text-2xl">map</span>
+              </div>
+              <h6 class="text-sm font-black text-on-surface">Este evento aún no tiene plano de croquis</h6>
+              <p class="text-xs text-outline leading-relaxed">
+                Selecciona una plantilla arquitectónica base para comenzar a construir el croquis y definir tus áreas a la venta.
               </p>
             </div>
 
             @if (canEdit()) {
               @if (hasLegacyZones()) {
-                <button type="button" (click)="migrateLegacy()"
-                  class="w-full px-3 py-3 rounded-2xl bg-primary/15 text-primary border border-primary/35 hover:bg-primary hover:text-black text-[11px] font-black transition-all flex items-center justify-center gap-2">
-                  <span class="material-symbols-outlined text-base">auto_awesome</span>
-                  Armar el croquis con las {{ event().croquisZones.length }} zonas ya capturadas
+                <button
+                  type="button"
+                  (click)="migrateLegacy()"
+                  class="w-full max-w-md mx-auto px-4 py-3 rounded-2xl bg-gradient-to-r from-primary to-amber-300 text-black font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2 hover:scale-102"
+                >
+                  <span class="material-symbols-outlined text-lg">auto_awesome</span>
+                  <span>Migrar croquis con las {{ event().croquisZones.length }} zonas detectadas</span>
                 </button>
               }
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl mx-auto pt-2">
                 @for (t of templates; track t.id) {
-                  <button type="button" (click)="createFromTemplate(t.id)"
-                    class="p-3 rounded-2xl bg-surface-container-high/70 border border-outline-variant/25 hover:border-cyan-500/45 text-left transition-all flex items-start gap-2.5">
-                    <span class="material-symbols-outlined text-lg text-cyan-300 shrink-0">{{ t.icon }}</span>
-                    <span class="min-w-0">
-                      <span class="block text-[11px] font-black text-on-surface">{{ t.name }}</span>
-                      <span class="block text-[10px] text-outline leading-snug">{{ t.description }}</span>
-                    </span>
+                  <button
+                    type="button"
+                    (click)="createFromTemplate(t.id)"
+                    class="p-4 rounded-2xl bg-surface-container-high/80 border border-white/10 hover:border-cyan-400/40 text-left transition-all flex items-start gap-3 group hover:scale-[1.02]"
+                  >
+                    <span class="material-symbols-outlined text-2xl text-cyan-300 shrink-0 group-hover:scale-110 transition-transform">{{ t.icon }}</span>
+                    <div class="min-w-0">
+                      <span class="block text-xs font-black text-on-surface group-hover:text-cyan-300 transition-colors">{{ t.name }}</span>
+                      <span class="block text-[11px] text-outline leading-relaxed mt-0.5">{{ t.description }}</span>
+                    </div>
                   </button>
                 }
               </div>
@@ -270,33 +324,32 @@ import { money, potentialTicketRevenue, serviceFee } from '../../event-metrics';
         }
       </section>
 
-      <!-- ─── TODOS LOS NÚMEROS ─── -->
-      <!-- Plegado por defecto: son datos de consulta, no de captura, y abiertos
-           de fijo empujarían las categorías fuera de la primera pantalla. En un
-           evento ya en venta —donde el croquis está bloqueado— es lo único que
-           realmente se viene a ver aquí. -->
+      <!-- ─── DESPLEGABLE: TODOS LOS NÚMEROS Y ESTADÍSTICAS DEL EVENTO ─── -->
       @if (plans().length) {
-        <section class="rounded-3xl bg-gradient-to-br from-primary/[0.05] via-surface-container-high/90 to-surface-container-high/90 border border-primary/25 border-l-4 border-l-primary/70 shadow-2xl backdrop-blur-2xl overflow-hidden">
+        <section class="rounded-3xl bg-black/20 border border-white/10 shadow-2xl backdrop-blur-3xl overflow-hidden transition-all">
           <button
             type="button"
             (click)="numbersOpen.set(!numbersOpen())"
-            class="w-full p-5 sm:p-6 flex items-center justify-between gap-3 text-left transition-colors hover:bg-surface-container/30"
+            class="w-full p-5 sm:p-6 flex items-center justify-between gap-4 text-left transition-colors hover:bg-white/5"
           >
-            <h5 class="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-2.5 min-w-0">
-              <span class="w-8 h-8 rounded-xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center material-symbols-outlined text-lg shrink-0">query_stats</span>
-              <span class="min-w-0">
-                <span class="block truncate">Todos los números del evento</span>
-                <span class="block text-[10px] font-bold normal-case tracking-normal text-outline truncate">
-                  Aforo, venta y taquilla por categoría y por croquis
-                </span>
-              </span>
-            </h5>
-            <span class="material-symbols-outlined text-xl text-outline shrink-0 transition-transform"
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-2xl bg-primary/20 text-primary border border-primary/40 flex items-center justify-center shrink-0 shadow-lg">
+                <span class="material-symbols-outlined text-xl">query_stats</span>
+              </div>
+              <div class="min-w-0">
+                <h5 class="font-['Epilogue'] font-black text-sm text-on-surface tracking-tight truncate">
+                  Todos los Números del Boletaje
+                </h5>
+                <p class="text-xs text-outline truncate">Desglose exhaustivo de aforo, ocupación y taquilla por zona</p>
+              </div>
+            </div>
+
+            <span class="material-symbols-outlined text-2xl text-outline shrink-0 transition-transform duration-300"
               [class.rotate-180]="numbersOpen()">expand_more</span>
           </button>
 
           @if (numbersOpen()) {
-            <div class="px-5 sm:px-6 pb-5 sm:pb-6">
+            <div class="px-5 sm:px-6 pb-6 pt-2 border-t border-white/10 animate-fade-in">
               <app-croquis-summary
                 [plans]="plans()"
                 [tiers]="tiers()"
@@ -309,132 +362,172 @@ import { money, potentialTicketRevenue, serviceFee } from '../../event-metrics';
       }
 
       <!-- ─── CATEGORÍAS DE BOLETO ─── -->
-      <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-cyan-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-cyan-500/25 border-l-4 border-l-cyan-500/70 shadow-2xl shadow-cyan-500/5 space-y-4 backdrop-blur-2xl">
-        <div class="flex items-center justify-between gap-2 flex-wrap border-b border-outline-variant/20 pb-4">
-          <h5 class="text-xs font-black uppercase tracking-wider text-cyan-300 flex items-center gap-2.5">
-            <span class="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 flex items-center justify-center material-symbols-outlined text-lg">confirmation_number</span>
-            <span>Categorías de boleto ({{ tiers().length }})</span>
-          </h5>
+      <section class="p-6 sm:p-7 rounded-3xl bg-black/20 border border-white/10 shadow-2xl backdrop-blur-3xl space-y-6">
+
+        <div class="flex items-center justify-between gap-4 flex-wrap border-b border-white/10 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center justify-center shadow-lg">
+              <span class="material-symbols-outlined text-xl">confirmation_number</span>
+            </div>
+            <div>
+              <h5 class="font-['Epilogue'] font-black text-base text-on-surface tracking-tight">
+                Categorías de Boleto
+              </h5>
+              <span class="text-xs text-outline font-mono">{{ tiers().length }} categoría(s) registrada(s)</span>
+            </div>
+          </div>
+
           @if (canEdit()) {
-            <button type="button" (click)="addTier()"
-              class="px-2.5 py-1.5 min-h-9 rounded-xl bg-primary/15 text-primary border border-primary/30 hover:bg-primary hover:text-on-primary text-[10px] font-bold flex items-center gap-1 transition-all">
-              <span class="material-symbols-outlined text-[13px]">add</span> Nueva categoría
+            <button
+              type="button"
+              (click)="addTier()"
+              class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 text-black font-black text-xs transition-all shadow-[0_0_20px_rgba(242,202,80,0.25)] flex items-center gap-2 active:scale-95 hover:scale-105"
+            >
+              <span class="material-symbols-outlined text-base">add</span>
+              <span>Nueva Categoría</span>
             </button>
           }
         </div>
 
-        <p class="text-[11px] text-outline leading-relaxed flex items-start gap-2">
-          <span class="material-symbols-outlined text-sm shrink-0 mt-0.5 text-cyan-300">sync</span>
+        <p class="text-xs text-outline leading-relaxed flex items-start gap-2 bg-black/20 p-3 rounded-2xl border border-white/5">
+          <span class="material-symbols-outlined text-base shrink-0 text-amber-300">sync</span>
           <span>
-            Los lugares de cada categoría <strong class="text-on-surface">se cuentan del croquis</strong> y no se
-            capturan aquí. Para cambiarlos, mueve o pinta áreas en el editor.
+            Los precios e íconos se configuran aquí. Los lugares de cada categoría <strong class="text-on-surface">se cuentan dinámicamente desde el croquis</strong>.
           </span>
         </p>
 
-        @for (tier of tiers(); track tier.id || tier.name) {
-          @let croquis = summaryOf(tier);
-          <div class="p-3.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
-            <div class="flex items-center gap-2 flex-wrap min-w-0">
-              <span class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border" [style.background-color]="tier.color + '33'" [style.border-color]="tier.color + '66'">
-                <span class="material-symbols-outlined text-base" [style.color]="tier.color">{{ tier.icon || 'confirmation_number' }}</span>
-              </span>
-              <div class="flex-1 min-w-[8rem]">
+        <!-- Grilla de Categorías -->
+        <div class="space-y-4">
+          @for (tier of tiers(); track tier.id || tier.name) {
+            @let croquis = summaryOf(tier);
+            <div class="p-5 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-amber-400/30 space-y-4 shadow-xl backdrop-blur-2xl transition-all">
+
+              <!-- Fila Superior: Icono, Nombre y Badges -->
+              <div class="flex items-center gap-3 flex-wrap min-w-0">
+                <span
+                  class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-md"
+                  [style.background-color]="tier.color + '22'"
+                  [style.border-color]="tier.color + '66'"
+                >
+                  <span class="material-symbols-outlined text-xl" [style.color]="tier.color">{{ tier.icon || 'confirmation_number' }}</span>
+                </span>
+
+                <div class="flex-1 min-w-[10rem]">
+                  <app-editable-field
+                    [value]="tier.name"
+                    valueClass="text-sm font-black text-on-surface break-words"
+                    [readonly]="!canEdit()"
+                    (save)="patchTier(tier, { name: $event })"
+                  />
+                </div>
+
+                <span class="px-3 py-1.5 rounded-xl text-xs font-black border shrink-0"
+                  [class]="croquis.capacity > 0
+                    ? 'bg-surface-container-high text-on-surface border-white/10 font-mono'
+                    : 'bg-rose-500/20 text-rose-300 border-rose-500/40'">
+                  {{ croquis.capacity.toLocaleString('es-MX') }} en croquis
+                </span>
+
+                @if (tier.soldSeats > 0) {
+                  <span class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black font-mono shrink-0">
+                    {{ tier.soldSeats }} vendidos
+                  </span>
+                }
+
+                @if (canEdit()) {
+                  <button
+                    type="button"
+                    (click)="tierUnderEdit.set(tier); tierDialogOpen.set(true)"
+                    class="w-8 h-8 rounded-xl bg-surface-container-high text-outline border border-white/10 hover:text-amber-300 hover:border-amber-400/40 flex items-center justify-center shrink-0 transition-all shadow-md"
+                    title="Editar color, ícono y descripción"
+                  >
+                    <span class="material-symbols-outlined text-sm">edit</span>
+                  </button>
+                }
+
+                @if (canEdit() && tier.soldSeats === 0) {
+                  <button
+                    type="button"
+                    (click)="removeTier(tier)"
+                    class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500 hover:text-white flex items-center justify-center shrink-0 transition-all shadow-md"
+                    title="Quitar categoría"
+                  >
+                    <span class="material-symbols-outlined text-sm">delete</span>
+                  </button>
+                }
+              </div>
+
+              <!-- Grilla de Campos de Edición -->
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
                 <app-editable-field
-                  [value]="tier.name"
-                  valueClass="text-xs font-black text-on-surface break-words"
+                  label="Precio Boleto"
+                  type="number"
+                  prefix="$"
+                  [value]="tier.price"
                   [readonly]="!canEdit()"
-                  (save)="patchTier(tier, { name: $event })"
+                  (save)="patchTier(tier, { price: toNumber($event) })"
+                />
+
+                <div class="min-w-0 p-3.5 rounded-2xl bg-black/20 border border-white/5 space-y-1">
+                  <span class="block text-[10px] font-black uppercase tracking-wider text-outline">Lugares Disponibles</span>
+                  <span class="text-sm font-bold text-on-surface font-mono block">
+                    {{ croquis.capacity.toLocaleString('es-MX') }}
+                  </span>
+                  <span class="block text-[10px] text-outline">
+                    {{ croquis.areaCount }} área(s) en croquis
+                  </span>
+                </div>
+
+                <div class="min-w-0 p-3.5 rounded-2xl bg-black/20 border border-white/5 space-y-1">
+                  <span class="block text-[10px] font-black uppercase tracking-wider text-outline">Disponibilidad en Zonas</span>
+                  <span class="text-xs font-bold text-on-surface truncate block">
+                    {{ croquis.planNames.length ? croquis.planNames.join(', ') : 'Sin asignar a croquis' }}
+                  </span>
+                </div>
+
+                <app-editable-field
+                  label="Ícono en Ficha"
+                  type="select"
+                  [options]="iconOptions"
+                  [value]="tier.icon || 'confirmation_number'"
+                  [readonly]="!canEdit()"
+                  (save)="patchTier(tier, { icon: $event })"
                 />
               </div>
 
-              <span class="px-2 py-1 rounded-lg text-[9px] font-black border shrink-0"
-                [class]="croquis.capacity > 0
-                  ? 'bg-surface-container text-on-surface border-outline-variant/30'
-                  : 'bg-rose-500/15 text-rose-300 border-rose-500/30'">
-                {{ croquis.capacity.toLocaleString('es-MX') }} en el croquis
-              </span>
+              <!-- Descripción -->
+              <app-editable-field
+                label="Qué incluye esta categoría"
+                hint="Información visible para el comprador"
+                type="textarea"
+                [rows]="2"
+                placeholder="Ej. Primeras filas frente al escenario, acceso preferencial y bebida de bienvenida."
+                valueClass="text-xs font-medium text-on-surface-variant break-words"
+                [value]="tier.description || ''"
+                [readonly]="!canEdit()"
+                (save)="patchTier(tier, { description: $event })"
+              />
 
-              @if (tier.soldSeats > 0) {
-                <span class="px-2 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[9px] font-black shrink-0">
-                  {{ tier.soldSeats }} vendidos
-                </span>
-              }
-              @if (canEdit()) {
-                <button type="button" (click)="tierUnderEdit.set(tier); tierDialogOpen.set(true)"
-                  class="w-7 h-7 rounded-lg bg-surface-container text-outline border border-outline-variant/30 hover:text-primary hover:border-primary/40 flex items-center justify-center shrink-0 transition-all"
-                  title="Editar color, ícono y descripción">
-                  <span class="material-symbols-outlined text-[13px]">edit</span>
-                </button>
-              }
-              @if (canEdit() && tier.soldSeats === 0) {
-                <button type="button" (click)="removeTier(tier)"
-                  class="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500 hover:text-white flex items-center justify-center shrink-0 transition-all"
-                  title="Quitar categoría">
-                  <span class="material-symbols-outlined text-[13px]">delete</span>
-                </button>
+              <!-- Taquilla Potencial Footer -->
+              @if (canViewFinances() && croquis.capacity > 0) {
+                <div class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs flex items-center justify-between gap-2">
+                  <span class="text-outline flex items-center gap-1.5 font-bold">
+                    <span class="material-symbols-outlined text-sm text-emerald-400">point_of_sale</span>
+                    Taquilla Potencial Estimada:
+                  </span>
+                  <strong class="text-emerald-400 font-mono text-sm">{{ money(croquis.capacity * (tier.price || 0)) }}</strong>
+                </div>
               }
             </div>
-
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <app-editable-field
-                label="Precio"
-                type="number"
-                prefix="$"
-                [value]="tier.price"
-                [readonly]="!canEdit()"
-                (save)="patchTier(tier, { price: toNumber($event) })"
-              />
-              <div class="min-w-0 p-3.5 rounded-2xl bg-surface-container/70 border border-outline-variant/20">
-                <span class="block text-[10px] font-black uppercase tracking-wider text-outline mb-1.5">Lugares a la venta</span>
-                <span class="text-xs font-bold text-on-surface font-mono">
-                  {{ croquis.capacity.toLocaleString('es-MX') }}
-                </span>
-                <span class="block text-[9px] text-outline mt-0.5">
-                  {{ croquis.areaCount }} área(s) del croquis
-                </span>
-              </div>
-              <div class="min-w-0 p-3.5 rounded-2xl bg-surface-container/70 border border-outline-variant/20">
-                <span class="block text-[10px] font-black uppercase tracking-wider text-outline mb-1.5">Dónde se vende</span>
-                <span class="text-[11px] font-bold text-on-surface break-words">
-                  {{ croquis.planNames.length ? croquis.planNames.join(', ') : 'En ningún croquis' }}
-                </span>
-              </div>
-              <app-editable-field
-                label="Ícono en la ficha"
-                type="select"
-                [options]="iconOptions"
-                [value]="tier.icon || 'confirmation_number'"
-                [readonly]="!canEdit()"
-                (save)="patchTier(tier, { icon: $event })"
-              />
+          } @empty {
+            <div class="p-8 text-center rounded-3xl bg-surface-container-high/40 border border-dashed border-white/10 space-y-2">
+              <span class="material-symbols-outlined text-3xl text-outline">confirmation_number</span>
+              <p class="text-xs font-bold text-on-surface">Sin categorías de boleto registradas aún.</p>
             </div>
-
-            <app-editable-field
-              label="Qué incluye esta categoría"
-              hint="el cliente decide su compra con este texto"
-              type="textarea"
-              [rows]="2"
-              placeholder="Ej. Primeras filas, acceso prioritario y bebida de cortesía."
-              valueClass="text-[11px] font-medium text-on-surface-variant break-words"
-              [value]="tier.description || ''"
-              [readonly]="!canEdit()"
-              (save)="patchTier(tier, { description: $event })"
-            />
-
-            @if (canViewFinances() && croquis.capacity > 0) {
-              <p class="text-[10px] text-outline flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-[12px] text-cyan-300">point_of_sale</span>
-                Taquilla potencial de esta categoría:
-                <strong class="text-on-surface font-mono">{{ money(croquis.capacity * (tier.price || 0)) }}</strong>
-              </p>
-            }
-          </div>
-        } @empty {
-          <p class="p-6 text-center text-[11px] text-outline italic bg-surface-container-high/40 rounded-2xl border border-dashed border-outline-variant/30">
-            Sin categorías de boleto. Sin esto las áreas del croquis no tienen precio ni color.
-          </p>
-        }
+          }
+        </div>
       </section>
+
     </div>
 
     @if (tierDialogOpen()) {
@@ -535,11 +628,6 @@ export class EventTabTicketsComponent {
 
   /**
    * Arma el croquis con las zonas del modelo viejo.
-   *
-   * Es explícito y no automático a propósito: la migración acomoda las zonas en
-   * bandas frente al escenario y eso es una suposición, no un dato. Conviene que
-   * alguien lo pida, lo vea y lo corrija, en vez de encontrarse un plano que
-   * nadie dibujó.
    */
   migrateLegacy(): void {
     const plans = planFromLegacyZones(this.event());
@@ -549,10 +637,6 @@ export class EventTabTicketsComponent {
 
   /**
    * Una categoría nueva se captura completa en un diálogo, no en blanco.
-   *
-   * Sin precio no puede vender y sin un color distinguible el croquis se vuelve
-   * una sola mancha; pedirlo todo junto evita que nazca a medias y haya que
-   * perseguirla después desde el checklist.
    */
   addTier(): void {
     this.tierUnderEdit.set(null);
@@ -576,9 +660,7 @@ export class EventTabTicketsComponent {
   }
 
   /**
-   * Quita la categoría y desliga del croquis todo lo que la usaba, en un solo
-   * parche: un área apuntando a una categoría borrada se seguiría viendo
-   * pintada y con precio hasta que alguien abriera el editor.
+   * Quita la categoría y desliga del croquis todo lo que la usaba.
    */
   removeTier(tier: TicketTier): void {
     const id = tier.id;

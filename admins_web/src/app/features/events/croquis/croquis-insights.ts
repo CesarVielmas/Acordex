@@ -1,5 +1,7 @@
-import { CroquisArea, CroquisPlan, CroquisTier } from '../../../core/models/croquis.models';
-import { areaBlocked, areaCapacity, areaHeld, areaSeats, areaSold, planStages } from './croquis-metrics';
+import { CroquisArea, CroquisPlan, CroquisSeat, CroquisTier } from '../../../core/models/croquis.models';
+import {
+  areaBlocked, areaCapacity, areaHeld, areaSeatEntries, areaSeats, areaSold, planStages
+} from './croquis-metrics';
 
 /**
  * Las cuentas del croquis: cuánto vale lo que está dibujado.
@@ -74,12 +76,30 @@ export function areaInsight(area: CroquisArea, tiers: Map<string, CroquisTier>):
     potential = capacity * price;
     collected = sold * price;
   } else {
-    for (const row of area.rows) {
-      for (const seat of row.seats) {
-        if (seat.status === 'bloqueado') continue;
-        const price = tiers.get(seat.tierId || area.tierId || '')?.price || 0;
-        potential += price;
-        if (seat.status === 'vendido') collected += price;
+    for (const { seat, tierId } of areaSeatEntries(area)) {
+      if (seat.status === 'bloqueado') continue;
+      const price = tiers.get(tierId || '')?.price || 0;
+      potential += price;
+      if (seat.status === 'vendido') collected += price;
+    }
+
+    // Una mesa con precio propio no vale la suma de sus sillas: se cobra de
+    // corrido y ese monto es el que hay que reportar, o la taquilla del salón
+    // saldría de menos justamente en las mesas que más dejan.
+    for (const table of area.tables || []) {
+      if (table.status === 'bloqueada' || !table.price) continue;
+      const sillas = table.seats.filter(s => s.status !== 'bloqueado');
+      if (!sillas.length) continue;
+
+      const porSilla = sillas.reduce(
+        (sum, s) => sum + (tiers.get(s.tierId || table.tierId || area.tierId || '')?.price || 0),
+        0
+      );
+      potential += table.price - porSilla;
+      // Solo cuenta como cobrada cuando la mesa se vendió completa: media mesa
+      // no es medio precio de mesa, es las sillas que se hayan cobrado.
+      if (sillas.every(s => s.status === 'vendido')) {
+        collected += table.price - porSilla;
       }
     }
   }
@@ -155,27 +175,24 @@ export function tierInsights(plans: CroquisPlan[], tiers: CroquisTier[]): TierIn
       }
 
       const used = new Set<string>();
-      for (const row of area.rows) {
-        for (const seat of row.seats) {
-          const tierId = seat.tierId || area.tierId;
-          if (!tierId) continue;
-          const entry = touch(tierId, plan.name);
-          if (!entry) continue;
-          used.add(tierId);
+      for (const { seat, tierId } of areaSeatEntries(area)) {
+        if (!tierId) continue;
+        const entry = touch(tierId, plan.name);
+        if (!entry) continue;
+        used.add(tierId);
 
-          if (seat.status === 'bloqueado') {
-            entry.blocked += 1;
-            continue;
-          }
-          entry.capacity += 1;
-          entry.seated += 1;
-          entry.potential += entry.tier.price || 0;
-          if (seat.status === 'vendido') {
-            entry.sold += 1;
-            entry.collected += entry.tier.price || 0;
-          } else if (seat.status === 'apartado') {
-            entry.held += 1;
-          }
+        if (seat.status === 'bloqueado') {
+          entry.blocked += 1;
+          continue;
+        }
+        entry.capacity += 1;
+        entry.seated += 1;
+        entry.potential += entry.tier.price || 0;
+        if (seat.status === 'vendido') {
+          entry.sold += 1;
+          entry.collected += entry.tier.price || 0;
+        } else if (seat.status === 'apartado') {
+          entry.held += 1;
         }
       }
       for (const tierId of used) {
@@ -208,6 +225,8 @@ export interface PlanInsight {
   collected: number;
   /** Butacas dibujadas, incluidas las bloqueadas. */
   seatCount: number;
+  /** Mesas dibujadas. */
+  tableCount: number;
   seatedAreas: number;
   generalAreas: number;
   stageCount: number;
@@ -218,7 +237,7 @@ export function planInsights(plans: CroquisPlan[], tiers: CroquisTier[]): PlanIn
   const index = new Map(tiers.map(t => [t.id || '', t]));
 
   return plans.map(plan => {
-    let capacity = 0, sold = 0, held = 0, potential = 0, collected = 0, seatCount = 0;
+    let capacity = 0, sold = 0, held = 0, potential = 0, collected = 0, seatCount = 0, tableCount = 0;
     let seatedAreas = 0, generalAreas = 0;
 
     for (const area of plan.areas) {
@@ -228,11 +247,12 @@ export function planInsights(plans: CroquisPlan[], tiers: CroquisTier[]): PlanIn
       held += info.held;
       potential += info.potential;
       collected += info.collected;
-      if (area.kind === 'butacas') {
+      if (area.kind === 'general') {
+        generalAreas += 1;
+      } else {
         seatedAreas += 1;
         seatCount += areaSeats(area).length;
-      } else {
-        generalAreas += 1;
+        tableCount += (area.tables || []).length;
       }
     }
 
@@ -244,6 +264,7 @@ export function planInsights(plans: CroquisPlan[], tiers: CroquisTier[]): PlanIn
       potential,
       collected,
       seatCount,
+      tableCount,
       seatedAreas,
       generalAreas,
       stageCount: planStages(plan).length,
@@ -270,6 +291,8 @@ export interface CroquisOverview {
   generalCapacity: number;
   /** Butacas dibujadas en total, para saber qué tan pesado va el croquis. */
   seatCount: number;
+  /** Mesas dibujadas en total. */
+  tableCount: number;
   /** Precio promedio ponderado por lugares: el boleto "típico" del evento. */
   averagePrice: number;
   minPrice: number;
@@ -303,6 +326,7 @@ export function croquisOverview(plans: CroquisPlan[], tiers: CroquisTier[], serv
     seatedCapacity: byTier.reduce((s, t) => s + t.seated, 0),
     generalCapacity: byTier.reduce((s, t) => s + t.general, 0),
     seatCount: byPlan.reduce((s, p) => s + p.seatCount, 0),
+    tableCount: byPlan.reduce((s, p) => s + p.tableCount, 0),
     // Ponderado por lugares y no por categorías: un VIP de 50 butacas no debe
     // pesar lo mismo que una general de 5,000 al describir el boleto típico.
     averagePrice: capacity > 0 ? potential / capacity : 0,
@@ -347,31 +371,43 @@ export function selectionInsight(
 
   let total = 0, sold = 0, held = 0, blocked = 0, potential = 0;
 
+  const take = (area: CroquisArea, groupId: string, groupLabel: string, seats: { seat: CroquisSeat; tierId?: string }[]) => {
+    for (let i = 0; i < seats.length; i++) {
+      if (!selected.has(`${area.id}|${groupId}|${i}`)) continue;
+
+      const { seat, tierId } = seats[i];
+      const tier = index.get(tierId || '') || null;
+      const key = tier?.id || '';
+      const price = tier?.price || 0;
+
+      total += 1;
+      if (seat.status === 'vendido') sold += 1;
+      else if (seat.status === 'apartado') held += 1;
+      else if (seat.status === 'bloqueado') blocked += 1;
+      else potential += price;
+
+      if (!buckets.has(key)) buckets.set(key, { tier, count: 0, subtotal: 0 });
+      const bucket = buckets.get(key)!;
+      bucket.count += 1;
+      if (seat.status !== 'bloqueado') bucket.subtotal += price;
+
+      if (!areaNames.includes(area.name)) areaNames.push(area.name);
+      if (!rowLabels.includes(groupLabel)) rowLabels.push(groupLabel);
+    }
+  };
+
   for (const plan of plans) {
     for (const area of plan.areas) {
       for (const row of area.rows) {
-        for (let i = 0; i < row.seats.length; i++) {
-          if (!selected.has(`${area.id}|${row.id}|${i}`)) continue;
-
-          const seat = row.seats[i];
-          const tier = index.get(seat.tierId || area.tierId || '') || null;
-          const key = tier?.id || '';
-          const price = tier?.price || 0;
-
-          total += 1;
-          if (seat.status === 'vendido') sold += 1;
-          else if (seat.status === 'apartado') held += 1;
-          else if (seat.status === 'bloqueado') blocked += 1;
-          else potential += price;
-
-          if (!buckets.has(key)) buckets.set(key, { tier, count: 0, subtotal: 0 });
-          const bucket = buckets.get(key)!;
-          bucket.count += 1;
-          if (seat.status !== 'bloqueado') bucket.subtotal += price;
-
-          if (!areaNames.includes(area.name)) areaNames.push(area.name);
-          if (!rowLabels.includes(row.label)) rowLabels.push(row.label);
-        }
+        take(area, row.id, row.label, row.seats.map(seat => ({ seat, tierId: seat.tierId || area.tierId })));
+      }
+      for (const table of area.tables || []) {
+        take(
+          area,
+          table.id,
+          table.label,
+          table.seats.map(seat => ({ seat, tierId: seat.tierId || table.tierId || area.tierId }))
+        );
       }
     }
   }
