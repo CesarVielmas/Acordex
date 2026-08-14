@@ -1,6 +1,6 @@
 import { Component, input, output, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { EventItem } from '../../../core/models/event.models';
+import { MandatoryExpediente } from '../../../core/models/event.models';
 import { SessionService } from '../../../core/services/session.service';
 import {
   activeIntervention, canDecideProposals, fieldTasks, findFieldTask, isSystemActor,
@@ -165,7 +165,7 @@ export class MandatoryTaskTagComponent {
    * mapa dentro de `event-tasks`.
    */
   readonly ref = input.required<string>();
-  readonly event = input.required<EventItem>();
+  readonly event = input.required<MandatoryExpediente>();
 
   readonly intervene = output<ResolvedTask>();
   /** Ir a Tareas, que es donde se deciden las propuestas. */

@@ -126,8 +126,8 @@ export const EVENT_STATE_META: Record<EventState, EventStateMeta> = {
     icon: 'confirmation_number',
     phaseTitle: 'Fase 5: En Venta con Clientes y Asientos Asignados',
     shortLabel: 'En Venta',
-    meaning: 'Hay clientes con boleto y asiento. Precios y croquis quedan bloqueados: cambiarlos obliga a reembolsar.',
-    actionDescription: 'Vigilar ocupación por zona y ritmo de venta; cualquier corrección crítica pasa por reembolso al cliente',
+    meaning: 'Hay clientes con boleto y asiento. Se puede sustituir un grupo o abrir más lugares, pero lo vendido no se toca.',
+    actionDescription: 'Vigilar ocupación y ritmo de venta; sustituir lo que se caiga y abrir zonas si se agota, sin tocar lo que ya tiene dueño',
     textColor: 'text-emerald-400',
     borderLeftClass: '!border-l-emerald-400',
     badgeClass: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
@@ -238,6 +238,19 @@ export interface EventEditPolicy {
   tickets: boolean;
   /** Reporte de cierre. */
   closure: boolean;
+  /**
+   * En esta fase solo se puede **añadir y sustituir**, nunca quitar lo vendido.
+   *
+   * Es la regla que faltaba y que dejaba el sistema sin respuesta para las dos
+   * cosas más comunes del negocio: el grupo que se cae tres días antes y hay que
+   * sustituir, y la zona que se agota y hay que abrir otra. Cerrar el cartel y
+   * el boletaje obligaba a retirar de cartelera un evento que estaba vendiendo
+   * —matando la venta— para poder venderle a más gente, que es absurdo.
+   *
+   * Lo que no se toca es lo que alguien ya compró: un asiento vendido no se
+   * borra ni se le baja el aforo por debajo. Añadir no le hace daño a nadie.
+   */
+  additiveOnly?: boolean;
   /** Aviso que debe verse antes de tocar algo en esta fase, si aplica. */
   warning?: string;
 }
@@ -280,22 +293,24 @@ export function eventEditPolicy(state: EventState): EventEditPolicy {
       return {
         identity: false,
         publicProfile: true,
-        lineup: false,
+        lineup: true,
         production: true,
-        tickets: false,
+        tickets: true,
         closure: false,
-        warning: 'El evento ya es público en cartelera. Todo cambio en la ficha se refleja en tiempo real. Para cambios mayores, devuélvelo a En Revisión.'
+        additiveOnly: true,
+        warning: 'El evento ya es público: lo que cambies se ve al momento. Puedes sustituir un grupo o abrir más lugares, pero no quitar lo que ya se vendió. Para mover fecha o recinto, usa Posponer o devuélvelo a En Revisión.'
       };
 
     case 'En Venta':
       return {
         identity: false,
         publicProfile: false,
-        lineup: false,
-        production: false,
-        tickets: false,
+        lineup: true,
+        production: true,
+        tickets: true,
         closure: false,
-        warning: 'Hay boletos vendidos con clientes y asientos asignados. La información y boletaje están estrictamente bloqueados. Solo se gestionan tareas opcionales y avisos de postergación o cancelación.'
+        additiveOnly: true,
+        warning: 'Hay clientes con asiento asignado. Puedes sustituir un grupo que se cayó o abrir más lugares —eso no le quita nada a nadie—, pero no borrar butacas vendidas ni bajar el aforo por debajo de lo vendido. La fecha se mueve con Posponer.'
       };
 
     case 'Finalizada':

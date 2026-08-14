@@ -336,20 +336,11 @@ export interface GroupItem {
   dailyMetrics?: GroupDailyMetric[];
 }
 
-export interface PressEvent {
-  id: string;
-  title: string;
-  type: 'Firma de Autógrafos' | 'Rueda de Prensa';
-  date: string;
-  location: string;
-  groupName: string;
-  operatingExpenses: number;
-  mediaCount: number;
-  accreditedJournalists: string[];
-  pressKitUrl: string;
-  status: 'Programado' | 'En Curso' | 'Finalizado';
-  summary: string;
-}
+// El evento de prensa vivía aquí como una tarjeta de solo lectura: un arreglo de
+// nombres de medios, un gasto y tres etiquetas de estado sin flujo detrás. Se
+// rehízo entero en `press.models.ts` —con ciclo de vida, checklist, tareas y
+// acreditaciones reales— y de aquel modelo solo sobrevivió lo que tenía sentido:
+// el tipo de evento, el gasto operativo y el kit de prensa.
 
 export interface TaskItem {
   id: string;

@@ -10,7 +10,6 @@ import {
   PaymentStatus,
   GroupItem,
   EventItem,
-  PressEvent,
   TaskItem,
   ClientItem,
   AdminUserItem,
@@ -28,7 +27,19 @@ import {
   NewEventDraft,
   EventActivity
 } from '../models/event.models';
+import {
+  PressAccreditationRequest,
+  PressEventItem,
+  PressTimelineStep,
+  NewPressDraft,
+  emptyAccreditationConfig,
+  emptyStageSetup,
+  emptyTalentBrief
+} from '../models/press.models';
 import { distinguishTierColors, ensureCroquisPlans } from '../../features/events/croquis/croquis-metrics';
+import { INITIAL_PRESS_EVENTS } from './press-mock.data';
+import { canConvoke } from '../../features/press/press-completeness';
+import { accreditationStats, pressSpend } from '../../features/press/press-metrics';
 
 const ACTIVE_DISQUERA_ID = 'acordex-records';
 
@@ -3843,37 +3854,6 @@ export class MockDataService {
     }
   ];
 
-  private readonly INITIAL_PRESS: PressEvent[] = [
-    {
-      id: 'PRS-301',
-      title: 'Firma de Autógrafos y Lanzamiento de Disco',
-      type: 'Firma de Autógrafos',
-      date: '2026-08-01',
-      location: 'Plaza Fiesta San Agustín, Monterrey',
-      groupName: 'Los Elegantes del Norte',
-      operatingExpenses: 45000,
-      mediaCount: 18,
-      accreditedJournalists: ['El Norte (Sección Gente)', 'Televisa Monterrey', 'Multimedios Radio', 'La Mejor FM'],
-      pressKitUrl: 'presskit_elegantes_2026.pdf',
-      status: 'Programado',
-      summary: 'Firma masiva de 1,000 autógrafos con pase de fotografía exclusivo para fans con boleto de la Arena Monterrey.'
-    },
-    {
-      id: 'PRS-302',
-      title: 'Rueda de Prensa Conexión Guadalajara',
-      type: 'Rueda de Prensa',
-      date: '2026-08-10',
-      location: 'Hotel Fiesta Americana Minerva',
-      groupName: 'Grupo Dinastía Real',
-      operatingExpenses: 28000,
-      mediaCount: 24,
-      accreditedJournalists: ['Milenio Jalisco', 'El Informador', 'Exa FM Guadalajara', 'Bandamax'],
-      pressKitUrl: 'presskit_dinastias_gdl.pdf',
-      status: 'Programado',
-      summary: 'Conferencia para anunciar el lanzamiento del álbum en co-producción con Fonovisa y la gira 2026.'
-    }
-  ];
-
   private readonly INITIAL_TASKS: TaskItem[] = [
     {
       id: 'TSK-01',
@@ -4684,12 +4664,28 @@ export class MockDataService {
     this.storage.getItem('acordex_events_v5', this.INITIAL_EVENTS).map(ev => {
       const ticketTiers = distinguishTierColors(ev.ticketTiers || []);
       const normalizado = { ...ev, ticketTiers, croquisPlans: ensureCroquisPlans({ ...ev, ticketTiers }) };
-      return concludeIfPast(normalizado);
+      // El orden importa: primero sale a cartelera lo que tocaba publicar y
+      // después se concluye lo que ya se celebró. Al revés, un evento
+      // programado para una fecha pasada se quedaría atrapado en la fase previa.
+      return concludeIfPast(publishIfDue(normalizado));
     })
   );
 
-  readonly pressEvents = signal<PressEvent[]>(
-    this.storage.getItem('acordex_press', this.INITIAL_PRESS)
+  /**
+   * Clave versionada: el modelo de prensa cambió por completo. Antes era una
+   * tarjeta de solo lectura con un arreglo de nombres de medios; ahora es un
+   * expediente con ciclo de vida, checklist, tareas y acreditaciones reales. Lo
+   * guardado con la forma anterior no trae ninguno de los campos que ahora se
+   * necesitan, así que se parte de los mocks nuevos en vez de migrar un dato que
+   * no puede contestar las preguntas que ahora se le hacen.
+   *
+   * El orden de las transiciones importa y es el mismo que en Eventos: primero
+   * sale la convocatoria programada y después se concluye lo que ya se celebró.
+   * Al revés, un evento programado para una fecha pasada se quedaría atrapado.
+   */
+  readonly pressEvents = signal<PressEventItem[]>(
+    this.storage.getItem<PressEventItem[]>('acordex_press_v2', INITIAL_PRESS_EVENTS)
+      .map(ev => concludePressIfPast(convokeIfDue(ev)))
   );
 
   readonly tasks = signal<TaskItem[]>(
@@ -5554,6 +5550,7 @@ export class MockDataService {
   addEvent(draft: NewEventDraft): void {
     const created: EventItem = {
       id: `EVT-${Math.floor(100 + Math.random() * 900)}`,
+      kind: 'evento',
       title: draft.title,
       date: draft.date,
       location: draft.location,
@@ -5592,6 +5589,424 @@ export class MockDataService {
 
     this.commitEvents([created, ...this.events()]);
     this.addAudit('Nuevo Evento', 'Eventos', `Registró el evento ${created.title}`);
+  }
+
+  // --- CICLO DE VIDA DE FIRMAS Y RUEDAS DE PRENSA ---
+
+  private commitPress(updated: PressEventItem[]): void {
+    this.pressEvents.set(updated);
+    this.storage.setItem('acordex_press_v2', updated);
+  }
+
+  pressEventById(id: string): PressEventItem | undefined {
+    return this.pressEvents().find(p => p.id === id);
+  }
+
+  private patchPress(id: string, patch: (ev: PressEventItem) => PressEventItem): void {
+    this.commitPress(this.pressEvents().map(ev => (ev.id === id ? patch(ev) : ev)));
+  }
+
+  /** Agrega un hito a la línea de tiempo del evento de prensa. */
+  private appendPressTimeline(
+    ev: PressEventItem,
+    step: Omit<PressTimelineStep, 'id' | 'completedAt' | 'actorName'>
+  ): PressEventItem {
+    const entry: PressTimelineStep = {
+      ...step,
+      id: `tl-${ev.id}-${(ev.timeline?.length || 0) + 1}`,
+      completedAt: this.nowStamp(),
+      actorName: this.currentActorName()
+    };
+    return { ...ev, timeline: [...(ev.timeline || []), entry] };
+  }
+
+  /**
+   * Guarda una edición del expediente de prensa.
+   *
+   * Igual que en Eventos: la pestaña arma el objeto ya modificado y lo manda
+   * entero en vez de que el store tenga un método por campo. La reconciliación de
+   * tareas es literalmente la misma función —`reconcileTasks` no sabe ni necesita
+   * saber qué clase de expediente le llega— así que un punto obligatorio de
+   * prensa se cierra y se reabre solo, exactamente igual que uno de boletaje.
+   */
+  updatePressDetails(pressId: string, updates: Partial<PressEventItem>): void {
+    const before = this.pressEventById(pressId);
+    this.patchPress(pressId, ev => ({ ...ev, ...updates }));
+    const after = this.pressEventById(pressId);
+
+    if (before && after) {
+      const recon = reconcileTasks(before, after, this.session.actor());
+      if (recon) {
+        this.patchPress(pressId, ev => ({
+          ...ev,
+          tasks: recon.tasks,
+          activity: [...(recon.activity || []), ...(ev.activity || [])]
+        }));
+      }
+    }
+
+    this.addAudit('Edición de Prensa', 'Firmas & Prensa', `Actualizó el expediente ${pressId}`);
+  }
+
+  /**
+   * Manda el borrador a revisión.
+   *
+   * No comprueba nada a propósito: mandar a revisar es reversible y es
+   * exactamente para lo que sirve la revisión. Lo que sí se frena es convocar,
+   * que es lo irreversible hacia el público.
+   */
+  submitPressForReview(pressId: string, note?: string): void {
+    this.patchPress(pressId, ev => {
+      const sentAt = this.nowStamp();
+      const conSalidas: PressEventItem = {
+        ...ev,
+        state: 'En Revisión',
+        managerAgreements: ev.managerAgreements?.map(a =>
+          a.status === 'Sin Enviar' ? { ...a, status: 'Pendiente' as const, invitedAt: a.invitedAt || sentAt } : a),
+        productionResponsibilities: ev.productionResponsibilities?.map(r =>
+          r.status === 'Sin Enviar' ? { ...r, status: 'Pendiente' as const, assignedAt: r.assignedAt || sentAt } : r),
+        tasks: ev.tasks?.map(t =>
+          t.status === 'sin-enviar' ? { ...t, status: 'asignada' as const, assignedAt: t.assignedAt || sentAt } : t)
+      };
+
+      return this.appendPressTimeline(conSalidas, {
+        phaseNumber: 2,
+        state: 'En Revisión',
+        phaseName: 'Revisión del Expediente',
+        summaryNote: note?.trim()
+          || 'Expediente enviado a revisión: se completa lo que falte y se contesta cada solicitud pendiente.'
+      });
+    });
+
+    this.addAudit('Envío a Revisión', 'Firmas & Prensa', `Envió el evento de prensa ${pressId} a revisión`);
+  }
+
+  /**
+   * Convoca el evento: lo publica en el portal y abre la acreditación.
+   *
+   * Es el punto de no retorno del apartado, así que se comprueba aquí y no solo
+   * en el botón: a partir de este momento hay medios ajenos mirando la ficha y
+   * mandando solicitudes. Programarla para más tarde deja el expediente en
+   * revisión y la saca `convokeIfDue` al llegar la fecha.
+   */
+  convokePress(pressId: string, scheduledAt?: string): void {
+    const target = this.pressEventById(pressId);
+    if (!target) return;
+
+    const check = canConvoke(target);
+    if (!check.can) {
+      this.addAudit('Convocatoria Bloqueada', 'Firmas & Prensa', `${pressId}: ${check.reason}`);
+      return;
+    }
+
+    const inmediata = !scheduledAt;
+
+    this.patchPress(pressId, ev => {
+      const updated: PressEventItem = {
+        ...ev,
+        state: inmediata ? 'Convocado' : ev.state,
+        convocation: {
+          ...(ev.convocation || {}),
+          scheduledAt: inmediata ? undefined : scheduledAt,
+          convokedAt: inmediata ? this.nowStamp() : undefined,
+          convokedBy: inmediata ? this.currentActorName() : undefined,
+          publicUrl: inmediata ? `/events/firma-prensa?id=${ev.id}` : ev.convocation?.publicUrl,
+          authorizedBy: this.currentActorName()
+        }
+      };
+
+      return this.appendPressTimeline(updated, {
+        phaseNumber: 3,
+        state: inmediata ? 'Convocado' : 'En Revisión',
+        phaseName: inmediata ? 'Convocatoria & Acreditación Abierta' : 'Convocatoria Programada',
+        summaryNote: inmediata
+          ? 'El evento salió al portal y el registro de acreditaciones quedó abierto.'
+          : `Convocatoria programada para ${scheduledAt}. El evento sigue privado hasta esa fecha.`,
+        snapshot: { requestsCount: (ev.accreditationRequests || []).length }
+      });
+    });
+
+    this.addAudit(
+      inmediata ? 'Convocatoria de Prensa' : 'Programación de Convocatoria',
+      'Firmas & Prensa',
+      inmediata ? `Convocó el evento ${pressId}` : `Programó la convocatoria de ${pressId} para ${scheduledAt}`
+    );
+  }
+
+  /** Retira el evento del portal para corregirlo a puerta cerrada. */
+  returnPressToReview(pressId: string, reason: string): void {
+    this.patchPress(pressId, ev => {
+      const desde = ev.state;
+      return this.appendPressTimeline({ ...ev, state: 'En Revisión' }, {
+        phaseNumber: 2,
+        state: 'En Revisión',
+        phaseName: 'Retiro a Revisión',
+        summaryNote: `Retirado de ${desde} a En Revisión: ${reason}`
+      });
+    });
+
+    this.addAudit('Retiro a Revisión', 'Firmas & Prensa', `Retiró ${pressId} del portal: ${reason}`);
+  }
+
+  /**
+   * Mueve la fecha del evento.
+   *
+   * Las acreditaciones ya emitidas siguen valiendo: nadie pagó nada y el gafete
+   * es el mismo. Lo que cambia es cuándo se usa, y por eso el aviso a los medios
+   * es obligatorio —un medio que apartó su mañana merece enterarse antes de
+   * presentarse a un recinto vacío—.
+   */
+  postponePress(
+    pressId: string,
+    newDate: string,
+    reason: string,
+    mediaNotice?: string,
+    videoUrl?: string,
+    flyerUrl?: string
+  ): void {
+    this.patchPress(pressId, ev => {
+      const anterior = ev.date;
+      const postponement = {
+        id: `post-${Date.now()}`,
+        previousDate: anterior,
+        newDate,
+        reason,
+        clientNotice: mediaNotice
+          || `Aviso a los medios acreditados: el evento se reprogramó del ${anterior} al ${newDate}. `
+            + 'Tu gafete y tus zonas de acceso siguen siendo válidos para la nueva fecha.',
+        videoUrl,
+        flyerUrl,
+        postponedAt: this.nowStamp(),
+        postponedBy: this.currentActorName()
+      };
+
+      const updated: PressEventItem = {
+        ...ev,
+        date: newDate,
+        state: 'Pospuesto',
+        activePostponement: postponement,
+        postponementHistory: [postponement, ...(ev.postponementHistory || [])]
+      };
+
+      return this.appendPressTimeline(updated, {
+        phaseNumber: 3,
+        state: 'Pospuesto',
+        phaseName: 'Postergación de Fecha',
+        summaryNote: `Reprogramado del ${anterior} al ${newDate}. Motivo: ${reason}. `
+          + `Se avisó a ${(ev.accreditationRequests || []).filter(r => r.status === 'approved').length} medio(s) acreditado(s).`
+      });
+    });
+
+    this.addAudit('Postergación de Prensa', 'Firmas & Prensa', `Pospuso ${pressId} al ${newDate}: ${reason}`);
+  }
+
+  /** Devuelve un evento pospuesto al portal con su nueva fecha. */
+  reconvokePress(pressId: string): void {
+    this.patchPress(pressId, ev => this.appendPressTimeline({
+      ...ev,
+      state: 'Convocado',
+      convocation: { ...(ev.convocation || {}), convokedAt: this.nowStamp(), convokedBy: this.currentActorName() }
+    }, {
+      phaseNumber: 3,
+      state: 'Convocado',
+      phaseName: 'Reconvocatoria',
+      summaryNote: `El evento vuelve al portal con la fecha nueva (${ev.date}).`
+    }));
+
+    this.addAudit('Reconvocatoria', 'Firmas & Prensa', `Volvió a convocar ${pressId}`);
+  }
+
+  /**
+   * Abre el expediente de cierre.
+   *
+   * La asistencia arranca contada de los check-in y el gasto del desglose de
+   * producción, no en blanco: son los dos únicos números que el sistema ya sabe,
+   * y pedirlos otra vez a mano es cómo se acaban capturando cifras que no cuadran
+   * con lo que dice el propio expediente.
+   */
+  finishPress(pressId: string): void {
+    this.patchPress(pressId, ev => {
+      const stats = accreditationStats(ev);
+      const gasto = pressSpend(ev);
+
+      const updated: PressEventItem = {
+        ...ev,
+        state: 'Realizado',
+        closure: {
+          attendedCount: ev.closure?.attendedCount ?? stats.attended,
+          publishedPieces: ev.closure?.publishedPieces,
+          estimatedReach: ev.closure?.estimatedReach,
+          photosUploaded: ev.closure?.photosUploaded
+            ?? (ev.evidenceMedia || []).filter(m => m.type === 'photo').length,
+          finalSpend: ev.closure?.finalSpend ?? gasto,
+          incidents: ev.closure?.incidents || [],
+          summary: ev.closure?.summary,
+          closedAt: this.nowStamp(),
+          closedBy: this.currentActorName()
+        }
+      };
+
+      return this.appendPressTimeline(updated, {
+        phaseNumber: 4,
+        state: 'Realizado',
+        phaseName: 'Evento Realizado',
+        summaryNote: 'El evento concluyó. Toca marcar quién asistió de verdad y capturar la cobertura publicada.',
+        snapshot: {
+          requestsCount: stats.total,
+          approvedCount: stats.approved,
+          attendedCount: stats.attended,
+          spend: gasto
+        }
+      });
+    });
+
+    this.addAudit('Cierre de Prensa', 'Firmas & Prensa', `Abrió el cierre del evento ${pressId}`);
+  }
+
+  sealPressClosure(pressId: string): void {
+    this.patchPress(pressId, ev => {
+      const updated: PressEventItem = {
+        ...ev,
+        state: 'Cerrado',
+        closure: {
+          ...(ev.closure || {}),
+          closedAt: ev.closure?.closedAt || this.nowStamp(),
+          closedBy: ev.closure?.closedBy || this.currentActorName(),
+          isSealed: true,
+          sealedAt: this.nowStamp(),
+          sealedBy: this.currentActorName()
+        }
+      };
+
+      return this.appendPressTimeline(updated, {
+        phaseNumber: 5,
+        state: 'Cerrado',
+        phaseName: 'Expediente Sellado',
+        summaryNote: 'Expediente cerrado y sellado. Solo queda la consulta histórica.',
+        snapshot: {
+          attendedCount: ev.closure?.attendedCount,
+          spend: ev.closure?.finalSpend ?? pressSpend(ev)
+        }
+      });
+    });
+
+    this.addAudit('Sellado de Prensa', 'Firmas & Prensa', `Selló el expediente ${pressId}`);
+  }
+
+  /**
+   * Cancela el evento de prensa.
+   *
+   * No arrastra reembolsos —nunca se cobró— pero sí medios que apartaron su
+   * agenda, y por eso el motivo es obligatorio y sale en el aviso. Quién puede
+   * cancelar se comprueba en la pantalla contra la sesión, no aquí: el store no
+   * sabe quién está mirando.
+   */
+  cancelPress(pressId: string, reason: string): void {
+    this.patchPress(pressId, ev => {
+      const acreditados = (ev.accreditationRequests || []).filter(r => r.status === 'approved').length;
+      const updated: PressEventItem = {
+        ...ev,
+        state: 'Cancelado',
+        cancellation: {
+          reason,
+          at: this.nowStamp(),
+          by: this.currentActorName(),
+          cancelledFromState: ev.state as never,
+          refundsIssued: 0,
+          refundedAmount: 0,
+          clientMessage: `Aviso oficial: el evento de prensa fue cancelado. Motivo: ${reason}. `
+            + 'No hubo ningún cobro asociado; las acreditaciones emitidas quedan sin efecto.'
+        }
+      };
+
+      return this.appendPressTimeline(updated, {
+        phaseNumber: 0,
+        state: 'Cancelado',
+        phaseName: 'Cancelación del Evento',
+        summaryNote: `Cancelado desde ${ev.state}: ${reason}. Se avisó a ${acreditados} medio(s) acreditado(s).`,
+        snapshot: { approvedCount: acreditados }
+      });
+    });
+
+    this.addAudit('Cancelación de Prensa', 'Firmas & Prensa', `Canceló ${pressId}: ${reason}`);
+  }
+
+  /** Fotografías y video del evento de prensa. */
+  uploadPressEvidence(pressId: string, type: 'photo' | 'video', caption: string, url: string, stage?: string): void {
+    const currentRole = this.roleService.activeRole();
+    const uploaderName = currentRole === 'usuario' ? 'Jorge Staff Ruiz' : 'Administrador Acordex';
+
+    const evidence: EventEvidence = {
+      id: `evm-${Date.now()}`,
+      type,
+      url: url || 'https://images.unsplash.com/photo-1459749411177-042180ce673c?w=600&auto=format&fit=crop&q=80',
+      caption,
+      uploaderName,
+      uploaderRole: currentRole,
+      uploadedAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
+      stage: (stage as EventEvidence['stage']) || 'Otro'
+    };
+
+    this.patchPress(pressId, ev => ({ ...ev, evidenceMedia: [evidence, ...(ev.evidenceMedia || [])] }));
+    this.addAudit('Carga de Material', 'Firmas & Prensa', `Subió material del evento ${pressId}`);
+  }
+
+  /**
+   * Alta de una firma o rueda de prensa. Igual que en Eventos, solo pide lo
+   * mínimo para identificarla: todo lo demás se captura en el expediente, que es
+   * lo que significa que nazca en 'Borrador'.
+   */
+  addPressEvent(draft: NewPressDraft): void {
+    const created: PressEventItem = {
+      id: `PRS-${Math.floor(100 + Math.random() * 900)}`,
+      kind: 'prensa',
+      title: draft.title,
+      pressType: draft.pressType,
+      date: draft.date,
+      startTime: draft.startTime,
+      location: draft.location,
+      venue: draft.venue,
+      venueAddress: draft.venueAddress,
+      groupName: draft.groupName || 'Por definir',
+      disqueraId: ACTIVE_DISQUERA_ID,
+      state: 'Borrador',
+      flyerUrl: draft.flyerUrl || '',
+      description: draft.description,
+      createdBy: this.currentActorName(),
+      createdAt: this.nowStamp(),
+      ownerManagerName: this.session.actor().managerName || this.currentActorName(),
+      lineup: [],
+      accreditation: { ...emptyAccreditationConfig(), capacity: draft.capacity },
+      accreditationRequests: [],
+      stage: emptyStageSetup(),
+      talent: emptyTalentBrief(),
+      timeline: [
+        {
+          id: 'tl-new-1',
+          phaseNumber: 1,
+          state: 'Borrador',
+          phaseName: 'Armado del Evento',
+          completedAt: this.nowStamp(),
+          actorName: this.currentActorName(),
+          summaryNote: `Se creó el borrador de la ${draft.pressType.toLowerCase()}.`
+        }
+      ],
+      evidenceMedia: []
+    };
+
+    this.commitPress([created, ...this.pressEvents()]);
+    this.addAudit('Nuevo Evento de Prensa', 'Firmas & Prensa', `Registró ${created.title}`);
+  }
+
+  /** Aplica un parche que ya trae resuelta la operación de acreditación. */
+  applyAccreditationPatch(pressId: string, patch: Partial<PressEventItem>): void {
+    if (!Object.keys(patch).length) return;
+    this.patchPress(pressId, ev => ({ ...ev, ...patch }));
+
+    const requests = patch.accreditationRequests as PressAccreditationRequest[] | undefined;
+    if (requests) {
+      this.addAudit('Acreditaciones', 'Firmas & Prensa', `Actualizó las acreditaciones de ${pressId}`);
+    }
   }
 
   // --- TASKS OPERATIONS ---
@@ -6021,6 +6436,139 @@ export function eventDayHasPassed(date: string | undefined, today = new Date()):
   const dia = new Date(date + 'T00:00:00');
   if (isNaN(dia.getTime())) return false;
   // Medianoche del día siguiente al evento: hasta entonces el evento sigue vivo.
+  const corte = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate() + 1);
+  return today.getTime() >= corte.getTime();
+}
+
+/**
+ * Saca a cartelera el evento cuya fecha de publicación programada ya llegó.
+ *
+ * La programación existía a medias: se guardaba la fecha, se escribía en la
+ * bitácora que la publicación era "automática" y ahí se acababa —nadie la
+ * publicaba nunca—. Un evento agendado se quedaba invisible al público para
+ * siempre, y lo peor es que parecía correcto: el expediente decía que estaba
+ * programado y el encargado no tenía motivo para volver a mirarlo.
+ */
+export function publishIfDue(e: EventItem, now = new Date()): EventItem {
+  if (e.state !== 'Próximo a Publicar') return e;
+
+  const cuando = e.publication?.scheduledAt;
+  if (!cuando) return e;
+
+  const fecha = new Date(cuando);
+  if (isNaN(fecha.getTime()) || now.getTime() < fecha.getTime()) return e;
+
+  return {
+    ...e,
+    state: 'Publicado',
+    publication: {
+      ...(e.publication || {}),
+      publishedAt: cuando,
+      publishedBy: e.publication?.authorizedBy || e.ownerManagerName || e.createdBy,
+      publicUrl: e.publication?.publicUrl || `/cartelera/${e.id}`
+    },
+    timeline: [
+      ...(e.timeline || []),
+      {
+        phaseNumber: 4,
+        state: 'Publicado' as const,
+        phaseName: 'Publicación Automática',
+        summaryNote: `Salió a cartelera solo, en la fecha programada (${cuando}).`,
+        at: cuando
+      }
+    ]
+  } as EventItem;
+}
+
+/**
+ * Da por realizado el evento de prensa cuyo día ya pasó.
+ *
+ * Nadie "realiza" una rueda de prensa pulsando un botón: ocurre porque llegó la
+ * fecha. Se cuenta desde el día siguiente, igual que en Eventos: un evento del 2
+ * sigue vivo todo el 2 y amanece 'Realizado' el 3.
+ */
+export function concludePressIfPast(e: PressEventItem, today = new Date()): PressEventItem {
+  if (e.state !== 'Convocado') return e;
+  if (!pressDayHasPassed(e.date, today)) return e;
+
+  return {
+    ...e,
+    state: 'Realizado',
+    timeline: [
+      ...(e.timeline || []),
+      {
+        id: `tl-${e.id}-auto-fin`,
+        phaseNumber: 4,
+        state: 'Realizado',
+        phaseName: 'Evento Realizado',
+        completedAt: new Date().toISOString().slice(0, 16),
+        actorName: 'sistema',
+        summaryNote: `El evento se celebró el ${e.date} y pasó a Realizado al día siguiente. `
+          + 'Falta marcar quién asistió de verdad y capturar la cobertura publicada.'
+      }
+    ]
+  };
+}
+
+/**
+ * Saca al portal el evento cuya convocatoria programada ya llegó.
+ *
+ * La transición se ejecuta de verdad, y esa es toda la razón de que exista: la
+ * versión anterior de esta idea en Eventos guardaba la fecha, escribía en la
+ * bitácora que la publicación era "automática" y ahí se acababa —nadie publicaba
+ * nunca—. Aquí hay un agravante: convocar abre la acreditación al público, y si
+ * en el rato entre programarla y su fecha alguien vació un dato obligatorio o
+ * llegó una solicitud sin contestar, sacarla igual publicaría una ficha rota. Por
+ * eso se vuelve a comprobar; y cuando no pasa, **se deja escrito por qué** en vez
+ * de callarse: una convocatoria que no salió y no avisó es igual de invisible que
+ * una que nunca se ejecutó.
+ */
+export function convokeIfDue(e: PressEventItem, now = new Date()): PressEventItem {
+  const cuando = e.convocation?.scheduledAt;
+  if (e.state !== 'En Revisión' || !cuando) return e;
+
+  const fecha = new Date(cuando);
+  if (isNaN(fecha.getTime()) || now.getTime() < fecha.getTime()) return e;
+
+  const check = canConvoke(e);
+  if (!check.can) {
+    return {
+      ...e,
+      convocation: { ...(e.convocation || {}), blockedReason: check.reason, blockedAt: now.toISOString().slice(0, 16) }
+    };
+  }
+
+  return {
+    ...e,
+    state: 'Convocado',
+    convocation: {
+      ...(e.convocation || {}),
+      blockedReason: undefined,
+      blockedAt: undefined,
+      convokedAt: cuando,
+      convokedBy: e.convocation?.authorizedBy || e.ownerManagerName || e.createdBy,
+      publicUrl: e.convocation?.publicUrl || `/events/firma-prensa?id=${e.id}`
+    },
+    timeline: [
+      ...(e.timeline || []),
+      {
+        id: `tl-${e.id}-auto-conv`,
+        phaseNumber: 3,
+        state: 'Convocado',
+        phaseName: 'Convocatoria Automática',
+        completedAt: cuando,
+        actorName: 'sistema',
+        summaryNote: `Salió al portal solo, en la fecha programada (${cuando}). El registro de acreditaciones quedó abierto.`
+      }
+    ]
+  };
+}
+
+/** Si ya amaneció el día siguiente al del evento de prensa. */
+function pressDayHasPassed(date: string | undefined, today = new Date()): boolean {
+  if (!date) return false;
+  const dia = new Date(date + 'T00:00:00');
+  if (isNaN(dia.getTime())) return false;
   const corte = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate() + 1);
   return today.getTime() >= corte.getTime();
 }

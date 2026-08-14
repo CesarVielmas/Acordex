@@ -1,8 +1,27 @@
 import {
-  ActorRef, EventActivity, EventFieldProposal, EventItem, EventProductionItem, EventTask
+  ActorRef, EventActivity, EventFieldProposal, EventItem, EventProductionItem,
+  EventTask, MandatoryExpediente
 } from '../../core/models/event.models';
+import { CompletenessItem, CompletenessReport } from '../../core/models/completeness.models';
+import { PressEventItem } from '../../core/models/press.models';
 import { EventDetailTab } from './components/event-detail-modal.component';
-import { eventCompleteness, CompletenessItem } from './event-completeness';
+import { eventCompleteness } from './event-completeness';
+import { pressCompleteness, PRESS_FIELD_TO_CHECKLIST } from '../press/press-completeness';
+
+/**
+ * Qué checklist mide este expediente.
+ *
+ * Una firma de prensa y un evento con boletaje comparten toda esta maquinaria
+ * —quién responde por un dato, quién puede escribirlo, qué se propone y quién
+ * decide— y solo se distinguen en la lista de puntos que hay que cumplir. Este
+ * es el único sitio donde esa diferencia existe; todo lo demás de este archivo
+ * no sabe ni necesita saber de qué clase de expediente se trata.
+ */
+function expedienteCompleteness(e: MandatoryExpediente): CompletenessReport {
+  return e.kind === 'prensa'
+    ? pressCompleteness(e as unknown as PressEventItem)
+    : eventCompleteness(e as unknown as EventItem);
+}
 
 export interface ResolvedTask extends EventTask {
   /** Estado real. En las de sistema lo manda el checklist, siempre. */
@@ -52,8 +71,8 @@ export function taskProductionItems(t: EventTask, prodItems: EventProductionItem
  * Resuelve las tareas del evento cruzando las guardadas con los puntos vivos del
  * checklist y colgándoles su desglose de producción.
  */
-export function resolveTasks(e: EventItem): ResolvedTask[] {
-  const report = eventCompleteness(e);
+export function resolveTasks(e: MandatoryExpediente): ResolvedTask[] {
+  const report = expedienteCompleteness(e);
   const checklistItems = report.items;
   const storedTasks = e.tasks || [];
   const prodItems = e.productionItems || [];
@@ -176,6 +195,11 @@ export function resolveTasks(e: EventItem): ResolvedTask[] {
  * El mapa vive aquí una sola vez y los ids de la derecha son los de verdad.
  */
 const FIELD_TO_CHECKLIST: Record<string, string[]> = {
+  // Los alias del expediente de prensa los declara Prensa —este archivo no tiene
+  // por qué saber qué es un backdrop— pero se enchufan aquí para que en tiempo de
+  // ejecución siga habiendo un solo mapa, que es la regla que importa.
+  ...PRESS_FIELD_TO_CHECKLIST,
+
   // Identidad: la caja del nombre y el recinto responde por todo lo suyo.
   identidad: ['identidad', 'descripcion', 'direccion', 'flyer'],
 
@@ -235,7 +259,7 @@ export function fieldTasks(tasks: ResolvedTask[], ref: string): ResolvedTask[] {
 }
 
 /** Quién responde por este punto: el encargado, o el organizador si no se repartió. */
-export function taskOwner(event: EventItem, task?: EventTask): string {
+export function taskOwner(event: MandatoryExpediente, task?: EventTask): string {
   const owner = task?.assignedManager || event.ownerManagerName || event.createdBy || '';
   // El sistema detecta los datos obligatorios, no responde por ellos. Un punto
   // "a cargo del sistema" no tiene a quién ir a buscar cuando falta, así que
@@ -270,7 +294,7 @@ export function activeIntervention(task?: EventTask): ActorRef | undefined {
  * y el otro lo llenó de su puño. Un tercero que quiera cambiarlo les debe
  * explicación a ambos, y a los dos les llega la decisión.
  */
-export function approversOf(event: EventItem, task?: EventTask): string[] {
+export function approversOf(event: MandatoryExpediente, task?: EventTask): string[] {
   const owner = taskOwner(event, task);
   const intervened = activeIntervention(task)?.managerName;
   const list = [owner];
@@ -279,7 +303,7 @@ export function approversOf(event: EventItem, task?: EventTask): string[] {
 }
 
 /** Si este actor es el encargado del punto. */
-export function ownsField(event: EventItem, task: ResolvedTask | undefined, actor: ActorRef): boolean {
+export function ownsField(event: MandatoryExpediente, task: ResolvedTask | undefined, actor: ActorRef): boolean {
   const owner = taskOwner(event, task);
   return !owner || owner === actor.managerName;
 }
@@ -297,7 +321,7 @@ export function ownsField(event: EventItem, task: ResolvedTask | undefined, acto
  *     primer llenado nunca compite contra nada: no hay un dato bueno que
  *     proteger, hay un hueco que impide publicar.
  */
-export function canEditDirectly(event: EventItem, task: ResolvedTask | undefined, actor: ActorRef): boolean {
+export function canEditDirectly(event: MandatoryExpediente, task: ResolvedTask | undefined, actor: ActorRef): boolean {
   if (!task) return true;
   if (ownsField(event, task, actor)) return true;
 
@@ -314,24 +338,24 @@ export function canEditDirectly(event: EventItem, task: ResolvedTask | undefined
  * cerrada. Sin ella, meterse en el dato de otra disquera sería tan fácil como
  * un despiste, y el aviso es justamente lo que convierte el despiste en decisión.
  */
-export function needsIntervention(event: EventItem, task: ResolvedTask | undefined, actor: ActorRef): boolean {
+export function needsIntervention(event: MandatoryExpediente, task: ResolvedTask | undefined, actor: ActorRef): boolean {
   if (!task || task.done) return false;
   if (ownsField(event, task, actor)) return false;
   return activeIntervention(task)?.managerName !== actor.managerName;
 }
 
 /** Si este actor decide sobre lo que le proponen a este punto. */
-export function canDecideProposals(event: EventItem, task: ResolvedTask | undefined, actor: ActorRef): boolean {
+export function canDecideProposals(event: MandatoryExpediente, task: ResolvedTask | undefined, actor: ActorRef): boolean {
   return approversOf(event, task).includes(actor.managerName);
 }
 
-export interface InterceptSaveResult {
+export interface InterceptSaveResult<T extends MandatoryExpediente = EventItem> {
   /** El parche se aplicó al expediente tal cual. */
   applied: boolean;
   /** Se guardó como propuesta a la espera del encargado. */
   proposed: boolean;
   message: string;
-  patch: Partial<EventItem>;
+  patch: Partial<T>;
 }
 
 /**
@@ -354,15 +378,15 @@ export interface InterceptSaveResult {
  * Lo que nunca pasa es que un tercero sobrescriba un dato bueno sin que se entere
  * quien respondía por él.
  */
-export function interceptFieldSave(
-  event: EventItem,
+export function interceptFieldSave<T extends MandatoryExpediente>(
+  event: T,
   ref: string,
   fieldKey: string,
   fieldLabel: string,
   actor: ActorRef,
-  patch: Partial<EventItem>,
+  patch: Partial<T>,
   labels?: { proposed?: string; previous?: string }
-): InterceptSaveResult {
+): InterceptSaveResult<T> {
   const task = findFieldTask(resolveTasks(event), ref);
   const owner = taskOwner(event, task);
   const now = new Date().toISOString().slice(0, 16);
@@ -391,7 +415,7 @@ export function interceptFieldSave(
       applied: true,
       proposed: false,
       message: `Retomaste tu punto. ${intervened.name} vuelve a necesitar tu aprobación para cambiarlo.`,
-      patch: { ...patch, tasks }
+      patch: { ...patch, tasks } as Partial<T>
     };
   }
 
@@ -408,7 +432,7 @@ export function interceptFieldSave(
       applied: true,
       proposed: false,
       message: `Capturaste un dato que responde ${owner}. Queda registrado que interviniste tú.`,
-      patch: { ...patch, tasks }
+      patch: { ...patch, tasks } as Partial<T>
     };
   }
 
@@ -419,7 +443,7 @@ export function interceptFieldSave(
       applied: true,
       proposed: false,
       message: 'Corregiste el dato que tú mismo capturaste.',
-      patch: { ...patch, tasks }
+      patch: { ...patch, tasks } as Partial<T>
     };
   }
 
@@ -457,7 +481,7 @@ export function interceptFieldSave(
       + (quienes.length > 1
         ? `Tienen que aceptarla ${quienes.join(' y ')}.`
         : `${quienes[0] || owner} decide si se aplica.`),
-    patch: { tasks }
+    patch: { tasks } as Partial<T>
   };
 }
 
@@ -480,7 +504,9 @@ export function proposalsForField(task: EventTask | undefined, fieldKey: string)
  * encargado dijera que estaban mal, es que solo cabía una. Las de otros campos
  * de la misma tarea siguen vivas, porque nunca estuvieron en la disputa.
  */
-export function acceptProposal(event: EventItem, taskId: string, proposalId: string, actor: ActorRef): Partial<EventItem> {
+export function acceptProposal<T extends MandatoryExpediente>(
+  event: T, taskId: string, proposalId: string, actor: ActorRef
+): Partial<T> {
   const task = (event.tasks || []).find(t => t.id === taskId);
   const proposal = (task?.changeProposals || []).find(p => p.id === proposalId);
   if (!task || !proposal) return {};
@@ -502,12 +528,12 @@ export function acceptProposal(event: EventItem, taskId: string, proposalId: str
     };
   });
 
-  return { ...mergePatch(event, proposal.proposedChanges), tasks };
+  return { ...mergePatch(event, proposal.proposedChanges), tasks } as Partial<T>;
 }
 
-export function rejectProposal(
-  event: EventItem, taskId: string, proposalId: string, actor: ActorRef, reason?: string
-): Partial<EventItem> {
+export function rejectProposal<T extends MandatoryExpediente>(
+  event: T, taskId: string, proposalId: string, actor: ActorRef, reason?: string
+): Partial<T> {
   const now = new Date().toISOString().slice(0, 16);
   const tasks = (event.tasks || []).map(t => {
     if (t.id !== taskId) return t;
@@ -519,7 +545,7 @@ export function rejectProposal(
           : p)
     };
   });
-  return { tasks };
+  return { tasks } as Partial<T>;
 }
 
 /**
@@ -529,12 +555,14 @@ export function rejectProposal(
  * —que es lo que hacía antes— sellaba autoría y hora de un dato que todavía no
  * se había escrito. La tarea la cierra el checklist cuando el dato aparezca.
  */
-export function markIntervention(event: EventItem, task: ResolvedTask, actor: ActorRef): Partial<EventItem> {
+export function markIntervention<T extends MandatoryExpediente>(
+  event: T, task: ResolvedTask, actor: ActorRef
+): Partial<T> {
   return {
     tasks: upsertTask(event, task, t => ({
       ...t, intervenedBy: actor, intervenedAt: new Date().toISOString().slice(0, 16)
     }))
-  };
+  } as Partial<T>;
 }
 
 /**
@@ -544,7 +572,7 @@ export function markIntervention(event: EventItem, task: ResolvedTask, actor: Ac
  * algo con ellas, así que la primera propuesta sobre un punto que nadie había
  * tocado no tenía dónde escribirse y se perdía.
  */
-function upsertTask(event: EventItem, task: ResolvedTask, change: (t: EventTask) => EventTask): EventTask[] {
+function upsertTask(event: MandatoryExpediente, task: ResolvedTask, change: (t: EventTask) => EventTask): EventTask[] {
   const stored = event.tasks || [];
   const found = stored.some(t => t.id === task.id);
   if (found) return stored.map(t => (t.id === task.id ? change(t) : t));
@@ -595,7 +623,7 @@ export interface ManagerWorkload {
   items: number;
 }
 
-export function managerWorkloads(e: EventItem, tasks?: ResolvedTask[]): ManagerWorkload[] {
+export function managerWorkloads(e: MandatoryExpediente, tasks?: ResolvedTask[]): ManagerWorkload[] {
   const list = tasks || resolveTasks(e);
   const owner = e.ownerManagerName || e.createdBy || '';
   const prodItems = e.productionItems || [];
@@ -679,12 +707,12 @@ export function managerWorkloads(e: EventItem, tasks?: ResolvedTask[]): ManagerW
  * automáticamente las tareas de sistema.
  */
 export function reconcileTasks(
-  before: EventItem,
-  after: EventItem,
+  before: MandatoryExpediente,
+  after: MandatoryExpediente,
   actor: ActorRef
 ): { tasks: EventTask[]; activity: EventActivity[] } | null {
-  const beforeComp = eventCompleteness(before);
-  const afterComp = eventCompleteness(after);
+  const beforeComp = expedienteCompleteness(before);
+  const afterComp = expedienteCompleteness(after);
 
   const beforeMap = new Map(beforeComp.items.map(i => [i.id, i]));
   const afterMap = new Map(afterComp.items.map(i => [i.id, i]));
@@ -852,7 +880,7 @@ function narrowPatch(patch: Record<string, any>, fieldKey: string): Record<strin
  * asignarse encima. Se nota tarde y mal: el dato desaparece de la ficha pública
  * sin que nadie lo haya tocado.
  */
-function mergePatch(event: EventItem, patch: Record<string, any>): Record<string, any> {
+function mergePatch(event: MandatoryExpediente, patch: Record<string, any>): Record<string, any> {
   const out: Record<string, any> = { ...patch };
   for (const [key, value] of Object.entries(patch)) {
     const current = (event as Record<string, any>)[key];

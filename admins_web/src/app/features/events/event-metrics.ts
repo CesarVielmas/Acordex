@@ -9,6 +9,7 @@ import {
   EventProductionResponsibility,
   EventPublicProfile,
   EventReviewRound,
+  EventState,
   LineupEngagementKind,
   ProductionCategory,
   TicketTier,
@@ -657,4 +658,44 @@ export function dateTimeLabel(iso?: string): string {
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) +
     ', ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+// ─── El calendario contra el estado ───────────────────────────────────────────
+
+/**
+ * Si la venta anticipada ya cerró.
+ *
+ * `salesCloseDaysBefore` es un punto obligatorio del expediente y hasta ahora su
+ * valor solo servía para pintar una frase: nadie lo comparaba nunca con el
+ * calendario. Un evento con "la venta cierra 3 días antes" seguía figurando como
+ * si vendiera la víspera del show, y el encargado no tenía cómo saber que la
+ * taquilla en línea ya estaba muerta.
+ */
+export function salesAreClosed(e: EventItem, today = new Date()): boolean {
+  if (e.state !== 'Publicado' && e.state !== 'En Venta') return false;
+
+  const days = publicProfile(e).salesCloseDaysBefore;
+  if (days == null || !e.date) return false;
+
+  const corte = new Date(e.date + 'T00:00:00');
+  if (isNaN(corte.getTime())) return false;
+  corte.setDate(corte.getDate() - days);
+
+  return today.getTime() >= corte.getTime();
+}
+
+/**
+ * Un evento al que se le pasó la fecha sin llegar a publicarse.
+ *
+ * No se concluye solo —nunca ocurrió— ni se cancela —nadie lo decidió—, así que
+ * se queda flotando en su fase para siempre. Es la peor forma de perder un
+ * evento: no aparece en ninguna alarma porque técnicamente todo está en orden.
+ */
+export function isStaleUnpublished(e: EventItem, today = new Date()): boolean {
+  const vivos: EventState[] = ['Borrador', 'En Revisión', 'Próximo a Publicar'];
+  if (!vivos.includes(e.state) || !e.date) return false;
+
+  const dia = new Date(e.date + 'T00:00:00');
+  if (isNaN(dia.getTime())) return false;
+  return today.getTime() >= new Date(dia.getFullYear(), dia.getMonth(), dia.getDate() + 1).getTime();
 }

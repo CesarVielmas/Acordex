@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { isSystemActor as isSystem } from './event-tasks';
-import { ActorRef, EventFieldProposal, EventItem } from '../../core/models/event.models';
+import { ActorRef, EventFieldProposal, EventItem, MandatoryExpediente } from '../../core/models/event.models';
 import {
   acceptProposal, activeIntervention, approversOf, canDecideProposals, canEditDirectly,
   findFieldTask, interceptFieldSave, needsIntervention, proposalsForField, rejectProposal,
@@ -22,11 +22,11 @@ import {
  * tendría que recibirlo en cada llamada, que es justo la firma incómoda que hace
  * que la gente acabe copiando la función en vez de usarla.
  */
-export class MandatoryFields {
+export class MandatoryFields<T extends MandatoryExpediente = EventItem> {
   constructor(
-    private readonly event: () => EventItem,
+    private readonly event: () => T,
     private readonly actor: () => ActorRef,
-    private readonly emit: (patch: Partial<EventItem>) => void
+    private readonly emit: (patch: Partial<T>) => void
   ) {}
 
   /**
@@ -122,7 +122,7 @@ export class MandatoryFields {
    * a mano en sesenta llamadas del formulario, la primera que se desviara del
    * nombre real habría creado una propuesta que no compite con ninguna.
    */
-  save(ref: string, label: string, patch: Partial<EventItem>): void {
+  save(ref: string, label: string, patch: Partial<T>): void {
     const fieldKey = fieldKeyOf(patch);
     const result = interceptFieldSave(
       this.event(), ref, fieldKey, label, this.actor(), patch,

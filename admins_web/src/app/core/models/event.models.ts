@@ -20,7 +20,9 @@ export type {
 export type ActivityChannel =
   | 'evento' | 'cartelera' | 'cartel' | 'produccion' | 'boletaje'
   | 'croquis' | 'acuerdos' | 'tareas' | 'revision'
-  | 'venta' | 'cierre';
+  | 'venta' | 'cierre'
+  /** Aprobaciones, rechazos y revocaciones de prensa. */
+  | 'acreditaciones';
 
 export type ActivityKind =
   | 'creacion' | 'edicion' | 'alta' | 'baja'
@@ -54,7 +56,12 @@ export interface EventActivity {
 
 // ─── Tareas del Evento ────────────────────────────────────────────────────────
 
-export type CompletenessGroup = 'Identidad' | 'Cartelera Pública' | 'Cartel' | 'Producción' | 'Boletaje';
+// El vocabulario del checklist vive en `completeness.models` porque lo comparten
+// los eventos con boletaje y los de prensa. Estaba declarado aquí *y* en
+// `event-completeness`, con la copia de allá idéntica pero suelta: en cuanto una
+// de las dos ganara un grupo nuevo, las tareas de ese grupo saldrían sin etiqueta.
+export type { CompletenessGroup } from './completeness.models';
+import type { CompletenessGroup } from './completeness.models';
 
 export type EventTaskKind = 'sistema' | 'externa';
 
@@ -971,8 +978,43 @@ export interface EventCancellation {
 
 // ─── Evento ───────────────────────────────────────────────────────────────────
 
+/**
+ * Qué clase de expediente es.
+ *
+ * Un evento con boletaje y una firma de prensa comparten toda la maquinaria de
+ * puntos obligatorios, tareas, intervenciones y propuestas; lo único que cambia
+ * es la lista de puntos que se miden. Este discriminante es lo que deja que esa
+ * maquinaria sepa qué checklist aplicar sin que Prensa tenga que duplicarla.
+ *
+ * Es opcional porque los expedientes guardados antes de que Prensa existiera no
+ * lo traen, y todos ellos son eventos.
+ */
+export type ExpedienteKind = 'evento' | 'prensa';
+
+/**
+ * Lo que la maquinaria de puntos obligatorios necesita leer de un expediente.
+ *
+ * Ni `event-tasks` ni `MandatoryFields` ni el tag de la esquina miran el estado,
+ * el boletaje ni el cartel: solo necesitan saber de quién es el expediente, qué
+ * tareas tiene guardadas y qué gasto cuelga de ellas. Tipar esas funciones contra
+ * `EventItem` completo obligaba a Prensa a fingir que tenía croquis y categorías
+ * de boleto para poder usar exactamente la misma lógica.
+ */
+export interface MandatoryExpediente {
+  id: string;
+  kind?: ExpedienteKind;
+  createdBy: string;
+  createdAt: string;
+  ownerManagerName?: string;
+  tasks?: EventTask[];
+  productionItems?: EventProductionItem[];
+  publicProfile?: EventPublicProfile;
+}
+
 export interface EventItem {
   id: string;
+  /** Siempre 'evento'; se guarda explícito para no depender de la ausencia del campo. */
+  kind?: ExpedienteKind;
   title: string;
   /** Fecha del evento en ISO corto ('2026-08-15'). */
   date: string;

@@ -1824,6 +1824,22 @@ export class CroquisEditorComponent {
    */
   private removeSeats(refs: SeatRef[]): void {
     if (!refs.length) return;
+
+    // Un lugar vendido o apartado no se borra: hay alguien con ese asiento en la
+    // mano. Quitarlo del croquis no le devuelve el dinero ni le avisa; solo hace
+    // que el día del evento haya una persona de pie con un boleto que dice una
+    // butaca que ya no existe. Para deshacer una venta está la cancelación.
+    const protegidos = refs.filter(ref => this.seatIsSold(ref));
+    if (protegidos.length) {
+      this.flashReview(
+        `${protegidos.length} lugar(es) no se quitaron: están vendidos o apartados. `
+        + 'Un asiento con dueño solo se libera cancelando su compra.'
+      );
+    }
+
+    refs = refs.filter(ref => !this.seatIsSold(ref));
+    if (!refs.length) return;
+
     const byGroup = this.groupRefs(refs);
 
     this.mutatePlan(plan => ({
@@ -2022,6 +2038,17 @@ export class CroquisEditorComponent {
       this.setTool(shortcut.tool);
     }
   }
+
+  /** Si este lugar ya tiene dueño y por tanto no se puede quitar del plano. */
+  private seatIsSold(ref: SeatRef): boolean {
+    const area = this.activePlan()?.areas.find(a => a.id === ref.areaId);
+    if (!area) return false;
+
+    const seat = area.rows.find(r => r.id === ref.rowId)?.seats[ref.index]
+      ?? (area.tables || []).find(t => t.id === ref.rowId)?.seats[ref.index];
+
+    return seat?.status === 'vendido' || seat?.status === 'apartado';
+  }
 }
 
 /** Parámetros por defecto del generador; se usa al convertir un área a butacas. */
@@ -2037,4 +2064,5 @@ function defaultGrid(): SeatGridOptions {
     curve: 0,
     aisles: []
   };
+
 }

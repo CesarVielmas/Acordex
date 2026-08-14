@@ -25,6 +25,8 @@ import { croquisCapacity } from '../croquis/croquis-metrics';
 import { managerWorkloads, ManagerWorkload, resolveTasks, ResolvedTask } from '../event-tasks';
 import { CompletenessItem, completenessByGroup, eventCompleteness } from '../event-completeness';
 import {
+  isStaleUnpublished,
+  salesAreClosed,
   allManagersConfirmedClosure,
   allReviewApprovalsResolved,
   approvals,
@@ -151,6 +153,71 @@ export type EventDetailTab =
               </div>
 
               <p class="text-xs text-on-surface-variant leading-relaxed max-w-4xl">{{ meta().meaning }}</p>
+
+              <!-- El calendario contra el estado. Son las dos formas de que un
+                   evento se muera en silencio: la venta cerró y nadie se enteró,
+                   o se le pasó la fecha sin llegar a publicarse y se quedó
+                   flotando en su fase para siempre sin salir en ninguna alarma. -->
+              @if (staleUnpublished()) {
+                <div class="p-4 rounded-2xl bg-rose-500/12 border border-rose-500/40 flex items-start gap-3">
+                  <span class="material-symbols-outlined text-lg text-rose-400 shrink-0">event_busy</span>
+                  <div class="space-y-1 min-w-0">
+                    <p class="text-xs font-black text-rose-200">La fecha del evento ya pasó y nunca se publicó</p>
+                    <p class="text-[11px] text-rose-100/90 leading-relaxed">
+                      Estaba para el {{ e.date }} y sigue en {{ e.state }}. No se concluye solo —no llegó a ocurrir— ni
+                      se cancela solo, porque eso lo decide alguien. Cancélalo para cerrarlo con su motivo, o cámbiale
+                      la fecha si de verdad se va a hacer.
+                    </p>
+                  </div>
+                </div>
+              }
+
+              @if (salesClosed()) {
+                <div class="p-4 rounded-2xl bg-amber-500/12 border border-amber-500/35 flex items-start gap-3">
+                  <span class="material-symbols-outlined text-lg text-amber-400 shrink-0">local_activity</span>
+                  <div class="space-y-1 min-w-0">
+                    <p class="text-xs font-black text-amber-200">La venta anticipada ya cerró</p>
+                    <p class="text-[11px] text-amber-100/90 leading-relaxed">
+                      {{ salesCloseLabel(e) }}. Lo que se venda a partir de aquí es taquilla en puerta.
+                    </p>
+                  </div>
+                </div>
+              }
+
+              <!-- La regla aditiva, dicha en positivo. El aviso de la fase la
+                   explica en prosa, pero al llegar a Cartel o Boletaje lo que
+                   hace falta es saber de un vistazo qué sí y qué no. -->
+              @if (policy().additiveOnly) {
+                <div class="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 space-y-2.5">
+                  <p class="text-xs font-black text-sky-200 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">add_circle</span>
+                    Solo se puede añadir y sustituir
+                  </p>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                    <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 space-y-1">
+                      <span class="font-black text-emerald-300 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[13px]">check</span> Sí puedes
+                      </span>
+                      <p class="text-emerald-100/90 leading-snug">
+                        Sustituir un grupo que se cayó · abrir zonas o lugares nuevos · corregir textos de la ficha
+                      </p>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 space-y-1">
+                      <span class="font-black text-rose-300 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[13px]">block</span> No puedes
+                      </span>
+                      <p class="text-rose-100/90 leading-snug">
+                        Borrar butacas vendidas o apartadas · cambiar fecha o recinto (usa Posponer)
+                      </p>
+                    </div>
+                  </div>
+                  @if (sold() > 0) {
+                    <p class="text-[10px] text-outline">
+                      {{ sold().toLocaleString('es-MX') }} asiento(s) con dueño quedan protegidos: el croquis no deja quitarlos.
+                    </p>
+                  }
+                </div>
+              }
 
               @if (policy().warning) {
                 <div class="text-xs p-3.5 rounded-2xl flex items-start gap-2.5 backdrop-blur-md shadow-inner"
@@ -1647,34 +1714,13 @@ export type EventDetailTab =
           }
 
           @if (canCancel()) {
-            @if (cancelling()) {
-              <div class="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <input
-                  [(ngModel)]="cancelReason"
-                  placeholder="Motivo de la cancelación (obligatorio)"
-                  class="flex-1 bg-surface-container border border-rose-500/40 rounded-xl px-3 py-2 min-h-11 text-xs text-on-surface focus:outline-none"
-                />
-                <button
-                  type="button"
-                  (click)="confirmCancel(e)"
-                  [disabled]="!cancelReason.trim()"
-                  class="px-4 py-2.5 min-h-11 rounded-xl bg-rose-500 text-white text-xs font-black disabled:opacity-40 disabled:pointer-events-none"
-                >Confirmar cancelación</button>
-                <button
-                  type="button"
-                  (click)="cancelling.set(false)"
-                  class="px-4 py-2.5 min-h-11 rounded-xl bg-surface-bright text-on-surface text-xs font-semibold"
-                >Volver</button>
-              </div>
-            } @else {
-              <button
-                type="button"
-                (click)="cancelling.set(true)"
-                class="px-4 py-2.5 min-h-11 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/40 hover:bg-rose-500 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 sm:mr-auto shadow-md"
-              >
-                <span class="material-symbols-outlined text-sm">cancel</span> Cancelar evento
-              </button>
-            }
+            <button
+              type="button"
+              (click)="openCancelDialog()"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/40 hover:bg-rose-500 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 sm:mr-auto shadow-md"
+            >
+              <span class="material-symbols-outlined text-sm">cancel</span> Cancelar evento
+            </button>
           }
 
           <!-- ESTADO: BORRADOR -->
@@ -2014,6 +2060,140 @@ export type EventDetailTab =
                 Confirmar y Regresar a Revisión
               </button>
             </div>
+          </div>
+        </div>
+      }
+
+      <!-- ─── MODAL: CANCELAR EL EVENTO ─── -->
+      <!-- Es la operación más grave del expediente y no se deshace: si hay
+           boletos vendidos hay que devolverle el dinero a gente que ya reservó
+           su noche. Se hacía con un campo de texto en la barra, con menos
+           ceremonia que posponer una fecha. Aquí se ve a quién afecta, cuánto
+           hay que devolver y qué se le va a decir, y hay que escribir el folio
+           para confirmar: cancelar por un clic de más no puede pasar. -->
+      @if (cancelModalOpen()) {
+        <div
+          class="fixed inset-0 z-[999999999] bg-black/92 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in"
+          (click)="cancelModalOpen.set(false)"
+        >
+          <div
+            class="w-full max-w-3xl bg-gradient-to-b from-[#2a1114] via-[#1a0f11] to-[#0b0f14] border border-rose-500/45 rounded-[2rem] shadow-[0_0_100px_rgba(244,63,94,0.25)] relative overflow-hidden max-h-[92vh] flex flex-col"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="absolute -top-28 -right-28 w-72 h-72 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+            <header class="shrink-0 flex items-center justify-between gap-4 p-6 border-b border-white/10 relative z-10">
+              <div class="flex items-center gap-3.5 min-w-0">
+                <div class="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/45 text-rose-300 flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-2xl">cancel</span>
+                </div>
+                <div class="min-w-0">
+                  <h4 class="font-['Epilogue'] text-lg font-black text-on-surface tracking-tight leading-tight">Cancelar el evento</h4>
+                  <p class="text-[11px] text-outline truncate">{{ e.title }} · {{ e.id }}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="cancelModalOpen.set(false)"
+                class="w-9 h-9 rounded-xl bg-white/5 text-outline hover:text-on-surface hover:bg-white/10 flex items-center justify-center transition-all shrink-0"
+              >
+                <span class="material-symbols-outlined text-lg">close</span>
+              </button>
+            </header>
+
+            <div class="flex-1 overflow-y-auto scroll-oculto p-6 space-y-4 relative z-10">
+
+              <!-- Qué se lleva por delante -->
+              <div class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/35 space-y-3">
+                <p class="text-[11px] font-black uppercase tracking-widest text-rose-300 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[14px]">warning</span>
+                  Esto no se puede deshacer
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="p-3 rounded-xl bg-black/40 border border-white/10">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Compradores</span>
+                    <span class="text-lg font-black font-mono" [class]="sold() > 0 ? 'text-rose-300' : 'text-on-surface-variant'">
+                      {{ sold().toLocaleString('es-MX') }}
+                    </span>
+                  </div>
+                  @if (roleService.canViewFinances()) {
+                    <div class="p-3 rounded-xl bg-black/40 border border-white/10">
+                      <span class="text-[9px] font-black uppercase tracking-wider text-outline block">A reembolsar</span>
+                      <span class="text-lg font-black font-mono text-rose-300">{{ money(refundAmount()) }}</span>
+                    </div>
+                  }
+                  <div class="p-3 rounded-xl bg-black/40 border border-white/10">
+                    <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Se cancela desde</span>
+                    <span class="text-xs font-black text-on-surface-variant">{{ e.state }}</span>
+                  </div>
+                </div>
+                <p class="text-[11px] text-rose-100 leading-relaxed">
+                  @if (sold() > 0) {
+                    Hay <strong>{{ sold().toLocaleString('es-MX') }}</strong> boleto(s) vendidos. Al confirmar se emite el
+                    reembolso del 100% y sale el aviso de cancelación a todos los compradores. El expediente queda como
+                    registro histórico y no vuelve a abrirse.
+                  } @else {
+                    No hay boletos vendidos, así que no hay reembolsos que emitir. Aun así el expediente queda cerrado
+                    como registro histórico y no vuelve a abrirse.
+                  }
+                </p>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-rose-300">Motivo de la cancelación *</label>
+                <textarea
+                  [(ngModel)]="cancelReason"
+                  rows="3"
+                  placeholder="Qué pasó. Queda en la trazabilidad y es lo que se le explica a los compradores."
+                  class="w-full bg-black/40 border border-rose-500/40 focus:border-rose-400 rounded-xl p-3.5 text-xs text-on-surface focus:outline-none resize-none transition-colors"
+                ></textarea>
+              </div>
+
+              <!-- Lo que leerá quien compró -->
+              <div class="p-4 rounded-2xl bg-black/50 border border-white/10 space-y-2">
+                <span class="text-[10px] font-black uppercase tracking-widest text-outline flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[13px]">visibility</span>
+                  Así lo verá el comprador
+                </span>
+                <p class="text-[11px] text-on-surface-variant leading-relaxed italic">"{{ cancelPreview() }}"</p>
+              </div>
+
+              <!-- Confirmación por folio -->
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-rose-300">
+                  Escribe <strong class="font-mono text-rose-200">{{ e.id }}</strong> para confirmar
+                </label>
+                <input
+                  type="text"
+                  [ngModel]="cancelConfirmText()"
+                  (ngModelChange)="cancelConfirmText.set($event)"
+                  [placeholder]="e.id"
+                  class="w-full bg-black/40 rounded-xl px-3.5 py-2.5 text-xs font-mono text-on-surface focus:outline-none border transition-colors"
+                  [class]="cancelConfirmed(e) ? 'border-emerald-500/50' : 'border-rose-500/40 focus:border-rose-400'"
+                />
+                <p class="text-[10px] text-outline">
+                  Se pide para que cancelar nunca sea un clic de más en la barra de acciones.
+                </p>
+              </div>
+            </div>
+
+            <footer class="shrink-0 flex items-center justify-end gap-2.5 p-5 border-t border-white/10 relative z-10">
+              <button
+                type="button"
+                (click)="cancelModalOpen.set(false)"
+                class="px-5 py-2.5 rounded-xl text-xs font-bold text-outline hover:text-on-surface transition-colors"
+              >No cancelar</button>
+              <button
+                type="button"
+                (click)="confirmCancel(e)"
+                [disabled]="!cancelReason.trim() || !cancelConfirmed(e)"
+                class="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 text-white font-black text-xs transition-all disabled:opacity-40 disabled:pointer-events-none shadow-lg shadow-rose-500/25 flex items-center gap-2 active:scale-95"
+              >
+                <span class="material-symbols-outlined text-base">cancel</span>
+                Cancelar definitivamente
+                @if (sold() > 0) { <span class="opacity-80">y reembolsar {{ sold().toLocaleString('es-MX') }}</span> }
+              </button>
+            </footer>
           </div>
         </div>
       }
@@ -3599,7 +3779,8 @@ export class EventDetailModalComponent {
   }
 
   confirmCancel(e: EventItem): void {
-    if (!this.cancelReason.trim()) return;
+    if (!this.cancelReason.trim() || !this.cancelConfirmed(e)) return;
+    this.cancelModalOpen.set(false);
     this.cancel.emit({ event: e, reason: this.cancelReason.trim() });
     this.cancelling.set(false);
     this.cancelReason = '';
@@ -3759,5 +3940,57 @@ export class EventDetailModalComponent {
     if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
+
+
+  // ─── Cancelación ────────────────────────────────────────────────────────────
+
+  readonly cancelModalOpen = signal(false);
+  readonly cancelConfirmText = signal('');
+
+  openCancelDialog(): void {
+    this.cancelReason = '';
+    this.cancelConfirmText.set('');
+    this.cancelModalOpen.set(true);
+  }
+
+  /** Lo que hay que devolverle a los compradores si se cancela ahora. */
+  refundAmount = computed(() => {
+    const e = this.event();
+    return e ? grossTicketRevenue(e) : 0;
+  });
+
+  /**
+   * El folio escrito a mano es la última puerta.
+   *
+   * Cancelar borra un evento del mundo y devuelve el dinero de miles de
+   * personas; no puede depender de acertarle a un botón. Escribir el folio
+   * obliga a mirar cuál es el expediente que se está cancelando.
+   */
+  cancelConfirmed(e: EventItem): boolean {
+    return this.cancelConfirmText().trim().toUpperCase() === (e.id || '').toUpperCase();
+  }
+
+  /** El aviso que recibirá quien compró, tal como saldrá. */
+  cancelPreview(): string {
+    const motivo = this.cancelReason.trim() || '(motivo por escribir)';
+    const vendidos = this.sold();
+    return `Aviso oficial: El evento ha sido cancelado definitivamente. Motivo: ${motivo}.`
+      + (vendidos > 0
+        ? ` Se procesa el reembolso del 100% para los ${vendidos.toLocaleString('es-MX')} boletos emitidos.`
+        : '');
+  }
+
+
+  /** La venta anticipada ya cerró según lo que dice el propio expediente. */
+  salesClosed = computed(() => {
+    const e = this.event();
+    return e ? salesAreClosed(e) : false;
+  });
+
+  /** Se le pasó la fecha sin llegar a publicarse. */
+  staleUnpublished = computed(() => {
+    const e = this.event();
+    return e ? isStaleUnpublished(e) : false;
+  });
 
 }
