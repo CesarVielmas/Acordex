@@ -1,4 +1,4 @@
-﻿import {
+import {
   EventItem,
   EventLineupSlot,
   GroupSoundCheck,
@@ -448,7 +448,7 @@ export function requestedChanges(e: EventItem): string[] {
   return rejectedApprovals(e).flatMap(a => a.requestedChanges || []);
 }
 
-// ─── Publicación ──────────────────────────────────────────────────────────────
+// ─── Publicación & Validación Integral ────────────────────────────────────────
 
 export function isScheduledToPublish(e: EventItem): boolean {
   return e.state === 'Próximo a Publicar' && !!e.publication?.scheduledAt;
@@ -459,7 +459,132 @@ export function hoursUntilPublish(e: EventItem): number | null {
   return hoursUntil(e.publication?.scheduledAt);
 }
 
-// ─── Cierre ───────────────────────────────────────────────────────────────────
+/** True si todas las solicitudes de aprobación de grupos externos están resueltas (sin pendientes). */
+export function allReviewApprovalsResolved(e: EventItem): boolean {
+  const list = approvals(e);
+  if (!list.length) return true;
+  return list.every(a => a.status === 'Aprobado' || a.status === 'Rechazado');
+}
+
+/** True si todas las invitaciones a managers co-organizadores fueron resueltas. */
+export function allAgreementsResolved(e: EventItem): boolean {
+  const agrs = e.managerAgreements || [];
+  return !agrs.some(a => a.status === 'Pendiente' || a.status === 'Sin Enviar');
+}
+
+/** True si todos los encargos de producción fueron resueltos. */
+export function allResponsibilitiesResolved(e: EventItem): boolean {
+  const resps = e.productionResponsibilities || [];
+  return !resps.some(r => r.status === 'Pendiente' || r.status === 'Sin Enviar');
+}
+
+/** True si no hay transferencias de tareas pendientes de respuesta. */
+export function allTaskTransfersResolved(e: EventItem): boolean {
+  return !(e.tasks || []).some(t => t.pendingTransfer?.status === 'pendiente');
+}
+
+/** True si no hay propuestas de cambio pendientes sobre ningún campo. */
+export function allFieldProposalsResolved(e: EventItem): boolean {
+  return !(e.tasks || []).some(t => (t.changeProposals || []).some(p => p.status === 'pendiente'));
+}
+
+export interface PublishReadiness {
+  canPublish: boolean;
+  missingRequirements: string[];
+  pendingRequestsCount: number;
+}
+
+/**
+ * Valida si un evento en revisión cumple con todas las condiciones para poder publicarse:
+ * 1. Todos los 33 puntos obligatorios del checklist capturados.
+ * 2. Todas las solicitudes (grupos, invitaciones, tareas, propuestas) resueltas (aceptadas o rechazadas).
+ */
+export function evaluatePublishReadiness(e: EventItem, missingRequiredCount: number): PublishReadiness {
+  const missingRequirements: string[] = [];
+
+  if (missingRequiredCount > 0) {
+    missingRequirements.push(`Faltan ${missingRequiredCount} punto(s) obligatorios del expediente por capturar.`);
+  }
+
+  const pendingApprovalsCount = pendingApprovals(e).length;
+  if (pendingApprovalsCount > 0) {
+    missingRequirements.push(`${pendingApprovalsCount} solicitud(es) de aprobación de grupo siguen pendientes de respuesta.`);
+  }
+
+  const pendingAgreementsCount = (e.managerAgreements || []).filter(a => a.status === 'Pendiente' || a.status === 'Sin Enviar').length;
+  if (pendingAgreementsCount > 0) {
+    missingRequirements.push(`${pendingAgreementsCount} invitación(es) a co-organizar siguen sin respuesta o por enviar.`);
+  }
+
+  const pendingResponsibilitiesCount = (e.productionResponsibilities || []).filter(r => r.status === 'Pendiente' || r.status === 'Sin Enviar').length;
+  if (pendingResponsibilitiesCount > 0) {
+    missingRequirements.push(`${pendingResponsibilitiesCount} encargo(s) de producción siguen pendientes de respuesta.`);
+  }
+
+  const pendingTransfersCount = (e.tasks || []).filter(t => t.pendingTransfer?.status === 'pendiente').length;
+  if (pendingTransfersCount > 0) {
+    missingRequirements.push(`${pendingTransfersCount} transferencia(s) de tareas esperan respuesta de su destinatario.`);
+  }
+
+  const pendingProposalsCount = (e.tasks || []).reduce(
+    (sum, t) => sum + (t.changeProposals || []).filter(p => p.status === 'pendiente').length,
+    0
+  );
+  if (pendingProposalsCount > 0) {
+    missingRequirements.push(`${pendingProposalsCount} propuesta(s) de cambio en campos siguen por decidir.`);
+  }
+
+  const totalPending = pendingApprovalsCount + pendingAgreementsCount + pendingResponsibilitiesCount + pendingTransfersCount + pendingProposalsCount;
+
+  return {
+    canPublish: missingRequiredCount === 0 && totalPending === 0,
+    missingRequirements,
+    pendingRequestsCount: totalPending
+  };
+}
+
+// ─── Cierre & Confirmación de Managers ────────────────────────────────────────
+
+export function participatingManagers(e: EventItem): string[] {
+  const agrs = (e.managerAgreements || []).map(a => a.managerName).filter(Boolean);
+  const owner = organizerName(e);
+  const set = new Set<string>(agrs);
+  if (owner) set.add(owner);
+  return Array.from(set);
+}
+
+/**
+ * True si todos los managers involucrados en el evento han firmado/confirmado el finiquito de cierre.
+ * Si es 1 solo manager (organizador único), se confirma de inmediato.
+ */
+/**
+ * Si el expediente ya puede sellarse.
+ *
+ * Con varias disqueras hace falta la firma de todas: el cierre reparte dinero y
+ * nadie puede darlo por bueno en nombre de otro. Con una sola no hay a quién
+ * esperar, y exigirle además el reporte de cierre convertía "puede cerrar cuando
+ * quiera" en "puede cerrar cuando termine el papeleo" — que es justo lo que la
+ * regla quería evitar para el organizador que va solo.
+ */
+export function allManagersConfirmedClosure(e: EventItem): boolean {
+  const managers = participatingManagers(e);
+  if (managers.length <= 1) {
+    return true;
+  }
+
+  const confirmations = e.closure?.managerConfirmations || [];
+  const confirmedSet = new Set(confirmations.map(c => c.managerName));
+  return managers.every(m => confirmedSet.has(m)) && isClosureComplete(e);
+}
+
+/** Verifica si quien mira es el creador original / organizador del evento. */
+export function isEventCreator(e: EventItem, actorNameOrManager?: string): boolean {
+  if (!actorNameOrManager) return false;
+  const owner = organizerName(e);
+  if (owner && owner.toLowerCase() === actorNameOrManager.toLowerCase()) return true;
+  if (e.createdBy && e.createdBy.toLowerCase() === actorNameOrManager.toLowerCase()) return true;
+  return false;
+}
 
 export function totalExpenses(e: EventItem): number {
   return (e.closure?.expenses || []).reduce((sum, x) => sum + (x.amount || 0), 0);

@@ -6,7 +6,9 @@ import { EditableFieldComponent, EditableOption } from '../../../../shared/ui/ed
 import { EventTabLineupComponent } from './event-tab-lineup.component';
 import { MandatoryTaskTagComponent } from '../../../../shared/ui/mandatory-task-tag/mandatory-task-tag.component';
 import { SessionService } from '../../../../core/services/session.service';
-import { ResolvedTask, isTaskUnlockedForActor, interceptFieldSave, resolveTasks } from '../../event-tasks';
+import { markIntervention, ResolvedTask } from '../../event-tasks';
+import { MandatoryFields } from '../../mandatory-fields';
+import { FieldProposalsComponent } from '../../../../shared/ui/field-proposals/field-proposals.component';
 import {
   publicProfile,
   lineup,
@@ -23,7 +25,7 @@ import {
 @Component({
   selector: 'app-event-tab-public',
   standalone: true,
-  imports: [CommonModule, EditableFieldComponent, EventTabLineupComponent, MandatoryTaskTagComponent],
+  imports: [CommonModule, EditableFieldComponent, EventTabLineupComponent, MandatoryTaskTagComponent, FieldProposalsComponent],
   host: { class: 'block' },
   template: `
     <div class="space-y-6">
@@ -66,7 +68,7 @@ import {
             <span>Datos principales del evento</span>
           </h5>
           <div class="flex items-center gap-2.5">
-            <app-mandatory-task-tag checklistItemId="identidad" [event]="event()" (intervene)="onInterveneTask($event)" />
+            <app-mandatory-task-tag ref="identidad" [event]="event()" (intervene)="onInterveneTask($event)" />
             <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">Identidad Base</span>
           </div>
         </div>
@@ -76,57 +78,69 @@ import {
             label="Nombre del evento"
             [value]="event().title"
             [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
-            [proposalWarning]="getProposalNotice('identidad')"
-            [proposedValue]="getPendingProposal('identidad', 'title')?.proposedValue"
-            [proposedBy]="getPendingProposal('identidad', 'title')?.proposedBy"
-            (save)="saveWithProposalCheck('identidad', 'Nombre del evento', { title: $event })"
+            [proposalWarning]="mandatory.warning('identidad')"
+            [proposals]="mandatory.proposals('identidad', 'title')"
+            [canDecide]="mandatory.canDecide('identidad')"
+            (acceptProposal)="mandatory.accept('identidad', $event)"
+            (rejectProposal)="mandatory.reject('identidad', $event)"
+            (save)="mandatory.save('identidad', 'Nombre del evento', { title: $event })"
           />
           <app-editable-field
             label="Fecha del evento"
             type="date"
             [value]="event().date"
             [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
-            [proposalWarning]="getProposalNotice('identidad')"
-            [proposedValue]="getPendingProposal('identidad', 'date')?.proposedValue"
-            [proposedBy]="getPendingProposal('identidad', 'date')?.proposedBy"
-            (save)="saveWithProposalCheck('identidad', 'Fecha del evento', { date: $event })"
+            [proposalWarning]="mandatory.warning('identidad')"
+            [proposals]="mandatory.proposals('identidad', 'date')"
+            [canDecide]="mandatory.canDecide('identidad')"
+            (acceptProposal)="mandatory.accept('identidad', $event)"
+            (rejectProposal)="mandatory.reject('identidad', $event)"
+            (save)="mandatory.save('identidad', 'Fecha del evento', { date: $event })"
           />
           <app-editable-field
             label="Aforo del recinto"
             type="number"
             [value]="event().capacity ?? ''"
             [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
-            [proposalWarning]="getProposalNotice('identidad')"
-            [proposedValue]="getPendingProposal('identidad', 'capacity')?.proposedValue"
-            [proposedBy]="getPendingProposal('identidad', 'capacity')?.proposedBy"
-            (save)="saveWithProposalCheck('identidad', 'Aforo del recinto', { capacity: toNumber($event) })"
+            [proposalWarning]="mandatory.warning('identidad')"
+            [proposals]="mandatory.proposals('identidad', 'capacity')"
+            [canDecide]="mandatory.canDecide('identidad')"
+            (acceptProposal)="mandatory.accept('identidad', $event)"
+            (rejectProposal)="mandatory.reject('identidad', $event)"
+            (save)="mandatory.save('identidad', 'Aforo del recinto', { capacity: toNumber($event) })"
           />
           <app-editable-field
             label="Recinto / Inmueble"
             [value]="event().venue"
             [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
-            [proposalWarning]="getProposalNotice('identidad')"
-            [proposedValue]="getPendingProposal('identidad', 'venue')?.proposedValue"
-            [proposedBy]="getPendingProposal('identidad', 'venue')?.proposedBy"
-            (save)="saveWithProposalCheck('identidad', 'Recinto / Inmueble', { venue: $event })"
+            [proposalWarning]="mandatory.warning('identidad')"
+            [proposals]="mandatory.proposals('identidad', 'venue')"
+            [canDecide]="mandatory.canDecide('identidad')"
+            (acceptProposal)="mandatory.accept('identidad', $event)"
+            (rejectProposal)="mandatory.reject('identidad', $event)"
+            (save)="mandatory.save('identidad', 'Recinto / Inmueble', { venue: $event })"
           />
           <app-editable-field
             label="Ciudad y estado"
             [value]="event().location"
             [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
-            [proposalWarning]="getProposalNotice('identidad')"
-            [proposedValue]="getPendingProposal('identidad', 'location')?.proposedValue"
-            [proposedBy]="getPendingProposal('identidad', 'location')?.proposedBy"
-            (save)="saveWithProposalCheck('identidad', 'Ciudad y estado', { location: $event })"
+            [proposalWarning]="mandatory.warning('identidad')"
+            [proposals]="mandatory.proposals('identidad', 'location')"
+            [canDecide]="mandatory.canDecide('identidad')"
+            (acceptProposal)="mandatory.accept('identidad', $event)"
+            (rejectProposal)="mandatory.reject('identidad', $event)"
+            (save)="mandatory.save('identidad', 'Ciudad y estado', { location: $event })"
           />
           <app-editable-field
             label="Dirección del recinto"
             [value]="event().venueAddress || ''"
             [readonly]="!canEditIdentity() || !isTaskUnlocked('identidad')"
-            [proposalWarning]="getProposalNotice('identidad')"
-            [proposedValue]="getPendingProposal('identidad', 'venueAddress')?.proposedValue"
-            [proposedBy]="getPendingProposal('identidad', 'venueAddress')?.proposedBy"
-            (save)="saveWithProposalCheck('identidad', 'Dirección del recinto', { venueAddress: $event })"
+            [proposalWarning]="mandatory.warning('identidad')"
+            [proposals]="mandatory.proposals('identidad', 'venueAddress')"
+            [canDecide]="mandatory.canDecide('identidad')"
+            (acceptProposal)="mandatory.accept('identidad', $event)"
+            (rejectProposal)="mandatory.reject('identidad', $event)"
+            (save)="mandatory.save('identidad', 'Dirección del recinto', { venueAddress: $event })"
           />
         </div>
 
@@ -135,15 +149,15 @@ import {
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <div class="flex items-center gap-2">
               <label class="text-[10px] font-black uppercase tracking-wider text-outline">Categoría del evento</label>
-              <app-mandatory-task-tag checklistItemId="categoria" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+              <app-mandatory-task-tag ref="categoria" [event]="event()" (intervene)="onInterveneTask($event)" />
             </div>
             <span class="text-[10px] text-outline">Encabeza la ficha pública del cliente</span>
           </div>
 
-          @if (getProposalNotice('categoria')) {
+          @if (mandatory.warning('categoria')) {
             <div class="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-[11px] font-bold leading-relaxed flex items-start gap-2.5 shadow-md">
               <span class="material-symbols-outlined text-base text-amber-400 shrink-0 mt-0.5">info</span>
-              <span>{{ getProposalNotice('categoria') }}</span>
+              <span>{{ mandatory.warning('categoria') }}</span>
             </div>
           }
 
@@ -160,30 +174,20 @@ import {
               >
                 <span class="material-symbols-outlined text-base">{{ c.icon }}</span>
                 <span>{{ c.label }}</span>
-                @if (getProposalNotice('categoria') && profile().category !== c.value) {
+                @if (mandatory.warning('categoria') && profile().category !== c.value) {
                   <span class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-950/90 text-amber-300 font-bold border border-amber-500/40 shadow-sm">Propuesta</span>
                 }
               </button>
             }
           </div>
 
-          @if (getPendingProposal('categoria', 'category')?.proposedValue) {
-            <div class="mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-amber-950/80 via-amber-900/60 to-amber-950/80 border border-amber-500/40 text-amber-200 text-[11px] font-medium leading-tight flex items-center justify-between gap-2 shadow-lg backdrop-blur-md animate-fade-in">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="material-symbols-outlined text-sm text-amber-400 shrink-0">pending_actions</span>
-                <span class="truncate">
-                  <strong class="font-black text-amber-300 uppercase tracking-wider text-[9px] mr-1">Propuesta enviada:</strong>
-                  <span class="font-bold underline decoration-amber-400/50">"Categoría {{ getPendingProposal('categoria', 'category')?.proposedValue }}"</span>
-                  @if (getPendingProposal('categoria', 'category')?.proposedBy) {
-                    <span class="text-[10px] text-amber-200/80 ml-1">· por {{ getPendingProposal('categoria', 'category')?.proposedBy }}</span>
-                  }
-                </span>
-              </div>
-              <span class="px-2 py-0.5 rounded-md bg-amber-500/25 text-amber-300 text-[9px] font-black uppercase tracking-wider shrink-0 border border-amber-500/40 shadow-sm">
-                En Revisión
-              </span>
-            </div>
-          }
+          <app-field-proposals
+            [proposals]="mandatory.proposals('categoria', 'category')"
+            [canDecide]="mandatory.canDecide('categoria')"
+            [owner]="mandatory.approvers('categoria')"
+            (accept)="mandatory.accept('categoria', $event)"
+            (reject)="mandatory.reject('categoria', $event)"
+          />
         </div>
 
         <app-editable-field
@@ -218,7 +222,7 @@ import {
           <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/20 space-y-3 shadow-md relative">
             <div class="flex items-center justify-between gap-2">
               <span class="text-[11px] font-black uppercase text-outline tracking-wider">Portada (16:9)</span>
-              <app-mandatory-task-tag checklistItemId="coverUrl" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+              <app-mandatory-task-tag ref="coverUrl" [event]="event()" (intervene)="onInterveneTask($event)" />
             </div>
             <app-editable-field
               label="Portada panorámica (16:9)"
@@ -228,9 +232,11 @@ import {
               valueClass="text-xs font-mono text-on-surface break-all"
               [value]="profile().coverUrl"
               [readonly]="!canEdit() || !isTaskUnlocked('coverUrl')"
-              [proposalWarning]="getProposalNotice('coverUrl')"
-              [proposedValue]="getPendingProposal('coverUrl', 'coverUrl')?.proposedValue"
-              [proposedBy]="getPendingProposal('coverUrl', 'coverUrl')?.proposedBy"
+              [proposalWarning]="mandatory.warning('coverUrl')"
+              [proposals]="mandatory.proposals('coverUrl', 'coverUrl')"
+              [canDecide]="mandatory.canDecide('coverUrl')"
+              (acceptProposal)="mandatory.accept('coverUrl', $event)"
+              (rejectProposal)="mandatory.reject('coverUrl', $event)"
               (save)="saveProfileWithProposalCheck('coverUrl', 'Portada Panorámica (16:9)', { coverUrl: $event })"
             />
             <div class="aspect-video rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/25 relative group shadow-lg">
@@ -252,7 +258,7 @@ import {
           <div class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/20 space-y-3 shadow-md relative">
             <div class="flex items-center justify-between gap-2">
               <span class="text-[11px] font-black uppercase text-outline tracking-wider">Cartel (3:4)</span>
-              <app-mandatory-task-tag checklistItemId="posterUrl" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+              <app-mandatory-task-tag ref="posterUrl" [event]="event()" (intervene)="onInterveneTask($event)" />
             </div>
             <app-editable-field
               label="Cartel / flyer oficial (3:4)"
@@ -262,9 +268,11 @@ import {
               valueClass="text-xs font-mono text-on-surface break-all"
               [value]="profile().posterUrl"
               [readonly]="!canEdit() || !isTaskUnlocked('posterUrl')"
-              [proposalWarning]="getProposalNotice('posterUrl')"
-              [proposedValue]="getPendingProposal('posterUrl', 'posterUrl')?.proposedValue"
-              [proposedBy]="getPendingProposal('posterUrl', 'posterUrl')?.proposedBy"
+              [proposalWarning]="mandatory.warning('posterUrl')"
+              [proposals]="mandatory.proposals('posterUrl', 'posterUrl')"
+              [canDecide]="mandatory.canDecide('posterUrl')"
+              (acceptProposal)="mandatory.accept('posterUrl', $event)"
+              (rejectProposal)="mandatory.reject('posterUrl', $event)"
               (save)="savePoster($event)"
             />
             <div class="aspect-[3/4] max-h-52 rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/25 mx-auto relative group shadow-lg">
@@ -299,7 +307,7 @@ import {
             <span>Saludos y mensajes de los artistas</span>
           </h5>
           <div class="flex items-center gap-2.5">
-            <app-mandatory-task-tag checklistItemId="videos_grupos" [event]="event()" (intervene)="onInterveneTask($event)" />
+            <app-mandatory-task-tag ref="videos_grupos" [event]="event()" (intervene)="onInterveneTask($event)" />
             <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">{{ greetingVideos().length }} video(s)</span>
             @if (canEdit() && isTaskUnlocked('videos_grupos')) {
               <button
@@ -350,7 +358,7 @@ import {
                   label="Título del video"
                   [value]="v.title"
                   [readonly]="!canEdit() || !isTaskUnlocked('videos_grupos')"
-                  [proposalWarning]="getProposalNotice('videos_grupos')"
+                  [proposalWarning]="mandatory.warning('videos_grupos')"
                   (save)="patchGreetingVideo(v, { title: $event })"
                 />
                 <app-editable-field
@@ -360,7 +368,7 @@ import {
                   valueClass="text-xs font-mono text-on-surface break-all"
                   [value]="v.url"
                   [readonly]="!canEdit() || !isTaskUnlocked('videos_grupos')"
-                  [proposalWarning]="getProposalNotice('videos_grupos')"
+                  [proposalWarning]="mandatory.warning('videos_grupos')"
                   (save)="patchGreetingVideo(v, { url: $event })"
                 />
 
@@ -399,7 +407,7 @@ import {
           <div class="space-y-1">
             <div class="flex items-center justify-between gap-2">
               <label class="text-[10px] font-black uppercase tracking-wider text-outline">Frase de Portada / Tagline</label>
-              <app-mandatory-task-tag checklistItemId="tagline" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+              <app-mandatory-task-tag ref="tagline" [event]="event()" (intervene)="onInterveneTask($event)" />
             </div>
             <app-editable-field
               label=""
@@ -410,9 +418,11 @@ import {
               valueClass="text-xs font-bold text-on-surface break-words"
               [value]="profile().tagline"
               [readonly]="!canEdit() || !isTaskUnlocked('tagline')"
-              [proposalWarning]="getProposalNotice('tagline')"
-              [proposedValue]="getPendingProposal('tagline', 'tagline')?.proposedValue"
-              [proposedBy]="getPendingProposal('tagline', 'tagline')?.proposedBy"
+              [proposalWarning]="mandatory.warning('tagline')"
+              [proposals]="mandatory.proposals('tagline', 'tagline')"
+              [canDecide]="mandatory.canDecide('tagline')"
+              (acceptProposal)="mandatory.accept('tagline', $event)"
+              (rejectProposal)="mandatory.reject('tagline', $event)"
               (save)="saveProfileWithProposalCheck('tagline', 'Frase de portada', { tagline: $event })"
             />
           </div>
@@ -421,7 +431,7 @@ import {
         <div class="space-y-1">
           <div class="flex items-center justify-between gap-2">
             <label class="text-[10px] font-black uppercase tracking-wider text-outline">Información detallada del evento</label>
-            <app-mandatory-task-tag checklistItemId="about_publico" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+            <app-mandatory-task-tag ref="about_publico" [event]="event()" (intervene)="onInterveneTask($event)" />
           </div>
           <app-editable-field
             label=""
@@ -432,9 +442,11 @@ import {
             valueClass="text-xs font-medium text-on-surface-variant break-words leading-relaxed"
             [value]="profile().about"
             [readonly]="!canEdit() || !isTaskUnlocked('about_publico')"
-            [proposalWarning]="getProposalNotice('about_publico')"
-            [proposedValue]="getPendingProposal('about_publico', 'about')?.proposedValue"
-            [proposedBy]="getPendingProposal('about_publico', 'about')?.proposedBy"
+            [proposalWarning]="mandatory.warning('about_publico')"
+            [proposals]="mandatory.proposals('about_publico', 'about')"
+            [canDecide]="mandatory.canDecide('about_publico')"
+            (acceptProposal)="mandatory.accept('about_publico', $event)"
+            (rejectProposal)="mandatory.reject('about_publico', $event)"
             (save)="saveProfileWithProposalCheck('about_publico', 'Información detallada del evento', { about: $event })"
           />
         </div>
@@ -446,7 +458,7 @@ import {
               <span class="material-symbols-outlined text-base text-primary">gavel</span> Reglas e Información Adicional
             </h6>
             <div class="flex items-center gap-2">
-              <app-mandatory-task-tag checklistItemId="reglas" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+              <app-mandatory-task-tag ref="reglas" [event]="event()" (intervene)="onInterveneTask($event)" />
               <span class="text-xs font-mono font-bold text-outline px-2.5 py-0.5 rounded-lg bg-surface-container border border-outline-variant/20">
                 {{ profile().rules.length }} regla(s)
               </span>
@@ -464,9 +476,11 @@ import {
                     [rows]="2"
                     valueClass="text-xs font-medium text-on-surface-variant break-words"
                     [readonly]="!canEdit() || !isTaskUnlocked('reglas')"
-                    [proposalWarning]="getProposalNotice('reglas')"
-                    [proposedValue]="getPendingProposal('reglas')?.proposedValue"
-                    [proposedBy]="getPendingProposal('reglas')?.proposedBy"
+                    [proposalWarning]="mandatory.warning('reglas')"
+                    [proposals]="mandatory.proposals('reglas', 'rules')"
+                    [canDecide]="mandatory.canDecide('reglas')"
+                    (acceptProposal)="mandatory.accept('reglas', $event)"
+                    (rejectProposal)="mandatory.reject('reglas', $event)"
                     (save)="patchRule(rule, $event)"
                   />
                 </div>
@@ -508,7 +522,7 @@ import {
             <div class="space-y-1">
               <div class="flex items-center justify-between gap-1">
                 <span class="text-[10px] font-bold text-outline uppercase">Soporte</span>
-                <app-mandatory-task-tag checklistItemId="soporte" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+                <app-mandatory-task-tag ref="soporte" [event]="event()" (intervene)="onInterveneTask($event)" />
               </div>
               <app-editable-field
                 label="Teléfono de compra"
@@ -516,9 +530,11 @@ import {
                 placeholder="+52 (81) 1234 5678"
                 [value]="profile().supportPhone || ''"
                 [readonly]="!canEdit() || !isTaskUnlocked('soporte')"
-                [proposalWarning]="getProposalNotice('soporte')"
-                [proposedValue]="getPendingProposal('soporte', 'supportPhone')?.proposedValue"
-                [proposedBy]="getPendingProposal('soporte', 'supportPhone')?.proposedBy"
+                [proposalWarning]="mandatory.warning('soporte')"
+                [proposals]="mandatory.proposals('soporte', 'supportPhone')"
+                [canDecide]="mandatory.canDecide('soporte')"
+                (acceptProposal)="mandatory.accept('soporte', $event)"
+                (rejectProposal)="mandatory.reject('soporte', $event)"
                 (save)="saveProfileWithProposalCheck('soporte', 'Teléfono de compra', { supportPhone: $event })"
               />
             </div>
@@ -529,15 +545,17 @@ import {
               placeholder="528112345678"
               [value]="profile().supportWhatsApp || ''"
               [readonly]="!canEdit() || !isTaskUnlocked('soporte')"
-              [proposalWarning]="getProposalNotice('soporte')"
-              [proposedValue]="getPendingProposal('soporte', 'supportWhatsApp')?.proposedValue"
-              [proposedBy]="getPendingProposal('soporte', 'supportWhatsApp')?.proposedBy"
+              [proposalWarning]="mandatory.warning('soporte')"
+              [proposals]="mandatory.proposals('soporte', 'supportWhatsApp')"
+              [canDecide]="mandatory.canDecide('soporte')"
+              (acceptProposal)="mandatory.accept('soporte', $event)"
+              (rejectProposal)="mandatory.reject('soporte', $event)"
               (save)="saveProfileWithProposalCheck('soporte', 'WhatsApp', { supportWhatsApp: $event })"
             />
             <div class="space-y-1">
               <div class="flex items-center justify-between gap-1">
                 <span class="text-[10px] font-bold text-outline uppercase">Cargo Servicio</span>
-                <app-mandatory-task-tag checklistItemId="cargo_servicio" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+                <app-mandatory-task-tag ref="cargo_servicio" [event]="event()" (intervene)="onInterveneTask($event)" />
               </div>
               <app-editable-field
                 label="Cargo por servicio"
@@ -546,9 +564,11 @@ import {
                 prefix="$"
                 [value]="profile().serviceFeePerSeat ?? 0"
                 [readonly]="!canEdit() || !isTaskUnlocked('cargo_servicio')"
-                [proposalWarning]="getProposalNotice('cargo_servicio')"
-                [proposedValue]="getPendingProposal('cargo_servicio', 'serviceFeePerSeat')?.proposedValue"
-                [proposedBy]="getPendingProposal('cargo_servicio', 'serviceFeePerSeat')?.proposedBy"
+                [proposalWarning]="mandatory.warning('cargo_servicio')"
+                [proposals]="mandatory.proposals('cargo_servicio', 'serviceFeePerSeat')"
+                [canDecide]="mandatory.canDecide('cargo_servicio')"
+                (acceptProposal)="mandatory.accept('cargo_servicio', $event)"
+                (rejectProposal)="mandatory.reject('cargo_servicio', $event)"
                 (save)="saveProfileWithProposalCheck('cargo_servicio', 'Cargo por servicio', { serviceFeePerSeat: toNumber($event) })"
               />
             </div>
@@ -685,22 +705,10 @@ export class EventTabPublicComponent {
 
   proposalNoticeToast = signal<string | null>(null);
 
-  saveWithProposalCheck(checklistItemId: string, fieldLabel: string, patchData: Partial<EventItem>): void {
-    const actor = this.sessionService.actor();
-    const res = interceptFieldSave(this.event(), checklistItemId, fieldLabel, actor, patchData);
-
-    if (res.isProposalCreated) {
-      this.proposalNoticeToast.set(res.message);
-      setTimeout(() => this.proposalNoticeToast.set(null), 6000);
-      this.patch.emit(res.updatedEvent);
-    } else {
-      this.patch.emit(res.updatedEvent);
-    }
-  }
 
   saveProfileWithProposalCheck(checklistItemId: string, fieldLabel: string, profileChanges: Partial<EventPublicProfile>): void {
     const patchObj = { publicProfile: { ...this.profile(), ...profileChanges } };
-    this.saveWithProposalCheck(checklistItemId, fieldLabel, patchObj);
+    this.mandatory.save(checklistItemId, fieldLabel, patchObj);
   }
 
   patchProfile(changes: Partial<EventPublicProfile>): void {
@@ -718,7 +726,7 @@ export class EventTabPublicComponent {
       publicProfile: { ...this.profile(), posterUrl: url },
       flyerUrl: url
     };
-    this.saveWithProposalCheck('posterUrl', 'Cartel / Flyer Oficial (3:4)', patchObj);
+    this.mandatory.save('posterUrl', 'Cartel / Flyer Oficial (3:4)', patchObj);
   }
 
   addGreetingVideo(): void {
@@ -757,152 +765,42 @@ export class EventTabPublicComponent {
     this.saveProfileWithProposalCheck('reglas', 'Reglas del Evento', { rules: updated });
   }
 
-  getProposalNotice(checklistItemId: string): string | null {
-    const actorMgr = this.sessionService.actor().managerName;
-    const tasks = resolveTasks(this.event());
-    const task = tasks.find(t =>
-      t.checklistItemId === checklistItemId ||
-      t.formSectionRef === checklistItemId ||
-      t.id === `task-sys-${checklistItemId}` ||
-      (checklistItemId === 'coverUrl' && (t.checklistItemId === 'portada' || t.formSectionRef === 'coverUrl')) ||
-      (checklistItemId === 'posterUrl' && (t.checklistItemId === 'cartel_oficial' || t.formSectionRef === 'posterUrl')) ||
-      (checklistItemId === 'ticketTiers' && (t.checklistItemId === 'boletos' || t.formSectionRef === 'ticketTiers')) ||
-      (checklistItemId === 'schedule' && (t.checklistItemId === 'corrida' || t.checklistItemId === 'orden' || t.formSectionRef === 'schedule')) ||
-      (checklistItemId === 'sound' && (t.checklistItemId === 'sonido' || t.formSectionRef === 'sound')) ||
-      (checklistItemId === 'videos_grupos' && (t.checklistItemId === 'videos_grupos' || t.formSectionRef === 'videos_grupos' || t.formSectionRef === 'greetingVideos'))
-    );
 
-    if (!task || !task.done) return null;
-
-    const ownerMgr = task.completedBy?.managerName || task.assignedManager || this.event().ownerManagerName || this.event().createdBy;
-    const isOwner = ownerMgr === actorMgr;
-
-    if (!isOwner) {
-      return `Esta tarea obligatoria fue completada por ${ownerMgr}. Si modificas este dato, se le enviará una propuesta de cambio que el encargado deberá aprobar o rechazar para que se aplique al expediente.`;
-    }
-
-    return null;
-  }
-
-  getPendingProposal(checklistItemId: string, fieldPropKey?: string): { proposedValue: string; proposedBy: string } | null {
-    const tasks = resolveTasks(this.event());
-    const task = tasks.find(t =>
-      t.checklistItemId === checklistItemId ||
-      t.formSectionRef === checklistItemId ||
-      t.id === `task-sys-${checklistItemId}` ||
-      (checklistItemId === 'coverUrl' && (t.checklistItemId === 'portada' || t.formSectionRef === 'coverUrl')) ||
-      (checklistItemId === 'posterUrl' && (t.checklistItemId === 'cartel_oficial' || t.formSectionRef === 'posterUrl')) ||
-      (checklistItemId === 'ticketTiers' && (t.checklistItemId === 'boletos' || t.formSectionRef === 'ticketTiers')) ||
-      (checklistItemId === 'schedule' && (t.checklistItemId === 'corrida' || t.checklistItemId === 'orden' || t.formSectionRef === 'schedule')) ||
-      (checklistItemId === 'sound' && (t.checklistItemId === 'sonido' || t.formSectionRef === 'sound')) ||
-      (checklistItemId === 'videos_grupos' && (t.checklistItemId === 'videos_grupos' || t.formSectionRef === 'videos_grupos' || t.formSectionRef === 'greetingVideos'))
-    );
-
-    // DEBUG: trazar exactamente qué pasa
-    if (checklistItemId === 'identidad' && fieldPropKey === 'title') {
-      console.log('[getPendingProposal] identidad/title', {
-        taskFound: !!task,
-        taskId: task?.id,
-        checklistItemId: task?.checklistItemId,
-        hasPendingProposal: !!task?.pendingChangeProposal,
-        proposalStatus: task?.pendingChangeProposal?.status,
-        proposalChanges: task?.pendingChangeProposal?.proposedChanges,
-        rawEventTasks: this.event().tasks?.map(t => ({ id: t.id, cid: t.checklistItemId, hasProp: !!t.pendingChangeProposal }))
-      });
-    }
-
-    if (!task || !task.pendingChangeProposal || task.pendingChangeProposal.status !== 'pendiente') {
-      return null;
-    }
-
-    const prop = task.pendingChangeProposal;
-    const changes = prop.proposedChanges || {};
-    const flat = (changes as any).publicProfile ? { ...changes, ...(changes as any).publicProfile } : changes;
-
-    let val: any;
-    if (fieldPropKey && (flat as any)[fieldPropKey] !== undefined) {
-      val = (flat as any)[fieldPropKey];
-    } else {
-      const keys = Object.keys(flat).filter(k => k !== 'publicProfile');
-      val = keys.length ? (flat as any)[keys[0]] : null;
-    }
-
-    if (val === undefined || val === null || val === '') return null;
-
-    return {
-      proposedValue: String(val),
-      proposedBy: prop.proposedBy?.name || prop.proposedBy?.managerName || 'Manager'
-    };
-  }
 
   private sessionService = inject(SessionService);
 
-  isTaskUnlocked(checklistItemId: string): boolean {
-    const actor = this.sessionService.actor();
-    return isTaskUnlockedForActor(this.event(), checklistItemId, actor.managerName);
+
+
+
+  /**
+   * Los datos obligatorios de esta pestaña: de quién son, qué hay que advertir
+   * antes de tocarlos y qué propuestas tienen encima. La lógica vive en un solo
+   * sitio; aquí solo se enchufa el evento y quien lo está mirando.
+   */
+  readonly mandatory = new MandatoryFields(
+    () => this.event(),
+    () => this.sessionService.actor(),
+    patch => this.patch.emit(patch)
+  );
+
+  /**
+   * Si este actor puede escribir aquí.
+   *
+   * Un manager siempre puede —para eso está el aviso de intervención—; el staff
+   * y los administradores solo dentro de la disquera que responde por el punto,
+   * porque no tienen a quién responderle del dato de otra.
+   */
+  isTaskUnlocked(ref: string): boolean {
+    // Cerrado solo mientras falte confirmar la intervención, y solo para quien
+    // puede confirmarla. El staff de otra disquera no tiene esa puerta.
+    if (!this.mandatory.locked(ref)) return true;
+    return false;
   }
 
+  /** Deja escrito que un manager ajeno se metió a resolver este punto. */
   onInterveneTask(task: ResolvedTask): void {
-    const actor = this.sessionService.actor();
-    const now = new Date().toISOString().slice(0, 16);
-
-    const updatedTasks = (this.event().tasks || []).map(t => {
-      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
-        return {
-          ...t,
-          intervenedBy: actor,
-          completedBy: actor,
-          completedAt: now,
-          status: 'completada' as const
-        };
-      }
-      return t;
-    });
-
-    this.patch.emit({ tasks: updatedTasks });
+    this.patch.emit(markIntervention(this.event(), task, this.sessionService.actor()));
   }
 
-  onAcceptProposalTask(task: ResolvedTask): void {
-    const prop = task.pendingChangeProposal;
-    if (!prop) return;
-
-    const patchData = prop.proposedChanges || {};
-    const updatedTasks = (this.event().tasks || []).map(t => {
-      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
-        return {
-          ...t,
-          pendingChangeProposal: {
-            ...prop,
-            status: 'aceptada' as const,
-            respondedAt: new Date().toISOString()
-          }
-        };
-      }
-      return t;
-    });
-
-    this.patch.emit({ ...patchData, tasks: updatedTasks });
-  }
-
-  onRejectProposalTask(task: ResolvedTask): void {
-    const prop = task.pendingChangeProposal;
-    if (!prop) return;
-
-    const updatedTasks = (this.event().tasks || []).map(t => {
-      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
-        return {
-          ...t,
-          pendingChangeProposal: {
-            ...prop,
-            status: 'rechazada' as const,
-            respondedAt: new Date().toISOString()
-          }
-        };
-      }
-      return t;
-    });
-
-    this.patch.emit({ tasks: updatedTasks });
-  }
 }
 

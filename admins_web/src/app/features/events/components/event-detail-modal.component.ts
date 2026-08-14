@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   EventItem, EventApproval, EventState, EventManagerAgreement, EventAgreementStatus,
-  EventLineupSlot, LineupApprovalStatus, ArtistGreetingVideo
+  EventLineupSlot, LineupApprovalStatus, ArtistGreetingVideo, EventPostponement, EventManagerClosureConfirmation
 } from '../../../core/models/event.models';
 import { GroupItem } from '../../../core/models/admin.models';
 import { eventStateMeta, eventEditPolicy } from '../../../core/models/event-state.meta';
 import { RoleService } from '../../../core/services/role.service';
+import { SessionService } from '../../../core/services/session.service';
 import { ModalShellComponent } from '../../../shared/ui/modal-shell/modal-shell.component';
 import { ProgressBarComponent } from '../../../shared/ui/progress-bar/progress-bar.component';
 import { TabPillsComponent, TabPillItem } from '../../../shared/ui/tab-pills/tab-pills.component';
@@ -24,18 +25,26 @@ import { croquisCapacity } from '../croquis/croquis-metrics';
 import { managerWorkloads, ManagerWorkload, resolveTasks, ResolvedTask } from '../event-tasks';
 import { CompletenessItem, completenessByGroup, eventCompleteness } from '../event-completeness';
 import {
+  allManagersConfirmedClosure,
+  allReviewApprovalsResolved,
   approvals,
   approvedCount,
   availableSeats,
   currentReviewRound,
   dateTimeLabel,
+  evaluatePublishReadiness,
   grossTicketRevenue,
   hasRejection,
+  isClosureComplete,
+  isEventCreator,
   isFullyApproved,
   lineup,
   lineupTotalCost,
   money,
+  netResult,
   occupancyPercent,
+  paidPayouts,
+  participatingManagers,
   pendingApprovals,
   pendingOutboundCount,
   potentialTicketRevenue,
@@ -45,6 +54,8 @@ import {
   slotEngagement,
   slotOfferAmount,
   soldSeats,
+  totalExpenses,
+  totalPayouts,
   totalSeats,
   unsentLineupRequests,
   unsentResponsibilities
@@ -169,15 +180,21 @@ export type EventDetailTab =
                   </div>
 
                   <div class="relative pt-1.5">
-                    <!-- Riel: va de centro a centro del primer y último nodo. -->
+                    <!-- Riel: va de centro a centro del primer y último nodo.
+                         Se ancla al centro real del nodo —6px de relleno
+                         superior más la mitad de sus 34px— y se centra por
+                         transformación, en vez de con un desplazamiento
+                         calculado a ojo: así la línea sale por la mitad del
+                         círculo y no por el tercio de abajo, que es lo que la
+                         hacía verse metida dentro del ícono. -->
                     <div
-                      class="absolute top-[26px] h-[3px] rounded-full bg-surface-container-highest/80"
+                      class="absolute top-[23px] -translate-y-1/2 h-[3px] rounded-full bg-surface-container-highest/80"
                       [style.left.%]="phaseTrackInset()"
                       [style.right.%]="phaseTrackInset()"
                     ></div>
                     <!-- Tramo recorrido -->
                     <div
-                      class="absolute top-[26px] h-[3px] rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.55)] transition-all duration-500"
+                      class="absolute top-[23px] -translate-y-1/2 h-[3px] rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.55)] transition-all duration-500"
                       [style.left.%]="phaseTrackInset()"
                       [style.width]="'calc((100% - ' + (2 * phaseTrackInset()) + '%) * ' + (phaseProgressPercent() / 100) + ')'"
                     ></div>
@@ -245,366 +262,684 @@ export type EventDetailTab =
           @if (activeTab() === 'resumen') {
             <div class="space-y-6">
 
-              <!-- Avance de captura -->
-              <section class="p-6 rounded-3xl bg-gradient-to-br from-sky-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-sky-500/25 border-l-4 border-l-sky-500/70 shadow-2xl shadow-sky-500/5 space-y-5 backdrop-blur-2xl relative overflow-hidden">
-                <div class="absolute -left-12 -top-12 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+              <!-- ─── VISTA: BORRADOR Y EN REVISIÓN ─── -->
+              @if (e.state === 'Borrador' || e.state === 'En Revisión') {
 
-                <div class="flex items-center justify-between gap-3 flex-wrap relative z-10">
-                  <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center font-black shadow-lg shadow-amber-500/10">
-                      <span class="material-symbols-outlined text-2xl font-bold">checklist</span>
-                    </div>
-                    <div>
-                      <h5 class="text-xs font-black uppercase tracking-wider text-on-surface">Información Requerida para Publicar</h5>
-                      <p class="text-xs text-outline font-medium">Estado general de completitud del expediente</p>
-                    </div>
-                  </div>
-
-                  <span class="px-4 py-2 rounded-2xl text-xs font-mono font-black border shadow-lg backdrop-blur-md flex items-center gap-2"
-                    [class]="report().canSubmitForReview
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10'
-                      : 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-amber-500/10'"
-                  >
-                    <span class="w-2.5 h-2.5 rounded-full" [class]="report().canSubmitForReview ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
-                    {{ report().doneCount }} de {{ report().totalCount }} puntos completados ({{ report().percent }}%)
-                  </span>
-                </div>
-
-                <!-- Sin valueLabel: el badge de arriba ya indica el porcentaje. -->
-                <app-progress-bar
-                  [percent]="report().percent"
-                  [colorVariant]="report().canSubmitForReview ? 'success' : 'warning'"
-                />
-
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 relative z-10">
-                  @for (block of checklist(); track block.group) {
-                    @let meta = groupColorClass(block.group);
-                    <div class="p-4 rounded-3xl bg-surface-container/70 border border-outline-variant/25 {{ meta.border }} space-y-3.5 backdrop-blur-md shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl relative overflow-hidden group">
-                      <div class="absolute -right-8 -top-8 w-28 h-28 bg-gradient-to-br {{ meta.bg }} rounded-full blur-2xl pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity"></div>
-
-                      <!-- Header de la tarjeta -->
-                      <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-outline-variant/15 relative z-10">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                          <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border {{ meta.badge }} shadow-md">
-                            <span class="material-symbols-outlined text-base font-bold">{{ groupIcon(block.group) }}</span>
-                          </div>
-                          <div class="min-w-0">
-                            <h6 class="text-xs font-black uppercase tracking-wider text-on-surface truncate">{{ block.group }}</h6>
-                            <p class="text-[10px] text-outline font-mono">
-                              {{ block.done }} de {{ block.items.length }} avance
-                            </p>
-                          </div>
+                <!-- En Revisión: Panel de Estado de Aprobaciones y Solicitudes -->
+                @if (e.state === 'En Revisión') {
+                  <section class="p-6 rounded-3xl bg-gradient-to-br from-amber-500/[0.08] via-surface-container-high/90 to-surface-container-high/90 border border-amber-500/30 border-l-4 border-l-amber-500 shadow-2xl space-y-4 backdrop-blur-2xl">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                      <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center font-black shadow-lg">
+                          <span class="material-symbols-outlined text-2xl font-bold">how_to_reg</span>
                         </div>
-
-                        <span
-                          class="px-2.5 py-1 rounded-xl text-[10px] font-mono font-black border shadow-sm shrink-0"
-                          [class]="block.done === block.items.length
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
-                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'"
-                        >
-                          {{ block.done === block.items.length ? '100% LISTO' : (roundPercent(block.done, block.items.length) + '%') }}
-                        </span>
+                        <div>
+                          <h5 class="text-xs font-black uppercase tracking-wider text-on-surface">Estado de Aprobaciones & Solicitudes de Ronda</h5>
+                          <p class="text-xs text-outline font-medium">Requisito indispensable para habilitar la publicación del evento</p>
+                        </div>
                       </div>
 
-                      <!-- Lista de items -->
-                      <ul class="space-y-2 relative z-10">
-                        @for (item of block.items; track item.id) {
-                          <li
-                            [title]="itemTooltip(item)"
-                            class="p-2.5 rounded-2xl border transition-all duration-200 cursor-help"
-                            [class]="item.done
-                              ? 'bg-emerald-500/5 border-emerald-500/20 text-on-surface'
-                              : (item.required
-                                ? 'bg-rose-500/10 border-rose-500/30 text-rose-100 shadow-[0_0_10px_rgba(244,63,94,0.12)]'
-                                : 'bg-surface-container/50 border-outline-variant/15 text-outline')"
-                          >
-                            <div class="flex items-start gap-2.5">
-                              <div
-                                class="w-5 h-5 rounded-lg flex items-center justify-center shrink-0 mt-0.5 shadow-sm"
-                                [class]="item.done
-                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                                  : (item.required
-                                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
-                                    : 'bg-surface-container-highest/60 text-outline border border-outline-variant/30')"
-                              >
-                                <span class="material-symbols-outlined text-xs font-black">
-                                  {{ item.done ? 'check' : (item.required ? 'exclamation' : 'remove') }}
-                                </span>
-                              </div>
-
-                              <div class="min-w-0 flex-1">
-                                <div class="flex items-center justify-between gap-1.5">
-                                  <span
-                                    class="text-[11px] leading-tight"
-                                    [class]="item.done ? 'text-on-surface-variant font-semibold' : 'text-on-surface font-bold'"
-                                  >
-                                    {{ item.label }}
-                                  </span>
-
-                                  @if (item.required && !item.done) {
-                                    <span class="px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-rose-500/25 text-rose-300 border border-rose-400/40 shrink-0">
-                                      Requerido
-                                    </span>
-                                  }
-                                </div>
-
-                                @if (!item.done && item.hint) {
-                                  <p class="text-[10px] text-outline mt-0.5 leading-snug">
-                                    {{ item.hint }}
-                                  </p>
-                                }
-
-                                <!-- Solo se etiqueta cuando NO le toca al
-                                     organizador: marcar "esto es tuyo" en casi
-                                     todos los puntos sería ruido. -->
-                                @if (!item.done && !isOwnItem(item)) {
-                                  <div class="flex items-center gap-1 flex-wrap mt-1">
-                                    @for (owner of foreignOwners(item); track owner) {
-                                      <span class="px-1.5 py-0.5 rounded-md text-[9px] font-black bg-sky-500/15 text-sky-300 border border-sky-500/30 flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-[10px]">hourglass_top</span>
-                                        Depende de {{ owner }}
-                                      </span>
-                                    }
-                                  </div>
-                                }
-                              </div>
-                            </div>
-                          </li>
-                        }
-                      </ul>
+                      <span class="px-4 py-2 rounded-2xl text-xs font-mono font-black border shadow-lg backdrop-blur-md flex items-center gap-2"
+                        [class]="publishReadiness().canPublish
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10'
+                          : 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-amber-500/10'"
+                      >
+                        <span class="w-2.5 h-2.5 rounded-full" [class]="publishReadiness().canPublish ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
+                        {{ publishReadiness().canPublish ? 'Listo para Publicar' : publishReadiness().pendingRequestsCount + ' solicitud(es) por resolver' }}
+                      </span>
                     </div>
-                  }
-                </div>
-              </section>
 
-              <!-- ¿De quién depende lo que falta? La pregunta que decide si el
-                   encargado se pone a capturar o se pone a perseguir a alguien. -->
-              @if (report().missingRequired.length) {
-                <section class="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-indigo-500/25 border-l-4 border-l-indigo-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
-                  <div class="flex items-center justify-between gap-3 flex-wrap">
-                    <h5 class="text-xs font-black uppercase tracking-wider text-indigo-300 flex items-center gap-2.5">
-                      <span class="w-8 h-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center justify-center material-symbols-outlined text-lg">assignment_ind</span>
-                      <span>Quién resuelve lo que falta</span>
-                    </h5>
-                    <span class="px-3 py-1.5 rounded-xl text-[11px] font-black border"
-                      [class]="report().allPendingAreOwn
-                        ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                        : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
-                      {{ report().allPendingAreOwn ? 'Todo está en tus manos' : 'Hay pendientes de otros managers' }}
+                    @if (!publishReadiness().canPublish) {
+                      <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 space-y-1 text-xs text-amber-200">
+                        <strong class="font-bold flex items-center gap-1.5 text-amber-300">
+                          <span class="material-symbols-outlined text-sm">lock</span> Publicación bloqueada temporalmente:
+                        </strong>
+                        <ul class="list-disc list-inside space-y-0.5 text-[11px] text-amber-200/90 pl-1">
+                          @for (reason of publishReadiness().missingRequirements; track reason) {
+                            <li>{{ reason }}</li>
+                          }
+                        </ul>
+                      </div>
+                    } @else {
+                      <div class="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2 text-xs text-emerald-300">
+                        <span class="material-symbols-outlined text-base">verified</span>
+                        <span>Todas las tareas obligatorias y solicitudes han sido resueltas de conformidad. El botón <strong>Publicar</strong> está habilitado.</span>
+                      </div>
+                    }
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                      <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                        <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Aprobaciones de Cartel</span>
+                        <span class="text-sm font-black font-mono" [class]="pendingApprovals(e).length ? 'text-amber-400' : 'text-emerald-400'">
+                          {{ approvedTotal() }} de {{ approvalList().length }}
+                        </span>
+                      </div>
+                      <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                        <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Co-organización</span>
+                        <span class="text-sm font-black font-mono text-teal-300">
+                          {{ agreements().length }} manager(s)
+                        </span>
+                      </div>
+                      <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                        <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Puntos Obligatorios</span>
+                        <span class="text-sm font-black font-mono" [class]="report().missingRequired.length ? 'text-rose-400' : 'text-emerald-400'">
+                          {{ report().doneCount }}/{{ report().totalCount }}
+                        </span>
+                      </div>
+                      <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                        <span class="text-[9px] font-black uppercase tracking-wider text-outline block">Ronda Vigente</span>
+                        <span class="text-sm font-black font-mono text-primary">
+                          Ronda {{ reviewRoundsCount() }}
+                        </span>
+                      </div>
+                    </div>
+                  </section>
+                }
+
+                <!-- Avance de captura (Checklist de 33 puntos) -->
+                <section class="p-6 rounded-3xl bg-gradient-to-br from-sky-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-sky-500/25 border-l-4 border-l-sky-500/70 shadow-2xl shadow-sky-500/5 space-y-5 backdrop-blur-2xl relative overflow-hidden">
+                  <div class="absolute -left-12 -top-12 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                  <div class="flex items-center justify-between gap-3 flex-wrap relative z-10">
+                    <div class="flex items-center gap-3">
+                      <div class="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center font-black shadow-lg shadow-amber-500/10">
+                        <span class="material-symbols-outlined text-2xl font-bold">checklist</span>
+                      </div>
+                      <div>
+                        <h5 class="text-xs font-black uppercase tracking-wider text-on-surface">Información Requerida para Publicar</h5>
+                        <p class="text-xs text-outline font-medium">Estado general de completitud del expediente</p>
+                      </div>
+                    </div>
+
+                    <span class="px-4 py-2 rounded-2xl text-xs font-mono font-black border shadow-lg backdrop-blur-md flex items-center gap-2"
+                      [class]="report().canSubmitForReview
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10'
+                        : 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-amber-500/10'"
+                    >
+                      <span class="w-2.5 h-2.5 rounded-full" [class]="report().canSubmitForReview ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'"></span>
+                      {{ report().doneCount }} de {{ report().totalCount }} puntos completados ({{ report().percent }}%)
                     </span>
                   </div>
 
-                  <p class="text-[11px] text-outline leading-relaxed">
-                    @if (report().allPendingAreOwn) {
-                      Los {{ report().missingRequired.length }} punto(s) que faltan los puedes capturar tú:
-                      nada del expediente está esperando a nadie más.
-                    } @else {
-                      Hay puntos que tú no puedes tocar. Los horarios y los costos de los grupos de un
-                      co-organizador los captura su dueño, y la ficha pública de cualquier grupo ajeno vive en el
-                      expediente de ese grupo.
-                    }
-                  </p>
+                  <app-progress-bar
+                    [percent]="report().percent"
+                    [colorVariant]="report().canSubmitForReview ? 'success' : 'warning'"
+                  />
 
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                    @for (block of report().pendingByOwner; track block.owner) {
-                      <div class="p-4 rounded-2xl border space-y-2.5"
-                        [class]="block.isOrganizer
-                          ? 'bg-surface-container/70 border-outline-variant/25'
-                          : 'bg-sky-500/[0.07] border-sky-500/30'">
-                        <div class="flex items-center justify-between gap-2 flex-wrap">
+                  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 relative z-10">
+                    @for (block of checklist(); track block.group) {
+                      @let meta = groupColorClass(block.group);
+                      <div class="p-4 rounded-3xl bg-surface-container/70 border border-outline-variant/25 {{ meta.border }} space-y-3.5 backdrop-blur-md shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl relative overflow-hidden group">
+                        <div class="absolute -right-8 -top-8 w-28 h-28 bg-gradient-to-br {{ meta.bg }} rounded-full blur-2xl pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity"></div>
+
+                        <!-- Header de la tarjeta -->
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-outline-variant/15 relative z-10">
                           <div class="flex items-center gap-2.5 min-w-0">
-                            <span class="w-8 h-8 rounded-xl border flex items-center justify-center material-symbols-outlined text-base shrink-0"
-                              [class]="block.isOrganizer
-                                ? 'bg-primary/15 border-primary/30 text-primary'
-                                : 'bg-sky-500/15 border-sky-500/30 text-sky-300'">
-                              {{ block.isOrganizer ? 'person' : 'group' }}
-                            </span>
+                            <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border {{ meta.badge }} shadow-md">
+                              <span class="material-symbols-outlined text-base font-bold">{{ groupIcon(block.group) }}</span>
+                            </div>
                             <div class="min-w-0">
-                              <p class="text-xs font-black text-on-surface truncate">
-                                {{ block.owner }}{{ block.isOrganizer ? ' (tú)' : '' }}
-                              </p>
-                              <p class="text-[10px] text-outline">
-                                {{ block.isOrganizer ? 'Organizador del evento' : ownerRoleLabel(block.owner) }}
+                              <h6 class="text-xs font-black uppercase tracking-wider text-on-surface truncate">{{ block.group }}</h6>
+                              <p class="text-[10px] text-outline font-mono">
+                                {{ block.done }} de {{ block.items.length }} avance
                               </p>
                             </div>
                           </div>
-                          <span class="px-2.5 py-1 rounded-xl text-[10px] font-mono font-black border shrink-0"
-                            [class]="block.isOrganizer
-                              ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                              : 'bg-sky-500/15 text-sky-300 border-sky-500/30'">
-                            {{ block.items.length }} pendiente(s)
+
+                          <span
+                            class="px-2.5 py-1 rounded-xl text-[10px] font-mono font-black border shadow-sm shrink-0"
+                            [class]="block.done === block.items.length
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
+                              : 'bg-amber-500/20 text-amber-300 border-amber-500/40'"
+                          >
+                            {{ block.done === block.items.length ? '100% LISTO' : (roundPercent(block.done, block.items.length) + '%') }}
                           </span>
                         </div>
 
-                        <ul class="space-y-1 pt-1 border-t border-outline-variant/15">
+                        <!-- Lista de items -->
+                        <ul class="space-y-2 relative z-10">
                           @for (item of block.items; track item.id) {
-                            <li class="text-[11px] text-on-surface-variant flex items-start gap-1.5">
-                              <span class="material-symbols-outlined text-[12px] shrink-0 mt-0.5 text-outline">chevron_right</span>
-                              <span>{{ item.label }}</span>
+                            <li
+                              [title]="itemTooltip(item)"
+                              class="p-2.5 rounded-2xl border transition-all duration-200 cursor-help"
+                              [class]="item.done
+                                ? 'bg-emerald-500/5 border-emerald-500/20 text-on-surface'
+                                : (item.required
+                                  ? (e.state === 'En Revisión' ? 'bg-rose-500/15 border-rose-500/40 text-rose-100 shadow-[0_0_12px_rgba(244,63,94,0.18)]' : 'bg-rose-500/10 border-rose-500/30 text-rose-100 shadow-[0_0_10px_rgba(244,63,94,0.12)]')
+                                  : 'bg-surface-container/50 border-outline-variant/15 text-outline')"
+                            >
+                              <div class="flex items-start gap-2.5">
+                                <div
+                                  class="w-5 h-5 rounded-lg flex items-center justify-center shrink-0 mt-0.5 shadow-sm"
+                                  [class]="item.done
+                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                                    : (item.required
+                                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                                      : 'bg-surface-container-highest/60 text-outline border border-outline-variant/30')"
+                                >
+                                  <span class="material-symbols-outlined text-xs font-black">
+                                    {{ item.done ? 'check' : (item.required ? 'exclamation' : 'remove') }}
+                                  </span>
+                                </div>
+
+                                <div class="min-w-0 flex-1">
+                                  <div class="flex items-center justify-between gap-1.5">
+                                    <span
+                                      class="text-[11px] leading-tight"
+                                      [class]="item.done ? 'text-on-surface-variant font-semibold' : 'text-on-surface font-bold'"
+                                    >
+                                      {{ item.label }}
+                                    </span>
+
+                                    @if (item.required && !item.done) {
+                                      <span class="px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider bg-rose-500/25 text-rose-300 border border-rose-400/40 shrink-0">
+                                        {{ e.state === 'En Revisión' ? 'Falta para publicar' : 'Requerido' }}
+                                      </span>
+                                    }
+                                  </div>
+
+                                  @if (!item.done && item.hint) {
+                                    <p class="text-[10px] text-outline mt-0.5 leading-snug">
+                                      {{ item.hint }}
+                                    </p>
+                                  }
+
+                                  @if (!item.done && !isOwnItem(item)) {
+                                    <div class="flex items-center gap-1 flex-wrap mt-1">
+                                      @for (owner of foreignOwners(item); track owner) {
+                                        <span class="px-1.5 py-0.5 rounded-md text-[9px] font-black bg-sky-500/15 text-sky-300 border border-sky-500/30 flex items-center gap-1">
+                                          <span class="material-symbols-outlined text-[10px]">hourglass_top</span>
+                                          Depende de {{ owner }}
+                                        </span>
+                                      }
+                                    </div>
+                                  }
+                                </div>
+                              </div>
                             </li>
                           }
                         </ul>
-
-                        <!-- Un manager que ni siquiera ha recibido la invitación
-                             no puede capturar nada: perseguirlo no sirve de nada
-                             hasta que el evento salga a revisión. -->
-                        @if (!block.isOrganizer) {
-                          @let invite = invitationOf(block.owner);
-                          <p class="text-[10px] flex items-start gap-1.5 pt-1.5 border-t border-outline-variant/15"
-                            [class]="invite && invite.status === 'Aceptado' ? 'text-emerald-300' : 'text-amber-300'">
-                            <span class="material-symbols-outlined text-[12px] shrink-0 mt-0.5">
-                              {{ invite && invite.status === 'Aceptado' ? 'check_circle' : 'schedule_send' }}
-                            </span>
-                            <span>
-                              @if (!invite) {
-                                No co-organiza el evento: sus datos salen del expediente de su grupo, no de aquí.
-                              } @else if (invite.status === 'Sin Enviar') {
-                                Todavía no recibe la invitación. No podrá capturar nada hasta que envíes el evento a revisión.
-                              } @else if (invite.status === 'Pendiente') {
-                                Ya recibió la invitación pero no ha respondido. Podrá capturar en cuanto acepte.
-                              } @else if (invite.status === 'Aceptado') {
-                                Ya aceptó co-organizar: puede capturar estos puntos cuando quiera.
-                              } @else {
-                                Rechazó co-organizar. Estos puntos se quedan sin dueño hasta que cambies el cartel.
-                              }
-                            </span>
-                          </p>
-                        }
                       </div>
                     }
                   </div>
                 </section>
-              }
 
-              <!-- ─── QUIÉN CARGA CON QUÉ ───
-                   El bloque de arriba responde "de quién depende lo que falta
-                   del expediente". Este responde la otra mitad de la pregunta:
-                   qué lleva encima cada disquera en total —los puntos que se le
-                   encargaron, los encargos operativos y el dinero que movió—,
-                   que es lo que hay que mirar para saber a quién se le está
-                   cargando la mano y a quién hay que ir a buscar. -->
-              @if (workloads().length) {
-                <section class="p-6 rounded-3xl bg-gradient-to-br from-teal-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-teal-500/25 border-l-4 border-l-teal-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
-                  <div class="flex items-center justify-between gap-3 flex-wrap">
-                    <h5 class="text-xs font-black uppercase tracking-wider text-teal-300 flex items-center gap-2.5">
-                      <span class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center material-symbols-outlined text-lg">groups</span>
-                      <span>Quién carga con qué</span>
-                    </h5>
-                    <button
-                      type="button"
-                      (click)="activeTab.set('tareas')"
-                      class="px-3 py-1.5 rounded-xl bg-teal-500/15 text-teal-200 border border-teal-500/30 hover:bg-teal-500 hover:text-black text-[10px] font-black transition-all flex items-center gap-1.5"
-                    >
-                      <span class="material-symbols-outlined text-[13px]">open_in_new</span> Abrir Tareas
-                    </button>
-                  </div>
+                <!-- Quién resuelve lo que falta -->
+                @if (report().missingRequired.length) {
+                  <section class="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-indigo-500/25 border-l-4 border-l-indigo-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                      <h5 class="text-xs font-black uppercase tracking-wider text-indigo-300 flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center justify-center material-symbols-outlined text-lg">assignment_ind</span>
+                        <span>Quién resuelve lo que falta</span>
+                      </h5>
+                      <span class="px-3 py-1.5 rounded-xl text-[11px] font-black border"
+                        [class]="report().allPendingAreOwn
+                          ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                          : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
+                        {{ report().allPendingAreOwn ? 'Todo está en tus manos' : 'Hay pendientes de otros managers' }}
+                      </span>
+                    </div>
 
-                  <p class="text-[11px] text-outline leading-relaxed">
-                    El reparto real del trabajo. Los <strong class="text-sky-300">puntos del expediente</strong> los cierra el sistema al capturar el dato;
-                    los <strong class="text-amber-300">encargos</strong> los confirma su responsable y su gasto es el que aparece en Producción.
-                  </p>
-
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                    @for (w of workloads(); track w.manager) {
-                      <div class="p-4 rounded-2xl border space-y-3"
-                        [class]="w.isOrganizer
-                          ? 'bg-amber-500/[0.06] border-amber-500/30'
-                          : 'bg-surface-container/70 border-outline-variant/25'">
-
-                        <div class="flex items-start justify-between gap-2.5 pb-2.5 border-b border-outline-variant/15">
-                          <div class="flex items-center gap-2.5 min-w-0">
-                            <span class="w-9 h-9 rounded-xl border flex items-center justify-center material-symbols-outlined text-base shrink-0"
-                              [class]="w.isOrganizer
-                                ? 'bg-amber-500/15 border-amber-500/35 text-amber-300'
-                                : 'bg-sky-500/15 border-sky-500/30 text-sky-300'">
-                              {{ w.isOrganizer ? 'stars' : 'business' }}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      @for (block of report().pendingByOwner; track block.owner) {
+                        <div class="p-4 rounded-2xl border space-y-2.5"
+                          [class]="block.isOrganizer
+                            ? 'bg-surface-container/70 border-outline-variant/25'
+                            : 'bg-sky-500/[0.07] border-sky-500/30'">
+                          <div class="flex items-center justify-between gap-2 flex-wrap">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                              <span class="w-8 h-8 rounded-xl border flex items-center justify-center material-symbols-outlined text-base shrink-0"
+                                [class]="block.isOrganizer
+                                  ? 'bg-primary/15 border-primary/30 text-primary'
+                                  : 'bg-sky-500/15 border-sky-500/30 text-sky-300'">
+                                {{ block.isOrganizer ? 'person' : 'group' }}
+                              </span>
+                              <div class="min-w-0">
+                                <p class="text-xs font-black text-on-surface truncate">
+                                  {{ block.owner }}{{ block.isOrganizer ? ' (tú)' : '' }}
+                                </p>
+                                <p class="text-[10px] text-outline">
+                                  {{ block.isOrganizer ? 'Organizador del evento' : ownerRoleLabel(block.owner) }}
+                                </p>
+                              </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-xl text-[10px] font-mono font-black border shrink-0"
+                              [class]="block.isOrganizer
+                                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                : 'bg-sky-500/15 text-sky-300 border-sky-500/30'">
+                              {{ block.items.length }} pendiente(s)
                             </span>
-                            <div class="min-w-0">
-                              <p class="text-xs font-black text-on-surface truncate">
-                                {{ w.manager }}{{ w.isOrganizer ? ' · organiza' : '' }}
-                              </p>
-                              <p class="text-[10px] text-outline">
-                                {{ w.required.length + w.optional.length }} responsabilidad(es)
-                              </p>
-                            </div>
                           </div>
 
-                          @if (w.awaitingResponse > 0) {
-                            <span class="px-2 py-1 rounded-lg bg-amber-400 text-black text-[9px] font-black uppercase tracking-wider shrink-0 flex items-center gap-1 animate-pulse">
-                              <span class="material-symbols-outlined text-[11px]">how_to_vote</span>
-                              {{ w.awaitingResponse }} por contestar
-                            </span>
-                          }
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-2">
-                          <div class="p-2.5 rounded-xl bg-black/25 border border-white/5 text-center">
-                            <div class="text-base font-black font-mono"
-                              [class]="w.required.length && w.requiredDone === w.required.length ? 'text-emerald-400' : 'text-sky-300'">
-                              {{ w.requiredDone }}<span class="text-outline text-[11px]">/{{ w.required.length }}</span>
-                            </div>
-                            <span class="text-[9px] font-bold uppercase tracking-wider text-outline">Expediente</span>
-                          </div>
-                          <div class="p-2.5 rounded-xl bg-black/25 border border-white/5 text-center">
-                            <div class="text-base font-black font-mono"
-                              [class]="w.optional.length && w.optionalDone === w.optional.length ? 'text-emerald-400' : 'text-amber-300'">
-                              {{ w.optionalDone }}<span class="text-outline text-[11px]">/{{ w.optional.length }}</span>
-                            </div>
-                            <span class="text-[9px] font-bold uppercase tracking-wider text-outline">Encargos</span>
-                          </div>
-                          <div class="p-2.5 rounded-xl bg-black/25 border border-white/5 text-center">
-                            @if (roleService.canViewFinances()) {
-                              <div class="text-base font-black font-mono text-violet-300">{{ money(w.spend) }}</div>
-                              <span class="text-[9px] font-bold uppercase tracking-wider text-outline">{{ w.items }} partida(s)</span>
-                            } @else {
-                              <div class="text-base font-black font-mono text-violet-300">{{ w.items }}</div>
-                              <span class="text-[9px] font-bold uppercase tracking-wider text-outline">Partidas</span>
-                            }
-                          </div>
-                        </div>
-
-                        @if (pendingOf(w).length) {
-                          <ul class="space-y-1 pt-1">
-                            @for (t of pendingOf(w); track t.id) {
-                              <li class="text-[10px] flex items-start gap-1.5">
-                                <span class="material-symbols-outlined text-[12px] shrink-0 mt-0.5"
-                                  [class]="t.kind === 'externa' ? 'text-amber-400' : 'text-sky-400'">
-                                  {{ t.kind === 'externa' ? 'handyman' : 'fact_check' }}
-                                </span>
-                                <span class="text-on-surface-variant leading-snug">
-                                  {{ t.title }}
-                                  @if (t.delegate) {
-                                    <span class="text-violet-300"> · {{ t.delegate.name }}</span>
-                                  }
-                                </span>
-                              </li>
-                            }
-                            @if (pendingCountOf(w) > pendingOf(w).length) {
-                              <li class="text-[10px] text-outline pl-4">
-                                +{{ pendingCountOf(w) - pendingOf(w).length }} más
+                          <ul class="space-y-1 pt-1 border-t border-outline-variant/15">
+                            @for (item of block.items; track item.id) {
+                              <li class="text-[11px] text-on-surface-variant flex items-start gap-1.5">
+                                <span class="material-symbols-outlined text-[12px] shrink-0 mt-0.5 text-outline">chevron_right</span>
+                                <span>{{ item.label }}</span>
                               </li>
                             }
                           </ul>
-                        } @else {
-                          <p class="text-[10px] text-emerald-300 flex items-center gap-1.5">
-                            <span class="material-symbols-outlined text-[13px]">check_circle</span>
-                            Sin pendientes de su parte
-                          </p>
-                        }
+                        </div>
+                      }
+                    </div>
+                  </section>
+                }
 
-                        @if (w.delegated > 0) {
-                          <p class="text-[10px] text-violet-300 flex items-center gap-1.5 pt-1 border-t border-outline-variant/15">
-                            <span class="material-symbols-outlined text-[13px]">groups</span>
-                            {{ w.delegated }} en manos de su staff
-                          </p>
-                        }
+                <!-- Quién carga con qué -->
+                @if (workloads().length) {
+                  <section class="p-6 rounded-3xl bg-gradient-to-br from-teal-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-teal-500/25 border-l-4 border-l-teal-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                      <h5 class="text-xs font-black uppercase tracking-wider text-teal-300 flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center material-symbols-outlined text-lg">groups</span>
+                        <span>Quién carga con qué</span>
+                      </h5>
+                      <button
+                        type="button"
+                        (click)="activeTab.set('tareas')"
+                        class="px-3 py-1.5 rounded-xl bg-teal-500/15 text-teal-200 border border-teal-500/30 hover:bg-teal-500 hover:text-black text-[10px] font-black transition-all flex items-center gap-1.5"
+                      >
+                        <span class="material-symbols-outlined text-[13px]">open_in_new</span> Abrir Tareas
+                      </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      @for (w of workloads(); track w.manager) {
+                        <div class="p-4 rounded-2xl border space-y-3"
+                          [class]="w.isOrganizer
+                            ? 'bg-amber-500/[0.06] border-amber-500/30'
+                            : 'bg-surface-container/70 border-outline-variant/25'">
+
+                          <div class="flex items-start justify-between gap-2.5 pb-2.5 border-b border-outline-variant/15">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                              <span class="w-9 h-9 rounded-xl border flex items-center justify-center material-symbols-outlined text-base shrink-0"
+                                [class]="w.isOrganizer
+                                  ? 'bg-amber-500/15 border-amber-500/35 text-amber-300'
+                                  : 'bg-sky-500/15 border-sky-500/30 text-sky-300'">
+                                {{ w.isOrganizer ? 'stars' : 'business' }}
+                              </span>
+                              <div class="min-w-0">
+                                <p class="text-xs font-black text-on-surface truncate">
+                                  {{ w.manager }}{{ w.isOrganizer ? ' · organiza' : '' }}
+                                </p>
+                                <p class="text-[10px] text-outline">
+                                  {{ w.required.length + w.optional.length }} responsabilidad(es)
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="grid grid-cols-3 gap-2">
+                            <div class="p-2.5 rounded-xl bg-black/25 border border-white/5 text-center">
+                              <div class="text-base font-black font-mono text-sky-300">
+                                {{ w.requiredDone }}/{{ w.required.length }}
+                              </div>
+                              <span class="text-[9px] font-bold uppercase tracking-wider text-outline">Expediente</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-black/25 border border-white/5 text-center">
+                              <div class="text-base font-black font-mono text-amber-300">
+                                {{ w.optionalDone }}/{{ w.optional.length }}
+                              </div>
+                              <span class="text-[9px] font-bold uppercase tracking-wider text-outline">Encargos</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-black/25 border border-white/5 text-center">
+                              <div class="text-base font-black font-mono text-violet-300">{{ money(w.spend) }}</div>
+                              <span class="text-[9px] font-bold uppercase tracking-wider text-outline">Gasto</span>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </section>
+                }
+
+              } @else if (e.state === 'Próximo a Publicar' || e.state === 'Publicado' || e.state === 'En Venta') {
+
+                <!-- ─── VISTA: EN CARTELERA & VENTA EN VIVO ─── -->
+
+                <!-- Alerta de postergación de fecha si aplica -->
+                @if (e.activePostponement; as post) {
+                  <section class="p-5 rounded-3xl bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-amber-500/40 shadow-xl space-y-2">
+                    <div class="flex items-center justify-between gap-3">
+                      <h5 class="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-lg">event_repeat</span>
+                        Evento Reprogramado
+                      </h5>
+                      <span class="px-2.5 py-0.5 rounded-lg bg-amber-500/25 text-amber-200 text-[10px] font-bold">
+                        Nueva fecha: {{ post.newDate }}
+                      </span>
+                    </div>
+                    <p class="text-xs text-amber-100/90"><strong>Motivo:</strong> {{ post.reason }}</p>
+                    <p class="text-[11px] text-amber-200/80">{{ post.clientNotice }}</p>
+                  </section>
+                }
+
+                <!-- Tablero Operativo de Venta y Cartelera -->
+                <section class="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/[0.08] via-surface-container-high/90 to-surface-container-high/90 border border-emerald-500/30 border-l-4 border-l-emerald-400 shadow-2xl space-y-5 backdrop-blur-2xl">
+                  <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center gap-3">
+                      <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 flex items-center justify-center shadow-lg">
+                        <span class="material-symbols-outlined text-2xl font-bold">point_of_sale</span>
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <h5 class="text-sm font-black uppercase tracking-wider text-on-surface">
+                            {{ e.state === 'Publicado' ? 'Evento Publicado en Cartelera' : (e.state === 'Próximo a Publicar' ? 'Publicación Automática Programada' : 'Taquilla Activa con Asientos Asignados') }}
+                          </h5>
+                          <span class="px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border"
+                            [class]="e.state === 'En Venta' ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/40' : (e.state === 'Publicado' ? 'bg-blue-500/25 text-blue-300 border-blue-500/40' : 'bg-cyan-500/25 text-cyan-300 border-cyan-500/40')">
+                            {{ e.state }}
+                          </span>
+                        </div>
+                        <p class="text-xs text-outline font-medium mt-0.5">
+                          {{ e.state === 'Publicado' ? 'Los clientes pueden ver el evento. Al registrarse 1 venta pasará automáticamente a En Venta.' : (e.state === 'Próximo a Publicar' ? 'El evento permanece privado hasta la fecha programada.' : 'Precios y butacas están bloqueados.') }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Aquí no van botones de acción. Posponer, devolver a
+                         revisión, publicar y concluir viven en la barra de
+                         abajo, que está siempre a la vista: tenerlos también en
+                         este banner era el mismo botón dos veces en la misma
+                         pantalla, y ya había empezado a desviarse —el de
+                         publicar de aquí no comprobaba nada—. -->
+                    <p class="text-[11px] text-outline flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-[13px]">south</span>
+                      Las acciones de esta fase están en la barra inferior.
+                    </p>
+                  </div>
+
+                  <!-- Ficha de publicación. Vivía en una pestaña aparte junto a
+                       cifras que ya estaban en Boletaje; aquí acompaña al banner
+                       que cuenta en qué fase está el evento, que es donde uno
+                       pregunta "¿desde cuándo está publicado y quién lo sacó?". -->
+                  @if (e.publication; as pub) {
+                    <div class="p-4 rounded-2xl bg-black/25 border border-white/10 space-y-2">
+                      <span class="text-[10px] font-black uppercase tracking-widest text-outline flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[13px]">campaign</span> Publicación
+                      </span>
+                      @if (pub.publishedAt) {
+                        <p class="text-[11px] text-on-surface-variant">
+                          Publicado el <strong class="text-on-surface">{{ dateTimeLabel(pub.publishedAt) }}</strong>
+                          @if (pub.publishedBy) { por {{ pub.publishedBy }} }
+                        </p>
+                      }
+                      @if (pub.scheduledAt) {
+                        <p class="text-[11px] text-cyan-200">
+                          Programada para <strong>{{ dateTimeLabel(pub.scheduledAt) }}</strong>
+                        </p>
+                      }
+                      @if (pub.channels?.length) {
+                        <div class="flex items-center gap-1.5 flex-wrap pt-1">
+                          @for (channel of pub.channels; track channel) {
+                            <span class="px-2.5 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold text-outline">
+                              {{ channel }}
+                            </span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @if (e.sales?.dailySales?.length) {
+                    <div class="p-4 rounded-2xl bg-black/25 border border-white/10 space-y-2">
+                      <span class="text-[10px] font-black uppercase tracking-widest text-outline flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[13px]">calendar_month</span> Últimos días de venta
+                      </span>
+                      @for (day of e.sales?.dailySales; track day.date) {
+                        <div class="flex items-center justify-between gap-2 text-[11px] px-2.5 py-1.5 rounded-xl bg-white/[0.03]">
+                          <span class="text-outline">{{ day.dayLabel }} · {{ day.date }}</span>
+                          <span class="text-on-surface font-bold">
+                            {{ day.tickets }} boletos
+                            @if (roleService.canViewFinances()) { · &#36;{{ day.revenue | number:'1.0-0' }} }
+                          </span>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- Métricas de Venta en Tiempo Real -->
+                  <div class="grid grid-cols-2 lg:grid-cols-5 gap-3.5 pt-2">
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Aforo Total</span>
+                      <span class="text-xl font-black font-mono text-on-surface">{{ seats().toLocaleString('es-MX') }}</span>
+                      <span class="text-[10px] text-outline block">Lugares vendibles</span>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-surface-container border border-emerald-500/30 space-y-1">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400 block">Boletos Vendidos</span>
+                      <span class="text-xl font-black font-mono text-emerald-400">{{ sold().toLocaleString('es-MX') }}</span>
+                      <span class="text-[10px] text-emerald-300/80 block">{{ occupancy() }}% ocupación</span>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Disponibles</span>
+                      <span class="text-xl font-black font-mono text-cyan-300">{{ available().toLocaleString('es-MX') }}</span>
+                      <span class="text-[10px] text-outline block">Por vender</span>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Taquilla Cobrada</span>
+                      <span class="text-xl font-black font-mono text-emerald-300">{{ collected() }}</span>
+                      <span class="text-[10px] text-outline block">Ingreso bruto</span>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Potencial 100%</span>
+                      <span class="text-xl font-black font-mono text-on-surface-variant">{{ potential() }}</span>
+                      <span class="text-[10px] text-outline block">Lleno total</span>
+                    </div>
+                  </div>
+
+                  <!-- Desglose de Categorías de Boletos -->
+                  <div class="space-y-2.5 pt-2 border-t border-outline-variant/20">
+                    <h6 class="text-xs font-black uppercase tracking-wider text-on-surface">Avance por Categoría de Boleto</h6>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      @for (tier of e.ticketTiers; track tier.id || tier.name) {
+                        <div class="p-3.5 rounded-2xl bg-surface-container/70 border border-outline-variant/20 space-y-2">
+                          <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs font-bold text-on-surface truncate">{{ tier.name }}</span>
+                            <span class="text-xs font-mono font-black text-emerald-400">{{ money(tier.price) }}</span>
+                          </div>
+                          <app-progress-bar
+                            [percent]="tierPercent(tier.soldSeats, tier.totalSeats)"
+                            [valueLabel]="(tier.soldSeats || 0) + ' de ' + tier.totalSeats + ' vendidos'"
+                            colorVariant="success"
+                          />
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Expediente 100% Verificado -->
+                <section class="p-5 rounded-3xl bg-surface-container/70 border border-outline-variant/25 flex items-center justify-between gap-3 flex-wrap">
+                  <div class="flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold">
+                      <span class="material-symbols-outlined text-xl">verified</span>
+                    </span>
+                    <div>
+                      <p class="text-xs font-black text-on-surface">Expediente Verificado y Completo (33/33 puntos)</p>
+                      <p class="text-[11px] text-outline">Identidad, Cartel de Artistas, Audio y Boletaje validados.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="activeTab.set('evento')"
+                    class="px-3.5 py-2 rounded-xl bg-surface-container-highest text-on-surface hover:bg-surface-bright text-xs font-bold transition-all border border-outline-variant/30 flex items-center gap-1.5"
+                  >
+                    <span class="material-symbols-outlined text-sm">visibility</span> Ver Ficha del Evento
+                  </button>
+                </section>
+
+              } @else if (e.state === 'Finalizada') {
+
+                <!-- ─── VISTA: FINALIZADA (RESULTADOS & LIQUIDACIÓN) ─── -->
+                <section class="p-6 rounded-3xl bg-gradient-to-br from-purple-500/[0.08] via-surface-container-high/90 to-surface-container-high/90 border border-purple-500/30 border-l-4 border-l-purple-400 shadow-2xl space-y-5 backdrop-blur-2xl">
+                  <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center gap-3">
+                      <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 text-purple-300 flex items-center justify-center shadow-lg">
+                        <span class="material-symbols-outlined text-2xl font-bold">fact_check</span>
+                      </div>
+                      <div>
+                        <h5 class="text-sm font-black uppercase tracking-wider text-on-surface">Evento Realizado · Balance Financiero & Finiquitos</h5>
+                        <p class="text-xs text-outline font-medium mt-0.5">Captura de resultados finales, liquidación de pagos y visto bueno de los managers</p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      (click)="activeTab.set('cierre')"
+                      class="px-4 py-2 rounded-xl bg-purple-500 text-white font-black text-xs hover:bg-purple-600 transition-all flex items-center gap-1.5 shadow-lg"
+                    >
+                      <span class="material-symbols-outlined text-sm">edit_note</span> Abrir Pestaña de Cierre
+                    </button>
+                  </div>
+
+                  <!-- Métricas de Cierre -->
+                  <div class="grid grid-cols-2 lg:grid-cols-5 gap-3.5 pt-1">
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Asistencia Real</span>
+                      <span class="text-xl font-black font-mono text-on-surface">{{ (e.closure?.attendance || sold()).toLocaleString('es-MX') }}</span>
+                      <span class="text-[10px] text-outline block">Personas en recinto</span>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Taquilla Cobrada</span>
+                      <span class="text-xl font-black font-mono text-emerald-300">{{ money(e.closure?.grossRevenue || grossRevenue(e)) }}</span>
+                      <span class="text-[10px] text-outline block">Ingreso bruto final</span>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Gastos Producción</span>
+                      <span class="text-xl font-black font-mono text-rose-300">{{ money(closureExpensesTotal(e)) }}</span>
+                      <span class="text-[10px] text-outline block">Recinto + Staff + Sonido</span>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Pagos a Grupos</span>
+                      <span class="text-xl font-black font-mono text-amber-300">{{ money(closurePayoutsTotal(e)) }}</span>
+                      <span class="text-[10px] text-outline block">Honorarios pactados</span>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/20 space-y-1">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Utilidad Neta</span>
+                      <span class="text-xl font-black font-mono" [class]="closureNetResult(e) >= 0 ? 'text-emerald-400' : 'text-rose-400'">
+                        {{ money(closureNetResult(e)) }}
+                      </span>
+                      <span class="text-[10px] text-outline block">A repartir</span>
+                    </div>
+                  </div>
+
+                  <!-- Panel de Confirmación de Managers -->
+                  <div class="p-4 rounded-2xl bg-surface-container/80 border border-outline-variant/25 space-y-3">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                      <h6 class="text-xs font-black uppercase tracking-wider text-teal-300 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">draw</span> Firmas de Conformidad de Managers
+                      </h6>
+                      <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black border"
+                        [class]="allManagersConfirmed() ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'">
+                        {{ closureConfirmationsCount(e) }} de {{ managers().length }} confirmados
+                      </span>
+                    </div>
+
+                    <p class="text-[11px] text-outline">
+                      {{ managers().length > 1 ? 'Co-organización: Todos los managers participantes deben confirmar su finiquito antes de sellar el expediente.' : 'Organizador único: se sella directamente al completar los datos de cierre.' }}
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      @for (m of managers(); track m) {
+                        @let conf = managerConfirmationOf(e, m);
+                        <div class="p-3 rounded-xl bg-surface-container-highest/50 border flex items-center justify-between gap-2"
+                          [class]="conf ? 'border-emerald-500/30 text-emerald-200' : 'border-outline-variant/25 text-outline'">
+                          <div class="min-w-0">
+                            <span class="text-xs font-black block text-on-surface truncate">{{ m }}</span>
+                            <span class="text-[10px] block">{{ conf ? ('Firmado: ' + conf.confirmedAt) : 'Pendiente de confirmación' }}</span>
+                          </div>
+                          @if (conf) {
+                            <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-bold border border-emerald-500/30">✓ Firmado</span>
+                          } @else {
+                            <button
+                              type="button"
+                              (click)="confirmManagerClosureAction(e, m)"
+                              class="px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-200 hover:bg-teal-500 hover:text-black text-[10px] font-black transition-all border border-teal-500/30 shrink-0"
+                            >
+                              Firmar
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </section>
+
+              } @else if (e.state === 'Cerrado') {
+
+                <!-- ─── VISTA: EXPEDIENTE CERRADO & SELLADO ─── -->
+                <section class="p-6 rounded-3xl bg-gradient-to-br from-zinc-500/[0.08] via-surface-container-high/90 to-surface-container-high/90 border border-zinc-500/30 border-l-4 border-l-zinc-400 shadow-2xl space-y-5 backdrop-blur-2xl text-center">
+                  <div class="w-16 h-16 rounded-full bg-zinc-500/20 border-2 border-zinc-400 text-zinc-200 flex items-center justify-center mx-auto shadow-2xl">
+                    <span class="material-symbols-outlined text-3xl font-bold">lock</span>
+                  </div>
+                  <div class="space-y-1">
+                    <h4 class="text-base font-black uppercase tracking-wider text-on-surface">Acta de Cierre Sellada e Inmutable</h4>
+                    <p class="text-xs text-outline max-w-lg mx-auto">
+                      Sellado el {{ e.closure?.sealedAt || 'fecha registrada' }} por <strong>{{ e.closure?.sealedBy || 'Administración' }}</strong>.
+                      Este expediente está archivado en modo de solo lectura y consulta histórica.
+                    </p>
+                  </div>
+
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto pt-2">
+                    <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20">
+                      <span class="text-[9px] font-black uppercase text-outline block">Asistencia</span>
+                      <strong class="text-sm font-mono text-on-surface">{{ (e.closure?.attendance || sold()).toLocaleString('es-MX') }}</strong>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20">
+                      <span class="text-[9px] font-black uppercase text-outline block">Taquilla</span>
+                      <strong class="text-sm font-mono text-emerald-300">{{ money(e.closure?.grossRevenue || grossRevenue(e)) }}</strong>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20">
+                      <span class="text-[9px] font-black uppercase text-outline block">Gastos & Pagos</span>
+                      <strong class="text-sm font-mono text-amber-300">{{ money(closureExpensesTotal(e) + closurePayoutsTotal(e)) }}</strong>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-surface-container border border-outline-variant/20">
+                      <span class="text-[9px] font-black uppercase text-outline block">Utilidad Final</span>
+                      <strong class="text-sm font-mono text-emerald-400">{{ money(closureNetResult(e)) }}</strong>
+                    </div>
+                  </div>
+                </section>
+
+              } @else if (e.state === 'Cancelado') {
+
+                <!-- ─── VISTA: EVENTO CANCELADO ─── -->
+                <section class="p-6 rounded-3xl bg-gradient-to-br from-rose-500/[0.1] via-surface-container-high/90 to-surface-container-high/90 border border-rose-500/30 border-l-4 border-l-rose-500 shadow-2xl space-y-4 backdrop-blur-2xl">
+                  <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-300 flex items-center justify-center shadow-lg shrink-0">
+                      <span class="material-symbols-outlined text-2xl font-bold">cancel</span>
+                    </div>
+                    <div>
+                      <h5 class="text-sm font-black uppercase tracking-wider text-rose-200">Evento Cancelado Definitivamente</h5>
+                      <p class="text-xs text-rose-100/80 mt-0.5">
+                        Cancelado el {{ dateTimeLabel(e.cancellation?.at) }} por <strong>{{ e.cancellation?.by }}</strong> (desde fase {{ e.cancellation?.cancelledFromState }}).
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="p-4 rounded-2xl bg-surface-container border border-rose-500/30 space-y-2 text-xs text-rose-100">
+                    <p><strong>Motivo oficial de cancelación:</strong> {{ e.cancellation?.reason }}</p>
+                    @if (e.cancellation?.clientMessage) {
+                      <p class="text-[11px] text-outline"><strong>Aviso a clientes:</strong> {{ e.cancellation?.clientMessage }}</p>
+                    }
+                    @if ((e.cancellation?.refundsIssued || 0) > 0) {
+                      <div class="pt-2 border-t border-rose-500/20 flex items-center gap-4 text-xs font-mono font-black text-rose-300">
+                        <span>Reembolsos: {{ e.cancellation?.refundsIssued }} boletos</span>
+                        <span>Monto devuelto: {{ money(e.cancellation?.refundedAmount || 0) }}</span>
                       </div>
                     }
                   </div>
                 </section>
+
               }
 
-              <!-- Cifras de un vistazo -->
+              <!-- Cifras de un vistazo generales -->
               <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="p-5 rounded-3xl bg-gradient-to-br from-surface-container-high/90 to-surface-container/70 border border-outline-variant/30 shadow-xl backdrop-blur-xl space-y-1.5 hover:border-outline-variant/50 transition-all">
                   <div class="flex items-center justify-between text-outline">
@@ -645,8 +980,7 @@ export type EventDetailTab =
                 }
               </section>
 
-              <!-- Resumen de acuerdos. Aquí solo el titular; el detalle vive en
-                   el apartado "Acuerdos" para no duplicar la fuente de verdad. -->
+              <!-- Resumen de acuerdos -->
               <section class="p-6 rounded-3xl bg-gradient-to-br from-teal-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-teal-500/25 border-l-4 border-l-teal-500/70 shadow-2xl shadow-teal-500/5 space-y-4 backdrop-blur-2xl">
                 <div class="flex items-center justify-between gap-3 flex-wrap">
                   <h5 class="text-xs font-black uppercase tracking-wider text-teal-300 flex items-center gap-2.5">
@@ -680,26 +1014,8 @@ export type EventDetailTab =
                     </span>
                   }
                 </div>
-
-                @if (percentMismatch()) {
-                  <p class="text-[11px] text-rose-300 flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-sm">error</span>
-                    Los porcentajes suman {{ agreedPercentTotal() }}% y no 100%.
-                  </p>
-                }
-                @if (externalSlots().length) {
-                  <p class="text-[11px] text-outline flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-sm text-teal-300">groups</span>
-                    {{ externalSlots().length }} grupo(s) del cartel son de otros managers.
-                  </p>
-                }
-                @if (isDraft() && outboundCount() > 0) {
-                  <p class="text-[11px] text-amber-300 flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-sm">schedule_send</span>
-                    {{ outboundCount() }} solicitud(es) e invitación(es) saldrán al enviar el evento a revisión.
-                  </p>
-                }
               </section>
+
             </div>
           }
 
@@ -743,6 +1059,7 @@ export type EventDetailTab =
           @if (activeTab() === 'tareas') {
             <app-event-tab-tasks
               [event]="e"
+              [canEdit]="roleService.canEditEvents()"
               [canViewFinances]="roleService.canViewFinances()"
               (navigateTab)="activeTab.set($event)"
               (patch)="patch.emit($event)"
@@ -1193,281 +1510,19 @@ export type EventDetailTab =
             </div>
           }
 
-          <!-- ─── REVISIÓN ─── -->
-          @if (activeTab() === 'revision') {
-            <section class="p-6 rounded-3xl bg-surface-container-high/90 border border-amber-500/30 shadow-2xl space-y-5 backdrop-blur-xl">
-              <div class="flex items-center justify-between gap-3 flex-wrap">
-                <h5 class="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
-                  <span class="material-symbols-outlined text-lg">rate_review</span>
-                  Aprobaciones entre encargados · Ronda {{ round()?.round || 1 }}
-                </h5>
-                <span class="text-xs font-bold text-outline">
-                  {{ approvedTotal() }} de {{ approvalList().length }} aprobadas
-                </span>
-              </div>
+          <!-- La pestaña Revisión se retiró. Solo repetía, en una lista
+               aparte, el estado de aprobación que cada grupo ya lleva en su
+               tarjeta del Cartel; lo único suyo —el motivo del rechazo y los
+               cambios que pide el dueño del grupo— se movió justo ahí, que es
+               donde sirve para hacer algo con ello. El candado de publicación
+               no cambia: sigue leyendo las aprobaciones pendientes. -->
 
-              @if (round()?.note) {
-                <p class="text-xs text-outline italic p-4 rounded-2xl bg-surface-container/80 border border-outline-variant/20">
-                  "{{ round()?.note }}" — {{ round()?.sentBy }}, {{ dateTimeLabel(round()?.sentAt) }}
-                </p>
-              }
-
-              @if (approvalList().length === 0) {
-                <p class="text-xs text-outline italic p-4 rounded-xl bg-surface-container/40 text-center">
-                  El cartel es completamente propio: no requiere la aprobación de ningún otro encargado.
-                </p>
-              }
-
-              @for (a of approvalList(); track a.id) {
-                <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/25 space-y-3 shadow-md">
-                  <div class="flex items-center justify-between gap-2 flex-wrap">
-                    <div class="min-w-0">
-                      <p class="text-xs font-bold text-on-surface truncate">{{ a.groupName }}</p>
-                      <p class="text-[10px] text-outline truncate">Encargado responsable: {{ a.managerName }}</p>
-                    </div>
-                    <span [class]="approvalBadgeClass(a)" class="px-3 py-1.5 rounded-xl text-xs font-black border shrink-0 shadow-sm">
-                      {{ a.status }}
-                    </span>
-                  </div>
-
-                  @if (a.status === 'Rechazado') {
-                    <div class="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-1">
-                      <p class="text-xs text-rose-200"><strong>Motivo:</strong> {{ a.reason }}</p>
-                      @if (a.requestedChanges?.length) {
-                        <ul class="text-[11px] text-rose-200/90 list-disc list-inside">
-                          @for (change of a.requestedChanges; track change) {
-                            <li>{{ change }}</li>
-                          }
-                        </ul>
-                      }
-                    </div>
-                  }
-
-                  @if (a.status === 'Pendiente' && roleService.canEditEvents()) {
-                    @if (respondingId() === a.id) {
-                      <div class="space-y-2 pt-2 border-t border-outline-variant/20">
-                        <textarea
-                          [(ngModel)]="rejectionReason"
-                          rows="2"
-                          placeholder="Motivo del rechazo y qué debe cambiarse..."
-                          class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-2 text-xs text-on-surface focus:outline-none focus:border-rose-400/60"
-                        ></textarea>
-                        <div class="flex items-center gap-2 flex-wrap">
-                          <button
-                            type="button"
-                            (click)="confirmReject(a)"
-                            [disabled]="!rejectionReason.trim()"
-                            class="px-3.5 py-2 min-h-9 rounded-xl bg-rose-500 text-white text-xs font-black disabled:opacity-40 disabled:pointer-events-none"
-                          >Confirmar rechazo</button>
-                          <button
-                            type="button"
-                            (click)="respondingId.set(null)"
-                            class="px-3.5 py-2 min-h-9 rounded-xl bg-surface-bright text-on-surface text-xs font-bold"
-                          >Cancelar</button>
-                        </div>
-                      </div>
-                    } @else {
-                      <div class="flex items-center gap-2 flex-wrap pt-2 border-t border-outline-variant/20">
-                        <button
-                          type="button"
-                          (click)="approve.emit({ event: e, approvalId: a.id })"
-                          class="px-4 py-2 min-h-9 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-black text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
-                        >
-                          <span class="material-symbols-outlined text-sm">thumb_up</span> Aprobar
-                        </button>
-                        <button
-                          type="button"
-                          (click)="startReject(a)"
-                          class="px-4 py-2 min-h-9 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/40 hover:bg-rose-500 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
-                        >
-                          <span class="material-symbols-outlined text-sm">thumb_down</span> Rechazar
-                        </button>
-                      </div>
-                    }
-                  }
-                </div>
-              }
-
-              <!-- Historial de rondas anteriores -->
-              @if (e.reviewRounds.length > 1) {
-                <div class="pt-4 border-t border-outline-variant/20 space-y-2.5">
-                  <span class="text-xs font-black uppercase tracking-wider text-outline">Rondas anteriores</span>
-                  @for (r of previousRounds(); track r.round) {
-                    <div class="p-3.5 rounded-2xl bg-surface-container border border-outline-variant/20 text-xs space-y-1">
-                      <div class="flex items-center justify-between gap-2">
-                        <span class="font-bold text-on-surface">Ronda {{ r.round }} · {{ r.outcome || 'En curso' }}</span>
-                        <span class="text-outline">{{ dateTimeLabel(r.sentAt) }}</span>
-                      </div>
-                      @for (a of r.approvals; track a.id) {
-                        <p class="text-outline">
-                          <strong class="text-on-surface-variant">{{ a.managerName }}</strong>: {{ a.status }}
-                          @if (a.reason) { — {{ a.reason }} }
-                        </p>
-                      }
-                    </div>
-                  }
-                </div>
-              }
-
-              @if (canPublish()) {
-                <div class="p-5 rounded-3xl bg-emerald-500/10 border border-emerald-500/30 space-y-3.5">
-                  <p class="text-xs text-emerald-200 flex items-start gap-2">
-                    <span class="material-symbols-outlined text-lg shrink-0 text-emerald-400">verified</span>
-                    <span>Todos los encargados han aprobado. Publicar es el punto de no retorno: el evento saldrá al público inmediatamente.</span>
-                  </p>
-                  <!-- Aquí sí frena. Un evento sale al público con su fecha, su
-                       recinto y sus precios o no sale: el comprador no puede
-                       toparse con una ficha a medias, y publicar no se deshace. -->
-                  @if (!report().canSubmitForReview) {
-                    <div class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-2">
-                      <p class="text-xs text-rose-200 flex items-start gap-2 font-bold">
-                        <span class="material-symbols-outlined text-lg shrink-0 text-rose-400">lock</span>
-                        <span>Faltan {{ report().missingRequired.length }} punto(s) obligatorios: hasta capturarlos no se puede publicar.</span>
-                      </p>
-                      <div class="flex items-center gap-1.5 flex-wrap">
-                        @for (m of report().missingRequired.slice(0, 6); track m.id) {
-                          <span class="px-2 py-0.5 rounded-lg bg-rose-500/15 text-rose-200 border border-rose-500/25 text-[10px] font-bold">{{ m.label }}</span>
-                        }
-                        @if (report().missingRequired.length > 6) {
-                          <span class="text-[10px] text-outline font-bold">+{{ report().missingRequired.length - 6 }} más</span>
-                        }
-                      </div>
-                      <button
-                        type="button"
-                        (click)="activeTab.set('tareas')"
-                        class="text-[11px] font-black text-rose-300 hover:text-rose-200 underline"
-                      >
-                        Ver quién responde por cada uno en Tareas
-                      </button>
-                    </div>
-                  }
-                  <div class="flex items-center gap-3 flex-wrap pt-1">
-                    <button
-                      type="button"
-                      (click)="publish.emit({ event: e })"
-                      [disabled]="!report().canSubmitForReview"
-                      [title]="report().canSubmitForReview ? 'Publicar ahora' : 'Faltan puntos obligatorios del expediente'"
-                      class="px-5 py-2.5 min-h-11 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-black shadow-lg shadow-blue-500/25 hover:scale-105 transition-all disabled:opacity-40 disabled:pointer-events-none disabled:hover:scale-100 flex items-center gap-2"
-                    >
-                      <span class="material-symbols-outlined text-base">campaign</span> Publicar ahora
-                    </button>
-                    <input
-                      type="datetime-local"
-                      [(ngModel)]="scheduleAt"
-                      class="bg-surface-container border border-outline-variant/30 rounded-xl px-3 py-2 min-h-11 text-xs text-on-surface focus:outline-none focus:border-cyan-400/60"
-                    />
-                    <button
-                      type="button"
-                      (click)="publish.emit({ event: e, scheduledAt: scheduleAt })"
-                      [disabled]="!scheduleAt || !report().canSubmitForReview"
-                      class="px-5 py-2.5 min-h-11 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold disabled:opacity-40 disabled:pointer-events-none flex items-center gap-2"
-                    >
-                      <span class="material-symbols-outlined text-base">schedule_send</span> Programar publicación
-                    </button>
-                  </div>
-                </div>
-              }
-            </section>
-          }
-
-          <!-- ─── VENTA ─── -->
-          @if (activeTab() === 'venta') {
-            <div class="space-y-5">
-              @if (e.publication; as pub) {
-                <section class="p-6 rounded-3xl bg-surface-container-high/90 border border-blue-500/25 space-y-2 text-xs shadow-xl backdrop-blur-xl">
-                  <h5 class="text-xs font-black uppercase tracking-wider text-blue-300 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-base">campaign</span> Datos de Publicación
-                  </h5>
-                  @if (pub.publishedAt) {
-                    <p class="text-on-surface-variant">
-                      Publicado el <strong class="text-on-surface">{{ dateTimeLabel(pub.publishedAt) }}</strong> por {{ pub.publishedBy }}
-                    </p>
-                  }
-                  @if (pub.scheduledAt) {
-                    <p class="text-cyan-200">
-                      Publicación programada para <strong>{{ dateTimeLabel(pub.scheduledAt) }}</strong>
-                    </p>
-                  }
-                  @if (pub.channels?.length) {
-                    <div class="flex items-center gap-2 flex-wrap pt-2">
-                      @for (channel of pub.channels; track channel) {
-                        <span class="px-3 py-1 rounded-xl bg-surface-container border border-outline-variant/25 text-xs font-bold text-outline">
-                          {{ channel }}
-                        </span>
-                      }
-                    </div>
-                  }
-                </section>
-              }
-
-              <section class="p-6 rounded-3xl bg-surface-container-high/90 border border-emerald-500/25 shadow-2xl space-y-5 backdrop-blur-xl">
-                <h5 class="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2">
-                  <span class="material-symbols-outlined text-base">confirmation_number</span> Avance en Venta de Boletos
-                </h5>
-
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                  <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/25">
-                    <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Vendidos</span>
-                    <span class="font-black text-on-surface text-base sm:text-xl font-mono">{{ sold().toLocaleString('es-MX') }}</span>
-                  </div>
-                  <div class="p-4 rounded-2xl bg-surface-container border border-emerald-500/30">
-                    <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400 block">Ocupación</span>
-                    <span class="font-black text-emerald-400 text-base sm:text-xl font-mono">{{ occupancy() }}%</span>
-                  </div>
-                  <div class="p-4 rounded-2xl bg-surface-container border border-outline-variant/25">
-                    <span class="text-[10px] font-black uppercase tracking-wider text-outline block">Por vender</span>
-                    <span class="font-black text-on-surface text-base sm:text-xl font-mono">{{ available().toLocaleString('es-MX') }}</span>
-                  </div>
-                  @if (roleService.canViewFinances()) {
-                    <div class="p-4 rounded-2xl bg-surface-container border border-emerald-500/30">
-                      <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400 block">Taquilla cobrada</span>
-                      <span class="font-black text-emerald-400 text-base sm:text-xl font-mono">{{ collected() }}</span>
-                    </div>
-                  }
-                </div>
-
-                <!-- Ocupación por categoría -->
-                <div class="space-y-3 pt-3 border-t border-outline-variant/20">
-                  @for (tier of e.ticketTiers; track tier.name) {
-                    <div class="space-y-1.5">
-                      <div class="flex items-center justify-between gap-2 text-xs">
-                        <span class="font-bold text-on-surface truncate">{{ tier.name }}</span>
-                        <span class="text-outline shrink-0 font-mono">
-                          {{ tier.soldSeats.toLocaleString('es-MX') }} / {{ tier.totalSeats.toLocaleString('es-MX') }}
-                        </span>
-                      </div>
-                      <app-progress-bar
-                        [percent]="tierPercent(tier.soldSeats, tier.totalSeats)"
-                        [colorVariant]="tierPercent(tier.soldSeats, tier.totalSeats) >= 70 ? 'success' : 'primary'"
-                      />
-                    </div>
-                  }
-                </div>
-
-                @if (e.sales?.dailySales?.length) {
-                  <div class="pt-3 border-t border-outline-variant/20 space-y-2">
-                    <span class="text-[10px] font-black uppercase tracking-wider text-outline">Últimos días de venta</span>
-                    @for (day of e.sales?.dailySales; track day.date) {
-                      <div class="flex items-center justify-between gap-2 text-xs p-2.5 rounded-xl bg-surface-container/60">
-                        <span class="text-outline">{{ day.dayLabel }} · {{ day.date }}</span>
-                        <span class="text-on-surface font-bold">
-                          {{ day.tickets }} boletos
-                          @if (roleService.canViewFinances()) { · &#36;{{ day.revenue | number:'1.0-0' }} }
-                        </span>
-                      </div>
-                    }
-                  </div>
-                }
-
-                @if ((e.sales?.refundsCount || 0) > 0) {
-                  <p class="text-xs text-amber-200 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30">
-                    {{ e.sales?.refundsCount }} reembolso(s) emitido(s)
-                    @if (roleService.canViewFinances()) { por {{ refundedLabel() }} }
-                  </p>
-                }
-              </section>
-            </div>
-          }
+          <!-- La pestaña Venta se retiró: sus cuatro cifras —vendidos,
+               ocupación, por vender y taquilla cobrada— ya estaban, y con más
+               detalle, en Boletaje & Croquis, que es donde se define el aforo
+               del que salen. Lo único suyo que no se repetía era la ficha de
+               publicación y el detalle diario, y eso se movió al Resumen, junto
+               al banner que ya cuenta en qué fase está el evento. -->
 
           <!-- ─── CIERRE ─── -->
           @if (activeTab() === 'cierre') {
@@ -1578,6 +1633,19 @@ export type EventDetailTab =
 
         <!-- ─── ACCIONES ─── -->
         <ng-container modal-footer>
+          <!-- Cancelar es del creador y de nadie más. A los demás managers se
+               les enseña apagado con el motivo: esconder el botón deja a quien
+               lo busca pensando que la pantalla está rota. -->
+          @if (!canCancel() && cancelIsRelevant()) {
+            <span
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-white/[0.03] text-outline border border-white/10 text-xs font-bold flex items-center gap-1.5 sm:mr-auto cursor-not-allowed"
+              [title]="'Cancelar el evento solo lo puede hacer ' + organizer() + ', que fue quien lo creó.'"
+            >
+              <span class="material-symbols-outlined text-sm">lock</span>
+              Cancelar · solo {{ organizer() }}
+            </span>
+          }
+
           @if (canCancel()) {
             @if (cancelling()) {
               <div class="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -1609,21 +1677,14 @@ export type EventDetailTab =
             }
           }
 
+          <!-- ESTADO: BORRADOR -->
           @if (e.state === 'Borrador' && roleService.canEditEvents()) {
-            <!-- El contador es el aviso de que este botón no solo cambia de fase:
-                 es el momento en el que salen todas las solicitudes e
-                 invitaciones que el borrador tenía guardadas. -->
             @if (outboundCount() > 0) {
               <span class="text-[11px] text-outline flex items-center gap-1.5 mr-1">
                 <span class="material-symbols-outlined text-sm text-amber-300">outbox</span>
                 Saldrán <strong class="text-amber-300">{{ outboundCount() }}</strong> aviso(s) a otros managers
               </span>
             }
-            <!-- Un borrador incompleto sí se manda a revisar: para eso es la
-                 revisión. Lo que falte se ve allá y se completa allá, con los
-                 encargados ya enterados en vez de esperando a que alguien acabe
-                 de capturar. El candado por puntos obligatorios está donde de
-                 verdad pesa —publicar—, que es el único momento irreversible. -->
             @if (!report().canSubmitForReview) {
               <span class="text-[11px] text-amber-300/90 flex items-center gap-1.5 mr-1">
                 <span class="material-symbols-outlined text-sm">pending_actions</span>
@@ -1633,28 +1694,143 @@ export type EventDetailTab =
             <button
               type="button"
               (click)="submitReview.emit(e)"
-              [title]="report().canSubmitForReview
-                ? (outboundCount() > 0
-                  ? 'Cambia el evento a revisión y manda las ' + outboundCount() + ' solicitud(es) e invitación(es) guardadas'
-                  : 'Enviar a los encargados involucrados')
-                : 'Se manda a revisión tal como está. Los ' + report().missingRequired.length + ' punto(s) obligatorios que falten se capturan durante la revisión; sin ellos no se podrá publicar.'"
               class="px-6 py-3 min-h-11 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black font-black text-xs shadow-xl shadow-amber-500/25 hover:scale-105 transition-all flex items-center gap-2 border border-amber-300/40"
             >
               <span class="material-symbols-outlined text-base">send</span> Enviar a Revisión
             </button>
           }
 
+          <!-- ESTADO: EN REVISIÓN -->
+          @if (e.state === 'En Revisión' && roleService.canEditEvents()) {
+            @if (!publishReadiness().canPublish) {
+              <span class="text-[11px] text-amber-300 flex items-center gap-1.5 mr-2">
+                <span class="material-symbols-outlined text-sm">lock</span>
+                Faltan {{ publishReadiness().missingRequirements.length }} requisito(s) para publicar
+              </span>
+            }
+            <button
+              type="button"
+              (click)="openPublishDialog()"
+              [disabled]="!publishReadiness().canPublish"
+              [title]="publishReadiness().canPublish ? 'Publicar inmediatamente o programar fecha' : publishReadiness().missingRequirements.join('\n')"
+              class="px-6 py-3 min-h-11 rounded-2xl bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600 text-black font-black text-xs shadow-xl shadow-emerald-500/25 hover:scale-105 transition-all disabled:opacity-40 disabled:pointer-events-none disabled:hover:scale-100 flex items-center gap-2 border border-emerald-300/40"
+            >
+              <span class="material-symbols-outlined text-base">campaign</span> Publicar Evento
+            </button>
+          }
+
+          <!-- ESTADO: PRÓXIMO A PUBLICAR -->
           @if (e.state === 'Próximo a Publicar' && roleService.canEditEvents()) {
             <button
               type="button"
+              (click)="openReturnReviewDialog()"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-surface-container-highest text-outline hover:text-on-surface text-xs font-bold transition-all border border-outline-variant/30 flex items-center gap-1.5"
+            >
+              <span class="material-symbols-outlined text-sm">reply</span> Devolver a En Revisión
+            </button>
+            <button
+              type="button"
               (click)="publish.emit({ event: e })"
-              [disabled]="!report().canSubmitForReview"
-              [title]="report().canSubmitForReview
-                ? 'Publicar de inmediato'
-                : 'Faltan ' + report().missingRequired.length + ' punto(s) obligatorios del expediente'"
+              [disabled]="!publishReadiness().canPublish"
+              [title]="publishReadiness().canPublish
+                ? 'Sacarlo al público ahora, sin esperar a la fecha programada'
+                : publishReadiness().missingRequirements.join('\n')"
               class="px-6 py-3 min-h-11 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-black text-xs shadow-xl shadow-blue-500/25 hover:scale-105 transition-all disabled:opacity-40 disabled:pointer-events-none disabled:hover:scale-100 flex items-center gap-2"
             >
               <span class="material-symbols-outlined text-base">campaign</span> Publicar de inmediato
+            </button>
+          }
+
+          <!-- ESTADO: PUBLICADO -->
+          @if (e.state === 'Publicado' && roleService.canEditEvents()) {
+            <button
+              type="button"
+              (click)="openPostponeDialog(e)"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/35 hover:bg-amber-500 hover:text-black text-xs font-bold transition-all flex items-center gap-1.5"
+            >
+              <span class="material-symbols-outlined text-sm">edit_calendar</span> Posponer Fecha
+            </button>
+            <button
+              type="button"
+              (click)="openReturnReviewDialog()"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-surface-container-highest text-outline hover:text-on-surface text-xs font-bold transition-all border border-outline-variant/30 flex items-center gap-1.5"
+            >
+              <span class="material-symbols-outlined text-sm">reply</span> Devolver a En Revisión
+            </button>
+            <!-- Andamio de datos de prueba, no una operación del negocio. En
+                 producción la primera venta la dispara el portal del cliente;
+                 aquí hace falta un pulsador para poder recorrer el ciclo. Se
+                 marca aparte para que no se lea como algo que un encargado hace. -->
+            <span class="px-2 py-1 rounded-lg bg-white/[0.04] border border-dashed border-white/20 text-[9px] font-black uppercase tracking-widest text-outline">
+              Simulación
+            </span>
+            <button
+              type="button"
+              (click)="triggerSimulateSale(e, 1)"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-white/[0.03] text-on-surface-variant border border-dashed border-white/25 hover:border-emerald-400/50 hover:text-emerald-300 text-xs font-bold transition-all flex items-center gap-1.5"
+              title="Dispara la primera venta como lo haría el portal del cliente: el evento pasará solo a En Venta"
+            >
+              <span class="material-symbols-outlined text-sm">shopping_cart</span> 1ª venta
+            </button>
+          }
+
+          <!-- ESTADO: EN VENTA -->
+          @if (e.state === 'En Venta' && roleService.canEditEvents()) {
+            <button
+              type="button"
+              (click)="openPostponeDialog(e)"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/35 hover:bg-amber-500 hover:text-black text-xs font-bold transition-all flex items-center gap-1.5"
+            >
+              <span class="material-symbols-outlined text-sm">edit_calendar</span> Posponer Fecha
+            </button>
+            <span class="px-2 py-1 rounded-lg bg-white/[0.04] border border-dashed border-white/20 text-[9px] font-black uppercase tracking-widest text-outline">
+              Simulación
+            </span>
+            <button
+              type="button"
+              (click)="triggerSimulateSale(e, 2)"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-white/[0.03] text-on-surface-variant border border-dashed border-white/25 hover:border-emerald-400/50 hover:text-emerald-300 text-xs font-bold transition-all flex items-center gap-1.5"
+              title="Añade dos ventas más para poder ver el avance de taquilla"
+            >
+              <span class="material-symbols-outlined text-sm">confirmation_number</span> +2 boletos
+            </button>
+            <!-- Concluir no es una decisión: el evento se acaba porque llegó
+                 su día. Tenerlo a mano permitía dar por terminado un
+                 espectáculo al que la gente todavía va a ir. Lo que queda es
+                 decir cuándo pasará solo. -->
+            <span class="px-4 py-2.5 min-h-11 rounded-xl bg-white/[0.03] text-outline border border-white/10 text-xs font-bold flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">schedule</span>
+              Concluye solo el {{ concludesOn() }}
+            </span>
+            <button
+              type="button"
+              (click)="finish.emit(e)"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-white/[0.03] text-on-surface-variant border border-dashed border-white/25 hover:border-purple-400/50 hover:text-purple-300 text-xs font-bold transition-all flex items-center gap-1.5"
+              title="Adelanta el reloj: da el evento por celebrado para poder ver la fase de cierre"
+            >
+              <span class="material-symbols-outlined text-sm">fast_forward</span> Ya pasó la fecha
+            </button>
+          }
+
+          <!-- ESTADO: FINALIZADA -->
+          @if (e.state === 'Finalizada' && roleService.canEditEvents()) {
+            <button
+              type="button"
+              (click)="activeTab.set('cierre')"
+              class="px-4 py-2.5 min-h-11 rounded-xl bg-purple-500/20 text-purple-200 border border-purple-500/40 hover:bg-purple-500 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5"
+            >
+              <span class="material-symbols-outlined text-sm">fact_check</span> Ir a Cierre & Finiquitos
+            </button>
+            <button
+              type="button"
+              (click)="seal.emit(e)"
+              [disabled]="!allManagersConfirmed()"
+              [title]="allManagersConfirmed()
+                ? 'Sellar el expediente: a partir de aquí solo se consulta'
+                : 'Faltan firmas de los managers que participaron en el evento'"
+              class="px-6 py-3 min-h-11 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-black font-black text-xs shadow-xl shadow-emerald-500/25 hover:scale-105 transition-all disabled:opacity-40 disabled:pointer-events-none disabled:hover:scale-100 flex items-center gap-2"
+            >
+              <span class="material-symbols-outlined text-base">lock</span> Cerrar y Sellar Expediente
             </button>
           }
 
@@ -1683,7 +1859,405 @@ export type EventDetailTab =
         />
       }
 
-      <!-- Ventana Modal Window Lateral Independiente para Vista Previa del Cliente -->
+      <!-- ─── MODAL: PUBLICAR EVENTO ─── -->
+      @if (publishModalOpen()) {
+        <div
+          class="fixed inset-0 z-[999999999] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in"
+          (click)="publishModalOpen.set(false)"
+        >
+          <div
+            class="w-full max-w-lg bg-gradient-to-b from-[#142318] via-[#101815] to-[#0b0f14] border border-emerald-500/40 rounded-3xl shadow-[0_0_80px_rgba(16,185,129,0.2)] p-6 space-y-5 relative overflow-hidden"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 flex items-center justify-center font-bold">
+                  <span class="material-symbols-outlined text-xl">campaign</span>
+                </div>
+                <div>
+                  <h4 class="text-sm font-black uppercase tracking-wider text-on-surface">Publicar Evento</h4>
+                  <p class="text-xs text-outline">Elige la modalidad de publicación</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="publishModalOpen.set(false)"
+                class="w-8 h-8 rounded-xl bg-surface-container-highest text-outline hover:text-on-surface flex items-center justify-center transition-all"
+              >
+                <span class="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            <div class="space-y-3">
+              <label
+                (click)="publishMode.set('immediate')"
+                class="p-4 rounded-2xl border cursor-pointer block transition-all"
+                [class]="publishMode() === 'immediate'
+                  ? 'bg-emerald-500/15 border-emerald-500 text-emerald-200 shadow-md'
+                  : 'bg-surface-container/60 border-outline-variant/20 text-outline hover:border-outline-variant/40'"
+              >
+                <div class="flex items-start gap-3">
+                  <input type="radio" [checked]="publishMode() === 'immediate'" name="pubMode" class="mt-1" />
+                  <div>
+                    <strong class="text-xs font-black block text-on-surface">Publicar Inmediatamente</strong>
+                    <span class="text-[11px]">El evento se listará de inmediato en la cartelera pública (&quot;Publicado&quot;).</span>
+                  </div>
+                </div>
+              </label>
+
+              <label
+                (click)="publishMode.set('scheduled')"
+                class="p-4 rounded-2xl border cursor-pointer block transition-all"
+                [class]="publishMode() === 'scheduled'
+                  ? 'bg-cyan-500/15 border-cyan-500 text-cyan-200 shadow-md'
+                  : 'bg-surface-container/60 border-outline-variant/20 text-outline hover:border-outline-variant/40'"
+              >
+                <div class="flex items-start gap-3">
+                  <input type="radio" [checked]="publishMode() === 'scheduled'" name="pubMode" class="mt-1" />
+                  <div class="space-y-2 flex-1">
+                    <div>
+                      <strong class="text-xs font-black block text-on-surface">Publicar Próximamente (Programada)</strong>
+                      <span class="text-[11px]">Pasará a &quot;Próximo a Publicar&quot; y no será visible al público hasta la fecha especificada.</span>
+                    </div>
+                    @if (publishMode() === 'scheduled') {
+                      <input
+                        type="datetime-local"
+                        [ngModel]="publishScheduleDate()"
+                        (ngModelChange)="publishScheduleDate.set($event)"
+                        class="w-full bg-black/40 border border-cyan-500/40 rounded-xl px-3 py-2 text-xs text-on-surface focus:outline-none"
+                      />
+                    }
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                (click)="publishModalOpen.set(false)"
+                class="px-4 py-2.5 rounded-xl bg-surface-container-highest text-outline text-xs font-bold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                (click)="confirmPublish(e)"
+                [disabled]="publishMode() === 'scheduled' && !publishScheduleDate().trim()"
+                class="px-5 py-2.5 rounded-xl bg-emerald-500 text-black font-black text-xs hover:bg-emerald-400 transition-all disabled:opacity-40 disabled:pointer-events-none shadow-lg shadow-emerald-500/20"
+              >
+                Confirmar Publicación
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ─── MODAL: DEVOLVER A EN REVISIÓN ─── -->
+      @if (returnReviewModalOpen()) {
+        <div
+          class="fixed inset-0 z-[999999999] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in"
+          (click)="returnReviewModalOpen.set(false)"
+        >
+          <div
+            class="w-full max-w-lg bg-gradient-to-b from-[#231e14] via-[#1a1712] to-[#0b0f14] border border-amber-500/40 rounded-3xl shadow-[0_0_80px_rgba(245,158,11,0.2)] p-6 space-y-4 relative overflow-hidden"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center font-bold">
+                  <span class="material-symbols-outlined text-xl">reply</span>
+                </div>
+                <div>
+                  <h4 class="text-sm font-black uppercase tracking-wider text-on-surface">Devolver a En Revisión</h4>
+                  <p class="text-xs text-outline">Retirar el evento del público para ajustes mayores</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="returnReviewModalOpen.set(false)"
+                class="w-8 h-8 rounded-xl bg-surface-container-highest text-outline hover:text-on-surface flex items-center justify-center transition-all"
+              >
+                <span class="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            <p class="text-xs text-amber-200/90 leading-relaxed">
+              El evento dejará de estar publicado o programado y volverá al estado <strong>En Revisión</strong>. Podrás editar todos los campos, cartel, boletaje y fechas a puerta cerrada.
+            </p>
+
+            <div class="space-y-1">
+              <label class="text-[10px] font-black uppercase text-outline">Motivo de la devolución (Obligatorio)</label>
+              <textarea
+                [ngModel]="returnReviewReason()"
+                (ngModelChange)="returnReviewReason.set($event)"
+                placeholder="Explica qué ajustes se realizarán en el evento..."
+                rows="3"
+                class="w-full bg-black/40 border border-amber-500/40 rounded-xl p-3 text-xs text-on-surface focus:outline-none resize-none"
+              ></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                (click)="returnReviewModalOpen.set(false)"
+                class="px-4 py-2.5 rounded-xl bg-surface-container-highest text-outline text-xs font-bold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                (click)="confirmReturnToReview(e)"
+                [disabled]="!returnReviewReason().trim()"
+                class="px-5 py-2.5 rounded-xl bg-amber-500 text-black font-black text-xs hover:bg-amber-400 transition-all disabled:opacity-40 disabled:pointer-events-none shadow-lg shadow-amber-500/20"
+              >
+                Confirmar y Regresar a Revisión
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ─── MODAL: POSPONER FECHA DEL EVENTO ─── -->
+      <!-- Posponer no es cambiar un campo: es avisarle a la gente que ya compró
+           que el plan cambió. Por eso la pantalla se reparte en dos: a la
+           izquierda la decisión —cuándo y por qué— y a la derecha lo que se le
+           manda al comprador, con el material a la vista. Los adjuntos se suben
+           de verdad, porque pedirle una URL a quien acaba de recibir el video
+           del grupo por WhatsApp era pedirle que lo publicara antes en otro
+           sitio. -->
+      @if (postponeModalOpen()) {
+        <div
+          class="fixed inset-0 z-[999999999] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fade-in"
+          (click)="postponeModalOpen.set(false)"
+        >
+          <div
+            class="w-full max-w-5xl bg-gradient-to-b from-[#241712] via-[#1a120f] to-[#0b0f14] border border-amber-500/40 rounded-[2rem] shadow-[0_0_100px_rgba(245,158,11,0.22)] relative overflow-hidden max-h-[92vh] flex flex-col"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="absolute -top-28 -right-28 w-72 h-72 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+            <header class="shrink-0 flex items-center justify-between gap-4 p-6 border-b border-white/10 relative z-10">
+              <div class="flex items-center gap-3.5 min-w-0">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/10">
+                  <span class="material-symbols-outlined text-2xl">event_repeat</span>
+                </div>
+                <div class="min-w-0">
+                  <h4 class="font-['Epilogue'] text-lg font-black text-on-surface tracking-tight leading-tight">Posponer el evento</h4>
+                  <p class="text-[11px] text-outline truncate">{{ e.title }} · {{ e.venue }}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="postponeModalOpen.set(false)"
+                class="w-9 h-9 rounded-xl bg-white/5 text-outline hover:text-on-surface hover:bg-white/10 flex items-center justify-center transition-all shrink-0"
+              >
+                <span class="material-symbols-outlined text-lg">close</span>
+              </button>
+            </header>
+
+            <div class="flex-1 overflow-y-auto scroll-oculto p-6 relative z-10">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- ─── Izquierda: la decisión ─── -->
+                <div class="space-y-4">
+                  <div class="p-4 rounded-2xl border flex items-start gap-3"
+                    [class]="sold() > 0 ? 'bg-rose-500/10 border-rose-500/30' : 'bg-white/[0.03] border-white/10'">
+                    <span class="material-symbols-outlined text-lg shrink-0"
+                      [class]="sold() > 0 ? 'text-rose-400' : 'text-outline'">groups</span>
+                    <p class="text-[11px] leading-relaxed" [class]="sold() > 0 ? 'text-rose-100' : 'text-outline'">
+                      @if (sold() > 0) {
+                        <strong>{{ sold().toLocaleString('es-MX') }} persona(s)</strong> ya compraron su boleto con
+                        asiento asignado. A todas les llegará este aviso.
+                      } @else {
+                        Todavía no hay boletos vendidos: posponer no afecta a ningún comprador.
+                      }
+                      @if (e.postponementHistory?.length) {
+                        <span class="block mt-1 font-bold">Ya se pospuso {{ e.postponementHistory?.length }} vez/veces antes.</span>
+                      }
+                    </p>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1.5">
+                      <label class="text-[10px] font-black uppercase tracking-wider text-outline">Fecha actual</label>
+                      <div class="px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-outline line-through">
+                        {{ e.date }}
+                      </div>
+                    </div>
+                    <div class="space-y-1.5">
+                      <label class="text-[10px] font-black uppercase tracking-wider text-amber-400">Nueva fecha *</label>
+                      <input
+                        type="date"
+                        [ngModel]="postponeNewDate()"
+                        (ngModelChange)="postponeNewDate.set($event)"
+                        [min]="tomorrow()"
+                        class="w-full bg-black/40 rounded-xl px-3.5 py-2.5 text-xs text-on-surface focus:outline-none border transition-colors"
+                        [class]="postponeDateError() ? 'border-rose-500/60' : 'border-amber-500/40 focus:border-amber-400'"
+                      />
+                    </div>
+                  </div>
+
+                  @if (postponeDateError(); as err) {
+                    <p class="text-[11px] text-rose-300 flex items-start gap-1.5">
+                      <span class="material-symbols-outlined text-[13px] shrink-0 mt-0.5">error</span>
+                      <span>{{ err }}</span>
+                    </p>
+                  }
+
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-outline">Motivo de la reprogramación *</label>
+                    <input
+                      type="text"
+                      [ngModel]="postponeReason()"
+                      (ngModelChange)="postponeReason.set($event)"
+                      placeholder="Fuerza mayor, clima, logística de los artistas…"
+                      class="w-full bg-black/40 border border-amber-500/40 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-xs text-on-surface focus:outline-none transition-colors"
+                    />
+                    <p class="text-[10px] text-outline">Queda en la trazabilidad del expediente. No se le muestra al comprador.</p>
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-outline">Aviso para el comprador</label>
+                    <textarea
+                      [ngModel]="postponeClientNotice()"
+                      (ngModelChange)="postponeClientNotice.set($event)"
+                      rows="4"
+                      placeholder="Si lo dejas vacío se manda el aviso estándar, que ya explica que los boletos siguen siendo válidos."
+                      class="w-full bg-black/40 border border-outline-variant/30 focus:border-amber-400/60 rounded-xl p-3.5 text-xs text-on-surface focus:outline-none resize-none transition-colors"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <!-- ─── Derecha: lo que recibe el comprador ─── -->
+                <div class="space-y-4">
+                  <span class="text-[10px] font-black uppercase tracking-widest text-amber-300 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[13px]">attach_file</span>
+                    Material del aviso
+                  </span>
+
+                  <!-- Flyer -->
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-outline">Flyer actualizado</label>
+                    @if (postponeFlyerUrl()) {
+                      <div class="relative rounded-2xl overflow-hidden border border-amber-500/35 bg-black group">
+                        <img [src]="postponeFlyerUrl()" alt="Flyer del aviso" class="w-full h-44 object-contain bg-black/60" />
+                        <div class="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black to-transparent flex items-center justify-between gap-2">
+                          <span class="text-[10px] text-on-surface-variant truncate">{{ postponeFlyerName() || 'Flyer cargado' }}</span>
+                          <button
+                            type="button"
+                            (click)="clearPostponeFlyer()"
+                            class="px-2 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500 hover:text-white text-[10px] font-bold transition-all shrink-0"
+                          >Quitar</button>
+                        </div>
+                      </div>
+                    } @else {
+                      <label
+                        class="flex flex-col items-center justify-center gap-2 h-32 rounded-2xl border-2 border-dashed cursor-pointer transition-all"
+                        [class]="dragOverFlyer()
+                          ? 'border-amber-400 bg-amber-500/10'
+                          : 'border-white/15 bg-black/30 hover:border-amber-400/50 hover:bg-amber-500/5'"
+                        (dragover)="onDragOver($event, 'flyer')"
+                        (dragleave)="dragOverFlyer.set(false)"
+                        (drop)="onDropFlyer($event)"
+                      >
+                        <span class="material-symbols-outlined text-2xl text-amber-400/70">add_photo_alternate</span>
+                        <span class="text-[11px] font-bold text-on-surface-variant">Arrastra el flyer o haz clic</span>
+                        <span class="text-[10px] text-outline">JPG o PNG</span>
+                        <input type="file" accept="image/*" class="hidden" (change)="onPickFlyer($event)" />
+                      </label>
+                    }
+                  </div>
+
+                  <!-- Video -->
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-outline">Video del grupo dando el aviso</label>
+                    @if (postponeVideoUrl()) {
+                      <div class="rounded-2xl overflow-hidden border border-amber-500/35 bg-black">
+                        <video [src]="postponeVideoUrl()" controls class="w-full h-40 bg-black object-contain"></video>
+                        <div class="p-2.5 flex items-center justify-between gap-2 border-t border-white/10">
+                          <span class="text-[10px] text-on-surface-variant truncate">{{ postponeVideoName() || 'Video cargado' }}</span>
+                          <button
+                            type="button"
+                            (click)="clearPostponeVideo()"
+                            class="px-2 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500 hover:text-white text-[10px] font-bold transition-all shrink-0"
+                          >Quitar</button>
+                        </div>
+                      </div>
+                    } @else {
+                      <label
+                        class="flex flex-col items-center justify-center gap-2 h-32 rounded-2xl border-2 border-dashed cursor-pointer transition-all"
+                        [class]="dragOverVideo()
+                          ? 'border-amber-400 bg-amber-500/10'
+                          : 'border-white/15 bg-black/30 hover:border-amber-400/50 hover:bg-amber-500/5'"
+                        (dragover)="onDragOver($event, 'video')"
+                        (dragleave)="dragOverVideo.set(false)"
+                        (drop)="onDropVideo($event)"
+                      >
+                        <span class="material-symbols-outlined text-2xl text-amber-400/70">videocam</span>
+                        <span class="text-[11px] font-bold text-on-surface-variant">Arrastra el video o haz clic</span>
+                        <span class="text-[10px] text-outline">MP4 o MOV · también sirve una liga de YouTube</span>
+                        <input type="file" accept="video/*" class="hidden" (change)="onPickVideo($event)" />
+                      </label>
+                      <input
+                        type="url"
+                        [ngModel]="postponeVideoUrl()"
+                        (ngModelChange)="postponeVideoUrl.set($event)"
+                        placeholder="…o pega la liga aquí"
+                        class="w-full bg-black/40 border border-outline-variant/30 focus:border-amber-400/60 rounded-xl px-3.5 py-2 text-[11px] text-on-surface focus:outline-none font-mono transition-colors"
+                      />
+                    }
+                  </div>
+
+                  <!-- Vista previa del comunicado -->
+                  <div class="p-4 rounded-2xl bg-black/50 border border-white/10 space-y-2">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-outline flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-[13px]">visibility</span>
+                      Así lo verá el comprador
+                    </span>
+                    <div class="flex items-center gap-2 text-[11px]">
+                      <span class="text-outline line-through">{{ e.date }}</span>
+                      <span class="material-symbols-outlined text-[13px] text-amber-400">arrow_forward</span>
+                      <strong class="text-amber-200">{{ postponeNewDate() || '(nueva fecha)' }}</strong>
+                    </div>
+                    <p class="text-[11px] text-on-surface-variant leading-relaxed italic">"{{ postponePreview(e) }}"</p>
+                    <div class="flex items-center gap-1.5 flex-wrap pt-1">
+                      @if (postponeFlyerUrl()) {
+                        <span class="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase tracking-wider">con flyer</span>
+                      }
+                      @if (postponeVideoUrl()) {
+                        <span class="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase tracking-wider">con video</span>
+                      }
+                      @if (!postponeFlyerUrl() && !postponeVideoUrl()) {
+                        <span class="text-[10px] text-outline">Solo texto. Un flyer o un video del grupo hacen que el aviso se lea de verdad.</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <footer class="shrink-0 flex items-center justify-end gap-2.5 p-5 border-t border-white/10 relative z-10">
+              <button
+                type="button"
+                (click)="postponeModalOpen.set(false)"
+                class="px-5 py-2.5 rounded-xl text-xs font-bold text-outline hover:text-on-surface transition-colors"
+              >Cancelar</button>
+              <button
+                type="button"
+                (click)="confirmPostpone(e)"
+                [disabled]="!postponeNewDate().trim() || !postponeReason().trim() || !!postponeDateError()"
+                class="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 text-black font-black text-xs transition-all disabled:opacity-40 disabled:pointer-events-none shadow-lg shadow-amber-500/25 flex items-center gap-2 active:scale-95"
+              >
+                <span class="material-symbols-outlined text-base">send</span>
+                Posponer y avisar
+                @if (sold() > 0) { <span class="opacity-80">a {{ sold().toLocaleString('es-MX') }}</span> }
+              </button>
+            </footer>
+          </div>
+        </div>
+      }
+
       <!-- ─── MODAL: INVITAR MANAGER A CO-ORGANIZAR ─── -->
       @if (inviteModalOpen()) {
         <div
@@ -2109,6 +2683,14 @@ export type EventDetailTab =
 })
 export class EventDetailModalComponent {
   roleService = inject(RoleService);
+  /**
+   * Quién está mirando el expediente.
+   *
+   * Hacía falta y no estaba: sin sesión, la comprobación de "¿eres el creador?"
+   * se resolvía con nombres escritos a mano en el código y acababa comparando el
+   * evento consigo mismo.
+   */
+  sessionService = inject(SessionService);
 
   event = input<EventItem | null>(null);
   availableGroups = input<GroupItem[]>([]);
@@ -2119,6 +2701,11 @@ export class EventDetailModalComponent {
   @Output() approve = new EventEmitter<{ event: EventItem; approvalId: string }>();
   @Output() reject = new EventEmitter<{ event: EventItem; approvalId: string; reason: string }>();
   @Output() publish = new EventEmitter<{ event: EventItem; scheduledAt?: string }>();
+  @Output() returnToReview = new EventEmitter<{ event: EventItem; reason: string }>();
+  @Output() simulateSale = new EventEmitter<{ event: EventItem; quantity: number; tierId?: string }>();
+  @Output() postpone = new EventEmitter<{ event: EventItem; newDate: string; reason: string; clientNotice?: string; videoUrl?: string; flyerUrl?: string }>();
+  @Output() finish = new EventEmitter<EventItem>();
+  @Output() confirmClosure = new EventEmitter<{ event: EventItem; managerName: string; notes?: string }>();
   @Output() cancel = new EventEmitter<{ event: EventItem; reason: string }>();
   @Output() seal = new EventEmitter<EventItem>();
   @Output() patch = new EventEmitter<Partial<EventItem>>();
@@ -2129,6 +2716,25 @@ export class EventDetailModalComponent {
   croquisEditorOpen = signal(false);
   croquisEditorPlanId = signal<string | null>(null);
 
+  // ─── Diálogos de acción de ciclo de vida ───
+  publishModalOpen = signal(false);
+  publishMode = signal<'immediate' | 'scheduled'>('immediate');
+  publishScheduleDate = signal('');
+
+  returnReviewModalOpen = signal(false);
+  returnReviewReason = signal('');
+
+  postponeModalOpen = signal(false);
+  postponeNewDate = signal('');
+  postponeReason = signal('');
+  postponeClientNotice = signal('');
+  postponeVideoUrl = signal('');
+  postponeFlyerUrl = signal('');
+
+  simulateSaleModalOpen = signal(false);
+  simulateSaleQty = signal(1);
+  simulateSaleTierId = signal<string | null>(null);
+
   /** Abre el editor de croquis, opcionalmente en un croquis concreto. */
   openCroquisEditor(planId: string | null): void {
     this.croquisEditorPlanId.set(planId);
@@ -2137,16 +2743,16 @@ export class EventDetailModalComponent {
 
   publicProfile = publicProfile;
   shortDate = shortDate;
+  dateTimeLabel = dateTimeLabel;
+  money = money;
+  pendingApprovals = pendingApprovals;
+  isClosureComplete = isClosureComplete;
 
   respondingId = signal<string | null>(null);
   cancelling = signal(false);
   rejectionReason = '';
   cancelReason = '';
   scheduleAt = '';
-
-  dateTimeLabel = dateTimeLabel;
-  /** Expuesto para la plantilla: formatea importes en la vista previa. */
-  money = money;
 
   meta = computed(() => eventStateMeta(this.event()?.state));
 
@@ -2516,23 +3122,71 @@ export class EventDetailModalComponent {
   });
 
   /**
-   * Pestañas visibles. Pestaña principal "EVENTO" unifica toda la información del evento.
+   * Pestañas visibles según el estado del ciclo de vida del evento.
    */
   tabs = computed<TabPillItem[]>(() => {
     const e = this.event();
     if (!e) return [];
 
-    const list: TabPillItem[] = [
-      { value: 'evento', label: 'Evento', icon: 'event', badge: String(this.slots().length),
-        ...EventDetailModalComponent.TAB_ACCENT['evento'] },
-      { value: 'resumen', label: 'Resumen', icon: 'dashboard', badge: this.report().percent + '%',
-        ...EventDetailModalComponent.TAB_ACCENT['resumen'] },
-      { value: 'produccion', label: 'Producción', icon: 'speaker',
-        ...EventDetailModalComponent.TAB_ACCENT['produccion'] },
-      { value: 'boletaje', label: 'Boletaje & Croquis', icon: 'confirmation_number',
-        ...EventDetailModalComponent.TAB_ACCENT['boletaje'] }
-    ];
+    const state = e.state;
+    const list: TabPillItem[] = [];
 
+    // 1. Resumen: Siempre presente
+    const resumenBadge = (state === 'Borrador' || state === 'En Revisión')
+      ? this.report().percent + '%'
+      : (state === 'Finalizada' ? (isClosureComplete(e) ? 'Listo' : 'Pendiente') : undefined);
+    list.push({
+      value: 'resumen',
+      label: 'Resumen',
+      icon: 'dashboard',
+      badge: resumenBadge,
+      ...EventDetailModalComponent.TAB_ACCENT['resumen']
+    });
+
+    // La revisión del cartel no tiene pestaña: cada grupo lleva su estado y su
+    // motivo en su propia tarjeta, dentro del Cartel.
+
+    // 3. Ficha Principal del Evento
+    list.push({
+      value: 'evento',
+      label: 'Evento',
+      icon: 'event',
+      badge: String(this.slots().length),
+      ...EventDetailModalComponent.TAB_ACCENT['evento']
+    });
+
+    // La venta no tiene pestaña propia: sus cifras se leen en Boletaje & Croquis,
+    // que es donde se define el aforo del que salen, y la ficha de publicación
+    // vive en el Resumen. Tenerla aparte obligaba a mantener dos vistas del
+    // mismo número y ya se habían desincronizado los formatos.
+
+    // 5. Cierre (en Finalizada y Cerrado)
+    if (state === 'Finalizada' || state === 'Cerrado' || e.closure) {
+      list.push({
+        value: 'cierre',
+        label: 'Cierre',
+        icon: 'fact_check',
+        badge: state === 'Cerrado' ? 'Sellado' : (isClosureComplete(e) ? 'Listo' : 'Pendiente'),
+        ...EventDetailModalComponent.TAB_ACCENT['cierre']
+      });
+    }
+
+    // 6. Producción y Boletaje
+    list.push({
+      value: 'produccion',
+      label: 'Producción',
+      icon: 'speaker',
+      ...EventDetailModalComponent.TAB_ACCENT['produccion']
+    });
+
+    list.push({
+      value: 'boletaje',
+      label: 'Boletaje & Croquis',
+      icon: 'confirmation_number',
+      ...EventDetailModalComponent.TAB_ACCENT['boletaje']
+    });
+
+    // 7. Tareas y Acuerdos
     const pendingTasks = resolveTasks(e).filter(t => !t.done).length;
     list.push({
       value: 'tareas',
@@ -2542,29 +3196,22 @@ export class EventDetailModalComponent {
       ...EventDetailModalComponent.TAB_ACCENT['tareas']
     });
 
-    list.push({ value: 'acuerdos', label: 'Acuerdos', icon: 'handshake',
+    list.push({
+      value: 'acuerdos',
+      label: 'Acuerdos',
+      icon: 'handshake',
       badge: this.agreements().length ? String(this.agreements().length) : undefined,
-      ...EventDetailModalComponent.TAB_ACCENT['acuerdos'] });
+      ...EventDetailModalComponent.TAB_ACCENT['acuerdos']
+    });
 
-    if ((e.reviewRounds?.length || 0) > 0) {
-      const pending = pendingApprovals(e).length;
-      list.push({ value: 'revision', label: 'Revisión', icon: 'rate_review',
-        badge: pending > 0 ? String(pending) : undefined,
-        ...EventDetailModalComponent.TAB_ACCENT['revision'] });
-    }
+    // 8. Trazabilidad
+    list.push({
+      value: 'trazabilidad',
+      label: 'Trazabilidad',
+      icon: 'timeline',
+      ...EventDetailModalComponent.TAB_ACCENT['trazabilidad']
+    });
 
-    if (e.publication || (e.sales?.ticketsSold || 0) > 0) {
-      list.push({ value: 'venta', label: 'Venta', icon: 'point_of_sale',
-        ...EventDetailModalComponent.TAB_ACCENT['venta'] });
-    }
-
-    if (e.state === 'Finalizada' || e.state === 'Cerrado' || e.closure) {
-      list.push({ value: 'cierre', label: 'Cierre', icon: 'fact_check',
-        ...EventDetailModalComponent.TAB_ACCENT['cierre'] });
-    }
-
-    list.push({ value: 'trazabilidad', label: 'Trazabilidad', icon: 'timeline',
-      ...EventDetailModalComponent.TAB_ACCENT['trazabilidad'] });
     return list;
   });
 
@@ -2764,19 +3411,121 @@ export class EventDetailModalComponent {
     return e ? approvedCount(e) : 0;
   });
 
-  canPublish = computed(() => {
+  publishReadiness = computed(() => {
     const e = this.event();
-    if (!e || !this.roleService.canEditEvents() || hasRejection(e)) return false;
-    if (e.state !== 'En Revisión') return false;
-    return isFullyApproved(e) || (pendingApprovals(e).length === 0 && this.approvalList().length === 0);
+    return e
+      ? evaluatePublishReadiness(e, this.report().missingRequired.length)
+      : { canPublish: false, missingRequirements: [], pendingRequestsCount: 0 };
   });
 
-  /** Cancelar tiene sentido mientras el evento siga vivo. */
+  canPublish = computed(() => {
+    const e = this.event();
+    if (!e || !this.roleService.canEditEvents()) return false;
+    if (e.state !== 'En Revisión') return false;
+    return this.publishReadiness().canPublish;
+  });
+
+  /**
+   * Si quien mira es la disquera que creó el evento.
+   *
+   * Se pregunta contra la sesión, que es la única respuesta posible. Antes se le
+   * pasaba `e.ownerManagerName` como si fuera el actor, así que `isEventCreator`
+   * comparaba el dueño del evento contra el dueño del evento: siempre cierto.
+   * Con eso, el botón de cancelar —que solo debe tener el creador— lo tenía
+   * cualquiera con permiso de edición, en cualquier evento y en cualquier fase.
+   */
+  isCreator = computed(() => {
+    const e = this.event();
+    if (!e) return false;
+    return isEventCreator(e, this.sessionService.actor().managerName);
+  });
+
+  /** Cancelar solo lo puede efectuar el creador original / organizador del evento mientras siga vivo. */
+  /** Fases en las que cancelar todavía significa algo. */
+  cancelIsRelevant = computed(() => {
+    const e = this.event();
+    if (!e || !this.roleService.canEditEvents()) return false;
+    return e.state !== 'Cerrado' && e.state !== 'Cancelado' && e.state !== 'Finalizada';
+  });
+
+  organizer = computed(() => {
+    const e = this.event();
+    return e ? (e.ownerManagerName || e.createdBy || 'el organizador') : 'el organizador';
+  });
+
   canCancel = computed(() => {
     const e = this.event();
     if (!e || !this.roleService.canEditEvents()) return false;
-    return e.state !== 'Cerrado' && e.state !== 'Cancelado';
+    if (e.state === 'Cerrado' || e.state === 'Cancelado') return false;
+    return this.isCreator();
   });
+
+  managers = computed(() => {
+    const e = this.event();
+    return e ? participatingManagers(e) : [];
+  });
+
+  allManagersConfirmed = computed(() => {
+    const e = this.event();
+    return e ? allManagersConfirmedClosure(e) : false;
+  });
+
+  openPublishDialog(): void {
+    this.publishMode.set('immediate');
+    this.publishScheduleDate.set('');
+    this.publishModalOpen.set(true);
+  }
+
+  confirmPublish(e: EventItem): void {
+    if (this.publishMode() === 'scheduled' && !this.publishScheduleDate().trim()) return;
+    this.publish.emit({
+      event: e,
+      scheduledAt: this.publishMode() === 'scheduled' ? this.publishScheduleDate().trim() : undefined
+    });
+    this.publishModalOpen.set(false);
+  }
+
+  openReturnReviewDialog(): void {
+    this.returnReviewReason.set('');
+    this.returnReviewModalOpen.set(true);
+  }
+
+  confirmReturnToReview(e: EventItem): void {
+    if (!this.returnReviewReason().trim()) return;
+    this.returnToReview.emit({ event: e, reason: this.returnReviewReason().trim() });
+    this.returnReviewModalOpen.set(false);
+    this.returnReviewReason.set('');
+  }
+
+  openPostponeDialog(e: EventItem): void {
+    this.postponeNewDate.set('');
+    this.postponeReason.set('');
+    this.postponeClientNotice.set('');
+    this.postponeVideoUrl.set('');
+    this.postponeFlyerUrl.set('');
+    this.postponeModalOpen.set(true);
+  }
+
+  confirmPostpone(e: EventItem): void {
+    if (!this.postponeNewDate().trim() || !this.postponeReason().trim()) return;
+    this.postpone.emit({
+      event: e,
+      newDate: this.postponeNewDate().trim(),
+      reason: this.postponeReason().trim(),
+      clientNotice: this.postponeClientNotice().trim() || undefined,
+      videoUrl: this.postponeVideoUrl().trim() || undefined,
+      flyerUrl: this.postponeFlyerUrl().trim() || undefined
+    });
+    this.postponeModalOpen.set(false);
+  }
+
+  triggerSimulateSale(e: EventItem, quantity = 1, tierId?: string): void {
+    this.simulateSale.emit({ event: e, quantity, tierId });
+  }
+
+  confirmManagerClosureAction(e: EventItem, managerName: string, notes?: string): void {
+    this.confirmClosure.emit({ event: e, managerName, notes });
+  }
 
   seats = computed(() => { const e = this.event(); return e ? totalSeats(e) : 0; });
   sold = computed(() => { const e = this.event(); return e ? soldSeats(e) : 0; });
@@ -2864,7 +3613,151 @@ export class EventDetailModalComponent {
     }
   }
 
+  reviewRoundsCount(): number {
+    return this.event()?.reviewRounds?.length || 0;
+  }
+
+  grossRevenue(e: EventItem): number {
+    return grossTicketRevenue(e);
+  }
+
+  closureExpensesTotal(e: EventItem): number {
+    return totalExpenses(e);
+  }
+
+  closurePayoutsTotal(e: EventItem): number {
+    return totalPayouts(e);
+  }
+
+  closureNetResult(e: EventItem): number {
+    return netResult(e);
+  }
+
+  closureConfirmationsCount(e: EventItem): number {
+    return e.closure?.managerConfirmations?.length || 0;
+  }
+
+  managerConfirmationOf(e: EventItem, managerName: string): EventManagerClosureConfirmation | undefined {
+    return e.closure?.managerConfirmations?.find(c => c.managerName === managerName);
+  }
+
   stepDotClass(state: EventItem['state']): string {
     return eventStateMeta(state).badgeClass;
   }
+
+  /**
+   * El día en que el evento pasará solo a Finalizada: el siguiente al del show.
+   *
+   * Se enseña porque la transición dejó de ser un botón, y sin decirlo la barra
+   * de acciones se quedaba muda sobre qué falta para avanzar de fase.
+   */
+  concludesOn = computed(() => {
+    const e = this.event();
+    if (!e?.date) return 'terminar el evento';
+    const dia = new Date(e.date + 'T00:00:00');
+    if (isNaN(dia.getTime())) return e.date;
+    const siguiente = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate() + 1);
+    return siguiente.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+  });
+
+
+  /** Mañana, el primer día al que tiene sentido mover un evento. */
+  tomorrow = computed(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  });
+
+  /**
+   * Por qué la nueva fecha no sirve, si no sirve.
+   *
+   * Mover un evento a una fecha ya pasada lo daría por concluido en cuanto se
+   * guardara —ahora que la conclusión la manda el calendario—, que es lo
+   * contrario de posponerlo. Y moverlo al mismo día no es posponer nada.
+   */
+  postponeDateError = computed<string | null>(() => {
+    const nueva = this.postponeNewDate().trim();
+    if (!nueva) return null;
+
+    const e = this.event();
+    if (nueva === e?.date) return 'Es la misma fecha que ya tiene el evento.';
+    if (nueva < this.tomorrow()) {
+      return 'La nueva fecha ya pasó o es hoy: el evento se daría por concluido en vez de posponerse.';
+    }
+    return null;
+  });
+
+  /** El aviso tal como le llegará al comprador, con el texto por omisión si se deja vacío. */
+  postponePreview(e: EventItem): string {
+    const escrito = this.postponeClientNotice().trim();
+    if (escrito) return escrito;
+    const nueva = this.postponeNewDate().trim() || '(nueva fecha)';
+    return `Aviso: El evento ha sido reprogramado del ${e.date} al ${nueva}. `
+      + 'Tus boletos y asientos continúan siendo 100% válidos para la nueva fecha.';
+  }
+
+
+  // ─── Adjuntos del aviso de postergación ─────────────────────────────────────
+
+  /**
+   * Los archivos se cargan de verdad, no se piden por URL.
+   *
+   * Pedir una liga a quien acaba de recibir el video del grupo por WhatsApp es
+   * pedirle que antes lo publique en otro sitio. Aquí se suelta el archivo y
+   * listo; en el mock se referencia con un objeto de sesión, que es lo que ya
+   * hace el resto del panel, y contra un backend real sería la respuesta de la
+   * subida.
+   */
+  readonly postponeFlyerName = signal('');
+  readonly postponeVideoName = signal('');
+  readonly dragOverFlyer = signal(false);
+  readonly dragOverVideo = signal(false);
+
+  onDragOver(ev: DragEvent, zona: 'flyer' | 'video'): void {
+    ev.preventDefault();
+    (zona === 'flyer' ? this.dragOverFlyer : this.dragOverVideo).set(true);
+  }
+
+  onDropFlyer(ev: DragEvent): void {
+    ev.preventDefault();
+    this.dragOverFlyer.set(false);
+    this.takeFlyer(ev.dataTransfer?.files?.[0]);
+  }
+
+  onDropVideo(ev: DragEvent): void {
+    ev.preventDefault();
+    this.dragOverVideo.set(false);
+    this.takeVideo(ev.dataTransfer?.files?.[0]);
+  }
+
+  onPickFlyer(ev: Event): void { this.takeFlyer((ev.target as HTMLInputElement).files?.[0]); }
+  onPickVideo(ev: Event): void { this.takeVideo((ev.target as HTMLInputElement).files?.[0]); }
+
+  private takeFlyer(file?: File | null): void {
+    if (!file || !file.type.startsWith('image/')) return;
+    this.postponeFlyerUrl.set(URL.createObjectURL(file));
+    this.postponeFlyerName.set(`${file.name} · ${this.fileSize(file.size)}`);
+  }
+
+  private takeVideo(file?: File | null): void {
+    if (!file || !file.type.startsWith('video/')) return;
+    this.postponeVideoUrl.set(URL.createObjectURL(file));
+    this.postponeVideoName.set(`${file.name} · ${this.fileSize(file.size)}`);
+  }
+
+  clearPostponeFlyer(): void {
+    this.postponeFlyerUrl.set('');
+    this.postponeFlyerName.set('');
+  }
+
+  clearPostponeVideo(): void {
+    this.postponeVideoUrl.set('');
+    this.postponeVideoName.set('');
+  }
+
+  private fileSize(bytes: number): string {
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
 }

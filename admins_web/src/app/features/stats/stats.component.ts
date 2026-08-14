@@ -1,100 +1,287 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MockDataService } from '../../core/services/mock-data.service';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
-import { PanelComponent } from '../../shared/ui/panel/panel.component';
-import { ProgressBarComponent } from '../../shared/ui/progress-bar/progress-bar.component';
+import { TabPillsComponent, TabPillItem } from '../../shared/ui/tab-pills/tab-pills.component';
 
+import {
+  EventStatsDetail,
+  ArtistStatsDetail
+} from '../../core/models/stats.models';
+
+import {
+  calculateGlobalStatsSummary,
+  calculateGenreDistribution,
+  calculateMonthlyAttendance,
+  calculateCityPerformance,
+  calculateEventStatsDetails,
+  calculateQuoteFunnel,
+  calculatePrivateEventTypes,
+  calculateArtistStatsDetails,
+  calculateAudienceDemographics,
+  getTrendPredictions
+} from './stats-metrics';
+
+import { StatsKpisComponent } from './components/stats-kpis.component';
+import { StatsTabOverviewComponent } from './components/stats-tab-overview.component';
+import { StatsTabEventsComponent } from './components/stats-tab-events.component';
+import { StatsTabQuotesComponent } from './components/stats-tab-quotes.component';
+import { StatsTabTalentComponent } from './components/stats-tab-talent.component';
+import { StatsTabDemographicsComponent } from './components/stats-tab-demographics.component';
+import { StatsTabPredictionsComponent } from './components/stats-tab-predictions.component';
+
+import { ModalEventStatsComponent } from './modals/modal-event-stats.component';
+import { ModalArtistStatsComponent } from './modals/modal-artist-stats.component';
+
+export type StatsTab =
+  | 'overview'
+  | 'events'
+  | 'quotes'
+  | 'talent'
+  | 'demographics'
+  | 'predictions';
+
+/**
+ * Módulo de Estadísticas & Inteligencia de Audiencia de Acordex.
+ *
+ * Integra en tiempo real datos de:
+ * 1. Eventos masivos (Boletos, aforos, zonas VIP/General)
+ * 2. Cotizaciones privadas (Embudo de conversión y tipos de fiesta)
+ * 3. Talento (Streaming en Spotify, seguidores en TikTok, calificaciones)
+ * 4. Demografía (Edades, género y canales de compra)
+ * 5. Predicciones inteligentes de demanda
+ */
 @Component({
   selector: 'app-stats',
   standalone: true,
-  imports: [CommonModule, BadgeComponent, PanelComponent, ProgressBarComponent],
+  imports: [
+    CommonModule,
+    BadgeComponent,
+    TabPillsComponent,
+    StatsKpisComponent,
+    StatsTabOverviewComponent,
+    StatsTabEventsComponent,
+    StatsTabQuotesComponent,
+    StatsTabTalentComponent,
+    StatsTabDemographicsComponent,
+    StatsTabPredictionsComponent,
+    ModalEventStatsComponent,
+    ModalArtistStatsComponent
+  ],
   template: `
-    <div class="space-y-6 sm:space-y-8 animate-fade-in">
+    <div class="space-y-6 sm:space-y-8 animate-fade-in pb-12">
 
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="font-display-xl text-xl sm:text-2xl font-black text-on-surface">Estadísticas & Audiencia</h1>
-            <app-badge label="Fan Demographics" variant="secondary" />
+      <!-- ─── ENCABEZADO PRINCIPAL ─── -->
+      <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-surface-container-high/90 via-surface-container/80 to-surface-container-high/90 backdrop-blur-xl border border-outline-variant/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div class="absolute -right-12 -top-12 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 min-w-0">
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight">Estadísticas & Inteligencia de Audiencia</h1>
+            <app-badge label="Métricas en Tiempo Real" variant="success" />
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary border border-primary/30">
+              Live Data Conectado
+            </span>
           </div>
-          <p class="text-xs text-outline mt-1">Interacción social, demografía del público e inteligencia de audiencia</p>
+          <p class="text-xs text-outline mt-1 max-w-2xl leading-relaxed">
+            Consolidación visual de boletos vendidos, aforos de palenques, embudo de cotizaciones para bodas, streaming en Spotify y demografía de fans.
+          </p>
+        </div>
+
+        <!-- Botón de Exportar / Imprimir -->
+        <div class="relative z-10 flex items-center gap-2">
+          <button
+            type="button"
+            (click)="printAnalytics()"
+            class="px-4 py-2.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-on-surface hover:bg-surface-container-highest text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-base">print</span>
+            Imprimir Reporte Estadístico
+          </button>
         </div>
       </div>
 
-      <!-- DEMOGRAPHICS & SOCIAL CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+      <!-- ─── KPIS SUPERIORES ─── -->
+      <app-stats-kpis [summary]="globalSummary()" />
 
-        <app-panel title="Rango de Edad Fanbase" icon="bar_chart">
-          <div class="space-y-3.5">
-            <app-progress-bar label="18 - 24 Años (Tumbado / Sierreño)" [percent]="48" valueLabel="48%" colorVariant="primary" />
-            <app-progress-bar label="25 - 34 Años (Norteño / Banda)" [percent]="36" valueLabel="36%" colorVariant="secondary" />
-            <app-progress-bar label="35+ Años (Tradicional)" [percent]="16" valueLabel="16%" colorVariant="neutral" />
-          </div>
-        </app-panel>
-
-        <app-panel title="Principales Ciudades" icon="location_city">
-          <div class="space-y-2 text-xs">
-            <div class="p-2.5 rounded-xl bg-surface-container-high flex justify-between items-center gap-2">
-              <span class="font-bold text-on-surface truncate">1. Monterrey, NL</span>
-              <span class="font-black text-emerald-400 shrink-0">42,500 Fans</span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-surface-container-high flex justify-between items-center gap-2">
-              <span class="font-bold text-on-surface truncate">2. Guadalajara, JAL</span>
-              <span class="font-black text-emerald-400 shrink-0">31,200 Fans</span>
-            </div>
-            <div class="p-2.5 rounded-xl bg-surface-container-high flex justify-between items-center gap-2">
-              <span class="font-bold text-on-surface truncate">3. Aguascalientes, AGS</span>
-              <span class="font-black text-emerald-400 shrink-0">22,800 Fans</span>
-            </div>
-          </div>
-        </app-panel>
-
-        <app-panel title="Redes Sociales" icon="share">
-          <div class="grid grid-cols-2 gap-3 text-xs">
-            <div class="p-3 rounded-2xl bg-surface-container-high text-center">
-              <span class="text-[10px] text-outline font-bold uppercase block">Seguidores TikTok</span>
-              <span class="text-lg font-black text-primary">1.2M</span>
-            </div>
-            <div class="p-3 rounded-2xl bg-surface-container-high text-center">
-              <span class="text-[10px] text-outline font-bold uppercase block">Spotify Oyentes</span>
-              <span class="text-lg font-black text-emerald-400">890K/mes</span>
-            </div>
-            <div class="p-3 rounded-2xl bg-surface-container-high text-center">
-              <span class="text-[10px] text-outline font-bold uppercase block">Historias Compartidas</span>
-              <span class="text-lg font-black text-secondary">45.2K</span>
-            </div>
-            <div class="p-3 rounded-2xl bg-surface-container-high text-center">
-              <span class="text-[10px] text-outline font-bold uppercase block">Engagement Rate</span>
-              <span class="text-lg font-black text-purple-300">8.4%</span>
-            </div>
-          </div>
-        </app-panel>
-
+      <!-- ─── BARRA DE PESTAÑAS ─── -->
+      <div class="border-b border-outline-variant/30 pb-2">
+        <app-tab-pills
+          [tabs]="tabOptions"
+          [active]="activeTab()"
+          (change)="setTab($event)"
+        />
       </div>
 
-      <!-- AUTOMATED ENGAGEMENT SUGGESTIONS -->
-      <div class="p-5 sm:p-6 rounded-3xl bg-surface-container border border-primary/40 shadow-xl space-y-4">
-        <h3 class="text-sm sm:text-base font-bold text-on-surface flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary">auto_awesome</span> Sugerencias de Engagement Automatizadas
-        </h3>
+      <!-- ─── CONTENIDO DE PESTAÑAS ─── -->
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-1">
-            <span class="text-[10px] font-bold text-primary uppercase">Campaña TikTok Live</span>
-            <p class="font-bold text-on-surface">Transmisión detrás de cámara en el ensayo general</p>
-            <p class="text-outline">Transmitir 30 minutos antes de la firma de autógrafos en Monterrey incrementará el tráfico de venta de boletos en un 15%.</p>
-          </div>
+      <!-- 1. RESUMEN GENERAL -->
+      @if (activeTab() === 'overview') {
+        <app-stats-tab-overview
+          [genres]="genreDistribution()"
+          [monthly]="monthlyAttendance()"
+          [cities]="cityPerformance()"
+        />
+      }
 
-          <div class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-1">
-            <span class="text-[10px] font-bold text-emerald-400 uppercase">Sorteo VIP en Spotify</span>
-            <p class="font-bold text-on-surface">Pases Meet & Greet para top oyentes en Guadalajara</p>
-            <p class="text-outline">Recompensar a los fans más activos en Spotify para impulsar el pre-save del nuevo sencillo en co-producción.</p>
-          </div>
-        </div>
-      </div>
+      <!-- 2. EVENTOS & TAQUILLA -->
+      @if (activeTab() === 'events') {
+        <app-stats-tab-events
+          [events]="eventDetails()"
+          (selectEvent)="onSelectEvent($event)"
+        />
+      }
+
+      <!-- 3. COTIZACIONES & EMBUDO -->
+      @if (activeTab() === 'quotes') {
+        <app-stats-tab-quotes
+          [funnel]="quoteFunnel()"
+          [eventTypes]="privateEventTypes()"
+        />
+      }
+
+      <!-- 4. ARTISTAS & REDES SOCIALES -->
+      @if (activeTab() === 'talent') {
+        <app-stats-tab-talent
+          [artists]="artistDetails()"
+          (selectArtist)="onSelectArtist($event)"
+        />
+      }
+
+      <!-- 5. DEMOGRAFÍA & FANS -->
+      @if (activeTab() === 'demographics') {
+        <app-stats-tab-demographics
+          [demographics]="demographics()"
+        />
+      }
+
+      <!-- 6. PREDICCIONES & TENDENCIAS -->
+      @if (activeTab() === 'predictions') {
+        <app-stats-tab-predictions
+          [predictions]="predictions()"
+        />
+      }
+
+      <!-- ─── MODALES INTERACTIVOS ─── -->
+
+      <!-- Modal 1: Detalle Estadístico por Evento -->
+      @if (selectedEventForModal()) {
+        <app-modal-event-stats
+          [event]="selectedEventForModal()!"
+          (closed)="selectedEventForModal.set(null)"
+        />
+      }
+
+      <!-- Modal 2: Ficha Digital y Audiencia por Artista -->
+      @if (selectedArtistForModal()) {
+        <app-modal-artist-stats
+          [artist]="selectedArtistForModal()!"
+          (closed)="selectedArtistForModal.set(null)"
+        />
+      }
 
     </div>
   `
 })
-export class StatsComponent {}
+export class StatsComponent {
+  mockData = inject(MockDataService);
+
+  activeTab = signal<StatsTab>('overview');
+
+  // Modales
+  selectedEventForModal = signal<EventStatsDetail | null>(null);
+  selectedArtistForModal = signal<ArtistStatsDetail | null>(null);
+
+  readonly tabOptions: TabPillItem[] = [
+    { value: 'overview', label: 'Resumen General', icon: 'query_stats' },
+    { value: 'events', label: 'Eventos & Taquilla', icon: 'confirmation_number' },
+    { value: 'quotes', label: 'Cotizaciones & Embudo', icon: 'filter_alt' },
+    { value: 'talent', label: 'Artistas & Redes', icon: 'cell_tower' },
+    { value: 'demographics', label: 'Demografía & Fans', icon: 'group' },
+    { value: 'predictions', label: 'Predicciones & Tendencias', icon: 'auto_awesome' }
+  ];
+
+  setTab(tabId: string): void {
+    this.activeTab.set(tabId as StatsTab);
+  }
+
+  // Derivaciones Reactivas Integradas
+  globalSummary = computed(() => {
+    return calculateGlobalStatsSummary(
+      this.mockData.events(),
+      this.mockData.quotes(),
+      this.mockData.groups()
+    );
+  });
+
+  genreDistribution = computed(() => {
+    return calculateGenreDistribution(
+      this.mockData.events(),
+      this.mockData.quotes(),
+      this.mockData.groups()
+    );
+  });
+
+  monthlyAttendance = computed(() => {
+    return calculateMonthlyAttendance(
+      this.mockData.events()
+    );
+  });
+
+  cityPerformance = computed(() => {
+    return calculateCityPerformance(
+      this.mockData.events(),
+      this.mockData.quotes()
+    );
+  });
+
+  eventDetails = computed(() => {
+    return calculateEventStatsDetails(
+      this.mockData.events()
+    );
+  });
+
+  quoteFunnel = computed(() => {
+    return calculateQuoteFunnel(
+      this.mockData.quotes()
+    );
+  });
+
+  privateEventTypes = computed(() => {
+    return calculatePrivateEventTypes(
+      this.mockData.quotes()
+    );
+  });
+
+  artistDetails = computed(() => {
+    return calculateArtistStatsDetails(
+      this.mockData.groups(),
+      this.mockData.events(),
+      this.mockData.quotes()
+    );
+  });
+
+  demographics = computed(() => {
+    return calculateAudienceDemographics(
+      this.mockData.events(),
+      this.mockData.groups()
+    );
+  });
+
+  predictions = computed(() => {
+    return getTrendPredictions();
+  });
+
+  // Handlers
+  onSelectEvent(event: EventStatsDetail): void {
+    this.selectedEventForModal.set(event);
+  }
+
+  onSelectArtist(artist: ArtistStatsDetail): void {
+    this.selectedArtistForModal.set(artist);
+  }
+
+  printAnalytics(): void {
+    window.print();
+  }
+}

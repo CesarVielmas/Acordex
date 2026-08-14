@@ -21,6 +21,7 @@ import {
   Role,
   ReceivingCard
 } from '../models/admin.models';
+import { FinanceTransaction, CashCutRecord } from '../models/finance.models';
 import {
   EventReviewRound,
   EventTimelineStep,
@@ -88,6 +89,249 @@ export class MockDataService {
       clabe: '072180004567890123',
       cardType: 'Débito',
       isDefault: false
+    }
+  ];
+
+  public readonly INITIAL_FINANCE_TRANSACTIONS: FinanceTransaction[] = [
+    {
+      id: 'trx-001',
+      folio: 'TRX-2026-001',
+      type: 'ingreso',
+      category: 'taquilla_evento',
+      concept: 'Venta de Boletos VIP y Preferente · Gran Baile de Primavera Palenque Santa Rita',
+      amount: 980000,
+      date: '2026-08-01',
+      accountId: 'card-banamex-02',
+      accountName: 'Citibanamex Taquilla & Producción',
+      status: 'conciliado',
+      receiptReference: 'SPEI-BBVA-99120',
+      relatedEntity: { type: 'event', id: 'EVT-001', name: 'Gran Baile de Primavera' },
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-02',
+      reconciledBy: 'Lic. Claudia Morales'
+    },
+    {
+      id: 'trx-002',
+      folio: 'TRX-2026-002',
+      type: 'ingreso',
+      category: 'anticipo_cotizacion',
+      concept: 'Anticipo 50% Contrato Boda Residencial San Pedro · Los Elegantes del Norte',
+      amount: 260000,
+      date: '2026-08-03',
+      accountId: 'card-bbva-01',
+      accountName: 'BBVA Empresarial Maestra',
+      status: 'conciliado',
+      receiptReference: 'TRF-SAN-8812',
+      relatedEntity: { type: 'quote', id: 'COT-8901', name: 'Boda Residencial San Pedro' },
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-03',
+      reconciledBy: 'Lic. Claudia Morales'
+    },
+    {
+      id: 'trx-003',
+      folio: 'TRX-2026-003',
+      type: 'egreso',
+      category: 'honorarios_artistas',
+      concept: 'Liquidación Honorarios de Actuación · Banda La Imperial (Noche Mexicana)',
+      amount: 650000,
+      date: '2026-08-04',
+      accountId: 'card-banorte-03',
+      accountName: 'Banorte Nómina & Talento',
+      status: 'conciliado',
+      receiptReference: 'SPEI-BAN-33120',
+      relatedEntity: { type: 'group', id: 'grp-3', name: 'Banda La Imperial' },
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-04',
+      reconciledBy: 'Ing. Mateo Rivas'
+    },
+    {
+      id: 'trx-004',
+      folio: 'TRX-2026-004',
+      type: 'egreso',
+      category: 'produccion_audio',
+      concept: 'Renta Sistema Line Array K2, Iluminación Móvil & Pantallas LED P3 · ProAudio Bajío',
+      amount: 285000,
+      date: '2026-08-05',
+      accountId: 'card-banamex-02',
+      accountName: 'Citibanamex Taquilla & Producción',
+      status: 'conciliado',
+      receiptReference: 'FAC-PRO-4491',
+      relatedEntity: { type: 'event', id: 'EVT-002', name: 'Festival Tumbado Zapopan' },
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-06',
+      reconciledBy: 'Lic. Claudia Morales'
+    },
+    {
+      id: 'trx-005',
+      folio: 'TRX-2026-005',
+      type: 'ingreso',
+      category: 'patrocinio',
+      concept: 'Patrocinio Comercial Oficial Exclusivo Cerveza Corona & Tequila Don Julio',
+      amount: 120000,
+      date: '2026-08-06',
+      accountId: 'card-bbva-01',
+      accountName: 'BBVA Empresarial Maestra',
+      status: 'conciliado',
+      receiptReference: 'TRF-COR-1102',
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-06',
+      reconciledBy: 'Lic. Claudia Morales'
+    },
+    {
+      id: 'trx-006',
+      folio: 'TRX-2026-006',
+      type: 'egreso',
+      category: 'finiquito_manager',
+      concept: 'Finiquito & Reparto de Utilidades 40% Co-organización · Don Raúl Treviño',
+      amount: 185000,
+      date: '2026-08-07',
+      accountId: 'card-bbva-01',
+      accountName: 'BBVA Empresarial Maestra',
+      status: 'conciliado',
+      receiptReference: 'FIN-MGR-0029',
+      relatedEntity: { type: 'manager', id: 'mgr-01', name: 'Don Raúl Treviño' },
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-07',
+      reconciledBy: 'Lic. Claudia Morales'
+    },
+    {
+      id: 'trx-007',
+      folio: 'TRX-2026-007',
+      type: 'ingreso',
+      category: 'concesion_barra',
+      concept: 'Corte de Efectivo Concesión de Barras y Venta de Alimentos Palenque',
+      amount: 85000,
+      date: '2026-08-08',
+      accountId: 'caja-chica-04',
+      accountName: 'Caja Chica Efectivo Recintos',
+      status: 'conciliado',
+      receiptReference: 'EFE-PAL-9021',
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-08',
+      reconciledBy: 'Jorge Staff Ruiz'
+    },
+    {
+      id: 'trx-008',
+      folio: 'TRX-2026-008',
+      type: 'egreso',
+      category: 'viaticos_logistica',
+      concept: 'Boletos de Avión y Hospedaje Cuadrilla Técnica 12 pax · Los Elegantes del Norte',
+      amount: 95000,
+      date: '2026-08-09',
+      accountId: 'card-bbva-01',
+      accountName: 'BBVA Empresarial Maestra',
+      status: 'conciliado',
+      receiptReference: 'AEROMEX-6621',
+      relatedEntity: { type: 'group', id: 'grp-1', name: 'Los Elegantes del Norte' },
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-09',
+      reconciledBy: 'Lic. Claudia Morales'
+    },
+    {
+      id: 'trx-009',
+      folio: 'TRX-2026-009',
+      type: 'ingreso',
+      category: 'contrato_privado',
+      concept: 'Liquidación Final 100% Contrato Corporativo Expo Ganadera · Grupo Dinastía Real',
+      amount: 190000,
+      date: '2026-08-10',
+      accountId: 'card-bbva-01',
+      accountName: 'BBVA Empresarial Maestra',
+      status: 'conciliado',
+      receiptReference: 'SPEI-CITI-4481',
+      relatedEntity: { type: 'quote', id: 'COT-8902', name: 'Festival Anual Expo Ganadera' },
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-10',
+      reconciledBy: 'Lic. Claudia Morales'
+    },
+    {
+      id: 'trx-010',
+      folio: 'TRX-2026-010',
+      type: 'egreso',
+      category: 'permisos_impuestos',
+      concept: 'Pago de Permisos Municipales de Espectáculos & Inspección Protección Civil',
+      amount: 75000,
+      date: '2026-08-11',
+      accountId: 'caja-chica-04',
+      accountName: 'Caja Chica Efectivo Recintos',
+      status: 'conciliado',
+      receiptReference: 'FOL-PC-2026-99',
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-11',
+      reconciledBy: 'Lic. Claudia Morales'
+    },
+    {
+      id: 'trx-011',
+      folio: 'TRX-2026-011',
+      type: 'ingreso',
+      category: 'taquilla_evento',
+      concept: 'Corte de Ventas Digitales Fase 1 (1,200 Boletos) · Festival Tumbado Zapopan',
+      amount: 540000,
+      date: '2026-08-12',
+      accountId: 'card-banamex-02',
+      accountName: 'Citibanamex Taquilla & Producción',
+      status: 'conciliado',
+      receiptReference: 'STRIPE-TK-9921',
+      relatedEntity: { type: 'event', id: 'EVT-002', name: 'Festival Tumbado Zapopan' },
+      isAuditReconciled: true,
+      reconciledAt: '2026-08-12',
+      reconciledBy: 'Lic. Claudia Morales'
+    },
+    {
+      id: 'trx-012',
+      folio: 'TRX-2026-012',
+      type: 'egreso',
+      category: 'produccion_audio',
+      concept: 'Anticipo Escenario Techado Ground Support & Plantas Eléctricas Cummins',
+      amount: 140000,
+      date: '2026-08-13',
+      accountId: 'card-banamex-02',
+      accountName: 'Citibanamex Taquilla & Producción',
+      status: 'pendiente',
+      receiptReference: 'REQ-STG-1104',
+      relatedEntity: { type: 'event', id: 'EVT-003', name: 'Noche Mexicana Lienzo Charro' },
+      isAuditReconciled: false
+    }
+  ];
+
+  public readonly INITIAL_CASH_CUTS: CashCutRecord[] = [
+    {
+      id: 'cut-001',
+      cutFolio: 'CORTE-2026-08-12',
+      date: '2026-08-12',
+      time: '23:45',
+      closedBy: 'Lic. Claudia Morales',
+      initialBalance: 3950000,
+      totalIncomes: 540000,
+      totalExpenses: 140000,
+      finalBalance: 4355000,
+      accountBreakdown: [
+        { accountId: 'card-bbva-01', accountName: 'BBVA Empresarial Maestra', balance: 2450000 },
+        { accountId: 'card-banamex-02', accountName: 'Citibanamex Taquilla & Producción', balance: 1180000 },
+        { accountId: 'card-banorte-03', accountName: 'Banorte Nómina & Talento', balance: 640000 },
+        { accountId: 'caja-chica-04', accountName: 'Caja Chica Efectivo Recintos', balance: 85000 }
+      ],
+      notes: 'Corte nocturno tras venta de boletos Fase 1 Festival Tumbado. Cuentas cuadradas al 100%.',
+      transactionsCount: 12
+    },
+    {
+      id: 'cut-002',
+      cutFolio: 'CORTE-2026-08-11',
+      date: '2026-08-11',
+      time: '22:30',
+      closedBy: 'Lic. Claudia Morales',
+      initialBalance: 4025000,
+      totalIncomes: 0,
+      totalExpenses: 75000,
+      finalBalance: 3950000,
+      accountBreakdown: [
+        { accountId: 'card-bbva-01', accountName: 'BBVA Empresarial Maestra', balance: 2260000 },
+        { accountId: 'card-banamex-02', accountName: 'Citibanamex Taquilla & Producción', balance: 1040000 },
+        { accountId: 'card-banorte-03', accountName: 'Banorte Nómina & Talento', balance: 565000 },
+        { accountId: 'caja-chica-04', accountName: 'Caja Chica Efectivo Recintos', balance: 85000 }
+      ],
+      notes: 'Pago de permisos municipales de espectáculos registrado y conciliado.',
+      transactionsCount: 10
     }
   ];
 
@@ -1804,15 +2048,35 @@ export class MockDataService {
           createdAt: '2026-07-30T10:30',
           completedAt: '2026-07-30T10:45',
           completedBy: { name: 'Valentina Morales', managerName: 'Valentina Morales', rank: 'manager' },
-          pendingChangeProposal: {
-            id: 'prop-demo-2',
-            proposedBy: { name: 'Don Raúl Treviño', managerName: 'Don Raúl Treviño', rank: 'manager' },
-            proposedAt: '2026-08-11T16:20',
-            fieldLabel: 'Frase de portada',
-            proposedChanges: { publicProfile: { tagline: '¡La noche más épica del año — no te la pierdas!' } },
-            previousValues: {},
-            status: 'pendiente'
-          }
+          // Dos disqueras distintas proponen frase para el mismo campo. Con el
+          // modelo de una sola propuesta la segunda borraba a la primera; aquí
+          // las dos llegan y Valentina, que responde por el punto, escoge.
+          changeProposals: [
+            {
+              id: 'prop-tagline-1',
+              checklistItemId: 'tagline',
+              fieldKey: 'tagline',
+              fieldLabel: 'Frase de portada',
+              proposedChanges: { publicProfile: { tagline: '¡La noche más épica del año — no te la pierdas!' } },
+              proposedLabel: '¡La noche más épica del año — no te la pierdas!',
+              previousLabel: 'Una noche de pura tradición sinaloense',
+              proposedBy: { name: 'Don Raúl Treviño', managerName: 'Don Raúl Treviño', rank: 'manager' },
+              proposedAt: '2026-08-11T16:20',
+              status: 'pendiente'
+            },
+            {
+              id: 'prop-tagline-2',
+              checklistItemId: 'tagline',
+              fieldKey: 'tagline',
+              fieldLabel: 'Frase de portada',
+              proposedChanges: { publicProfile: { tagline: 'Banda, tambora y sierreño en una sola noche' } },
+              proposedLabel: 'Banda, tambora y sierreño en una sola noche',
+              previousLabel: 'Una noche de pura tradición sinaloense',
+              proposedBy: { name: 'Lic. Gonzalo Garza', managerName: 'Lic. Gonzalo Garza', rank: 'manager' },
+              proposedAt: '2026-08-12T09:05',
+              status: 'pendiente'
+            }
+          ]
         },
         {
           id: 'task-sys-about',
@@ -1822,13 +2086,54 @@ export class MockDataService {
           group: 'Cartelera Pública',
           checklistItemId: 'about_publico',
           formSectionRef: 'about_publico',
-          assignedManager: 'Beto Ramírez (Sierreño Music)',
+          assignedManager: 'Don Raúl Treviño',
           status: 'completada',
           priority: 'Alta',
           createdBy: { name: 'Sistema Acordex', managerName: 'sistema', rank: 'sistema' },
           createdAt: '2026-07-30T11:00',
           completedAt: '2026-07-30T11:15',
-          completedBy: { name: 'Beto Ramírez (Sierreño Music)', managerName: 'Beto Ramírez (Sierreño Music)', rank: 'manager' }
+          completedBy: { name: 'Don Raúl Treviño', managerName: 'Don Raúl Treviño', rank: 'manager' },
+          // Tres cambios sobre el mismo punto pero no sobre el mismo campo: los
+          // dos primeros pelean por el texto y solo puede quedar uno; el de las
+          // reglas va por su cuenta y se acepta aparte.
+          changeProposals: [
+            {
+              id: 'prop-about-1',
+              checklistItemId: 'about_publico',
+              fieldKey: 'aboutText',
+              fieldLabel: 'Información del evento',
+              proposedChanges: { publicProfile: { aboutText: 'Cuatro agrupaciones en vivo, apertura de puertas 19:00, zona VIP con servicio de mesa y acceso preferente por la puerta 3.' } },
+              proposedLabel: 'Cuatro agrupaciones en vivo, apertura de puertas 19:00, zona VIP con servicio…',
+              previousLabel: 'Una noche con lo mejor de la música sinaloense.',
+              proposedBy: { name: 'Beto Ramírez (Sierreño Music)', managerName: 'Beto Ramírez (Sierreño Music)', rank: 'manager' },
+              proposedAt: '2026-08-11T18:40',
+              status: 'pendiente'
+            },
+            {
+              id: 'prop-about-2',
+              checklistItemId: 'about_publico',
+              fieldKey: 'aboutText',
+              fieldLabel: 'Información del evento',
+              proposedChanges: { publicProfile: { aboutText: 'La fiesta sinaloense más grande de Jalisco: banda, tambora y sierreño hasta la madrugada.' } },
+              proposedLabel: 'La fiesta sinaloense más grande de Jalisco: banda, tambora y sierreño…',
+              previousLabel: 'Una noche con lo mejor de la música sinaloense.',
+              proposedBy: { name: 'Valentina Morales', managerName: 'Valentina Morales', rank: 'manager' },
+              proposedAt: '2026-08-12T10:15',
+              status: 'pendiente'
+            },
+            {
+              id: 'prop-about-3',
+              checklistItemId: 'about_publico',
+              fieldKey: 'rules',
+              fieldLabel: 'Reglas e información adicional',
+              proposedChanges: { publicProfile: { rules: 'Prohibido el ingreso de alimentos y bebidas. Menores de 12 años entran gratis acompañados.' } },
+              proposedLabel: 'Prohibido el ingreso de alimentos y bebidas. Menores de 12 años…',
+              previousLabel: '(vacío)',
+              proposedBy: { name: 'Lic. Gonzalo Garza', managerName: 'Lic. Gonzalo Garza', rank: 'manager' },
+              proposedAt: '2026-08-12T11:02',
+              status: 'pendiente'
+            }
+          ]
         },
         {
           id: 'task-sys-soporte',
@@ -3574,88 +3879,386 @@ export class MockDataService {
       id: 'TSK-01',
       title: 'Revisión y firma de adenda bancaria para Arena Monterrey',
       description: 'Validar transferencia de anticipo del 50% con departamento legal y contabilidad.',
+      category: 'Legal & Permisos',
       assignedTo: 'Lic. Claudia Morales',
       assignedRole: 'encargado',
-      priority: 'Alta',
+      priority: 'Urgente',
       privacy: 'Privada',
       status: 'En Proceso',
-      dueDate: '2026-07-28',
-      eventName: 'Noche de Gala Norteña 2026'
+      dueDate: '2026-08-15',
+      dueTime: '14:00 hrs',
+      eventName: 'Noche de Gala Norteña 2026',
+      relatedToType: 'evento',
+      relatedId: 'EVT-01',
+      relatedTitle: 'Noche de Gala Norteña 2026',
+      subtasks: [
+        { id: 'st-1', label: 'Dictamen de abogado corporativo', completed: true },
+        { id: 'st-2', label: 'Visto bueno de finanzas para SPEI', completed: true },
+        { id: 'st-3', label: 'Recolección de firma del apoderado', completed: false }
+      ],
+      comments: [
+        { id: 'c-1', authorName: 'Lic. Claudia Morales', authorRole: 'encargado', text: 'El borrador ya fue revisado con el banco. Falta únicamente la firma final.', createdAt: 'Hoy 10:30 hrs' }
+      ]
     },
     {
       id: 'TSK-02',
-      title: 'Ajuste de margen de ganancias co-producción Fonovisa',
-      description: 'Negociar comisión por venta de boletos digitales en el Auditorio Telmex.',
+      title: 'Ajuste de comisión por co-producción en Zapopan',
+      description: 'Negociar comisión del 15% de taquilla digital para el Festival Tumbado.',
+      category: 'Finanzas & Cobranza',
       assignedTo: 'Ing. Mateo Rivas',
       assignedRole: 'encargado',
       priority: 'Alta',
       privacy: 'Delicada',
       status: 'Pendiente',
-      dueDate: '2026-07-30',
-      eventName: 'Festival Tumbado Zapopan'
+      dueDate: '2026-08-18',
+      dueTime: '16:00 hrs',
+      eventName: 'Festival Tumbado Zapopan',
+      relatedToType: 'evento',
+      relatedId: 'EVT-02',
+      relatedTitle: 'Festival Tumbado Zapopan',
+      subtasks: [
+        { id: 'st-4', label: 'Simulación de corridas financieras', completed: true },
+        { id: 'st-5', label: 'Reunión virtual con el co-organizador', completed: false }
+      ]
     },
     {
       id: 'TSK-03',
       title: 'Verificación de catering y camerinos VIP',
-      description: 'Coordinar con el proveedor de alimentos requerimientos del rider para Los Elegantes del Norte.',
+      description: 'Coordinar con el proveedor de alimentos requerimientos del rider para Los Elegantes.',
+      category: 'Hospitalidad & Camerinos',
       assignedTo: 'Jorge Técnico',
       assignedRole: 'usuario',
       priority: 'Media',
       privacy: 'Pública',
       status: 'Pendiente',
-      dueDate: '2026-08-14',
-      eventName: 'Noche de Gala Norteña 2026'
+      dueDate: '2026-08-20',
+      dueTime: '12:00 hrs',
+      eventName: 'Gran Palenque San Marcos',
+      relatedToType: 'evento',
+      relatedId: 'EVT-03',
+      relatedTitle: 'Gran Palenque San Marcos',
+      subtasks: [
+        { id: 'st-6', label: 'Confirmar menú de carnes y bebidas', completed: false },
+        { id: 'st-7', label: 'Entrega de 15 pulseras de acceso VIP', completed: false }
+      ]
     },
     {
       id: 'TSK-04',
-      title: 'Subida de fotografías de inspección del escenario',
-      description: 'Cargar evidencia fotográfica de las estructuras de iluminación en el estadio.',
+      title: 'Inspección de estructuras de iluminación y audio',
+      description: 'Cargar evidencia fotográfica de las estructuras de iluminación y sonido en el estadio.',
+      category: 'Producción & Escenario',
       assignedTo: 'Mariana Staff',
       assignedRole: 'usuario',
       priority: 'Media',
       privacy: 'Pública',
       status: 'Completada',
-      dueDate: '2026-07-20',
-      eventName: 'Gran Palenque San Marcos'
+      dueDate: '2026-08-10',
+      dueTime: '18:00 hrs',
+      eventName: 'Gran Palenque San Marcos',
+      relatedToType: 'evento',
+      relatedId: 'EVT-03',
+      relatedTitle: 'Gran Palenque San Marcos',
+      subtasks: [
+        { id: 'st-8', label: 'Revisión de pernos y plantas de luz', completed: true },
+        { id: 'st-9', label: 'Subida de bitácora técnica', completed: true }
+      ],
+      completedAt: '2026-08-10 17:45 hrs',
+      completedBy: 'Mariana Staff'
+    },
+    {
+      id: 'TSK-05',
+      title: 'Apartado de hospedaje y camionetas para músicos',
+      description: 'Reservar 10 habitaciones dobles en hotel sede y dos camionetas Suburban con chofer.',
+      category: 'Logística & Hospedaje',
+      assignedTo: 'Carlos Chofer',
+      assignedRole: 'usuario',
+      priority: 'Alta',
+      privacy: 'Pública',
+      status: 'En Proceso',
+      dueDate: '2026-08-16',
+      dueTime: '11:00 hrs',
+      eventName: 'Noche de Gala Norteña 2026',
+      relatedToType: 'evento',
+      relatedId: 'EVT-01',
+      relatedTitle: 'Noche de Gala Norteña 2026',
+      subtasks: [
+        { id: 'st-10', label: 'Cotizar 3 opciones de hoteles 5 estrellas', completed: true },
+        { id: 'st-11', label: 'Pago de depósito en garantía', completed: true },
+        { id: 'st-12', label: 'Envío de vouchers a los músicos', completed: false }
+      ]
+    },
+    {
+      id: 'TSK-06',
+      title: 'Trámite de permiso de Protección Civil y Bomberos',
+      description: 'Presentar dictamen estructural y plan de contingencia ante autoridades municipales.',
+      category: 'Legal & Permisos',
+      assignedTo: 'Lic. Claudia Morales',
+      assignedRole: 'encargado',
+      priority: 'Urgente',
+      privacy: 'Delicada',
+      status: 'En Revisión',
+      dueDate: '2026-08-14',
+      dueTime: '13:00 hrs',
+      eventName: 'Gran Palenque San Marcos',
+      relatedToType: 'evento',
+      relatedId: 'EVT-03',
+      relatedTitle: 'Gran Palenque San Marcos',
+      subtasks: [
+        { id: 'st-13', label: 'Plano de salidas de emergencia impreso', completed: true },
+        { id: 'st-14', label: 'Inspección física de extintores', completed: true },
+        { id: 'st-15', label: 'Sello oficial de visto bueno', completed: false }
+      ]
+    },
+    {
+      id: 'TSK-07',
+      title: 'Mantenimiento y calibración de acordeones de escenario',
+      description: 'Afinación de voces y cambio de correas para la gira de Los Elegantes.',
+      category: 'Talento & Backline',
+      assignedTo: 'Jorge Técnico',
+      assignedRole: 'usuario',
+      priority: 'Media',
+      privacy: 'Pública',
+      status: 'En Proceso',
+      dueDate: '2026-08-22',
+      dueTime: '17:00 hrs',
+      relatedToType: 'grupo',
+      relatedId: 'GRP-01',
+      relatedTitle: 'Los Elegantes del Norte',
+      subtasks: [
+        { id: 'st-16', label: 'Afinación en tono Fa y Sol', completed: true },
+        { id: 'st-17', label: 'Limpieza de fuelles y cajas', completed: false }
+      ]
+    },
+    {
+      id: 'TSK-08',
+      title: 'Rueda de prensa y gira de medios en Monterrey',
+      description: 'Coordinar con televisoras y estaciones de radio la promoción del nuevo sencillo.',
+      category: 'Prensa & Marketing',
+      assignedTo: 'Mariana Staff',
+      assignedRole: 'usuario',
+      priority: 'Baja',
+      privacy: 'Pública',
+      status: 'Pendiente',
+      dueDate: '2026-08-25',
+      dueTime: '10:00 hrs',
+      relatedToType: 'grupo',
+      relatedId: 'GRP-02',
+      relatedTitle: 'Fuerza Norteña',
+      subtasks: [
+        { id: 'st-18', label: 'Redacción y envío de boletín de prensa', completed: false },
+        { id: 'st-19', label: 'Reserva de salón en hotel para medios', completed: false }
+      ]
+    },
+    {
+      id: 'TSK-09',
+      title: 'Cobro de anticipo del 50% para Boda en Rancho San José',
+      description: 'Validar comprobante de pago de anticipo para apartar la fecha en agenda.',
+      category: 'Finanzas & Cobranza',
+      assignedTo: 'Lic. Claudia Morales',
+      assignedRole: 'encargado',
+      priority: 'Alta',
+      privacy: 'Delicada',
+      status: 'Completada',
+      dueDate: '2026-08-08',
+      dueTime: '19:00 hrs',
+      relatedToType: 'cotizacion',
+      relatedId: 'COT-891',
+      relatedTitle: 'Boda González - Rancho San José',
+      subtasks: [
+        { id: 'st-20', label: 'Verificar depósito en BBVA Empresarial', completed: true },
+        { id: 'st-21', label: 'Generar contrato de exclusividad de fecha', completed: true }
+      ],
+      completedAt: '2026-08-08 15:30 hrs',
+      completedBy: 'Lic. Claudia Morales'
     }
   ];
 
   private readonly INITIAL_CLIENTS: ClientItem[] = [
     {
       id: 'CLI-501',
-      name: 'Roberto Gómez',
-      company: 'Promociones del Norte SA',
+      name: 'Roberto Gómez Garza',
+      company: 'Promociones del Norte SA de CV',
+      segment: 'Promotor de Bailes',
+      tier: 'Diamante',
+      status: 'Frecuente',
       email: 'rgomez@promonorte.com',
       phone: '+52 81 8392 1029',
+      whatsapp: '+528183921029',
+      city: 'Monterrey',
+      state: 'Nuevo León',
+      rating: 5,
       totalEvents: 8,
       totalSpent: 2850000,
-      status: 'Frecuente',
+      averageTicket: 356250,
       lastQuoteDate: '2026-07-10',
-      notes: 'Cliente preferencial. Solicita siempre fechas en fines de semana en Monterrey y Saltillo.'
+      notes: 'Cliente preferencial de máxima confianza. Solicita siempre fechas en fines de semana en Monterrey, Saltillo y Torreón. Paga puntual el 50% de anticipo por SPEI.',
+      taxInfo: {
+        rfc: 'PNO180412KJ9',
+        taxName: 'Promociones del Norte SA de CV',
+        taxRegime: '601 - General de Ley Personas Morales',
+        cfdiUse: 'G03 - Gastos en general',
+        billingAddress: 'Av. Constitución 2400, Col. Obispado, Monterrey, NL, CP 64060'
+      },
+      favoriteGenres: ['Norteño Sax', 'Banda Sinaloense'],
+      preferredArtists: ['Los Elegantes del Norte', 'Fuerza Norteña'],
+      interactions: [
+        { id: 'int-1', date: '2026-08-10 11:30', type: 'whatsapp', summary: 'Confirmó interés para la fecha del 15 de Septiembre en Monterrey.', authorName: 'Lic. Claudia Morales' },
+        { id: 'int-2', date: '2026-07-22 16:00', type: 'reunion', summary: 'Reunión en oficinas para revisar calendario de fin de año.', authorName: 'Ing. Mateo Rivas' }
+      ],
+      offersSent: [
+        { id: 'off-1', date: '2026-07-25', discountPercent: 10, details: 'Paquete 2 fechas en fin de semana para Los Elegantes del Norte', suggestedGroupName: 'Los Elegantes del Norte', status: 'Aceptada' }
+      ]
     },
     {
       id: 'CLI-502',
-      name: 'Lorena Mendoza',
-      company: 'Patronato Feria San Marcos',
+      name: 'Lic. Lorena Mendoza',
+      company: 'Patronato de la Feria Nacional de San Marcos',
+      segment: 'Empresario de Palenque / Feria',
+      tier: 'Diamante',
+      status: 'Frecuente',
       email: 'lmendoza@feriasanmarcos.org',
       phone: '+52 449 910 2030',
+      whatsapp: '+524499102030',
+      city: 'Aguascalientes',
+      state: 'Aguascalientes',
+      rating: 5,
       totalEvents: 4,
       totalSpent: 1940000,
-      status: 'Frecuente',
+      averageTicket: 485000,
       lastQuoteDate: '2026-07-18',
-      notes: 'Organizador gubernamental. Requiere facturas con 30 días de crédito y fianza.'
+      notes: 'Organizador gubernamental de feria tradicional. Requiere contratos con 45 días de anticipación y póliza de fianza de cumplimiento. Liquidación al 100% 5 días antes.',
+      taxInfo: {
+        rfc: 'PFS960515R88',
+        taxName: 'Patronato de la Feria Nacional de San Marcos',
+        taxRegime: '603 - Personas Morales con Fines no Lucrativos',
+        cfdiUse: 'G03 - Gastos en general',
+        billingAddress: 'Explanada San Marcos s/n, Barrio de San Marcos, Aguascalientes, AGS, CP 20070'
+      },
+      favoriteGenres: ['Norteño Sax', 'Sierreño Tumbado', 'Mariachi & Tradicional'],
+      preferredArtists: ['Los Elegantes del Norte'],
+      interactions: [
+        { id: 'int-3', date: '2026-08-05 14:00', type: 'llamada', summary: 'Llamada para solicitar propuesta preliminar del Palenque 2027.', authorName: 'Lic. Claudia Morales' }
+      ]
     },
     {
       id: 'CLI-503',
       name: 'Carlos Villarreal',
       company: 'Empresa Tapatía de Espectáculos',
+      segment: 'Promotor de Bailes',
+      tier: 'Oro',
+      status: 'Activo',
       email: 'carlos@tapatiaesp.mx',
       phone: '+52 33 3615 9022',
-      totalEvents: 2,
-      totalSpent: 480000,
-      status: 'Activo',
+      whatsapp: '+523336159022',
+      city: 'Guadalajara',
+      state: 'Jalisco',
+      rating: 4,
+      totalEvents: 3,
+      totalSpent: 850000,
+      averageTicket: 283333,
       lastQuoteDate: '2026-07-20',
-      notes: 'Enfocado en público joven en Guadalajara.'
+      notes: 'Enfocado en público joven en el área metropolitana de Guadalajara y Zapopan. Especialista en festivales sierreños y corridos bélicos.',
+      taxInfo: {
+        rfc: 'ETE120901LM2',
+        taxName: 'Empresa Tapatía de Espectáculos SA de CV',
+        taxRegime: '601 - General de Ley Personas Morales',
+        cfdiUse: 'G03 - Gastos en general',
+        billingAddress: 'Av. López Mateos Sur 1450, Chapalita, Guadalajara, JAL, CP 44500'
+      },
+      favoriteGenres: ['Sierreño Tumbado', 'Huapango & Cumbia'],
+      preferredArtists: ['Fuerza Norteña'],
+      interactions: [
+        { id: 'int-4', date: '2026-07-20 18:30', type: 'whatsapp', summary: 'Solicitó cotización para el Auditorio Telmex.', authorName: 'Ing. Mateo Rivas' }
+      ]
+    },
+    {
+      id: 'CLI-504',
+      name: 'Lic. Fernando Garza Sada',
+      company: 'Grupo Industrial Alfa & Asociados',
+      segment: 'Corporativo / Empresa',
+      tier: 'Oro',
+      status: 'Activo',
+      email: 'fgarza@alfa-corp.mx',
+      phone: '+52 81 8150 4000',
+      whatsapp: '+528181504000',
+      city: 'San Pedro Garza García',
+      state: 'Nuevo León',
+      rating: 5,
+      totalEvents: 2,
+      totalSpent: 640000,
+      averageTicket: 320000,
+      lastQuoteDate: '2026-06-15',
+      notes: 'Corporativo de alta gama. Contrata grupos de Norteño Clásico para sus fiestas anuales de directivos y cierre de año en Club Campestre.',
+      taxInfo: {
+        rfc: 'GIA850220AA1',
+        taxName: 'Grupo Industrial Alfa SA de CV',
+        taxRegime: '601 - General de Ley Personas Morales',
+        cfdiUse: 'G03 - Gastos en general',
+        billingAddress: 'Av. Gómez Morín 350, Valle del Campestre, San Pedro Garza García, NL, CP 66265'
+      },
+      favoriteGenres: ['Norteño Sax', 'Banda Clásica'],
+      preferredArtists: ['Los Elegantes del Norte']
+    },
+    {
+      id: 'CLI-505',
+      name: 'Arq. Rodrigo Elizondo Cantú',
+      company: 'Familia Elizondo Cantú',
+      segment: 'Particular (Boda/XV)',
+      tier: 'Plata',
+      status: 'Activo',
+      email: 'rodrigo.elizondo@gmail.com',
+      phone: '+52 81 1234 5678',
+      whatsapp: '+528112345678',
+      city: 'Santiago',
+      state: 'Nuevo León',
+      rating: 5,
+      totalEvents: 1,
+      totalSpent: 280000,
+      averageTicket: 280000,
+      lastQuoteDate: '2026-07-28',
+      notes: 'Contrató para la boda de su hija en Rancho San José. Solicitó rider específico de iluminación arquitectónica en jardín.',
+      favoriteGenres: ['Norteño Sax', 'Huapango & Cumbia'],
+      preferredArtists: ['Los Elegantes del Norte']
+    },
+    {
+      id: 'CLI-506',
+      name: 'Dra. Valeria Hinojosa',
+      company: 'Comité de Festejos Tradicionales de Mazatlán',
+      segment: 'Gobierno / Municipio',
+      tier: 'Plata',
+      status: 'Activo',
+      email: 'vhinojosa@mazatlan.gob.mx',
+      phone: '+52 669 982 1000',
+      whatsapp: '+526699821000',
+      city: 'Mazatlán',
+      state: 'Sinaloa',
+      rating: 4,
+      totalEvents: 1,
+      totalSpent: 420000,
+      averageTicket: 420000,
+      lastQuoteDate: '2026-05-10',
+      notes: 'Coordinadora de eventos culturales del malecón y explanada municipal.',
+      favoriteGenres: ['Banda Sinaloense']
+    },
+    {
+      id: 'CLI-507',
+      name: 'Miguel Ángel Serna',
+      company: 'Discoteca Rodeo Santa Fe',
+      segment: 'Promotor de Bailes',
+      tier: 'Prospecto',
+      status: 'Prospecto',
+      email: 'maserna@rodeosantafe.com',
+      phone: '+52 55 5366 9000',
+      whatsapp: '+525553669000',
+      city: 'Tlalnepantla',
+      state: 'Estado de México',
+      rating: 3,
+      totalEvents: 0,
+      totalSpent: 0,
+      averageTicket: 0,
+      lastQuoteDate: '2026-08-01',
+      notes: 'Prospecto interesado en armar una temporada de 3 bailes mensuales en el Valle de México.',
+      favoriteGenres: ['Sierreño Tumbado', 'Norteño Sax']
     }
   ];
 
@@ -3665,27 +4268,120 @@ export class MockDataService {
       name: 'Lic. Claudia Morales',
       email: 'cmorales@acordex.com',
       role: 'encargado',
+      department: 'Dirección General',
+      phone: '+52 81 8390 1200',
       avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
       status: 'Activo',
-      lastAccess: 'Hoy 14:22'
+      lastAccess: 'Hoy 14:22',
+      lastLoginIp: '187.190.45.12',
+      twoFactorEnabled: true,
+      assignedGroups: ['ALL'],
+      permissions: {
+        canViewFinances: true,
+        canEditEvents: true,
+        canManageUsers: true,
+        canDispatchOffers: true,
+        canSignContracts: true,
+        canDeleteFiles: true,
+        canAuditLogs: true,
+        canExportReports: true
+      }
     },
     {
       id: 'USR-02',
       name: 'Ing. Mateo Rivas',
       email: 'mrivas@acordex.com',
       role: 'administrador',
+      department: 'Producción & Logística',
+      phone: '+52 81 8150 3344',
       avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
       status: 'Activo',
-      lastAccess: 'Hoy 11:05'
+      lastAccess: 'Hoy 11:05',
+      lastLoginIp: '187.190.45.15',
+      twoFactorEnabled: true,
+      assignedGroups: ['ALL'],
+      permissions: {
+        canViewFinances: false,
+        canEditEvents: true,
+        canManageUsers: false,
+        canDispatchOffers: true,
+        canSignContracts: false,
+        canDeleteFiles: true,
+        canAuditLogs: true,
+        canExportReports: true
+      }
     },
     {
       id: 'USR-03',
-      name: 'Jorge Staff Ruiz',
+      name: 'C.P. Sofía Balderas',
+      email: 'sbalderas@acordex.com',
+      role: 'administrador',
+      department: 'Finanzas & Cobranza',
+      phone: '+52 81 8222 9900',
+      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+      status: 'Activo',
+      lastAccess: 'Hoy 09:18',
+      lastLoginIp: '187.190.45.20',
+      twoFactorEnabled: true,
+      assignedGroups: ['ALL'],
+      permissions: {
+        canViewFinances: true,
+        canEditEvents: false,
+        canManageUsers: false,
+        canDispatchOffers: false,
+        canSignContracts: false,
+        canDeleteFiles: false,
+        canAuditLogs: true,
+        canExportReports: true
+      }
+    },
+    {
+      id: 'USR-04',
+      name: 'Jorge Técnico Ruiz',
       email: 'jstaff@acordex.com',
       role: 'usuario',
+      department: 'Operaciones de Campo',
+      phone: '+52 81 1234 9876',
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       status: 'Activo',
-      lastAccess: 'Ayer 18:40'
+      lastAccess: 'Ayer 18:40',
+      lastLoginIp: '189.200.12.88',
+      twoFactorEnabled: false,
+      assignedGroups: ['Los Elegantes del Norte', 'Fuerza Norteña'],
+      permissions: {
+        canViewFinances: false,
+        canEditEvents: false,
+        canManageUsers: false,
+        canDispatchOffers: false,
+        canSignContracts: false,
+        canDeleteFiles: false,
+        canAuditLogs: false,
+        canExportReports: false
+      }
+    },
+    {
+      id: 'USR-05',
+      name: 'Mariana Staff López',
+      email: 'mstaff@acordex.com',
+      role: 'usuario',
+      department: 'Talento & Booking',
+      phone: '+52 81 3344 5566',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+      status: 'Activo',
+      lastAccess: 'Ayer 15:30',
+      lastLoginIp: '189.200.12.90',
+      twoFactorEnabled: false,
+      assignedGroups: ['ALL'],
+      permissions: {
+        canViewFinances: false,
+        canEditEvents: false,
+        canManageUsers: false,
+        canDispatchOffers: true,
+        canSignContracts: false,
+        canDeleteFiles: false,
+        canAuditLogs: false,
+        canExportReports: false
+      }
     }
   ];
 
@@ -3711,7 +4407,7 @@ export class MockDataService {
     {
       id: 'LOG-903',
       timestamp: '2026-07-22 18:32',
-      userName: 'Jorge Staff Ruiz',
+      userName: 'Jorge Técnico Ruiz',
       role: 'usuario',
       action: 'Carga de Evidencia',
       targetModule: 'Eventos',
@@ -3729,62 +4425,171 @@ export class MockDataService {
     {
       id: 'LOG-905',
       timestamp: '2026-07-21 09:15',
-      userName: 'Carlos Staff Pérez',
-      role: 'usuario',
-      action: 'Acreditación de Medios',
-      targetModule: 'Prensa',
-      details: 'Verificó gafetes y entregó 35 kits de prensa en hotel sede'
+      userName: 'C.P. Sofía Balderas',
+      role: 'administrador',
+      action: 'Arqueo de Caja',
+      targetModule: 'Finanzas',
+      details: 'Selló corte de caja diario con balance en cero'
     }
   ];
 
   private readonly INITIAL_FILES: FileItem[] = [
     {
       id: 'FIL-01',
-      fileName: 'Contrato_Exclusividad_Elegantes_2026.pdf',
+      fileName: 'Contrato_Exclusividad_Elegantes_2026_Firmado.pdf',
       groupName: 'Los Elegantes del Norte',
       category: 'Contratos',
+      format: 'PDF',
       size: '2.4 MB',
       uploadDate: '2026-01-15',
+      uploadedBy: 'Lic. Claudia Morales',
+      status: 'Vigente',
+      downloadCount: 18,
+      tags: ['Contrato', 'Exclusividad', 'Legal'],
+      description: 'Contrato de representación exclusiva y booking 2026-2027.',
       url: '#'
     },
     {
       id: 'FIL-02',
-      fileName: 'PressKit_Oficial_Banda_La_Imperial.pdf',
-      groupName: 'Banda La Imperial',
-      category: 'Press Kits',
-      size: '8.1 MB',
-      uploadDate: '2026-03-10',
+      fileName: 'Rider_Tecnico_Audio_Iluminacion_Elegantes_2026.pdf',
+      groupName: 'Los Elegantes del Norte',
+      category: 'Riders Técnicos',
+      format: 'PDF',
+      size: '4.8 MB',
+      uploadDate: '2026-02-20',
+      uploadedBy: 'Ing. Mateo Rivas',
+      status: 'Vigente',
+      downloadCount: 42,
+      tags: ['Rider', 'Audio', 'Stage Plot', 'Microfonía'],
+      description: 'Rider oficial con mapa de microfonía Shure y consolas DiGiCo.',
       url: '#'
     },
     {
       id: 'FIL-03',
-      fileName: 'Galeria_Fotografica_Ensayo_Gala.zip',
-      groupName: 'Los Elegantes del Norte',
-      category: 'Fotos',
-      size: '45.8 MB',
-      uploadDate: '2026-07-20',
+      fileName: 'PressKit_Oficial_Banda_La_Imperial_HD.pdf',
+      groupName: 'Banda La Imperial',
+      category: 'Press Kits',
+      format: 'PDF',
+      size: '8.1 MB',
+      uploadDate: '2026-03-10',
+      uploadedBy: 'Mariana Staff López',
+      status: 'Vigente',
+      downloadCount: 25,
+      tags: ['Prensa', 'Biografía', 'Fotos'],
+      description: 'Dossier de prensa, semblanza y discografía oficial.',
       url: '#'
     },
     {
       id: 'FIL-04',
-      fileName: 'Video_Promo_Arena_Monterrey.mp4',
+      fileName: 'Galeria_Fotografica_Ensayo_Gala_Monterrey.zip',
+      groupName: 'Los Elegantes del Norte',
+      category: 'Fotos',
+      format: 'ZIP',
+      size: '45.8 MB',
+      uploadDate: '2026-07-20',
+      uploadedBy: 'Jorge Técnico Ruiz',
+      status: 'Vigente',
+      downloadCount: 8,
+      tags: ['Fotografía', 'Ensayos', 'Gala'],
+      description: 'Fotografías en alta resolución para pantallas de escenario.',
+      url: '#'
+    },
+    {
+      id: 'FIL-05',
+      fileName: 'Video_Promo_Arena_Monterrey_LED_Screen.mp4',
       groupName: 'Los Elegantes del Norte',
       category: 'Videos',
+      format: 'MP4',
       size: '120.5 MB',
       uploadDate: '2026-07-21',
+      uploadedBy: 'Ing. Mateo Rivas',
+      status: 'Vigente',
+      downloadCount: 14,
+      tags: ['Video', 'Promocional', 'Arena Monterrey'],
+      description: 'Spot audiovisual para pantallas de lienzos y estadios.',
+      url: '#'
+    },
+    {
+      id: 'FIL-06',
+      fileName: 'Rider_Backline_Fuerza_Nortena.pdf',
+      groupName: 'Fuerza Norteña',
+      category: 'Riders Técnicos',
+      format: 'PDF',
+      size: '3.1 MB',
+      uploadDate: '2026-05-12',
+      uploadedBy: 'Ing. Mateo Rivas',
+      status: 'Vigente',
+      downloadCount: 19,
+      tags: ['Rider', 'Backline', 'Sierreño'],
+      description: 'Requerimientos de amplificación y acordeones Gabbanelli.',
+      url: '#'
+    },
+    {
+      id: 'FIL-07',
+      fileName: 'Factura_Fiscal_Timbrada_Palenque_Aguascalientes.pdf',
+      groupName: 'Los Elegantes del Norte',
+      category: 'Reportes & Facturas',
+      format: 'PDF',
+      size: '1.2 MB',
+      uploadDate: '2026-07-25',
+      uploadedBy: 'C.P. Sofía Balderas',
+      status: 'Vigente',
+      downloadCount: 5,
+      tags: ['Factura', 'SAT', 'CFDI'],
+      description: 'Comprobante fiscal digital por cobro de anticipo.',
       url: '#'
     }
   ];
 
   private readonly INITIAL_SETTINGS: CorporateSettings = {
     agencyName: 'ACORDEX Music & Entertainment Group',
+    legalName: 'Acordex Records SA de CV',
     legalId: 'AME-920310-KX9',
+    taxRegime: '601 - General de Ley Personas Morales',
+    legalRepresentative: 'Lic. Claudia Morales Valenzuela',
     logoUrl: 'https://images.unsplash.com/photo-1614680376593-902f749f7edc?w=200&auto=format&fit=crop&q=80',
     contactEmail: 'contacto@acordexrecords.com',
     contactPhone: '+52 81 8000 9000',
-    address: 'Av. Constitución 2000, Piso 14, San Pedro Garza García, NL',
+    address: 'Av. Constitución 2000, Piso 14, Col. Obispado',
+    city: 'Monterrey',
+    state: 'Nuevo León',
+    postalCode: '64060',
+    website: 'https://acordex.com',
     currency: 'MXN ($)',
-    autoSaveMock: true
+    autoSaveMock: true,
+
+    defaultCommissionPercent: 15,
+    quoteValidityDays: 7,
+    requiredAdvancePercent: 50,
+    cancellationPolicyTerms: 'El anticipo del 50% no es reembolsable si la cancelación se realiza con menos de 15 días naturales de anticipación.',
+    defaultContractNotes: 'Los viáticos y hospedaje son a cargo del empresario en distancias mayores a 150 km del centro operativo.',
+
+    enableWhatsAppNotifications: true,
+    enableEmailAlerts: true,
+    notifyOnQuoteAccepted: true,
+    notifyOnTaskOverdue: true,
+    notifyOnPaymentReceived: true,
+
+    receivingBankAccounts: [
+      {
+        id: 'ACC-01',
+        bankName: 'BBVA Bancomer',
+        accountHolder: 'Acordex Records SA de CV',
+        clabe: '012 580 00123456789 0',
+        accountNumber: '0123456789',
+        currency: 'MXN',
+        isPrimary: true
+      },
+      {
+        id: 'ACC-02',
+        bankName: 'Banorte',
+        accountHolder: 'Acordex Records SA de CV',
+        clabe: '072 580 00987654321 5',
+        accountNumber: '0987654321',
+        currency: 'MXN',
+        isPrimary: false
+      }
+    ]
   };
 
   // --- SIGNALS STATE PERSISTED IN LOCALSTORAGE ---
@@ -3795,6 +4600,14 @@ export class MockDataService {
 
   readonly receivingCards = signal<ReceivingCard[]>(
     this.storage.getItem('acordex_receiving_cards', this.INITIAL_RECEIVING_CARDS)
+  );
+
+  readonly financeTransactions = signal<FinanceTransaction[]>(
+    this.storage.getItem('acordex_finance_trx_v1', this.INITIAL_FINANCE_TRANSACTIONS)
+  );
+
+  readonly cashCuts = signal<CashCutRecord[]>(
+    this.storage.getItem('acordex_cash_cuts_v1', this.INITIAL_CASH_CUTS)
   );
 
   getReceivingCards(): ReceivingCard[] {
@@ -3868,9 +4681,10 @@ export class MockDataService {
    * ilegible.
    */
   readonly events = signal<EventItem[]>(
-    this.storage.getItem('acordex_events_v4', this.INITIAL_EVENTS).map(ev => {
+    this.storage.getItem('acordex_events_v5', this.INITIAL_EVENTS).map(ev => {
       const ticketTiers = distinguishTierColors(ev.ticketTiers || []);
-      return { ...ev, ticketTiers, croquisPlans: ensureCroquisPlans({ ...ev, ticketTiers }) };
+      const normalizado = { ...ev, ticketTiers, croquisPlans: ensureCroquisPlans({ ...ev, ticketTiers }) };
+      return concludeIfPast(normalizado);
     })
   );
 
@@ -4071,7 +4885,7 @@ export class MockDataService {
   /** Escribe un evento ya modificado y lo persiste. */
   private commitEvents(updated: EventItem[]): void {
     this.events.set(updated);
-    this.storage.setItem('acordex_events_v4', updated);
+    this.storage.setItem('acordex_events_v5', updated);
   }
 
   /** Aplica una transformación a un solo evento. */
@@ -4362,6 +5176,12 @@ export class MockDataService {
    * Es el punto de no retorno: a partir de aquí el evento es visible para el
    * público y cualquier corrección deja de ser un trámite interno.
    */
+  /**
+   * Publica el evento, ya sea de inmediato o programado.
+   *
+   * Si es inmediato, pasa directamente a 'Publicado' y se muestra al público en cartelera.
+   * Si es programado, pasa a 'Próximo a Publicar' con fecha de publicación automática (no visible al público aún).
+   */
   publishEvent(eventId: string, scheduledAt?: string): void {
     const immediate = !scheduledAt;
 
@@ -4385,7 +5205,7 @@ export class MockDataService {
         phaseName: immediate ? 'Publicación en Cartelera' : 'Programación de Publicación',
         summaryNote: immediate
           ? 'Evento publicado en cartelera con boletos disponibles al público.'
-          : `Publicación automática programada para ${scheduledAt}.`,
+          : `Publicación automática programada para ${scheduledAt}. El evento permanece privado hasta la fecha.`,
         snapshot: { totalCapacity: (ev.ticketTiers || []).reduce((s, t) => s + (t.totalSeats || 0), 0) }
       });
     });
@@ -4398,10 +5218,242 @@ export class MockDataService {
   }
 
   /**
-   * Cierra y sella el expediente: pasa a 'Cerrado' y congela el reporte.
-   *
-   * Es la única transición irreversible del ciclo, así que se firma con quién
-   * y cuándo: a partir de aquí el evento solo se consulta.
+   * Devuelve un evento desde 'Próximo a Publicar' o 'Publicado' a 'En Revisión'.
+   * Se utiliza cuando se detectan cambios importantes que requieren retirar el evento del público
+   * para volver a revisarlo a puerta cerrada antes de republicar.
+   */
+  returnEventToReview(eventId: string, reason: string): void {
+    this.patchEvent(eventId, ev => {
+      const fromState = ev.state;
+      const updated: EventItem = {
+        ...ev,
+        state: 'En Revisión'
+      };
+
+      return this.appendTimeline(updated, {
+        phaseNumber: 2,
+        state: 'En Revisión',
+        phaseName: 'Retiro a Revisión',
+        summaryNote: `Evento retirado de ${fromState} a En Revisión para modificaciones internas: ${reason}`
+      });
+    });
+
+    this.addAudit('Retiro a Revisión', 'Eventos', `Devolvió el evento ${eventId} a En Revisión: ${reason}`);
+  }
+
+  /**
+   * Simula la compra de boletos para pruebas de taquilla.
+   * Si el evento está en 'Publicado', comprar 1 boleto transiciona AUTOMÁTICAMENTE a 'En Venta'.
+   */
+  simulateTicketSale(eventId: string, quantity = 1, tierId?: string): void {
+    this.patchEvent(eventId, ev => {
+      const tiers = [...(ev.ticketTiers || [])];
+      if (!tiers.length) return ev;
+
+      const targetTier = (tierId ? tiers.find(t => t.id === tierId) : tiers.find(t => (t.totalSeats - t.soldSeats) >= quantity)) || tiers[0];
+      const tierIndex = tiers.indexOf(targetTier);
+      const actualQty = Math.max(1, quantity);
+      const saleAmount = (targetTier.price || 0) * actualQty;
+      const now = this.nowStamp();
+      const todayDate = now.slice(0, 10);
+
+      // Actualizar tier
+      tiers[tierIndex] = {
+        ...targetTier,
+        soldSeats: (targetTier.soldSeats || 0) + actualQty
+      };
+
+      // Actualizar ventas
+      const currentSales = ev.sales || { ordersCount: 0, ticketsSold: 0, grossRevenue: 0, dailySales: [] };
+      const currentDaily = [...(currentSales.dailySales || [])];
+      const todayDailyIdx = currentDaily.findIndex(d => d.date === todayDate);
+
+      if (todayDailyIdx >= 0) {
+        currentDaily[todayDailyIdx] = {
+          ...currentDaily[todayDailyIdx],
+          tickets: currentDaily[todayDailyIdx].tickets + actualQty,
+          revenue: currentDaily[todayDailyIdx].revenue + saleAmount
+        };
+      } else {
+        currentDaily.unshift({
+          date: todayDate,
+          dayLabel: 'Hoy',
+          tickets: actualQty,
+          revenue: saleAmount
+        });
+      }
+
+      const updatedSales = {
+        ...currentSales,
+        firstSaleAt: currentSales.firstSaleAt || now,
+        lastSaleAt: now,
+        ordersCount: currentSales.ordersCount + 1,
+        ticketsSold: currentSales.ticketsSold + actualQty,
+        grossRevenue: currentSales.grossRevenue + saleAmount,
+        dailySales: currentDaily.slice(0, 7)
+      };
+
+      const wasPublicado = ev.state === 'Publicado';
+      const nextState = wasPublicado ? ('En Venta' as const) : ev.state;
+
+      let updatedEvent: EventItem = {
+        ...ev,
+        state: nextState,
+        ticketTiers: tiers,
+        sales: updatedSales
+      };
+
+      if (wasPublicado) {
+        updatedEvent = this.appendTimeline(updatedEvent, {
+          phaseNumber: 5,
+          state: 'En Venta',
+          phaseName: 'Apertura de Venta al Público',
+          summaryNote: `Primera venta registrada (${actualQty} boleto(s) de ${targetTier.name}). El evento pasa automáticamente a En Venta con clientes y asientos asignados.`,
+          snapshot: {
+            ticketsSold: updatedSales.ticketsSold,
+            grossRevenue: updatedSales.grossRevenue,
+            totalCapacity: tiers.reduce((s, t) => s + (t.totalSeats || 0), 0)
+          }
+        });
+      }
+
+      return updatedEvent;
+    });
+
+    this.addAudit('Venta de Boletos', 'Eventos', `Registró venta de ${quantity} boleto(s) en evento ${eventId}`);
+  }
+
+  /**
+   * Pospone la fecha del evento con motivo, nueva fecha y comunicado a clientes.
+   * Válido en 'Publicado' y 'En Venta'.
+   */
+  postponeEvent(
+    eventId: string,
+    newDate: string,
+    reason: string,
+    clientNotice?: string,
+    videoUrl?: string,
+    flyerUrl?: string
+  ): void {
+    this.patchEvent(eventId, ev => {
+      const prevDate = ev.date;
+      const now = this.nowStamp();
+      const postponement = {
+        id: `post-${Date.now()}`,
+        previousDate: prevDate,
+        newDate,
+        reason,
+        clientNotice: clientNotice || `Aviso: El evento ha sido reprogramado del ${prevDate} al ${newDate}. Tus boletos y asientos continúan siendo 100% válidos para la nueva fecha.`,
+        videoUrl,
+        flyerUrl,
+        postponedAt: now,
+        postponedBy: this.currentActorName()
+      };
+
+      const updated: EventItem = {
+        ...ev,
+        date: newDate,
+        activePostponement: postponement,
+        postponementHistory: [postponement, ...(ev.postponementHistory || [])]
+      };
+
+      return this.appendTimeline(updated, {
+        phaseNumber: ev.state === 'En Venta' ? 5 : 4,
+        state: ev.state,
+        phaseName: 'Postergación de Fecha',
+        summaryNote: `Evento reprogramado del ${prevDate} al ${newDate}. Motivo: ${reason}. Se emitió aviso y comunicado formal a los clientes compradores.`
+      });
+    });
+
+    this.addAudit('Postergación de Evento', 'Eventos', `Pospuso el evento ${eventId} al ${newDate}: ${reason}`);
+  }
+
+  /**
+   * Concluye el evento ('En Venta' -> 'Finalizada') tras ocurrir el espectáculo.
+   * Inicializa el balance de cierre y los finiquitos por pagar a grupos y managers.
+   */
+  finishEvent(eventId: string): void {
+    this.patchEvent(eventId, ev => {
+      const sold = ev.sales?.ticketsSold || (ev.ticketTiers || []).reduce((s, t) => s + (t.soldSeats || 0), 0);
+      const grossRev = ev.sales?.grossRevenue || (ev.ticketTiers || []).reduce((s, t) => s + (t.soldSeats || 0) * (t.price || 0), 0);
+      const prodExpenses = (ev.productionItems || []).map(p => ({
+        id: p.id,
+        concept: p.concept,
+        category: 'Otro' as const,
+        amount: p.amount || 0,
+        notes: p.detail
+      }));
+
+      const groupPayouts = (ev.lineup || []).map(s => ({
+        groupId: s.groupId,
+        groupName: s.groupName,
+        agreedTotal: s.agreedTotal || (s.costItems || []).reduce((sum, c) => sum + (c.amount || 0), 0),
+        paidAmount: 0,
+        status: 'Pendiente' as const
+      }));
+
+      const updated: EventItem = {
+        ...ev,
+        state: 'Finalizada',
+        closure: {
+          attendance: ev.closure?.attendance ?? sold,
+          ticketsSold: ev.closure?.ticketsSold ?? sold,
+          grossRevenue: ev.closure?.grossRevenue ?? grossRev,
+          expenses: ev.closure?.expenses?.length ? ev.closure.expenses : prodExpenses,
+          payouts: ev.closure?.payouts?.length ? ev.closure.payouts : groupPayouts,
+          managerConfirmations: ev.closure?.managerConfirmations || [],
+          closedAt: this.nowStamp(),
+          closedBy: this.currentActorName()
+        }
+      };
+
+      return this.appendTimeline(updated, {
+        phaseNumber: 6,
+        state: 'Finalizada',
+        phaseName: 'Evento Concluido',
+        summaryNote: 'El evento concluyó exitosamente. Apertura del expediente de resultados, desglose de gastos y liquidación de finiquitos a grupos y managers.',
+        snapshot: { ticketsSold: sold, grossRevenue: grossRev }
+      });
+    });
+
+    this.addAudit('Conclusión de Evento', 'Eventos', `Marcó como concluido el evento ${eventId}`);
+  }
+
+  /**
+   * Registra la confirmación formal del finiquito y balance de cierre por parte de un manager co-organizador.
+   * Obligatorio para todos los managers antes de poder sellar el expediente.
+   */
+  confirmManagerClosure(eventId: string, managerName: string, notes?: string): void {
+    this.patchEvent(eventId, ev => {
+      const existingConf = ev.closure?.managerConfirmations || [];
+      if (existingConf.some(c => c.managerName === managerName)) return ev;
+
+      const newConf = {
+        managerName,
+        confirmedAt: this.nowStamp(),
+        confirmedBy: this.currentActorName(),
+        notes
+      };
+
+      const updatedClosure = {
+        expenses: [],
+        payouts: [],
+        ...(ev.closure || {}),
+        managerConfirmations: [...existingConf, newConf]
+      };
+
+      return {
+        ...ev,
+        closure: updatedClosure
+      };
+    });
+
+    this.addAudit('Confirmación de Finiquito', 'Eventos', `Manager ${managerName} confirmó de conformidad el finiquito del evento ${eventId}`);
+  }
+
+  /**
+   * Cierra y sella el expediente: pasa a 'Cerrado' y congela el reporte para siempre.
+   * Es la única transición irreversible del ciclo. Solo lectura total.
    */
   sealEventClosure(eventId: string): void {
     this.patchEvent(eventId, ev => {
@@ -4424,7 +5476,7 @@ export class MockDataService {
         phaseNumber: 7,
         state: 'Cerrado',
         phaseName: 'Expediente Sellado',
-        summaryNote: 'Expediente cerrado y sellado: gastos, pagos a grupos y resultados capturados en su totalidad.',
+        summaryNote: 'Expediente cerrado y sellado de forma inmutable tras la confirmación de todos los managers participantes.',
         snapshot: {
           ticketsSold: ev.closure?.ticketsSold,
           grossRevenue: ev.closure?.grossRevenue,
@@ -4436,7 +5488,10 @@ export class MockDataService {
     this.addAudit('Cierre de Evento', 'Eventos', `Selló el expediente del evento ${eventId}`);
   }
 
-  /** Cancela el evento. Si ya había venta, el motivo y los reembolsos quedan registrados. */
+  /**
+   * Cancela el evento. Solo permitido para el creador original / organizador del evento.
+   * Si ya había venta ('En Venta'), se calculan y registran los reembolsos obligatorios a todos los compradores.
+   */
   cancelEvent(eventId: string, reason: string, refundsIssued = 0, refundedAmount = 0): void {
     this.patchEvent(eventId, ev => {
       const updated: EventItem = {
@@ -4448,7 +5503,8 @@ export class MockDataService {
           by: this.currentActorName(),
           cancelledFromState: ev.state,
           refundsIssued,
-          refundedAmount
+          refundedAmount,
+          clientMessage: `Aviso oficial: El evento ha sido cancelado definitivamente. Motivo: ${reason}. Se ha procesado el reembolso del 100% para los ${refundsIssued} boletos emitidos.`
         }
       };
 
@@ -4456,7 +5512,7 @@ export class MockDataService {
         phaseNumber: 0,
         state: 'Cancelado',
         phaseName: 'Cancelación del Evento',
-        summaryNote: `Cancelado desde ${ev.state}: ${reason}`,
+        summaryNote: `Cancelado desde ${ev.state}: ${reason}. Reembolsos: ${refundsIssued} boleto(s) por $${refundedAmount.toLocaleString('es-MX')} MXN.`,
         snapshot: { ticketsSold: refundsIssued, grossRevenue: refundedAmount }
       });
     });
@@ -4540,16 +5596,68 @@ export class MockDataService {
 
   // --- TASKS OPERATIONS ---
 
-  updateTaskStatus(taskId: string, newStatus: 'Pendiente' | 'En Proceso' | 'Completada'): void {
+  updateTaskStatus(taskId: string, newStatus: TaskItem['status']): void {
     const updated = this.tasks().map(t => {
       if (t.id === taskId) {
-        return { ...t, status: newStatus };
+        return {
+          ...t,
+          status: newStatus,
+          completedAt: newStatus === 'Completada' ? new Date().toISOString().slice(0, 16).replace('T', ' ') + ' hrs' : t.completedAt,
+          completedBy: newStatus === 'Completada' ? this.currentActorName() : t.completedBy
+        };
       }
       return t;
     });
     this.tasks.set(updated);
     this.storage.setItem('acordex_tasks', updated);
     this.addAudit('Estado de Tarea', 'Tareas', `Actualizó tarea ${taskId} a "${newStatus}"`);
+  }
+
+  updateTask(task: TaskItem): void {
+    const updated = this.tasks().map(t => t.id === task.id ? task : t);
+    this.tasks.set(updated);
+    this.storage.setItem('acordex_tasks', updated);
+    this.addAudit('Edición de Tarea', 'Tareas', `Actualizó la tarea "${task.title}" [${task.id}]`);
+  }
+
+  deleteTask(taskId: string): void {
+    const target = this.tasks().find(t => t.id === taskId);
+    const updated = this.tasks().filter(t => t.id !== taskId);
+    this.tasks.set(updated);
+    this.storage.setItem('acordex_tasks', updated);
+    this.addAudit('Eliminación de Tarea', 'Tareas', `Eliminó la tarea "${target?.title || taskId}"`);
+  }
+
+  toggleSubtask(taskId: string, subtaskId: string): void {
+    const updated = this.tasks().map(t => {
+      if (t.id === taskId && t.subtasks) {
+        const subtasks = t.subtasks.map(st => st.id === subtaskId ? { ...st, completed: !st.completed } : st);
+        return { ...t, subtasks };
+      }
+      return t;
+    });
+    this.tasks.set(updated);
+    this.storage.setItem('acordex_tasks', updated);
+  }
+
+  addCommentToTask(taskId: string, commentText: string, authorName: string, authorRole: Role): void {
+    const newComment = {
+      id: `c-${Date.now()}`,
+      authorName,
+      authorRole,
+      text: commentText,
+      createdAt: 'Justo ahora'
+    };
+    const updated = this.tasks().map(t => {
+      if (t.id === taskId) {
+        const comments = [...(t.comments || []), newComment];
+        return { ...t, comments };
+      }
+      return t;
+    });
+    this.tasks.set(updated);
+    this.storage.setItem('acordex_tasks', updated);
+    this.addAudit('Comentario en Tarea', 'Tareas', `Comentó en la tarea ${taskId}: "${commentText.slice(0, 35)}..."`);
   }
 
   addTask(newTask: Omit<TaskItem, 'id'>): void {
@@ -4565,11 +5673,105 @@ export class MockDataService {
 
   // --- CLIENTS CRM OPERATIONS ---
 
-  sendSpecialOfferToClient(clientId: string, discountPercent: number, offerDetails: string): void {
+  addClient(newClient: Omit<ClientItem, 'id'>): void {
+    const created: ClientItem = {
+      ...newClient,
+      id: `CLI-${Math.floor(510 + Math.random() * 90)}`
+    };
+    const updated = [created, ...this.clients()];
+    this.clients.set(updated);
+    this.storage.setItem('acordex_clients', updated);
+    this.addAudit('Nuevo Cliente CRM', 'Clientes CRM', `Registró cliente "${created.name}" [${created.company}]`);
+  }
+
+  updateClient(client: ClientItem): void {
+    const updated = this.clients().map(c => c.id === client.id ? client : c);
+    this.clients.set(updated);
+    this.storage.setItem('acordex_clients', updated);
+    this.addAudit('Edición de Cliente', 'Clientes CRM', `Actualizó información de "${client.name}" [${client.id}]`);
+  }
+
+  deleteClient(clientId: string): void {
+    const target = this.clients().find(c => c.id === clientId);
+    const updated = this.clients().filter(c => c.id !== clientId);
+    this.clients.set(updated);
+    this.storage.setItem('acordex_clients', updated);
+    this.addAudit('Eliminación de Cliente', 'Clientes CRM', `Eliminó cliente "${target?.name || clientId}"`);
+  }
+
+  addClientInteraction(clientId: string, type: 'llamada' | 'whatsapp' | 'reunion' | 'cotizacion' | 'oferta' | 'nota', summary: string, authorName: string): void {
+    const newInt = {
+      id: `int-${Date.now()}`,
+      date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      type,
+      summary,
+      authorName
+    };
+    const updated = this.clients().map(c => {
+      if (c.id === clientId) {
+        return {
+          ...c,
+          interactions: [newInt, ...(c.interactions || [])]
+        };
+      }
+      return c;
+    });
+    this.clients.set(updated);
+    this.storage.setItem('acordex_clients', updated);
+    this.addAudit('Interacción CRM', 'Clientes CRM', `Registró ${type} con cliente ${clientId}: "${summary.slice(0, 35)}..."`);
+  }
+
+  sendSpecialOfferToClient(clientId: string, discountPercent: number, offerDetails: string, suggestedGroupName?: string): void {
+    const newOffer = {
+      id: `off-${Date.now()}`,
+      date: new Date().toISOString().slice(0, 10),
+      discountPercent,
+      details: offerDetails,
+      suggestedGroupName,
+      status: 'Enviada' as const
+    };
+    const updated = this.clients().map(c => {
+      if (c.id === clientId) {
+        return {
+          ...c,
+          offersSent: [newOffer, ...(c.offersSent || [])]
+        };
+      }
+      return c;
+    });
+    this.clients.set(updated);
+    this.storage.setItem('acordex_clients', updated);
     this.addAudit('Despacho de Oferta', 'Clientes CRM', `Envió propuesta especial con ${discountPercent}% desc. al cliente ${clientId}: ${offerDetails}`);
   }
 
   // --- USERS MANAGEMENT ---
+
+  addUser(newUser: Omit<AdminUserItem, 'id' | 'lastAccess'>): void {
+    const created: AdminUserItem = {
+      ...newUser,
+      id: `USR-${Math.floor(10 + Math.random() * 90)}`,
+      lastAccess: 'Nunca'
+    };
+    const updated = [created, ...this.users()];
+    this.users.set(updated);
+    this.storage.setItem('acordex_users', updated);
+    this.addAudit('Nuevo Usuario Registrado', 'Usuarios', `Registró al usuario "${created.name}" con rol "${created.role}" [${created.department || 'General'}]`);
+  }
+
+  updateUser(user: AdminUserItem): void {
+    const updated = this.users().map(u => u.id === user.id ? user : u);
+    this.users.set(updated);
+    this.storage.setItem('acordex_users', updated);
+    this.addAudit('Edición de Usuario', 'Usuarios', `Actualizó información y rol de "${user.name}" [${user.id}]`);
+  }
+
+  deleteUser(userId: string): void {
+    const target = this.users().find(u => u.id === userId);
+    const updated = this.users().filter(u => u.id !== userId);
+    this.users.set(updated);
+    this.storage.setItem('acordex_users', updated);
+    this.addAudit('Eliminación de Usuario', 'Usuarios', `Eliminó la cuenta de usuario "${target?.name || userId}"`);
+  }
 
   updateUserRole(userId: string, newRole: Role): void {
     const updated = this.users().map(u => {
@@ -4583,18 +5785,40 @@ export class MockDataService {
     this.addAudit('Cambio de Rol de Usuario', 'Usuarios', `Asignó el rol "${newRole}" al usuario ${userId}`);
   }
 
+  toggleUserStatus(userId: string): void {
+    const updated = this.users().map(u => {
+      if (u.id === userId) {
+        const nextStatus = u.status === 'Activo' ? 'Suspendido' : 'Activo';
+        return { ...u, status: nextStatus as 'Activo' | 'Suspendido' };
+      }
+      return u;
+    });
+    this.users.set(updated);
+    this.storage.setItem('acordex_users', updated);
+    this.addAudit('Estado de Usuario', 'Usuarios', `Cambió estado de cuenta de usuario ${userId}`);
+  }
+
   // --- FILES OPERATIONS ---
 
   uploadFile(file: Omit<FileItem, 'id' | 'uploadDate'>): void {
     const created: FileItem = {
       ...file,
       id: `FIL-${Math.floor(10 + Math.random() * 90)}`,
-      uploadDate: new Date().toISOString().slice(0, 10)
+      uploadDate: new Date().toISOString().slice(0, 10),
+      downloadCount: 0,
+      status: file.status || 'Vigente'
     };
     const updated = [created, ...this.files()];
     this.files.set(updated);
     this.storage.setItem('acordex_files', updated);
-    this.addAudit('Carga de Archivo', 'Archivos', `Cargó archivo "${created.fileName}" para ${created.groupName}`);
+    this.addAudit('Carga de Archivo', 'Archivos', `Cargó archivo "${created.fileName}" para ${created.groupName} [${created.category}]`);
+  }
+
+  updateFile(file: FileItem): void {
+    const updated = this.files().map(f => f.id === file.id ? file : f);
+    this.files.set(updated);
+    this.storage.setItem('acordex_files', updated);
+    this.addAudit('Edición de Archivo', 'Archivos', `Actualizó metadatos de "${file.fileName}" [${file.id}]`);
   }
 
   deleteFile(fileId: string): void {
@@ -4605,11 +5829,198 @@ export class MockDataService {
     this.addAudit('Eliminación de Archivo', 'Archivos', `Eliminó archivo "${target?.fileName || fileId}"`);
   }
 
-  // --- SETTINGS OPERATION ---
+  incrementFileDownloads(fileId: string): void {
+    const updated = this.files().map(f => {
+      if (f.id === fileId) {
+        return { ...f, downloadCount: (f.downloadCount || 0) + 1 };
+      }
+      return f;
+    });
+    this.files.set(updated);
+    this.storage.setItem('acordex_files', updated);
+  }
+
+  // --- SETTINGS OPERATIONS ---
 
   updateSettings(newSettings: CorporateSettings): void {
     this.settings.set(newSettings);
     this.storage.setItem('acordex_settings', newSettings);
-    this.addAudit('Actualización Configuración', 'Configuración', 'Actualizó perfil corporativo de la disquera');
+    this.addAudit('Actualización Configuración', 'Configuración', 'Actualizó perfil corporativo y políticas de la disquera');
   }
+
+  addBankReceivingAccount(account: { bankName: string; accountHolder: string; clabe: string; accountNumber: string; currency: string; isPrimary: boolean }): void {
+    const current = this.settings();
+    const newAcc = {
+      id: `ACC-${Math.floor(10 + Math.random() * 90)}`,
+      ...account
+    };
+    const receivingBankAccounts = [...(current.receivingBankAccounts || []), newAcc];
+    const updatedSettings = { ...current, receivingBankAccounts };
+    this.settings.set(updatedSettings);
+    this.storage.setItem('acordex_settings', updatedSettings);
+    this.addAudit('Cuenta Bancaria Agregada', 'Configuración', `Agregó cuenta receptora ${account.bankName} (${account.clabe})`);
+  }
+
+  deleteBankReceivingAccount(accountId: string): void {
+    const current = this.settings();
+    const receivingBankAccounts = (current.receivingBankAccounts || []).filter(a => a.id !== accountId);
+    const updatedSettings = { ...current, receivingBankAccounts };
+    this.settings.set(updatedSettings);
+    this.storage.setItem('acordex_settings', updatedSettings);
+    this.addAudit('Cuenta Bancaria Eliminada', 'Configuración', `Eliminó cuenta bancaria receptora ${accountId}`);
+  }
+
+  resetAllMockData(): void {
+    localStorage.clear();
+    window.location.reload();
+  }
+
+  // --- FINANCES & TREASURY OPERATIONS ---
+
+  addFinanceTransaction(trx: Omit<FinanceTransaction, 'id' | 'folio'>): void {
+    const count = this.financeTransactions().length + 1;
+    const folio = `TRX-2026-${count.toString().padStart(3, '0')}`;
+    const newTrx: FinanceTransaction = {
+      ...trx,
+      id: `trx-${Date.now().toString().slice(-4)}`,
+      folio,
+      isAuditReconciled: trx.status === 'conciliado'
+    };
+
+    const updated = [newTrx, ...this.financeTransactions()];
+    this.financeTransactions.set(updated);
+    this.storage.setItem('acordex_finance_trx_v1', updated);
+    this.addAudit('Movimiento Financiero Registrado', 'Finanzas', `${newTrx.type.toUpperCase()}: ${newTrx.concept} ($${newTrx.amount.toLocaleString()} MXN)`);
+  }
+
+  reconcileFinanceTransaction(trxId: string, reference?: string): void {
+    const updated = this.financeTransactions().map(t => {
+      if (t.id === trxId) {
+        return {
+          ...t,
+          status: 'conciliado' as const,
+          receiptReference: reference || t.receiptReference || `SPEI-REC-${Date.now().toString().slice(-4)}`,
+          isAuditReconciled: true,
+          reconciledAt: new Date().toISOString().slice(0, 10),
+          reconciledBy: 'Lic. Claudia Morales'
+        };
+      }
+      return t;
+    });
+
+    this.financeTransactions.set(updated);
+    this.storage.setItem('acordex_finance_trx_v1', updated);
+    this.addAudit('Conciliación Bancaria', 'Finanzas', `Concilió transacción ${trxId} con referencia ${reference || 'automática'}`);
+  }
+
+  recordReceivablePayment(receivableId: string, amount: number, accountId: string, reference?: string): void {
+    // Si viene de una cotización, actualizamos su estatus
+    if (receivableId.startsWith('REC-COT-') || receivableId.startsWith('REC-')) {
+      const qId = receivableId.replace('REC-COT-', '').replace('REC-', '');
+      const targetQuote = this.quotes().find(q => q.id === qId);
+      if (targetQuote) {
+        const newStatus = amount >= (targetQuote.totalAmount || 0) * 0.9 ? 'Pago Confirmado 100%' : 'Anticipo 50%';
+        this.updateQuotePaymentStatus(targetQuote.id, newStatus);
+      }
+    }
+
+    // Registramos el ingreso en tesorería
+    this.addFinanceTransaction({
+      type: 'ingreso',
+      category: 'anticipo_cotizacion',
+      concept: `Abono/Liquidación de Cobranza · ${receivableId}`,
+      amount,
+      date: new Date().toISOString().slice(0, 10),
+      accountId,
+      accountName: accountId.includes('bbva') ? 'BBVA Empresarial Maestra' : accountId.includes('banamex') ? 'Citibanamex Taquilla & Producción' : 'Banorte Nómina & Talento',
+      status: 'conciliado',
+      receiptReference: reference || `SPEI-ING-${Date.now().toString().slice(-4)}`
+    });
+  }
+
+  dispersePayablePayment(payableId: string, amount: number, accountId: string, reference: string): void {
+    this.addFinanceTransaction({
+      type: 'egreso',
+      category: 'honorarios_artistas',
+      concept: `Dispersión de Pago · ${payableId}`,
+      amount,
+      date: new Date().toISOString().slice(0, 10),
+      accountId,
+      accountName: accountId.includes('banorte') ? 'Banorte Nómina & Talento' : accountId.includes('banamex') ? 'Citibanamex Taquilla & Producción' : 'BBVA Empresarial Maestra',
+      status: 'conciliado',
+      receiptReference: reference
+    });
+  }
+
+  recordManagerSettlementPayout(managerName: string, eventId: string, amount: number, accountId: string, reference: string): void {
+    this.addFinanceTransaction({
+      type: 'egreso',
+      category: 'finiquito_manager',
+      concept: `Pago de Finiquito & Utilidades · ${managerName} (Evento ${eventId})`,
+      amount,
+      date: new Date().toISOString().slice(0, 10),
+      accountId,
+      accountName: 'BBVA Empresarial Maestra',
+      status: 'conciliado',
+      receiptReference: reference,
+      relatedEntity: { type: 'manager', id: managerName, name: managerName }
+    });
+  }
+
+  saveCashCut(cutData: Omit<CashCutRecord, 'id' | 'cutFolio'>): CashCutRecord {
+    const count = this.cashCuts().length + 1;
+    const cutFolio = `CORTE-${new Date().toISOString().slice(0, 10)}-${count.toString().padStart(2, '0')}`;
+    const newCut: CashCutRecord = {
+      ...cutData,
+      id: `cut-${Date.now().toString().slice(-4)}`,
+      cutFolio
+    };
+    const updated = [newCut, ...this.cashCuts()];
+    this.cashCuts.set(updated);
+    this.storage.setItem('acordex_cash_cuts_v1', updated);
+    this.addAudit('Corte de Caja Realizado', 'Finanzas', `Arqueo oficial ${cutFolio} guardado con balance final de $${newCut.finalBalance.toLocaleString()} MXN`);
+    return newCut;
+  }
+}
+
+/**
+ * Da por concluido el evento cuyo día ya pasó.
+ *
+ * Nadie "concluye" un espectáculo pulsando un botón: el evento se acaba porque
+ * llegó la fecha y ocurrió. Tener esa transición a mano permitía cerrar un
+ * evento que todavía no había pasado —y con boletos vendidos, eso es dar por
+ * terminado algo a lo que la gente aún va a ir— y, al revés, dejar semanas en
+ * 'En Venta' un evento que ya se celebró.
+ *
+ * Se cuenta desde el día siguiente: un evento del 29 sigue vivo todo el 29, y
+ * amanece 'Finalizada' el 30.
+ */
+export function concludeIfPast(e: EventItem, today = new Date()): EventItem {
+  if (e.state !== 'Publicado' && e.state !== 'En Venta') return e;
+  if (!eventDayHasPassed(e.date, today)) return e;
+
+  return {
+    ...e,
+    state: 'Finalizada',
+    timeline: [
+      ...(e.timeline || []),
+      {
+        phaseNumber: 6,
+        state: 'Finalizada' as const,
+        phaseName: 'Evento Concluido',
+        summaryNote: `El evento se celebró el ${e.date} y pasó a Finalizada al día siguiente. Toca cerrar cuentas y repartir.`,
+        at: new Date().toISOString().slice(0, 16)
+      }
+    ]
+  } as EventItem;
+}
+
+/** Si ya amaneció el día siguiente al del evento. */
+export function eventDayHasPassed(date: string | undefined, today = new Date()): boolean {
+  if (!date) return false;
+  const dia = new Date(date + 'T00:00:00');
+  if (isNaN(dia.getTime())) return false;
+  // Medianoche del día siguiente al evento: hasta entonces el evento sigue vivo.
+  const corte = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate() + 1);
+  return today.getTime() >= corte.getTime();
 }

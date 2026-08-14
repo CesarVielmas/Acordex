@@ -3,6 +3,8 @@ import {
   ViewChild, ElementRef, ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { EventFieldProposal } from '../../../core/models/event.models';
+import { FieldProposalsComponent } from '../field-proposals/field-proposals.component';
 import { FormsModule } from '@angular/forms';
 
 export type EditableType =
@@ -28,7 +30,7 @@ export interface EditableOption {
 @Component({
   selector: 'app-editable-field',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, FieldProposalsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -60,9 +62,14 @@ export interface EditableOption {
 
           @if (!readonly()) {
             <div class="flex items-center gap-1.5 shrink-0">
-              @if (proposalWarning()) {
+              @if (proposals().length) {
                 <span class="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                  <span class="material-symbols-outlined text-[11px]">warning</span> Propuesta
+                  <span class="material-symbols-outlined text-[11px]">rate_review</span>
+                  {{ proposals().length }} propuesta(s)
+                </span>
+              } @else if (proposalWarning()) {
+                <span class="px-2 py-0.5 rounded-lg bg-white/5 text-outline border border-white/10 text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[11px]">shield_person</span> De otro
                 </span>
               }
               <span
@@ -140,23 +147,13 @@ export interface EditableOption {
         </div>
       }
 
-      @if (proposedValue()) {
-        <div class="mt-2.5 p-2.5 rounded-xl bg-gradient-to-r from-amber-950/80 via-amber-900/60 to-amber-950/80 border border-amber-500/40 text-amber-200 text-[11px] font-medium leading-tight flex items-center justify-between gap-2 shadow-lg backdrop-blur-md animate-fade-in">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="material-symbols-outlined text-sm text-amber-400 shrink-0">pending_actions</span>
-            <span class="truncate">
-              <strong class="font-black text-amber-300 uppercase tracking-wider text-[9px] mr-1">Propuesta enviada:</strong>
-              <span class="font-bold underline decoration-amber-400/50">"{{ proposedValue() }}"</span>
-              @if (proposedBy()) {
-                <span class="text-[10px] text-amber-200/80 ml-1">· por {{ proposedBy() }}</span>
-              }
-            </span>
-          </div>
-          <span class="px-2 py-0.5 rounded-md bg-amber-500/25 text-amber-300 text-[9px] font-black uppercase tracking-wider shrink-0 border border-amber-500/40 shadow-sm">
-            Pendiente
-          </span>
-        </div>
-      }
+      <app-field-proposals
+        [proposals]="proposals()"
+        [canDecide]="canDecide()"
+        [owner]="proposalOwner()"
+        (accept)="acceptProposal.emit($event)"
+        (reject)="rejectProposal.emit($event)"
+      />
     </div>
   `
 })
@@ -165,8 +162,14 @@ export class EditableFieldComponent {
   label = input<string>('');
   hint = input<string>('');
   proposalWarning = input<string | null | undefined>(undefined);
-  proposedValue = input<string | number | null | undefined>(undefined);
-  proposedBy = input<string | null | undefined>(undefined);
+  /** Cambios que otros managers proponen sobre este campo, a la espera del encargado. */
+  proposals = input<EventFieldProposal[]>([]);
+  /** Si quien mira es quien decide sobre esas propuestas. */
+  canDecide = input<boolean>(false);
+  proposalOwner = input<string>('su encargado');
+
+  acceptProposal = output<string>();
+  rejectProposal = output<string>();
   type = input<EditableType>('text');
   options = input<EditableOption[]>([]);
   placeholder = input<string>('');

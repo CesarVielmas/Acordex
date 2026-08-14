@@ -218,6 +218,11 @@ import { daysUntilEvent, grossTicketRevenue, occupancyPercent, soldSeats } from 
           (approve)="respondApproval($event.event, $event.approvalId, true)"
           (reject)="respondApproval($event.event, $event.approvalId, false, $event.reason)"
           (publish)="publish($event.event, $event.scheduledAt)"
+          (returnToReview)="returnToReview($event.event, $event.reason)"
+          (simulateSale)="simulateTicketSale($event.event, $event.quantity, $event.tierId)"
+          (postpone)="postponeEvent($event.event, $event.newDate, $event.reason, $event.clientNotice, $event.videoUrl, $event.flyerUrl)"
+          (finish)="finishEvent($event)"
+          (confirmClosure)="confirmManagerClosure($event.event, $event.managerName, $event.notes)"
           (cancel)="cancelEvent($event.event, $event.reason)"
           (seal)="sealEvent($event)"
           (patch)="applyPatch($event)"
@@ -566,6 +571,38 @@ export class EventsComponent {
 
   publish(evt: EventItem, scheduledAt?: string): void {
     this.mockData.publishEvent(evt.id, scheduledAt);
+    this.refreshSelected(evt.id);
+  }
+
+  returnToReview(evt: EventItem, reason: string): void {
+    this.mockData.returnEventToReview(evt.id, reason);
+    this.refreshSelected(evt.id);
+  }
+
+  simulateTicketSale(evt: EventItem, quantity = 1, tierId?: string): void {
+    this.mockData.simulateTicketSale(evt.id, quantity, tierId);
+    this.refreshSelected(evt.id);
+  }
+
+  postponeEvent(
+    evt: EventItem,
+    newDate: string,
+    reason: string,
+    clientNotice?: string,
+    videoUrl?: string,
+    flyerUrl?: string
+  ): void {
+    this.mockData.postponeEvent(evt.id, newDate, reason, clientNotice, videoUrl, flyerUrl);
+    this.refreshSelected(evt.id);
+  }
+
+  finishEvent(evt: EventItem): void {
+    this.mockData.finishEvent(evt.id);
+    this.refreshSelected(evt.id);
+  }
+
+  confirmManagerClosure(evt: EventItem, managerName: string, notes?: string): void {
+    this.mockData.confirmManagerClosure(evt.id, managerName, notes);
     this.refreshSelected(evt.id);
   }
 

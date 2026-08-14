@@ -243,34 +243,157 @@ export interface EventEditPolicy {
 }
 
 export function eventEditPolicy(state: EventState): EventEditPolicy {
-  switch (eventStateMeta(state).lockLevel) {
-    case 'libre':
-      return { identity: true, publicProfile: true, lineup: true, production: true, tickets: true, closure: false };
-
-    case 'acordado':
+  switch (state) {
+    case 'Borrador':
       return {
-        identity: true, publicProfile: true, lineup: true, production: true, tickets: true, closure: false,
-        warning: 'Los encargados ya revisaron este cartel. Si cambias horarios o costos, tendrás que volver a pedir su aprobación.'
+        identity: true,
+        publicProfile: true,
+        lineup: true,
+        production: true,
+        tickets: true,
+        closure: false
       };
 
-    case 'publico':
+    case 'En Revisión':
       return {
-        identity: false, publicProfile: true, lineup: true, production: true, tickets: true, closure: state === 'Finalizada',
-        warning: state === 'Finalizada'
-          ? 'El evento ya ocurrió: lo que se captura aquí son los resultados finales.'
-          : 'El evento ya es visible para el público. Todo cambio se refleja de inmediato en la cartelera.'
+        identity: true,
+        publicProfile: true,
+        lineup: true,
+        production: true,
+        tickets: true,
+        closure: false,
+        warning: 'En Revisión se captura y completa la información requerida del evento antes de autorizar la publicación.'
       };
 
-    case 'vendido':
+    case 'Próximo a Publicar':
       return {
-        identity: false, publicProfile: true, lineup: false, production: true, tickets: false, closure: false,
-        warning: 'Hay clientes con asiento asignado. Precios, zonas y butacas están bloqueados: modificarlos obliga a reembolsar y reasignar uno por uno.'
+        identity: false,
+        publicProfile: true,
+        lineup: false,
+        production: true,
+        tickets: false,
+        closure: false,
+        warning: 'El evento está aprobado y programado (no visible aún al público). Para cambios estructurales, devuélvelo a En Revisión.'
+      };
+
+    case 'Publicado':
+      return {
+        identity: false,
+        publicProfile: true,
+        lineup: false,
+        production: true,
+        tickets: false,
+        closure: false,
+        warning: 'El evento ya es público en cartelera. Todo cambio en la ficha se refleja en tiempo real. Para cambios mayores, devuélvelo a En Revisión.'
+      };
+
+    case 'En Venta':
+      return {
+        identity: false,
+        publicProfile: false,
+        lineup: false,
+        production: false,
+        tickets: false,
+        closure: false,
+        warning: 'Hay boletos vendidos con clientes y asientos asignados. La información y boletaje están estrictamente bloqueados. Solo se gestionan tareas opcionales y avisos de postergación o cancelación.'
+      };
+
+    case 'Finalizada':
+      return {
+        identity: false,
+        publicProfile: false,
+        lineup: false,
+        production: false,
+        tickets: false,
+        closure: true,
+        warning: 'El evento concluyó. Visualiza las ventas finales, gastos y liquida el reparto de ganancias con los managers involucrados antes de sellar.'
+      };
+
+    case 'Cerrado':
+      return {
+        identity: false,
+        publicProfile: false,
+        lineup: false,
+        production: false,
+        tickets: false,
+        closure: false,
+        warning: 'Expediente cerrado y sellado: solo lectura y consulta histórica inmutable.'
+      };
+
+    case 'Cancelado':
+      return {
+        identity: false,
+        publicProfile: false,
+        lineup: false,
+        production: false,
+        tickets: false,
+        closure: false,
+        warning: 'Evento cancelado: registro histórico de motivos y reembolsos emitidos.'
       };
 
     default:
       return {
-        identity: false, publicProfile: false, lineup: false, production: false, tickets: false, closure: false,
-        warning: 'Expediente sellado: solo lectura.'
+        identity: false,
+        publicProfile: false,
+        lineup: false,
+        production: false,
+        tickets: false,
+        closure: false,
+        warning: 'Expediente en solo lectura.'
+      };
+  }
+}
+
+/**
+ * Qué se puede hacer con las tareas en cada fase.
+ *
+ * Va aparte de `EventEditPolicy` porque las tareas no siguen la suerte del
+ * expediente. En 'En Venta' la información queda sellada —hay clientes con
+ * asiento— pero la operación del evento sigue viva: falta contratar el audio,
+ * pagar la ambulancia, cerrar el catering. Bloquear eso junto con los precios
+ * dejaría al equipo sin dónde anotar lo que de verdad está haciendo esa semana.
+ */
+export interface EventTaskPolicy {
+  /** Encargar un punto del expediente a otra disquera. */
+  assignMandatory: boolean;
+  /** Crear encargos operativos nuevos. */
+  createOptional: boolean;
+  /** Confirmar encargos, delegarlos, transferirlos y desglosar su gasto. */
+  workOptional: boolean;
+  /** Aceptar o rechazar cambios propuestos sobre datos obligatorios. */
+  decideProposals: boolean;
+  /** Motivo del bloqueo, cuando algo está cerrado. */
+  notice?: string;
+}
+
+export function eventTaskPolicy(state: EventState): EventTaskPolicy {
+  switch (state) {
+    case 'Borrador':
+    case 'En Revisión':
+    case 'Próximo a Publicar':
+    case 'Publicado':
+      return { assignMandatory: true, createOptional: true, workOptional: true, decideProposals: true };
+
+    case 'En Venta':
+      // El expediente está sellado: los puntos obligatorios ya se revisaron y se
+      // publicaron, y con boletos vendidos no se vuelven a repartir. Lo operativo
+      // sigue abierto porque el evento aún no ha ocurrido.
+      return {
+        assignMandatory: false, createOptional: true, workOptional: true, decideProposals: false,
+        notice: 'Con boletos vendidos, los puntos del expediente quedan sellados. Aquí solo se trabajan los encargos operativos.'
+      };
+
+    case 'Finalizada':
+      return {
+        assignMandatory: false, createOptional: false, workOptional: false, decideProposals: false,
+        notice: 'El evento concluyó. Las tareas quedan como registro de quién respondió por qué; ahora toca cerrar cuentas.'
+      };
+
+    default:
+      // Cerrado y Cancelado: expediente histórico.
+      return {
+        assignMandatory: false, createOptional: false, workOptional: false, decideProposals: false,
+        notice: 'Expediente en solo lectura: las tareas se consultan, no se modifican.'
       };
   }
 }

@@ -32,7 +32,8 @@ import {
 
 import { MandatoryTaskTagComponent } from '../../../../shared/ui/mandatory-task-tag/mandatory-task-tag.component';
 import { SessionService } from '../../../../core/services/session.service';
-import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-tasks';
+import { markIntervention, resolveTasks, ResolvedTask } from '../../event-tasks';
+import { MandatoryFields } from '../../mandatory-fields';
 
 /**
  * Producción: desglose de gastos, reparto de rubros entre managers,
@@ -657,7 +658,7 @@ import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-
             </div>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <app-mandatory-task-tag checklistItemId="schedule" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+            <app-mandatory-task-tag ref="schedule" [event]="event()" (intervene)="onInterveneTask($event)" />
             @if (canEdit() && isTaskUnlocked('schedule') && slots().length > 0) {
               <button
                 type="button"
@@ -673,10 +674,10 @@ import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-
           </div>
         </div>
 
-        @if (getProposalNotice('schedule')) {
+        @if (mandatory.warning('schedule')) {
           <div class="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-bold leading-relaxed flex items-start gap-2.5 shadow-md">
             <span class="material-symbols-outlined text-base text-amber-400 shrink-0 mt-0.5">info</span>
-            <span>{{ getProposalNotice('schedule') }}</span>
+            <span>{{ mandatory.warning('schedule') }}</span>
           </div>
         }
 
@@ -844,7 +845,7 @@ import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-
             </div>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <app-mandatory-task-tag checklistItemId="sound" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+            <app-mandatory-task-tag ref="sound" [event]="event()" (intervene)="onInterveneTask($event)" />
             @if (canEdit() && isTaskUnlocked('sound') && slots().length > 0) {
               <button
                 type="button"
@@ -865,10 +866,10 @@ import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-
           </div>
         </div>
 
-        @if (getProposalNotice('sound')) {
+        @if (mandatory.warning('sound')) {
           <div class="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-bold leading-relaxed flex items-start gap-2.5 shadow-md">
             <span class="material-symbols-outlined text-base text-amber-400 shrink-0 mt-0.5">info</span>
-            <span>{{ getProposalNotice('sound') }}</span>
+            <span>{{ mandatory.warning('sound') }}</span>
           </div>
         }
 
@@ -1649,94 +1650,38 @@ export class EventTabProductionComponent {
 
   private sessionService = inject(SessionService);
 
-  isTaskUnlocked(checklistItemId: string): boolean {
-    const actor = this.sessionService.actor();
-    return isTaskUnlockedForActor(this.event(), checklistItemId, actor.managerName);
+
+
+
+
+  /**
+   * Los datos obligatorios de esta pestaña: de quién son, qué hay que advertir
+   * antes de tocarlos y qué propuestas tienen encima. La lógica vive en un solo
+   * sitio; aquí solo se enchufa el evento y quien lo está mirando.
+   */
+  readonly mandatory = new MandatoryFields(
+    () => this.event(),
+    () => this.sessionService.actor(),
+    patch => this.patch.emit(patch)
+  );
+
+  /**
+   * Si este actor puede escribir aquí.
+   *
+   * Un manager siempre puede —para eso está el aviso de intervención—; el staff
+   * y los administradores solo dentro de la disquera que responde por el punto,
+   * porque no tienen a quién responderle del dato de otra.
+   */
+  isTaskUnlocked(ref: string): boolean {
+    // Cerrado solo mientras falte confirmar la intervención, y solo para quien
+    // puede confirmarla. El staff de otra disquera no tiene esa puerta.
+    if (!this.mandatory.locked(ref)) return true;
+    return false;
   }
 
+  /** Deja escrito que un manager ajeno se metió a resolver este punto. */
   onInterveneTask(task: ResolvedTask): void {
-    const actor = this.sessionService.actor();
-    const now = new Date().toISOString().slice(0, 16);
-
-    const updatedTasks = (this.event().tasks || []).map(t => {
-      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
-        return {
-          ...t,
-          intervenedBy: actor,
-          completedBy: actor,
-          completedAt: now,
-          status: 'completada' as const
-        };
-      }
-      return t;
-    });
-
-    this.patch.emit({ tasks: updatedTasks });
+    this.patch.emit(markIntervention(this.event(), task, this.sessionService.actor()));
   }
 
-  onAcceptProposalTask(task: ResolvedTask): void {
-    const prop = task.pendingChangeProposal;
-    if (!prop) return;
-
-    const patchData = prop.proposedChanges || {};
-    const updatedTasks = (this.event().tasks || []).map(t => {
-      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
-        return {
-          ...t,
-          pendingChangeProposal: {
-            ...prop,
-            status: 'aceptada' as const,
-            respondedAt: new Date().toISOString()
-          }
-        };
-      }
-      return t;
-    });
-
-    this.patch.emit({ ...patchData, tasks: updatedTasks });
-  }
-
-  onRejectProposalTask(task: ResolvedTask): void {
-    const prop = task.pendingChangeProposal;
-    if (!prop) return;
-
-    const updatedTasks = (this.event().tasks || []).map(t => {
-      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
-        return {
-          ...t,
-          pendingChangeProposal: {
-            ...prop,
-            status: 'rechazada' as const,
-            respondedAt: new Date().toISOString()
-          }
-        };
-      }
-      return t;
-    });
-
-    this.patch.emit({ tasks: updatedTasks });
-  }
-
-  getProposalNotice(checklistItemId: string): string | null {
-    const actorMgr = this.sessionService.actor().managerName;
-    const tasks = resolveTasks(this.event());
-    const task = tasks.find(t =>
-      t.checklistItemId === checklistItemId ||
-      t.formSectionRef === checklistItemId ||
-      t.id === `task-sys-${checklistItemId}` ||
-      (checklistItemId === 'schedule' && (t.checklistItemId === 'corrida' || t.checklistItemId === 'orden' || t.formSectionRef === 'schedule')) ||
-      (checklistItemId === 'sound' && (t.checklistItemId === 'sonido' || t.formSectionRef === 'sound'))
-    );
-
-    if (!task || !task.done) return null;
-
-    const ownerMgr = task.completedBy?.managerName || task.assignedManager || this.event().ownerManagerName || this.event().createdBy;
-    const isOwner = ownerMgr === actorMgr;
-
-    if (!isOwner) {
-      return `Esta tarea obligatoria fue completada por ${ownerMgr}. Si modificas este dato, se le enviará una propuesta de cambio que el encargado deberá aprobar o rechazar para que se aplique al expediente.`;
-    }
-
-    return null;
-  }
 }

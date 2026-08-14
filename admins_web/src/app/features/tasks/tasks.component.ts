@@ -1,48 +1,97 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { TaskItem, TaskPrivacy, Role } from '../../core/models/admin.models';
-import { BadgeComponent, BadgeVariant } from '../../shared/ui/badge/badge.component';
+import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 import { InfoBannerComponent } from '../../shared/ui/info-banner/info-banner.component';
-import { ModalShellComponent } from '../../shared/ui/modal-shell/modal-shell.component';
-import { FormFieldComponent, FormFieldOption } from '../../shared/ui/form-field/form-field.component';
-import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.component';
+import { TabPillsComponent, TabPillItem } from '../../shared/ui/tab-pills/tab-pills.component';
 
+import { calculateTasksKPIs } from './task-metrics';
+
+import { TasksKpisComponent } from './components/tasks-kpis.component';
+import { TasksTabKanbanComponent } from './components/tasks-tab-kanban.component';
+import { TasksTabTimelineComponent } from './components/tasks-tab-timeline.component';
+import { TasksTabProjectsComponent } from './components/tasks-tab-projects.component';
+import { TasksTabTeamComponent } from './components/tasks-tab-team.component';
+
+import { ModalTaskEditorComponent } from './modals/modal-task-editor.component';
+import { ModalTaskDetailComponent } from './modals/modal-task-detail.component';
+
+export type TasksTab = 'kanban' | 'timeline' | 'projects' | 'team';
+
+/**
+ * Módulo de Gestión de Tareas & Operación de Campo de Acordex.
+ *
+ * Conecta las tareas operativas de Eventos Masivos, Cotizaciones Privadas,
+ * Grupos del Catálogo y Finanzas, con control de privacidad por rol.
+ */
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [CommonModule, FormsModule, BadgeComponent, InfoBannerComponent, ModalShellComponent, FormFieldComponent, IconButtonComponent],
+  imports: [
+    CommonModule,
+    BadgeComponent,
+    InfoBannerComponent,
+    TabPillsComponent,
+    TasksKpisComponent,
+    TasksTabKanbanComponent,
+    TasksTabTimelineComponent,
+    TasksTabProjectsComponent,
+    TasksTabTeamComponent,
+    ModalTaskEditorComponent,
+    ModalTaskDetailComponent
+  ],
   template: `
-    <div class="space-y-6 animate-fade-in">
+    <div class="space-y-6 sm:space-y-8 animate-fade-in pb-12">
 
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="font-display-xl text-xl sm:text-2xl font-black text-on-surface">Tablero de Tareas</h1>
-            <app-badge label="Filtros por Privacidad" variant="primary" />
+      <!-- ─── ENCABEZADO PRINCIPAL ─── -->
+      <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-surface-container-high/90 via-surface-container/80 to-surface-container-high/90 backdrop-blur-xl border border-outline-variant/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div class="absolute -right-12 -top-12 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 min-w-0">
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight">Tablero de Tareas & Operaciones</h1>
+            <app-badge label="Control de Campo" variant="primary" />
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary border border-primary/30">
+              Operación en Vivo
+            </span>
           </div>
-          <p class="text-xs text-outline mt-1">Asignación operativa con control de privacidad según rol activo</p>
+          <p class="text-xs text-outline mt-1 max-w-2xl leading-relaxed">
+            Asignación operativa de producción técnica, permisos municipales, logística de hospedaje, catering VIP y cobranza de anticipos.
+          </p>
         </div>
 
-        <button
-          (click)="isCreating.set(true)"
-          class="px-4 py-2.5 min-h-11 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2 self-start"
-        >
-          <span class="material-symbols-outlined text-lg">add_task</span> Nueva Tarea
-        </button>
+        <!-- Botones de Acción -->
+        <div class="relative z-10 flex items-center gap-2.5 self-start md:self-auto">
+          <button
+            type="button"
+            (click)="printTasks()"
+            class="px-3.5 py-2.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-on-surface hover:bg-surface-container-highest text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-base">print</span>
+            Imprimir
+          </button>
+
+          <button
+            type="button"
+            (click)="openCreateModal()"
+            class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-black text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-lg">add_task</span>
+            Nueva Tarea
+          </button>
+        </div>
       </div>
 
-      <!-- ROLE PRIVACY NOTICE BANNER -->
-      <app-info-banner icon="security" title="Visibilidad según Rol" [hasLegend]="true" variant="neutral">
+      <!-- ─── ROLE PRIVACY NOTICE BANNER ─── -->
+      <app-info-banner icon="security" title="Visibilidad según Rol Activo" [hasLegend]="true" variant="neutral">
         @if (roleService.isEncargado()) {
-          Viendo tareas <strong>Públicas</strong>, <strong>Delicadas</strong> y <strong>Privadas</strong> (Encargado).
+          Tienes acceso a tareas <strong>Públicas</strong>, <strong>Delicadas</strong> y <strong>Privadas</strong> (Rol Encargado).
         } @else if (roleService.isAdminOrEncargado()) {
-          Viendo tareas <strong>Públicas</strong> y <strong>Delicadas</strong> (Ocultas 1 tarea Privada).
+          Tienes acceso a tareas <strong>Públicas</strong> y <strong>Delicadas</strong> (Tareas privadas ocultas).
         } @else {
-          Viendo únicamente tareas <strong>Públicas</strong> de campo.
+          Viendo únicamente tareas <strong>Públicas</strong> de campo y logística.
         }
 
         <ng-container banner-legend>
@@ -52,94 +101,77 @@ import { IconButtonComponent } from '../../shared/ui/icon-button/icon-button.com
         </ng-container>
       </app-info-banner>
 
-      <!-- KANBAN BOARD COLUMNS -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        @for (status of taskStatuses; track status) {
-          <div class="bg-surface-container/70 rounded-3xl p-5 border border-outline-variant/30 flex flex-col lg:min-h-[500px]">
+      <!-- ─── KPIS SUPERIORES ─── -->
+      <app-tasks-kpis [kpis]="tasksKPIs()" />
 
-            <!-- Column Header -->
-            <div class="flex items-center justify-between pb-3 mb-4 border-b border-outline-variant/20">
-              <h3 class="text-sm font-bold text-on-surface flex items-center gap-2">
-                <span [class]="getStatusColorDot(status)" class="w-3 h-3 rounded-full"></span>
-                {{ status }}
-              </h3>
-              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-surface-bright text-primary">
-                {{ getTasksByStatus(status).length }}
-              </span>
-            </div>
-
-            <!-- Cards Container -->
-            <div class="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1">
-              @for (tsk of getTasksByStatus(status); track tsk.id) {
-                <div class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 hover:border-primary/50 transition-all shadow-md space-y-3 group">
-
-                  <div class="flex items-center justify-between gap-2">
-                    <app-badge [label]="tsk.privacy" [variant]="getPrivacyVariant(tsk.privacy)" />
-                    <span [class]="tsk.priority === 'Alta' ? 'text-red-400 font-bold' : 'text-outline'" class="text-[11px] shrink-0">
-                      Prioridad {{ tsk.priority }}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h4 class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
-                      {{ tsk.title }}
-                    </h4>
-                    <p class="text-xs text-outline mt-1 leading-relaxed">{{ tsk.description }}</p>
-                  </div>
-
-                  @if (tsk.eventName) {
-                    <p class="text-[11px] text-primary font-semibold flex items-center gap-1">
-                      <span class="material-symbols-outlined text-xs">event</span> {{ tsk.eventName }}
-                    </p>
-                  }
-
-                  <!-- Card Footer & Quick Status Switcher -->
-                  <div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between gap-2 text-xs">
-                    <span class="text-[11px] font-medium text-outline min-w-0 truncate">
-                      Resp: <strong class="text-on-surface">{{ tsk.assignedTo }}</strong>
-                    </span>
-
-                    <div class="flex items-center gap-1 shrink-0">
-                      @if (status !== 'Pendiente') {
-                        <app-icon-button icon="schedule" ariaLabel="Mover a Pendiente" variant="ghost" (pressed)="changeTaskStatus(tsk.id, 'Pendiente')" />
-                      }
-                      @if (status !== 'En Proceso') {
-                        <app-icon-button icon="engineering" ariaLabel="Mover a En Proceso" variant="ghost" (pressed)="changeTaskStatus(tsk.id, 'En Proceso')" />
-                      }
-                      @if (status !== 'Completada') {
-                        <app-icon-button icon="check" ariaLabel="Mover a Completada" variant="ghost" (pressed)="changeTaskStatus(tsk.id, 'Completada')" />
-                      }
-                    </div>
-                  </div>
-
-                </div>
-              }
-            </div>
-
-          </div>
-        }
+      <!-- ─── NAVEGACIÓN DE PESTAÑAS ─── -->
+      <div class="border-b border-outline-variant/30 pb-2">
+        <app-tab-pills
+          [tabs]="tabOptions"
+          [active]="activeTab()"
+          (change)="setTab($event)"
+        />
       </div>
 
-      <!-- CREATE TASK MODAL -->
-      @if (isCreating()) {
-        <app-modal-shell title="Crear Nueva Tarea" icon="add_task" size="md" [hasFooter]="true" (closed)="isCreating.set(false)">
-          <div class="space-y-3.5">
-            <app-form-field label="Título de la Tarea" [(value)]="newTaskForm.title" placeholder="Ej. Inspección de escenario" />
-            <app-form-field label="Descripción" type="textarea" [(value)]="newTaskForm.description" placeholder="Detalles de la asignación..." />
+      <!-- ─── CONTENIDO DE VISTAS ─── -->
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <app-form-field label="Nivel de Privacidad" type="select" [(value)]="newTaskForm.privacy" [options]="privacyOptions" />
-              <app-form-field label="Prioridad" type="select" [(value)]="newTaskForm.priority" [options]="priorityOptions" />
-            </div>
+      <!-- 1. TABLERO KANBAN -->
+      @if (activeTab() === 'kanban') {
+        <app-tasks-tab-kanban
+          [tasks]="mockData.filteredTasks()"
+          (openDetail)="onOpenDetail($event)"
+          (changeStatus)="onChangeStatus($event.taskId, $event.status)"
+        />
+      }
 
-            <app-form-field label="Responsable" [(value)]="newTaskForm.assignedTo" placeholder="Ej. Jorge Staff" />
-          </div>
+      <!-- 2. AGENDA CRONOLÓGICA -->
+      @if (activeTab() === 'timeline') {
+        <app-tasks-tab-timeline
+          [tasks]="mockData.filteredTasks()"
+          (openDetail)="onOpenDetail($event)"
+        />
+      }
 
-          <ng-container modal-footer>
-            <button (click)="isCreating.set(false)" class="px-4 py-2 min-h-11 rounded-xl bg-surface-bright text-on-surface text-xs font-semibold">Cancelar</button>
-            <button (click)="saveTask()" class="px-5 py-2 min-h-11 rounded-xl bg-primary text-on-primary text-xs font-bold">Crear Tarea</button>
-          </ng-container>
-        </app-modal-shell>
+      <!-- 3. AVANCE POR PROYECTO / EVENTO -->
+      @if (activeTab() === 'projects') {
+        <app-tasks-tab-projects
+          [tasks]="mockData.filteredTasks()"
+          (openDetail)="onOpenDetail($event)"
+        />
+      }
+
+      <!-- 4. CARGA DE TRABAJO DEL EQUIPO -->
+      @if (activeTab() === 'team') {
+        <app-tasks-tab-team
+          [tasks]="mockData.filteredTasks()"
+        />
+      }
+
+      <!-- ─── MODALES INTERACTIVOS ─── -->
+
+      <!-- Modal 1: Editor / Creador de Tarea -->
+      @if (isEditorOpen()) {
+        <app-modal-task-editor
+          [taskToEdit]="taskBeingEdited()"
+          [events]="mockData.events()"
+          [quotes]="mockData.quotes()"
+          [groups]="mockData.groups()"
+          (saved)="onSaveTask($event)"
+          (closed)="closeEditorModal()"
+        />
+      }
+
+      <!-- Modal 2: Detalle de Tarea con Subtareas y Comentarios -->
+      @if (selectedTaskForDetail()) {
+        <app-modal-task-detail
+          [task]="selectedTaskForDetail()!"
+          (closed)="selectedTaskForDetail.set(null)"
+          (edit)="onEditFromDetail($event)"
+          (delete)="onDeleteTask($event)"
+          (changeStatus)="onChangeStatus(selectedTaskForDetail()!.id, $event)"
+          (toggleSubtask)="onToggleSubtask(selectedTaskForDetail()!.id, $event)"
+          (addComment)="onAddComment(selectedTaskForDetail()!.id, $event)"
+        />
       }
 
     </div>
@@ -149,72 +181,97 @@ export class TasksComponent {
   roleService = inject(RoleService);
   mockData = inject(MockDataService);
 
-  isCreating = signal(false);
+  activeTab = signal<TasksTab>('kanban');
 
-  readonly taskStatuses: ('Pendiente' | 'En Proceso' | 'Completada')[] = [
-    'Pendiente',
-    'En Proceso',
-    'Completada'
+  // Modales
+  isEditorOpen = signal(false);
+  taskBeingEdited = signal<TaskItem | null>(null);
+  selectedTaskForDetail = signal<TaskItem | null>(null);
+
+  readonly tabOptions: TabPillItem[] = [
+    { value: 'kanban', label: 'Tablero Kanban', icon: 'view_kanban' },
+    { value: 'timeline', label: 'Agenda & Vencimientos', icon: 'event_upcoming' },
+    { value: 'projects', label: 'Avance por Proyecto', icon: 'folder_open' },
+    { value: 'team', label: 'Carga del Equipo', icon: 'badge' }
   ];
 
-  readonly privacyOptions: FormFieldOption[] = [
-    { label: 'Pública (Visible para todos)', value: 'Pública' },
-    { label: 'Delicada (Encargado y Admin)', value: 'Delicada' },
-    { label: 'Privada (Solo Encargado)', value: 'Privada' }
-  ];
-
-  readonly priorityOptions: FormFieldOption[] = [
-    { label: 'Alta', value: 'Alta' },
-    { label: 'Media', value: 'Media' },
-    { label: 'Baja', value: 'Baja' }
-  ];
-
-  newTaskForm = {
-    title: '',
-    description: '',
-    assignedTo: 'Jorge Staff',
-    priority: 'Media' as 'Alta' | 'Media' | 'Baja',
-    privacy: 'Pública' as TaskPrivacy,
-    dueDate: '2026-08-10'
-  };
-
-  getTasksByStatus(status: 'Pendiente' | 'En Proceso' | 'Completada') {
-    return this.mockData.filteredTasks().filter(t => t.status === status);
+  setTab(tabId: string): void {
+    this.activeTab.set(tabId as TasksTab);
   }
 
-  getStatusColorDot(status: string): string {
-    switch (status) {
-      case 'Pendiente': return 'bg-amber-400';
-      case 'En Proceso': return 'bg-blue-400';
-      case 'Completada': return 'bg-emerald-400';
-      default: return 'bg-outline';
+  tasksKPIs = computed(() => {
+    return calculateTasksKPIs(this.mockData.filteredTasks());
+  });
+
+  // Operaciones de Modales
+  openCreateModal(): void {
+    this.taskBeingEdited.set(null);
+    this.isEditorOpen.set(true);
+  }
+
+  closeEditorModal(): void {
+    this.isEditorOpen.set(false);
+    this.taskBeingEdited.set(null);
+  }
+
+  onOpenDetail(task: TaskItem): void {
+    this.selectedTaskForDetail.set(task);
+  }
+
+  onEditFromDetail(task: TaskItem): void {
+    this.selectedTaskForDetail.set(null);
+    this.taskBeingEdited.set(task);
+    this.isEditorOpen.set(true);
+  }
+
+  onSaveTask(task: TaskItem): void {
+    if (this.taskBeingEdited()) {
+      this.mockData.updateTask(task);
+    } else {
+      this.mockData.addTask(task);
+    }
+    this.closeEditorModal();
+  }
+
+  onChangeStatus(taskId: string, status: TaskItem['status']): void {
+    this.mockData.updateTaskStatus(taskId, status);
+    // Si el modal de detalle está abierto, refrescar su estado
+    const current = this.selectedTaskForDetail();
+    if (current && current.id === taskId) {
+      const updated = this.mockData.tasks().find(t => t.id === taskId);
+      if (updated) {
+        this.selectedTaskForDetail.set(updated);
+      }
     }
   }
 
-  getPrivacyVariant(privacy: TaskPrivacy): BadgeVariant {
-    switch (privacy) {
-      case 'Privada': return 'error';
-      case 'Delicada': return 'warning';
-      default: return 'success';
+  onToggleSubtask(taskId: string, subtaskId: string): void {
+    this.mockData.toggleSubtask(taskId, subtaskId);
+    // Refrescar modal de detalle
+    const updated = this.mockData.tasks().find(t => t.id === taskId);
+    if (updated) {
+      this.selectedTaskForDetail.set(updated);
     }
   }
 
-  changeTaskStatus(taskId: string, newStatus: 'Pendiente' | 'En Proceso' | 'Completada'): void {
-    this.mockData.updateTaskStatus(taskId, newStatus);
+  onAddComment(taskId: string, text: string): void {
+    const actorName = this.roleService.isEncargado() ? 'Lic. Claudia Morales' : 'Jorge Técnico';
+    const role = this.roleService.activeRole();
+    this.mockData.addCommentToTask(taskId, text, actorName, role);
+
+    // Refrescar modal de detalle
+    const updated = this.mockData.tasks().find(t => t.id === taskId);
+    if (updated) {
+      this.selectedTaskForDetail.set(updated);
+    }
   }
 
-  saveTask(): void {
-    if (!this.newTaskForm.title) return;
-    this.mockData.addTask({
-      title: this.newTaskForm.title,
-      description: this.newTaskForm.description,
-      assignedTo: this.newTaskForm.assignedTo,
-      assignedRole: 'usuario' as Role,
-      priority: this.newTaskForm.priority,
-      privacy: this.newTaskForm.privacy,
-      status: 'Pendiente',
-      dueDate: this.newTaskForm.dueDate
-    });
-    this.isCreating.set(false);
+  onDeleteTask(taskId: string): void {
+    this.mockData.deleteTask(taskId);
+    this.selectedTaskForDetail.set(null);
+  }
+
+  printTasks(): void {
+    window.print();
   }
 }

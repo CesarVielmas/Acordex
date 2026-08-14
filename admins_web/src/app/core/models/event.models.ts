@@ -83,6 +83,58 @@ export interface EventTaskTransfer {
   rejectionReason?: string;
 }
 
+/**
+ * Un cambio que un manager ajeno propone sobre un dato obligatorio ya capturado.
+ *
+ * Existe porque el dato obligatorio tiene dueño. Cuando el encargado de un punto
+ * ya lo llenó, que cualquier otro manager pueda sobrescribirlo de un teclazo
+ * convierte el reparto de responsabilidades en un adorno: nadie responde por un
+ * dato que cualquiera cambia sin avisar. Así que el cambio no se aplica, se
+ * propone, y el encargado decide.
+ *
+ * La propuesta es por **campo** y no por punto del checklist. Un punto como
+ * "identidad" cubre el nombre, la fecha, el aforo, el recinto, la ciudad y la
+ * dirección; si un manager propone otro recinto y otro propone otra fecha no se
+ * están contradiciendo, y colgarlas del punto obligaba a elegir entre dos cosas
+ * que no compiten. Compiten las que tocan el mismo campo, y solo entre esas hay
+ * que escoger una.
+ */
+export interface EventFieldProposal {
+  id: string;
+  /** Punto del checklist al que pertenece el campo tocado. */
+  checklistItemId: string;
+  /**
+   * Qué campo se propone cambiar. Es la llave con la que se decide qué
+   * propuestas compiten entre sí: dos sobre `venue` son excluyentes, una sobre
+   * `venue` y otra sobre `date` no.
+   */
+  fieldKey: string;
+  /** Nombre del campo tal como se lee en pantalla. */
+  fieldLabel: string;
+
+  /** El parche que se aplicaría al expediente si se acepta. */
+  proposedChanges: Record<string, any>;
+  /** El valor propuesto ya legible, para pintarlo sin volver a derivarlo. */
+  proposedLabel: string;
+  /** Lo que decía el campo cuando se propuso, para enseñar el antes y el después. */
+  previousLabel: string;
+
+  proposedBy: ActorRef;
+  proposedAt: string;
+
+  status: 'pendiente' | 'aceptada' | 'rechazada';
+  respondedAt?: string;
+  respondedBy?: ActorRef;
+  rejectionReason?: string;
+  /**
+   * Se rechazó sola al aceptarse otra sobre el mismo campo. Se distingue del
+   * rechazo a mano porque no es un juicio sobre esta propuesta: es la
+   * consecuencia de haber elegido otra.
+   */
+  supersededBy?: string;
+}
+
+/** @deprecated Sustituida por `EventFieldProposal`; se lee para no perder lo guardado. */
 export interface EventTaskChangeProposal {
   id: string;
   proposedBy: ActorRef;
@@ -133,7 +185,16 @@ export interface EventTask {
 
   /** Transferencia de tarea entre Managers pendiente de aprobación */
   pendingTransfer?: EventTaskTransfer;
-  /** Propuesta de modificación a tarea obligatoria completada */
+  /**
+   * Cambios que otros managers proponen sobre los datos de esta tarea.
+   *
+   * Viven aquí y no sueltas en el evento porque el que decide es el encargado
+   * del punto, y el punto es la tarea. Se guardan las resueltas junto a las
+   * pendientes: "se rechazó la propuesta de fulano" es exactamente el rastro que
+   * hace falta cuando alguien pregunta por qué el dato dice lo que dice.
+   */
+  changeProposals?: EventFieldProposal[];
+  /** @deprecated Propuesta única del modelo viejo; `resolveTasks` la migra. */
   pendingChangeProposal?: EventTaskChangeProposal;
   /** Historial de transferencias de la tarea */
   transferHistory?: EventTaskTransfer[];
@@ -146,8 +207,15 @@ export interface EventTask {
   acceptedAt?: string;
   completedAt?: string;
   completedBy?: ActorRef;
-  /** Manager que intervino para completar la tarea si era de otro Manager */
+  /**
+   * Manager ajeno que se metió a resolver este punto.
+   *
+   * Se sella al intervenir y no dice que la tarea esté hecha: la cierra el
+   * checklist cuando el dato aparece. Es el rastro de que el encargado no fue
+   * quien lo llenó, que es lo que hay que poder explicar después.
+   */
   intervenedBy?: ActorRef;
+  intervenedAt?: string;
   /** Obligatoria en las externas: es la única prueba de que se hizo. */
   completionNote?: string;
   rejectedReason?: string;
@@ -824,6 +892,13 @@ export interface EventPayout {
   notes?: string;
 }
 
+export interface EventManagerClosureConfirmation {
+  managerName: string;
+  confirmedAt: string;
+  confirmedBy?: string;
+  notes?: string;
+}
+
 /**
  * Datos finales del evento. Se capturan en 'Finalizada' y quedan congelados al
  * pasar a 'Cerrado'.
@@ -834,6 +909,8 @@ export interface EventClosureReport {
   grossRevenue?: number;
   expenses: EventExpense[];
   payouts: EventPayout[];
+  /** Confirmaciones de finiquito firmadas por cada manager co-organizador. */
+  managerConfirmations?: EventManagerClosureConfirmation[];
   mediaUploadedCount?: number;
   incidents?: string[];
   summary?: string;
@@ -843,6 +920,20 @@ export interface EventClosureReport {
   isSealed?: boolean;
   sealedAt?: string;
   sealedBy?: string;
+}
+
+// ─── Postergación del evento ──────────────────────────────────────────────────
+
+export interface EventPostponement {
+  id: string;
+  previousDate: string;
+  newDate: string;
+  reason: string;
+  clientNotice?: string;
+  videoUrl?: string;
+  flyerUrl?: string;
+  postponedAt: string;
+  postponedBy: string;
 }
 
 // ─── Trazabilidad ─────────────────────────────────────────────────────────────
@@ -951,6 +1042,9 @@ export interface EventItem {
   sales?: EventSalesSnapshot;
   closure?: EventClosureReport;
   cancellation?: EventCancellation;
+  /** Información de postergación de fecha si el evento fue reprogramado. */
+  activePostponement?: EventPostponement;
+  postponementHistory?: EventPostponement[];
 
   timeline: EventTimelineStep[];
   evidenceMedia: EventEvidence[];

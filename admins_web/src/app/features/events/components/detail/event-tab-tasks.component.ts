@@ -2,14 +2,20 @@ import { Component, input, output, signal, computed, inject } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  EventItem, EventTask, EventProductionItem, EventTaskTransfer,
+  EventFieldProposal, EventItem, EventTask, EventProductionItem, EventTaskTransfer,
   ProductionCategory, ProductionItemStatus
 } from '../../../../core/models/event.models';
 import { SessionService } from '../../../../core/services/session.service';
 import { RoleService } from '../../../../core/services/role.service';
 import { EditableFieldComponent, EditableOption } from '../../../../shared/ui/editable-field/editable-field.component';
 import { eventCompleteness } from '../../event-completeness';
-import { resolveTasks, ResolvedTask, getTabForChecklistItem } from '../../event-tasks';
+import { eventTaskPolicy } from '../../../../core/models/event-state.meta';
+import {
+  acceptProposal, activeIntervention, approversOf, canDecideProposals,
+  getTabForChecklistItem, isSystemActor, pendingProposals, rejectProposal,
+  resolveTasks, ResolvedTask
+} from '../../event-tasks';
+import { FieldProposalsComponent } from '../../../../shared/ui/field-proposals/field-proposals.component';
 import { PRODUCTION_CATEGORIES, productionCategoryMeta } from '../../production-catalog';
 import { EventDetailTab } from '../event-detail-modal.component';
 import { money } from '../../event-metrics';
@@ -40,7 +46,7 @@ import { money } from '../../event-metrics';
 @Component({
   selector: 'app-event-tab-tasks',
   standalone: true,
-  imports: [CommonModule, FormsModule, EditableFieldComponent],
+  imports: [CommonModule, FormsModule, EditableFieldComponent, FieldProposalsComponent],
   host: { class: 'block pt-4' },
   template: `
     <div class="space-y-6">
@@ -66,6 +72,7 @@ import { money } from '../../event-metrics';
           </div>
 
           <div class="flex items-center gap-2.5 flex-wrap shrink-0">
+            @if (canAssign()) {
             <button
               type="button"
               (click)="assignPanelOpen.set(!assignPanelOpen()); createPanelOpen.set(false)"
@@ -77,7 +84,9 @@ import { money } from '../../event-metrics';
               <span class="material-symbols-outlined text-base">how_to_reg</span>
               Encargar punto del expediente
             </button>
+            }
 
+            @if (canCreate()) {
             <button
               type="button"
               (click)="createPanelOpen.set(!createPanelOpen()); assignPanelOpen.set(false)"
@@ -89,8 +98,16 @@ import { money } from '../../event-metrics';
               <span class="material-symbols-outlined text-base">add_task</span>
               Nuevo encargo operativo
             </button>
+            }
           </div>
         </div>
+
+        @if (policy().notice) {
+          <div class="relative z-10 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-start gap-2.5">
+            <span class="material-symbols-outlined text-base text-outline shrink-0">lock</span>
+            <p class="text-[11px] text-on-surface-variant leading-relaxed">{{ policy().notice }}</p>
+          </div>
+        }
 
         <!-- ─── Cifras ─── -->
         <div class="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -608,23 +625,83 @@ import { money } from '../../event-metrics';
                       </span>
                     </div>
 
-                    @if (t.done && (t.completedAt || t.intervenedBy || t.completedBy)) {
+                    @if (t.done) {
                       <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-1">
                         <div class="flex items-center gap-1.5 font-bold text-emerald-300">
                           <span class="material-symbols-outlined text-sm">verified</span>
                           <span>Completado y Verificado</span>
-                          @if (t.intervenedBy) {
-                            <span class="px-2 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-black uppercase">
-                              Intervención de Manager
+                          @if (intervenerOf(t)) {
+                            <span class="px-2 py-0.5 rounded-md bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-black uppercase tracking-wider">
+                              Intervenida
                             </span>
                           }
                         </div>
                         <p class="text-[11px] text-emerald-200/90">
-                          Resuelto por: <strong class="text-on-surface">{{ t.intervenedBy ? t.intervenedBy.name + ' (Manager Interviniente)' : (t.completedBy?.name || t.assignedManager || 'Sistema') }}</strong>
-                          @if (t.completedAt) {
-                            <span class="text-emerald-300/80 font-mono"> · {{ t.completedAt }}</span>
+                          Resuelto por <strong class="text-on-surface">{{ resolvedByOf(t) }}</strong>
+                          @if (resolvedAtOf(t)) {
+                            <span class="text-emerald-300/80 font-mono"> · {{ resolvedAtOf(t) }}</span>
                           }
                         </p>
+                        @if (intervenerOf(t) && t.assignedManager) {
+                          <p class="text-[10px] text-amber-200/90 leading-snug">
+                            Lo capturó {{ intervenerOf(t) }} interviniendo en un punto de {{ t.assignedManager }}.
+                            Mientras siga así, los dos pueden corregirlo y los dos deciden lo que otros propongan.
+                          </p>
+                        }
+                      </div>
+                    }
+
+                    <!-- ── Los cambios que otros managers proponen sobre este dato ──
+                         Van aquí y no solo junto al campo porque esta es la pantalla
+                         donde el encargado revisa lo suyo: si únicamente vivieran en el
+                         formulario, tendría que recorrer las cinco pestañas del
+                         expediente para enterarse de que alguien le propuso algo. -->
+                    @if (proposalsOf(t).length) {
+                      <div class="rounded-2xl bg-amber-500/[0.07] border border-amber-400/40 overflow-hidden">
+                        <div class="px-4 py-3 flex items-start justify-between gap-3 flex-wrap border-b border-amber-500/20 bg-amber-500/[0.06]">
+                          <div class="flex items-start gap-2.5 min-w-0">
+                            <span class="material-symbols-outlined text-lg text-amber-400 shrink-0">rate_review</span>
+                            <div class="min-w-0 space-y-0.5">
+                              <h6 class="text-[11px] font-black text-amber-300">
+                                {{ proposalsOf(t).length }} cambio(s) esperando decisión
+                              </h6>
+                              <p class="text-[10px] text-outline leading-relaxed">
+                                @if (canDecideOn(t)) {
+                                  Otros managers proponen cambiar este dato. Cuando varios proponen sobre el mismo campo
+                                  solo puede quedar uno: al aceptar una, las demás de ese campo se descartan solas.
+                                } @else {
+                                  Lo decide {{ approversLabel(t) }}. Tu propuesta se aplica solo si la acepta{{ intervenerOf(t) ? 'n' : '' }}.
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Se desplaza en su sitio en vez de estirar la tarjeta:
+                             con cuatro propuestas encima, el encargado perdía de
+                             vista las demás tareas y tenía que buscar el final
+                             de la lista para volver. -->
+                        <div class="p-3 space-y-3 scroll-oculto max-h-[19rem]">
+                          @for (group of proposalGroupsOf(t); track group.fieldKey) {
+                            <div class="space-y-1.5">
+                              <div class="flex items-center gap-2">
+                                <span class="text-[9px] font-black uppercase tracking-widest text-outline">{{ group.fieldLabel }}</span>
+                                @if (group.items.length > 1) {
+                                  <span class="px-1.5 py-0.5 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 text-[8px] font-black uppercase tracking-wider">
+                                    {{ group.items.length }} en disputa
+                                  </span>
+                                }
+                              </div>
+                              <app-field-proposals
+                                [proposals]="group.items"
+                                [canDecide]="canDecideOn(t)"
+                                [owner]="approversLabel(t)"
+                                (accept)="acceptChange(t, $event)"
+                                (reject)="rejectChange(t, $event)"
+                              />
+                            </div>
+                          }
+                        </div>
                       </div>
                     }
 
@@ -1040,6 +1117,8 @@ import { money } from '../../event-metrics';
 export class EventTabTasksComponent {
   event = input.required<EventItem>();
   canViewFinances = input<boolean>(true);
+  /** Si el rol de plataforma permite tocar el evento siquiera. */
+  canEdit = input<boolean>(true);
   patch = output<Partial<EventItem>>();
   navigateTab = output<EventDetailTab>();
 
@@ -1089,6 +1168,19 @@ export class EventTabTasksComponent {
   // ─── Derivados ─────────────────────────────────────────────────────────────
   tasks = computed(() => resolveTasks(this.event()));
   isDraft = computed(() => this.event().state === 'Borrador');
+
+  /**
+   * Qué se puede hacer con las tareas en la fase en la que está el evento.
+   *
+   * Faltaba por completo: la pestaña no sabía en qué estado estaba, así que en
+   * un evento cerrado o con boletos vendidos se seguían pudiendo reasignar
+   * puntos obligatorios y decidir propuestas sobre datos que ya vio el público.
+   */
+  policy = computed(() => eventTaskPolicy(this.event().state));
+  canAssign = computed(() => this.canEdit() && this.policy().assignMandatory);
+  canCreate = computed(() => this.canEdit() && this.policy().createOptional);
+  canWork = computed(() => this.canEdit() && this.policy().workOptional);
+  canDecide = computed(() => this.canEdit() && this.policy().decideProposals);
   organizer = computed(() => this.event().ownerManagerName || this.event().createdBy || '');
 
   private requiredTasks = computed(() => this.tasks().filter(t => t.blocking));
@@ -1188,6 +1280,9 @@ export class EventTabTasksComponent {
    * pasarle una tarea a alguien es que la respuesta sea suya.
    */
   canManageTask(t: ResolvedTask): boolean {
+    // La fase manda por encima de la disquera: en un evento sellado no hay nada
+    // que gestionar aunque la tarea sea tuya.
+    if (t.kind === 'sistema' ? !this.canAssign() : !this.canWork()) return false;
     const me = this.session.actor().managerName;
     if (t.assignedManager) return t.assignedManager === me;
     return this.organizer() === me;
@@ -1603,4 +1698,83 @@ export class EventTabTasksComponent {
 
     this.patch.emit({ tasks: updatedTasks });
   }
+
+  // ─── Cambios propuestos sobre un dato obligatorio ──────────────────────────
+
+  proposalsOf(t: ResolvedTask): EventFieldProposal[] {
+    return pendingProposals(t);
+  }
+
+  /**
+   * Las propuestas agrupadas por el campo que tocan.
+   *
+   * Agrupar es lo que hace visible la decisión real: dos propuestas sobre el
+   * recinto son excluyentes y hay que elegir, una sobre el recinto y otra sobre
+   * la fecha no compiten y se aceptan por separado. En una lista plana las
+   * cuatro se ven iguales.
+   */
+  proposalGroupsOf(t: ResolvedTask): { fieldKey: string; fieldLabel: string; items: EventFieldProposal[] }[] {
+    const groups: { fieldKey: string; fieldLabel: string; items: EventFieldProposal[] }[] = [];
+    for (const p of this.proposalsOf(t)) {
+      let g = groups.find(x => x.fieldKey === p.fieldKey);
+      if (!g) { g = { fieldKey: p.fieldKey, fieldLabel: p.fieldLabel, items: [] }; groups.push(g); }
+      g.items.push(p);
+    }
+    return groups;
+  }
+
+  /**
+   * Quién decide sobre lo que le proponen a este punto.
+   *
+   * Su encargado siempre, y además quien haya intervenido mientras la
+   * intervención siga viva: el dato lleva la firma de los dos y un tercero les
+   * debe explicación a ambos.
+   */
+  canDecideOn(t: ResolvedTask): boolean {
+    if (!this.canDecide()) return false;
+    return canDecideProposals(this.event(), t, this.session.actor());
+  }
+
+  /** Los nombres de quienes tienen que aceptar, para poder decirlo. */
+  approversLabel(t: ResolvedTask): string {
+    return approversOf(this.event(), t).join(' y ') || this.organizer();
+  }
+
+  /** El manager que intervino y sigue firmando el dato con su encargado. */
+  intervenerOf(t: ResolvedTask): string {
+    return activeIntervention(t)?.name || '';
+  }
+
+  /**
+   * Quién resolvió el punto, nunca "el sistema".
+   *
+   * El sistema detecta que el dato está, no lo escribe. Dejarlo como autor de un
+   * punto obligatorio deja al expediente sin nadie a quien preguntarle cuando el
+   * dato resulta estar mal.
+   */
+  resolvedByOf(t: ResolvedTask): string {
+    const who = t.completedBy || t.intervenedBy;
+    if (who && !isSystemActor(who)) return who.name;
+    return !isSystemActor(t.assignedManager) && t.assignedManager
+      ? t.assignedManager : this.organizer();
+  }
+
+  /** Fecha y hora en que quedó resuelto, ya legible. */
+  resolvedAtOf(t: ResolvedTask): string {
+    const iso = t.completedAt || t.intervenedAt;
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+      + ' · ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' h';
+  }
+
+  acceptChange(t: ResolvedTask, proposalId: string): void {
+    this.patch.emit(acceptProposal(this.event(), t.id, proposalId, this.session.actor()));
+  }
+
+  rejectChange(t: ResolvedTask, proposalId: string): void {
+    this.patch.emit(rejectProposal(this.event(), t.id, proposalId, this.session.actor()));
+  }
+
 }

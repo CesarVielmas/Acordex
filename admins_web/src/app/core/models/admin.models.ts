@@ -357,11 +357,20 @@ export interface TaskItem {
   description: string;
   assignedTo: string;
   assignedRole: Role;
-  priority: 'Alta' | 'Media' | 'Baja';
+  priority: 'Urgente' | 'Alta' | 'Media' | 'Baja';
   privacy: TaskPrivacy;
-  status: 'Pendiente' | 'En Proceso' | 'Completada';
+  status: 'Pendiente' | 'En Proceso' | 'En Revisión' | 'Completada' | 'Cancelada';
   dueDate: string;
+  dueTime?: string;
   eventName?: string;
+  category?: 'Producción & Escenario' | 'Logística & Hospedaje' | 'Legal & Permisos' | 'Hospitalidad & Camerinos' | 'Finanzas & Cobranza' | 'Prensa & Marketing' | 'Talento & Backline' | 'Operación General';
+  relatedToType?: 'evento' | 'cotizacion' | 'grupo' | 'finanzas' | 'general';
+  relatedId?: string;
+  relatedTitle?: string;
+  subtasks?: { id: string; label: string; completed: boolean }[];
+  comments?: { id: string; authorName: string; authorRole: Role; text: string; createdAt: string }[];
+  completedAt?: string;
+  completedBy?: string;
 }
 
 export interface ClientItem {
@@ -370,11 +379,42 @@ export interface ClientItem {
   company: string;
   email: string;
   phone: string;
+  whatsapp?: string;
+  segment?: 'Empresario de Palenque / Feria' | 'Promotor de Bailes' | 'Particular (Boda/XV)' | 'Corporativo / Empresa' | 'Gobierno / Municipio';
+  tier?: 'Diamante' | 'Oro' | 'Plata' | 'Prospecto';
+  status: 'Frecuente' | 'Activo' | 'Prospecto' | 'Inactivo' | 'Lista Negra';
+  city?: string;
+  state?: string;
+  rating?: number;
   totalEvents: number;
   totalSpent: number;
-  status: 'Frecuente' | 'Activo' | 'Inactivo';
+  averageTicket?: number;
   lastQuoteDate: string;
   notes: string;
+  taxInfo?: {
+    rfc?: string;
+    taxName?: string;
+    taxRegime?: string;
+    cfdiUse?: string;
+    billingAddress?: string;
+  };
+  favoriteGenres?: string[];
+  preferredArtists?: string[];
+  interactions?: {
+    id: string;
+    date: string;
+    type: 'llamada' | 'whatsapp' | 'reunion' | 'cotizacion' | 'oferta' | 'nota';
+    summary: string;
+    authorName: string;
+  }[];
+  offersSent?: {
+    id: string;
+    date: string;
+    discountPercent: number;
+    details: string;
+    suggestedGroupName?: string;
+    status: 'Enviada' | 'Aceptada' | 'Expirada';
+  }[];
 }
 
 export interface AdminUserItem {
@@ -383,8 +423,23 @@ export interface AdminUserItem {
   email: string;
   role: Role;
   avatar: string;
-  status: 'Activo' | 'Inactivo';
+  status: 'Activo' | 'Inactivo' | 'Suspendido' | 'Invitación Pendiente';
   lastAccess: string;
+  department?: 'Dirección General' | 'Producción & Logística' | 'Finanzas & Cobranza' | 'Talento & Booking' | 'Marketing & Prensa' | 'Operaciones de Campo';
+  phone?: string;
+  lastLoginIp?: string;
+  twoFactorEnabled?: boolean;
+  assignedGroups?: string[];
+  permissions?: {
+    canViewFinances: boolean;
+    canEditEvents: boolean;
+    canManageUsers: boolean;
+    canDispatchOffers: boolean;
+    canSignContracts: boolean;
+    canDeleteFiles: boolean;
+    canAuditLogs: boolean;
+    canExportReports: boolean;
+  };
 }
 
 export interface AuditLog {
@@ -401,10 +456,17 @@ export interface FileItem {
   id: string;
   fileName: string;
   groupName: string;
-  category: 'Fotos' | 'Videos' | 'Contratos' | 'Press Kits';
+  category: 'Fotos' | 'Videos' | 'Contratos' | 'Riders Técnicos' | 'Reportes & Facturas' | 'Press Kits';
+  format?: 'PDF' | 'JPG' | 'PNG' | 'MP4' | 'ZIP' | 'XML' | 'DOCX';
   size: string;
   uploadDate: string;
   url: string;
+  uploadedBy?: string;
+  status?: 'Vigente' | 'Borrador' | 'Archivado';
+  downloadCount?: number;
+  tags?: string[];
+  description?: string;
+  previewUrl?: string;
 }
 
 export interface CorporateSettings {
@@ -416,4 +478,39 @@ export interface CorporateSettings {
   address: string;
   currency: string;
   autoSaveMock: boolean;
+
+  // Propiedades Corporativas Avanzadas
+  legalName?: string;
+  taxRegime?: string;
+  legalRepresentative?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  website?: string;
+  signatureUrl?: string;
+
+  // Políticas Comerciales
+  defaultCommissionPercent?: number;
+  quoteValidityDays?: number;
+  requiredAdvancePercent?: number;
+  cancellationPolicyTerms?: string;
+  defaultContractNotes?: string;
+
+  // Notificaciones & Alertas
+  enableWhatsAppNotifications?: boolean;
+  enableEmailAlerts?: boolean;
+  notifyOnQuoteAccepted?: boolean;
+  notifyOnTaskOverdue?: boolean;
+  notifyOnPaymentReceived?: boolean;
+
+  // Cuentas Bancarias
+  receivingBankAccounts?: {
+    id: string;
+    bankName: string;
+    accountHolder: string;
+    clabe: string;
+    accountNumber: string;
+    currency: string;
+    isPrimary: boolean;
+  }[];
 }

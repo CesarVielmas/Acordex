@@ -734,3 +734,20 @@
   .group-modal-backdrop,
   .group-modal-orb { animation: none; }
 }
+
+/**
+ * Zona que se desplaza sin barra a la vista.
+ *
+ * Para listas que crecen dentro de una tarjeta —los cambios que otros managers
+ * proponen sobre un dato obligatorio— y que no pueden estirarla sin límite: con
+ * cuatro propuestas la tarjeta medía media pantalla y empujaba las tareas
+ * siguientes fuera de la vista. La barra se oculta porque el recorte ya se ve
+ * en el degradado del borde, y una barra dentro de otra zona desplazable
+ * confunde cuál de las dos se está moviendo.
+ */
+.scroll-oculto {
+  overflow-y: auto;
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* Edge antiguo */
+}
+.scroll-oculto::-webkit-scrollbar { width: 0; height: 0; }

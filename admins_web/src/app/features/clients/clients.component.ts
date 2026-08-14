@@ -1,137 +1,169 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { RoleService } from '../../core/services/role.service';
 import { MockDataService } from '../../core/services/mock-data.service';
 import { ClientItem } from '../../core/models/admin.models';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
-import { EntityCardComponent } from '../../shared/ui/entity-card/entity-card.component';
-import { ModalShellComponent } from '../../shared/ui/modal-shell/modal-shell.component';
-import { FormFieldComponent, FormFieldOption } from '../../shared/ui/form-field/form-field.component';
+import { TabPillsComponent, TabPillItem } from '../../shared/ui/tab-pills/tab-pills.component';
 
+import { calculateClientsKPIs } from './client-metrics';
+
+import { ClientsKpisComponent } from './components/clients-kpis.component';
+import { ClientsTabDirectoryComponent } from './components/clients-tab-directory.component';
+import { ClientsTabRankingComponent } from './components/clients-tab-ranking.component';
+import { ClientsTabInteractionsComponent } from './components/clients-tab-interactions.component';
+import { ClientsTabOffersComponent } from './components/clients-tab-offers.component';
+
+import { ModalClientEditorComponent } from './modals/modal-client-editor.component';
+import { ModalClientDetailComponent } from './modals/modal-client-detail.component';
+import { ModalSendOfferComponent } from './modals/modal-send-offer.component';
+
+export type ClientsTab = 'directory' | 'ranking' | 'interactions' | 'offers';
+
+/**
+ * Módulo de Gestión de Clientes & CRM de Acordex.
+ *
+ * Administra las relaciones comerciales con Empresarios de Palenques,
+ * Patronatos de Ferias, Promotores de Bailes, Particulares y Gobiernos.
+ */
 @Component({
   selector: 'app-clients',
   standalone: true,
-  imports: [CommonModule, FormsModule, BadgeComponent, EntityCardComponent, ModalShellComponent, FormFieldComponent],
+  imports: [
+    CommonModule,
+    BadgeComponent,
+    TabPillsComponent,
+    ClientsKpisComponent,
+    ClientsTabDirectoryComponent,
+    ClientsTabRankingComponent,
+    ClientsTabInteractionsComponent,
+    ClientsTabOffersComponent,
+    ModalClientEditorComponent,
+    ModalClientDetailComponent,
+    ModalSendOfferComponent
+  ],
   template: `
-    <div class="space-y-6 animate-fade-in">
+    <div class="space-y-6 sm:space-y-8 animate-fade-in pb-12">
 
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="font-display-xl text-xl sm:text-2xl font-black text-on-surface">Directorio de Clientes & CRM</h1>
-            <app-badge label="Organizadores Recurrentes" variant="primary" />
+      <!-- ─── ENCABEZADO PRINCIPAL ─── -->
+      <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-surface-container-high/90 via-surface-container/80 to-surface-container-high/90 backdrop-blur-xl border border-outline-variant/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div class="absolute -right-12 -top-12 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 min-w-0">
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight">Directorio de Clientes & CRM</h1>
+            <app-badge label="Cartera Comercial" variant="primary" />
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary border border-primary/30">
+              CRM Conectado
+            </span>
           </div>
-          <p class="text-xs text-outline mt-1">Historial de cotizaciones por cliente y despacho de ofertas especiales</p>
+          <p class="text-xs text-outline mt-1 max-w-2xl leading-relaxed">
+            Gestión 360° de promotores de palenques, patronatos de ferias, particulares para bodas, historial de cotizaciones y campañas preferenciales.
+          </p>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="relative z-10 flex items-center gap-2.5 self-start md:self-auto">
+          <button
+            type="button"
+            (click)="printClients()"
+            class="px-3.5 py-2.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-on-surface hover:bg-surface-container-highest text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-base">print</span>
+            Imprimir
+          </button>
+
+          <button
+            type="button"
+            (click)="openCreateModal()"
+            class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-black text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-lg">person_add</span>
+            Nuevo Cliente
+          </button>
         </div>
       </div>
 
-      <!-- CLIENT CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-        @for (cli of mockData.clients(); track cli.id) {
-          <app-entity-card [title]="cli.name" [subtitle]="cli.company" [hasVisual]="false">
-            <ng-container card-badges>
-              <app-badge [label]="cli.id" variant="neutral" />
-              <app-badge [label]="cli.status" variant="success" />
-            </ng-container>
+      <!-- ─── KPIS SUPERIORES ─── -->
+      <app-clients-kpis [kpis]="clientsKPIs()" />
 
-            <div card-stats class="space-y-3">
-              <div class="space-y-1 text-xs text-outline">
-                <p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">mail</span> <span class="truncate">{{ cli.email }}</span></p>
-                <p class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">call</span> {{ cli.phone }}</p>
-              </div>
-
-              <div class="p-3 rounded-2xl bg-surface-container-high grid grid-cols-2 gap-2 text-center text-xs">
-                <div>
-                  <span class="text-[10px] text-outline font-bold uppercase block">Eventos</span>
-                  <span class="font-black text-on-surface text-sm">{{ cli.totalEvents }} Realizados</span>
-                </div>
-                <div>
-                  <span class="text-[10px] text-outline font-bold uppercase block">Inversión Acumulada</span>
-                  @if (roleService.canViewFinances()) {
-                    <span class="font-black text-emerald-400 text-sm">&#36;{{ cli.totalSpent | number:'1.0-0' }}</span>
-                  } @else {
-                    <span class="font-bold text-outline text-xs">Confidencial</span>
-                  }
-                </div>
-              </div>
-            </div>
-
-            <div card-footer class="pt-4 border-t border-outline-variant/20 flex gap-2">
-              <button
-                (click)="selectedClient.set(cli)"
-                class="flex-1 py-2.5 min-h-11 rounded-xl bg-surface-container-highest hover:bg-surface-bright text-on-surface font-bold text-xs transition-all"
-              >
-                Historial
-              </button>
-              <button
-                (click)="openOfferModal(cli)"
-                class="flex-1 py-2.5 min-h-11 rounded-xl bg-primary text-on-primary hover:scale-105 font-bold text-xs transition-all shadow-md"
-              >
-                Enviar Oferta
-              </button>
-            </div>
-          </app-entity-card>
-        }
+      <!-- ─── NAVEGACIÓN DE PESTAÑAS ─── -->
+      <div class="border-b border-outline-variant/30 pb-2">
+        <app-tab-pills
+          [tabs]="tabOptions"
+          [active]="activeTab()"
+          (change)="setTab($event)"
+        />
       </div>
 
-      <!-- CLIENT HISTORY MODAL -->
-      @if (selectedClient(); as client) {
-        <app-modal-shell
-          [title]="client.name"
-          [subtitle]="client.company"
-          size="xl"
-          [hasFooter]="true"
-          (closed)="selectedClient.set(null)"
-        >
-          <div class="space-y-3 text-xs">
-            <h4 class="font-bold text-on-surface uppercase tracking-wider text-[11px]">Notas de Servicio</h4>
-            <p class="p-3 rounded-xl bg-surface-container-high text-on-surface border border-outline-variant/20">
-              {{ client.notes }}
-            </p>
+      <!-- ─── CONTENIDO DE VISTAS ─── -->
 
-            <h4 class="font-bold text-on-surface uppercase tracking-wider text-[11px] pt-2">Cotizaciones Históricas</h4>
-            <div class="space-y-2">
-              @for (q of getClientQuotes(client.name); track q.id) {
-                <div class="p-3 rounded-xl bg-surface-container-high flex items-center justify-between gap-2">
-                  <div class="min-w-0">
-                    <span class="font-bold text-primary">{{ q.id }}</span>
-                    <span class="text-on-surface ml-2 font-medium">{{ q.groupName }}</span>
-                  </div>
-                  <app-badge [label]="q.state" variant="primary" />
-                </div>
-              }
-            </div>
-          </div>
-
-          <ng-container modal-footer>
-            <button (click)="selectedClient.set(null)" class="px-4 py-2 min-h-11 rounded-xl bg-surface-bright text-on-surface text-xs font-semibold">Cerrar</button>
-          </ng-container>
-        </app-modal-shell>
+      <!-- 1. DIRECTORIO DE CLIENTES -->
+      @if (activeTab() === 'directory') {
+        <app-clients-tab-directory
+          [clients]="mockData.clients()"
+          (openDetail)="onOpenDetail($event)"
+          (sendOffer)="onOpenSendOffer($event)"
+          (editClient)="onEditClient($event)"
+        />
       }
 
-      <!-- SPECIAL OFFER DISPATCH MODAL -->
-      @if (offerClientTarget(); as target) {
-        <app-modal-shell
-          title="Enviar Oferta Especial CRM"
-          icon="local_offer"
-          size="md"
-          [hasFooter]="true"
-          (closed)="offerClientTarget.set(null)"
-        >
-          <div class="space-y-3.5 text-xs">
-            <p class="text-outline">Para: <strong class="text-on-surface">{{ target.name }}</strong> ({{ target.email }})</p>
+      <!-- 2. RANKING DE CLIENTES TOP -->
+      @if (activeTab() === 'ranking') {
+        <app-clients-tab-ranking
+          [clients]="mockData.clients()"
+          (openDetail)="onOpenDetail($event)"
+        />
+      }
 
-            <app-form-field label="Porcentaje de Descuento Especial" type="select" [(value)]="offerForm.discountPercent" [options]="discountOptions" />
-            <app-form-field label="Detalle de la Propuesta / Mensaje Custom" type="textarea" [(value)]="offerForm.details" placeholder="Escribe los detalles de la oferta especial..." />
-          </div>
+      <!-- 3. BITÁCORA DE SEGUIMIENTO -->
+      @if (activeTab() === 'interactions') {
+        <app-clients-tab-interactions
+          [clients]="mockData.clients()"
+          (addInteraction)="onAddInteraction($event)"
+        />
+      }
 
-          <ng-container modal-footer>
-            <button (click)="offerClientTarget.set(null)" class="px-4 py-2 min-h-11 rounded-xl bg-surface-bright text-on-surface text-xs font-semibold">Cancelar</button>
-            <button (click)="dispatchOffer()" class="px-5 py-2 min-h-11 rounded-xl bg-primary text-on-primary text-xs font-bold">Simular Envío</button>
-          </ng-container>
-        </app-modal-shell>
+      <!-- 4. CENTRO DE OFERTAS Y PROMOCIONES -->
+      @if (activeTab() === 'offers') {
+        <app-clients-tab-offers
+          [clients]="mockData.clients()"
+          (sendOffer)="onOpenSendOffer($event)"
+        />
+      }
+
+      <!-- ─── MODALES INTERACTIVOS ─── -->
+
+      <!-- Modal 1: Editor de Cliente -->
+      @if (isEditorOpen()) {
+        <app-modal-client-editor
+          [clientToEdit]="clientBeingEdited()"
+          (saved)="onSaveClient($event)"
+          (closed)="closeEditorModal()"
+        />
+      }
+
+      <!-- Modal 2: Expediente 360° del Cliente -->
+      @if (selectedClientForDetail()) {
+        <app-modal-client-detail
+          [client]="selectedClientForDetail()!"
+          [allQuotes]="mockData.quotes()"
+          (closed)="selectedClientForDetail.set(null)"
+          (edit)="onEditFromDetail($event)"
+          (delete)="onDeleteClient($event)"
+          (sendOffer)="onOpenSendOffer($event)"
+          (addInteraction)="onAddInteraction($event)"
+        />
+      }
+
+      <!-- Modal 3: Despacho de Oferta Especial -->
+      @if (selectedClientForOffer()) {
+        <app-modal-send-offer
+          [client]="selectedClientForOffer()!"
+          [groups]="mockData.groups()"
+          (sent)="onDispatchOffer($event)"
+          (closed)="selectedClientForOffer.set(null)"
+        />
       }
 
     </div>
@@ -141,34 +173,91 @@ export class ClientsComponent {
   roleService = inject(RoleService);
   mockData = inject(MockDataService);
 
-  selectedClient = signal<ClientItem | null>(null);
-  offerClientTarget = signal<ClientItem | null>(null);
+  activeTab = signal<ClientsTab>('directory');
 
-  readonly discountOptions: FormFieldOption[] = [
-    { label: '5% Descuento Cliente Frecuente', value: '5' },
-    { label: '10% Descuento Promoción Temporada', value: '10' },
-    { label: '15% Descuento Paquete 2 Fechas', value: '15' }
+  // Modales
+  isEditorOpen = signal(false);
+  clientBeingEdited = signal<ClientItem | null>(null);
+  selectedClientForDetail = signal<ClientItem | null>(null);
+  selectedClientForOffer = signal<ClientItem | null>(null);
+
+  readonly tabOptions: TabPillItem[] = [
+    { value: 'directory', label: 'Directorio & CRM', icon: 'contacts' },
+    { value: 'ranking', label: 'Ranking Top Clientes', icon: 'leaderboard' },
+    { value: 'interactions', label: 'Bitácora de Seguimiento', icon: 'chat' },
+    { value: 'offers', label: 'Ofertas & Fidelización', icon: 'local_offer' }
   ];
 
-  offerForm = {
-    discountPercent: '10',
-    details: 'Propuesta preferencial para contratación de Banda La Imperial en paquete de fin de semana.'
-  };
-
-  getClientQuotes(clientName: string) {
-    return this.mockData.quotes().filter(q => q.clientName === clientName);
+  setTab(tabId: string): void {
+    this.activeTab.set(tabId as ClientsTab);
   }
 
-  openOfferModal(cli: ClientItem): void {
-    this.offerClientTarget.set(cli);
+  clientsKPIs = computed(() => {
+    return calculateClientsKPIs(this.mockData.clients());
+  });
+
+  // Operaciones de Modales
+  openCreateModal(): void {
+    this.clientBeingEdited.set(null);
+    this.isEditorOpen.set(true);
   }
 
-  dispatchOffer(): void {
-    const target = this.offerClientTarget();
-    if (target) {
-      this.mockData.sendSpecialOfferToClient(target.id, Number(this.offerForm.discountPercent), this.offerForm.details);
-      alert(`Oferta enviada con éxito a ${target.email}`);
-      this.offerClientTarget.set(null);
+  closeEditorModal(): void {
+    this.isEditorOpen.set(false);
+    this.clientBeingEdited.set(null);
+  }
+
+  onOpenDetail(client: ClientItem): void {
+    this.selectedClientForDetail.set(client);
+  }
+
+  onEditClient(client: ClientItem): void {
+    this.clientBeingEdited.set(client);
+    this.isEditorOpen.set(true);
+  }
+
+  onEditFromDetail(client: ClientItem): void {
+    this.selectedClientForDetail.set(null);
+    this.clientBeingEdited.set(client);
+    this.isEditorOpen.set(true);
+  }
+
+  onOpenSendOffer(client: ClientItem): void {
+    this.selectedClientForOffer.set(client);
+  }
+
+  onSaveClient(client: ClientItem): void {
+    if (this.clientBeingEdited()) {
+      this.mockData.updateClient(client);
+    } else {
+      this.mockData.addClient(client);
     }
+    this.closeEditorModal();
+  }
+
+  onDeleteClient(clientId: string): void {
+    this.mockData.deleteClient(clientId);
+    this.selectedClientForDetail.set(null);
+  }
+
+  onAddInteraction(data: { clientId: string; type: any; summary: string; authorName: string }): void {
+    this.mockData.addClientInteraction(data.clientId, data.type, data.summary, data.authorName);
+    // Refrescar modal de detalle si está abierto
+    const current = this.selectedClientForDetail();
+    if (current && current.id === data.clientId) {
+      const updated = this.mockData.clients().find(c => c.id === data.clientId);
+      if (updated) {
+        this.selectedClientForDetail.set(updated);
+      }
+    }
+  }
+
+  onDispatchOffer(data: { clientId: string; discountPercent: number; details: string; suggestedGroupName?: string }): void {
+    this.mockData.sendSpecialOfferToClient(data.clientId, data.discountPercent, data.details, data.suggestedGroupName);
+    this.selectedClientForOffer.set(null);
+  }
+
+  printClients(): void {
+    window.print();
   }
 }

@@ -1,4 +1,6 @@
-import { EventItem, EventTask, EventActivity, ActorRef, EventProductionItem, EventTaskChangeProposal } from '../../core/models/event.models';
+import {
+  ActorRef, EventActivity, EventFieldProposal, EventItem, EventProductionItem, EventTask
+} from '../../core/models/event.models';
 import { EventDetailTab } from './components/event-detail-modal.component';
 import { eventCompleteness, CompletenessItem } from './event-completeness';
 
@@ -70,6 +72,29 @@ export function resolveTasks(e: EventItem): ResolvedTask[] {
     return { productionItems: items, productionTotal: items.reduce((s, p) => s + (p.amount || 0), 0) };
   };
 
+  /** Las propuestas guardadas con el modelo de una sola, leídas como la lista que ahora son. */
+  const withProposals = (t: EventTask): EventFieldProposal[] => {
+    const list = t.changeProposals || [];
+    const legacy = t.pendingChangeProposal;
+    if (!legacy || list.some(p => p.id === legacy.id)) return list;
+
+    const key = Object.keys(legacy.proposedChanges || {})[0] || 'campo';
+    return [...list, {
+      id: legacy.id,
+      checklistItemId: t.checklistItemId || '',
+      fieldKey: key,
+      fieldLabel: legacy.fieldLabel,
+      proposedChanges: legacy.proposedChanges,
+      proposedLabel: describePatch(legacy.proposedChanges || {}, key),
+      previousLabel: describePatch(legacy.previousValues || {}, key),
+      proposedBy: legacy.proposedBy,
+      proposedAt: legacy.proposedAt,
+      status: legacy.status,
+      respondedAt: legacy.respondedAt,
+      rejectionReason: legacy.rejectionReason
+    }];
+  };
+
   // 1. Tareas de sistema basadas en el checklist
   for (const item of checklistItems) {
     const existing = storedMap.get(item.id);
@@ -84,6 +109,7 @@ export function resolveTasks(e: EventItem): ResolvedTask[] {
         checklist: item,
         blocking: item.required,
         virtual: false,
+        changeProposals: withProposals(existing),
         ...withProduction(existing)
       });
     } else {
@@ -118,6 +144,7 @@ export function resolveTasks(e: EventItem): ResolvedTask[] {
         done: t.status === 'completada',
         blocking: false,
         virtual: false,
+        changeProposals: withProposals(t),
         ...withProduction(t)
       });
     }
@@ -135,108 +162,405 @@ export function resolveTasks(e: EventItem): ResolvedTask[] {
   });
 }
 
+// ─── Puntos obligatorios en el formulario ─────────────────────────────────────
+
 /**
- * Determina si una tarea obligatoria o de campo está desbloqueada para edición por el actor actual.
- * Si pertenece a otro manager y NO ha sido intervenida, retorna false (bloqueado).
+ * Cómo llama el formulario a cada punto del checklist.
+ *
+ * Las secciones del expediente no se corresponden una a una con los puntos: la
+ * caja de "identidad" cubre seis campos y la corrida del día cubre tres puntos.
+ * Antes cada componente resolvía esto por su cuenta con una cadena de ocho
+ * condiciones copiada literalmente en cinco archivos, y con ids que **no existen
+ * en el checklist** —`coverUrl`, `schedule`, `lineup`—, así que la mitad de las
+ * veces no encontraba la tarea y el tag salía en blanco sin que nadie lo notara.
+ * El mapa vive aquí una sola vez y los ids de la derecha son los de verdad.
  */
-export function isTaskUnlockedForActor(
-  event: EventItem,
-  checklistItemId: string,
-  actorManagerName: string
-): boolean {
-  const tasks = resolveTasks(event);
-  const task = tasks.find(t =>
-    t.checklistItemId === checklistItemId ||
-    t.formSectionRef === checklistItemId ||
-    t.id === `task-sys-${checklistItemId}` ||
-    (checklistItemId === 'coverUrl' && (t.checklistItemId === 'portada' || t.formSectionRef === 'coverUrl')) ||
-    (checklistItemId === 'posterUrl' && (t.checklistItemId === 'cartel_oficial' || t.formSectionRef === 'posterUrl')) ||
-    (checklistItemId === 'ticketTiers' && (t.checklistItemId === 'boletos' || t.formSectionRef === 'ticketTiers')) ||
-    (checklistItemId === 'schedule' && (t.checklistItemId === 'corrida' || t.checklistItemId === 'orden' || t.formSectionRef === 'schedule')) ||
-    (checklistItemId === 'sound' && (t.checklistItemId === 'sonido' || t.formSectionRef === 'sound')) ||
-    (checklistItemId === 'videos_grupos' && (t.checklistItemId === 'videos_grupos' || t.formSectionRef === 'videos_grupos' || t.formSectionRef === 'greetingVideos'))
-  );
+const FIELD_TO_CHECKLIST: Record<string, string[]> = {
+  // Identidad: la caja del nombre y el recinto responde por todo lo suyo.
+  identidad: ['identidad', 'descripcion', 'direccion', 'flyer'],
 
+  // Cartelera pública.
+  coverUrl: ['portada'],
+  posterUrl: ['cartel_oficial'],
+  categoria: ['categoria', 'edad'],
+  tagline: ['tagline'],
+  aboutText: ['about_publico'],
+  about_publico: ['about_publico'],
+  rules: ['reglas'],
+  reglas: ['reglas'],
+  soporte: ['soporte'],
+  ticketSupportPhone: ['soporte'],
+  cargo_servicio: ['cargo_servicio'],
+  venueAddress: ['direccion'],
+
+  // Cartel.
+  lineup: ['cartel', 'headliner', 'grupos_publico'],
+  greetingVideos: ['videos_grupos'],
+  videos_grupos: ['videos_grupos'],
+
+  // Producción: la corrida del día y el bloque de audio arrastran cada uno
+  // varios puntos, y hasta ahora el tag solo respondía por el primero.
+  schedule: ['corrida', 'orden', 'llegadas', 'costos', 'encargados'],
+  sound: ['sonido', 'ingeniero', 'soundcheck', 'rider'],
+
+  // Boletaje: el croquis y el boletaje se capturan juntos y se cierran juntos.
+  croquis: ['croquis', 'croquis_escenario'],
+  ticketTiers: ['boletos', 'areas_categoria', 'boletos_lugares', 'aforo', 'descripcion_boletos'],
+  boletos: ['boletos', 'areas_categoria', 'boletos_lugares', 'aforo', 'descripcion_boletos']
+};
+
+/** Los puntos del checklist que cubre una referencia del formulario. */
+export function checklistIdsFor(ref: string): string[] {
+  return FIELD_TO_CHECKLIST[ref] || [ref];
+}
+
+/**
+ * La tarea del punto obligatorio que gobierna esta parte del formulario.
+ *
+ * Cuando la referencia cubre varios puntos manda el que todavía está pendiente:
+ * una sección se marca en verde cuando *todo* lo suyo está capturado, no cuando
+ * lo está la primera cosa que se encontró.
+ */
+export function findFieldTask(tasks: ResolvedTask[], ref: string): ResolvedTask | undefined {
+  return fieldTasks(tasks, ref).find(t => !t.done) || fieldTasks(tasks, ref)[0];
+}
+
+/** Todos los puntos del checklist que cuelgan de esta parte del formulario. */
+export function fieldTasks(tasks: ResolvedTask[], ref: string): ResolvedTask[] {
+  const ids = checklistIdsFor(ref);
+  return tasks.filter(t =>
+    (t.checklistItemId && ids.includes(t.checklistItemId))
+    || (t.formSectionRef && (t.formSectionRef === ref || ids.includes(t.formSectionRef)))
+    || ids.some(id => t.id === `task-sys-${id}`));
+}
+
+/** Quién responde por este punto: el encargado, o el organizador si no se repartió. */
+export function taskOwner(event: EventItem, task?: EventTask): string {
+  const owner = task?.assignedManager || event.ownerManagerName || event.createdBy || '';
+  // El sistema detecta los datos obligatorios, no responde por ellos. Un punto
+  // "a cargo del sistema" no tiene a quién ir a buscar cuando falta, así que
+  // cuando no hay nadie más responde el organizador.
+  return isSystemActor(owner) ? (event.ownerManagerName || event.createdBy || '') : owner;
+}
+
+/** El sistema no es una disquera: ni interviene, ni completa, ni aprueba nada. */
+export function isSystemActor(who?: string | ActorRef | null): boolean {
+  if (!who) return false;
+  const name = typeof who === 'string' ? who : who.managerName;
+  return !name || name.toLowerCase() === 'sistema';
+}
+
+/**
+ * La intervención viva sobre este punto, si la hay.
+ *
+ * Deja de valer en cuanto el encargado vuelve a escribir en su punto: eso quiere
+ * decir que retomó lo suyo, y a partir de ahí quien intervino vuelve a ser un
+ * manager cualquiera que tiene que pedir permiso como todos.
+ */
+export function activeIntervention(task?: EventTask): ActorRef | undefined {
+  const who = task?.intervenedBy;
+  return who && !isSystemActor(who) ? who : undefined;
+}
+
+/**
+ * Quiénes tienen que enterarse de un cambio propuesto sobre este punto.
+ *
+ * Normalmente solo su encargado. Pero cuando otro manager tuvo que intervenir
+ * porque el dato estaba vacío, el dato es de los dos: uno responde por el punto
+ * y el otro lo llenó de su puño. Un tercero que quiera cambiarlo les debe
+ * explicación a ambos, y a los dos les llega la decisión.
+ */
+export function approversOf(event: EventItem, task?: EventTask): string[] {
+  const owner = taskOwner(event, task);
+  const intervened = activeIntervention(task)?.managerName;
+  const list = [owner];
+  if (intervened && intervened !== owner) list.push(intervened);
+  return list.filter(Boolean);
+}
+
+/** Si este actor es el encargado del punto. */
+export function ownsField(event: EventItem, task: ResolvedTask | undefined, actor: ActorRef): boolean {
+  const owner = taskOwner(event, task);
+  return !owner || owner === actor.managerName;
+}
+
+/**
+ * Si lo que escriba este actor se aplica solo, sin pedirle permiso a nadie.
+ *
+ * Son tres los que pueden, y en este orden de razón:
+ *
+ *   - **El encargado**, siempre. Es su dato.
+ *   - **Quien intervino** mientras la intervención siga viva. Llenó un punto que
+ *     estaba vacío y nadie más iba a llenar; obligarle a pedir permiso para
+ *     corregir su propia captura sería castigarle por haber ayudado.
+ *   - **Cualquiera**, si el punto está vacío y ya confirmó la intervención. El
+ *     primer llenado nunca compite contra nada: no hay un dato bueno que
+ *     proteger, hay un hueco que impide publicar.
+ */
+export function canEditDirectly(event: EventItem, task: ResolvedTask | undefined, actor: ActorRef): boolean {
   if (!task) return true;
+  if (ownsField(event, task, actor)) return true;
 
-  const assigned = task.assignedManager || event.ownerManagerName || event.createdBy;
-  const isMine = assigned === actorManagerName || actorManagerName === 'Encargado Acordex';
-  const hasIntervened = !!task.intervenedBy || (task.completedBy && task.completedBy.managerName === actorManagerName);
+  const intervened = activeIntervention(task);
+  if (intervened?.managerName === actor.managerName) return true;
 
-  return isMine || hasIntervened || task.done;
+  return !task.done && !!intervened && intervened.managerName === actor.managerName;
+}
+
+/**
+ * Si a este actor le falta confirmar la intervención antes de poder escribir.
+ *
+ * Es la puerta del punto ajeno y vacío: se abre confirmando, no se queda
+ * cerrada. Sin ella, meterse en el dato de otra disquera sería tan fácil como
+ * un despiste, y el aviso es justamente lo que convierte el despiste en decisión.
+ */
+export function needsIntervention(event: EventItem, task: ResolvedTask | undefined, actor: ActorRef): boolean {
+  if (!task || task.done) return false;
+  if (ownsField(event, task, actor)) return false;
+  return activeIntervention(task)?.managerName !== actor.managerName;
+}
+
+/** Si este actor decide sobre lo que le proponen a este punto. */
+export function canDecideProposals(event: EventItem, task: ResolvedTask | undefined, actor: ActorRef): boolean {
+  return approversOf(event, task).includes(actor.managerName);
 }
 
 export interface InterceptSaveResult {
-  applyDirectly: boolean;
-  isProposalCreated: boolean;
+  /** El parche se aplicó al expediente tal cual. */
+  applied: boolean;
+  /** Se guardó como propuesta a la espera del encargado. */
+  proposed: boolean;
   message: string;
-  updatedEvent: Partial<EventItem>;
+  patch: Partial<EventItem>;
 }
 
 /**
- * Intercepta la edición de campos vinculados a tareas obligatorias.
- * Si la tarea obligatoria ya fue completada por algún manager, y quien edita ahora NO ES
- * el manager encargado asignado, se genera una propuesta de modificación pendiente.
+ * Decide qué pasa cuando alguien guarda un dato obligatorio.
+ *
+ * El punto pasa por tres fases y en cada una manda gente distinta:
+ *
+ *   1. **Vacío.** No hay nada que proteger, hay un hueco que impide publicar. Lo
+ *      llena su encargado, o cualquier manager que confirme la intervención, y
+ *      se aplica al instante. El primer llenado nunca compite contra nada.
+ *
+ *   2. **Lleno tras una intervención.** El dato es de dos: el que responde por el
+ *      punto y el que lo llenó. Los dos lo corrigen al instante y los dos deciden
+ *      lo que un tercero proponga, porque a los dos les afecta.
+ *
+ *   3. **Lleno y retomado.** En cuanto el encargado vuelve a escribir en su
+ *      punto, la intervención se apaga: retomó lo suyo. A partir de ahí solo él
+ *      escribe directo, y quien había intervenido vuelve a la cola como todos.
+ *
+ * Lo que nunca pasa es que un tercero sobrescriba un dato bueno sin que se entere
+ * quien respondía por él.
  */
 export function interceptFieldSave(
   event: EventItem,
-  checklistItemId: string,
+  ref: string,
+  fieldKey: string,
   fieldLabel: string,
   actor: ActorRef,
-  patchData: Partial<EventItem>,
-  previousValues?: Record<string, any>
+  patch: Partial<EventItem>,
+  labels?: { proposed?: string; previous?: string }
 ): InterceptSaveResult {
-  const tasks = resolveTasks(event);
-  const task = tasks.find(t =>
-    t.checklistItemId === checklistItemId ||
-    t.formSectionRef === checklistItemId ||
-    t.id === `task-sys-${checklistItemId}` ||
-    (checklistItemId === 'coverUrl' && (t.checklistItemId === 'portada' || t.formSectionRef === 'coverUrl')) ||
-    (checklistItemId === 'posterUrl' && (t.checklistItemId === 'cartel_oficial' || t.formSectionRef === 'posterUrl')) ||
-    (checklistItemId === 'ticketTiers' && (t.checklistItemId === 'boletos' || t.formSectionRef === 'ticketTiers')) ||
-    (checklistItemId === 'schedule' && (t.checklistItemId === 'corrida' || t.checklistItemId === 'orden' || t.formSectionRef === 'schedule')) ||
-    (checklistItemId === 'sound' && (t.checklistItemId === 'sonido' || t.formSectionRef === 'sound')) ||
-    (checklistItemId === 'videos_grupos' && (t.checklistItemId === 'videos_grupos' || t.formSectionRef === 'videos_grupos' || t.formSectionRef === 'greetingVideos'))
-  );
+  const task = findFieldTask(resolveTasks(event), ref);
+  const owner = taskOwner(event, task);
+  const now = new Date().toISOString().slice(0, 16);
 
-  const ownerMgr = task?.completedBy?.managerName || task?.assignedManager || event.ownerManagerName || event.createdBy;
-  const isOwner = ownerMgr === actor.managerName;
+  if (!task) {
+    return { applied: true, proposed: false, message: 'Cambio guardado en el expediente.', patch };
+  }
 
-  if (task && task.done && !isOwner) {
-    const proposal: EventTaskChangeProposal = {
-      id: 'prop-' + Date.now(),
-      proposedBy: actor,
-      proposedAt: new Date().toISOString().slice(0, 16),
-      fieldLabel,
-      proposedChanges: patchData,
-      previousValues: previousValues || {},
-      status: 'pendiente'
-    };
+  // ─── Fase 3: el encargado retoma lo suyo ───
+  if (ownsField(event, task, actor)) {
+    const intervened = activeIntervention(task);
+    if (!intervened) {
+      return { applied: true, proposed: false, message: 'Cambio guardado en el expediente.', patch };
+    }
 
-    const updatedTasks = (event.tasks || []).map(t => {
-      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
-        return {
-          ...t,
-          pendingChangeProposal: proposal
-        };
-      }
-      return t;
-    });
-
+    // Apagar la intervención es lo que devuelve el punto a la normalidad: de
+    // aquí en adelante quien intervino ya no escribe directo.
+    const tasks = upsertTask(event, task, t => ({
+      ...t,
+      intervenedBy: undefined,
+      intervenedAt: undefined,
+      completedBy: actor,
+      completedAt: now
+    }));
     return {
-      applyDirectly: false,
-      isProposalCreated: true,
-      message: `Se ha registrado tu propuesta de cambio en "${fieldLabel}". El manager encargado (${ownerMgr}) recibirá el aviso para aceptarla o rechazarla.`,
-      updatedEvent: { tasks: updatedTasks }
+      applied: true,
+      proposed: false,
+      message: `Retomaste tu punto. ${intervened.name} vuelve a necesitar tu aprobación para cambiarlo.`,
+      patch: { ...patch, tasks }
     };
   }
 
-  return {
-    applyDirectly: true,
-    isProposalCreated: false,
-    message: 'Cambio guardado en el expediente.',
-    updatedEvent: patchData
+  // ─── Fase 1: el punto está vacío ───
+  if (!task.done) {
+    const tasks = upsertTask(event, task, t => ({
+      ...t,
+      intervenedBy: actor,
+      intervenedAt: now,
+      completedBy: actor,
+      completedAt: now
+    }));
+    return {
+      applied: true,
+      proposed: false,
+      message: `Capturaste un dato que responde ${owner}. Queda registrado que interviniste tú.`,
+      patch: { ...patch, tasks }
+    };
+  }
+
+  // ─── Fase 2: lo llenó una intervención y quien escribe es quien intervino ───
+  if (activeIntervention(task)?.managerName === actor.managerName) {
+    const tasks = upsertTask(event, task, t => ({ ...t, completedBy: actor, completedAt: now }));
+    return {
+      applied: true,
+      proposed: false,
+      message: 'Corregiste el dato que tú mismo capturaste.',
+      patch: { ...patch, tasks }
+    };
+  }
+
+  const proposal: EventFieldProposal = {
+    id: `prop-${fieldKey}-${Date.now()}`,
+    checklistItemId: task.checklistItemId || ref,
+    fieldKey,
+    fieldLabel,
+    // Solo el campo que se tocó. Las pestañas construyen el parche esparciendo
+    // la ficha pública entera —`{ publicProfile: { ...actual, ...cambio } }`—, y
+    // guardarla así congelaría dentro de la propuesta todo lo demás tal como
+    // estaba: aceptarla una semana después revertiría de paso cinco datos que
+    // nadie pidió cambiar.
+    proposedChanges: narrowPatch(patch, fieldKey),
+    proposedLabel: labels?.proposed ?? describePatch(patch, fieldKey),
+    previousLabel: labels?.previous ?? '',
+    proposedBy: actor,
+    proposedAt: now,
+    status: 'pendiente'
   };
+
+  const tasks = upsertTask(event, task, t => ({
+    ...t,
+    // Se apila: si otro manager ya propuso algo sobre este campo, las dos tienen
+    // que llegarle al encargado para que elija. Sustituir la anterior —que es lo
+    // que hacía el modelo de una sola propuesta— borraba la primera sin rastro.
+    changeProposals: [...(t.changeProposals || []).filter(p => p.id !== proposal.id), proposal]
+  }));
+
+  const quienes = approversOf(event, task);
+  return {
+    applied: false,
+    proposed: true,
+    message: `Tu cambio en «${fieldLabel}» quedó como propuesta. `
+      + (quienes.length > 1
+        ? `Tienen que aceptarla ${quienes.join(' y ')}.`
+        : `${quienes[0] || owner} decide si se aplica.`),
+    patch: { tasks }
+  };
+}
+
+/** Las propuestas vivas de una tarea, las más recientes primero. */
+export function pendingProposals(task?: EventTask): EventFieldProposal[] {
+  return (task?.changeProposals || [])
+    .filter(p => p.status === 'pendiente')
+    .sort((l, r) => r.proposedAt.localeCompare(l.proposedAt));
+}
+
+/** Las propuestas vivas que compiten por un mismo campo. */
+export function proposalsForField(task: EventTask | undefined, fieldKey: string): EventFieldProposal[] {
+  return pendingProposals(task).filter(p => p.fieldKey === fieldKey);
+}
+
+/**
+ * Acepta una propuesta y descarta las que peleaban por el mismo campo.
+ *
+ * Las rivales se marcan como desplazadas y no como rechazadas: no es que el
+ * encargado dijera que estaban mal, es que solo cabía una. Las de otros campos
+ * de la misma tarea siguen vivas, porque nunca estuvieron en la disputa.
+ */
+export function acceptProposal(event: EventItem, taskId: string, proposalId: string, actor: ActorRef): Partial<EventItem> {
+  const task = (event.tasks || []).find(t => t.id === taskId);
+  const proposal = (task?.changeProposals || []).find(p => p.id === proposalId);
+  if (!task || !proposal) return {};
+
+  const now = new Date().toISOString().slice(0, 16);
+  const tasks = (event.tasks || []).map(t => {
+    if (t.id !== taskId) return t;
+    return {
+      ...t,
+      changeProposals: (t.changeProposals || []).map(p => {
+        if (p.id === proposalId) {
+          return { ...p, status: 'aceptada' as const, respondedAt: now, respondedBy: actor };
+        }
+        if (p.status === 'pendiente' && p.fieldKey === proposal.fieldKey) {
+          return { ...p, status: 'rechazada' as const, respondedAt: now, respondedBy: actor, supersededBy: proposalId };
+        }
+        return p;
+      })
+    };
+  });
+
+  return { ...mergePatch(event, proposal.proposedChanges), tasks };
+}
+
+export function rejectProposal(
+  event: EventItem, taskId: string, proposalId: string, actor: ActorRef, reason?: string
+): Partial<EventItem> {
+  const now = new Date().toISOString().slice(0, 16);
+  const tasks = (event.tasks || []).map(t => {
+    if (t.id !== taskId) return t;
+    return {
+      ...t,
+      changeProposals: (t.changeProposals || []).map(p =>
+        p.id === proposalId
+          ? { ...p, status: 'rechazada' as const, respondedAt: now, respondedBy: actor, rejectionReason: reason }
+          : p)
+    };
+  });
+  return { tasks };
+}
+
+/**
+ * Deja escrito que este manager se metió a resolver un punto que no era suyo.
+ *
+ * No lo da por hecho: marcar la tarea como completada al confirmar el aviso
+ * —que es lo que hacía antes— sellaba autoría y hora de un dato que todavía no
+ * se había escrito. La tarea la cierra el checklist cuando el dato aparezca.
+ */
+export function markIntervention(event: EventItem, task: ResolvedTask, actor: ActorRef): Partial<EventItem> {
+  return {
+    tasks: upsertTask(event, task, t => ({
+      ...t, intervenedBy: actor, intervenedAt: new Date().toISOString().slice(0, 16)
+    }))
+  };
+}
+
+/**
+ * Aplica un cambio a la tarea guardada, materializándola si era virtual.
+ *
+ * Las tareas de los puntos del checklist no se guardan hasta que alguien hace
+ * algo con ellas, así que la primera propuesta sobre un punto que nadie había
+ * tocado no tenía dónde escribirse y se perdía.
+ */
+function upsertTask(event: EventItem, task: ResolvedTask, change: (t: EventTask) => EventTask): EventTask[] {
+  const stored = event.tasks || [];
+  const found = stored.some(t => t.id === task.id);
+  if (found) return stored.map(t => (t.id === task.id ? change(t) : t));
+
+  const { done, checklist, blocking, virtual, productionItems, productionTotal, ...base } = task;
+  return [...stored, change(base)];
+}
+
+/** Un valor propuesto en una línea, para poder enseñarlo sin abrir el parche. */
+function describePatch(patch: Record<string, any>, fieldKey: string): string {
+  const flat: Record<string, any> = { ...patch, ...(patch['publicProfile'] || {}) };
+  const value = flat[fieldKey] ?? Object.values(flat).find(v => v !== undefined && v !== null && v !== '');
+  if (value === undefined || value === null || value === '') return '(vacío)';
+  if (Array.isArray(value)) return `${value.length} elemento(s)`;
+  if (typeof value === 'object') return 'varios campos';
+  return String(value);
 }
 
 /**
@@ -261,6 +585,10 @@ export interface ManagerWorkload {
   delegated: number;
   /** Transferencias esperando su respuesta. */
   awaitingResponse: number;
+  /** Cambios que otros managers le proponen y tiene que aceptar o rechazar. */
+  proposalsToDecide: number;
+  /** Puntos ajenos que tuvo que llenar él porque estaban vacíos. */
+  interventions: number;
   /** Lo que suma el desglose de todas sus tareas. */
   spend: number;
   /** Partidas del desglose que lleva, vengan o no de una tarea. */
@@ -279,7 +607,8 @@ export function managerWorkloads(e: EventItem, tasks?: ResolvedTask[]): ManagerW
       entry = {
         manager, isOrganizer: manager === owner,
         required: [], requiredDone: 0, optional: [], optionalDone: 0,
-        delegated: 0, awaitingResponse: 0, spend: 0, items: 0
+        delegated: 0, awaitingResponse: 0, proposalsToDecide: 0, interventions: 0,
+        spend: 0, items: 0
       };
       by.set(manager, entry);
     }
@@ -293,8 +622,8 @@ export function managerWorkloads(e: EventItem, tasks?: ResolvedTask[]): ManagerW
   for (const t of list) {
     // Una tarea sin dueño la responde el organizador: es suya hasta que la
     // encargue, y dejarla fuera del reparto la volvía tierra de nadie.
-    const manager = t.assignedManager || owner;
-    if (!manager) continue;
+    const manager = isSystemActor(t.assignedManager) ? owner : (t.assignedManager || owner);
+    if (!manager || isSystemActor(manager)) continue;
 
     const entry = slot(manager);
     if (t.kind === 'sistema') {
@@ -316,6 +645,16 @@ export function managerWorkloads(e: EventItem, tasks?: ResolvedTask[]): ManagerW
     if (t.pendingTransfer?.status === 'pendiente') {
       slot(t.pendingTransfer.toManager).awaitingResponse += 1;
     }
+
+    // Y los cambios propuestos los deciden todos sus aprobadores: el encargado
+    // del punto y, si lo llenó otro, también quien intervino.
+    const abiertas = pendingProposals(t).length;
+    if (abiertas) {
+      for (const quien of approversOf(e, t)) slot(quien).proposalsToDecide += abiertas;
+    }
+
+    const intervino = activeIntervention(t);
+    if (intervino) slot(intervino.managerName).interventions += 1;
   }
 
   // Gasto suelto: partidas capturadas en Producción que no salieron de ninguna
@@ -323,7 +662,7 @@ export function managerWorkloads(e: EventItem, tasks?: ResolvedTask[]): ManagerW
   for (const p of prodItems) {
     if (p.taskId) continue;
     const manager = p.assignedTo || owner;
-    if (!manager) continue;
+    if (!manager || isSystemActor(manager)) continue;
     const entry = slot(manager);
     entry.spend += p.amount || 0;
     entry.items += 1;
@@ -493,4 +832,34 @@ export function getTabForChecklistItem(id: string): EventDetailTab {
     default:
       return 'evento';
   }
+}
+
+/** El parche recortado al campo que de verdad se propone cambiar. */
+function narrowPatch(patch: Record<string, any>, fieldKey: string): Record<string, any> {
+  const profile = patch['publicProfile'];
+  if (profile && typeof profile === 'object' && fieldKey in profile) {
+    return { publicProfile: { [fieldKey]: profile[fieldKey] } };
+  }
+  if (fieldKey in patch) return { [fieldKey]: patch[fieldKey] };
+  return patch;
+}
+
+/**
+ * Aplica un parche sin tirar lo que no menciona.
+ *
+ * La ficha pública es un objeto anidado, así que un parche que solo trae la
+ * frase de portada borraba de un plumazo el cartel, la portada y las reglas al
+ * asignarse encima. Se nota tarde y mal: el dato desaparece de la ficha pública
+ * sin que nadie lo haya tocado.
+ */
+function mergePatch(event: EventItem, patch: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = { ...patch };
+  for (const [key, value] of Object.entries(patch)) {
+    const current = (event as Record<string, any>)[key];
+    const anidado = value && typeof value === 'object' && !Array.isArray(value);
+    if (anidado && current && typeof current === 'object' && !Array.isArray(current)) {
+      out[key] = { ...current, ...value };
+    }
+  }
+  return out;
 }

@@ -4,18 +4,24 @@ import {
   EventItem,
   EventClosureReport,
   EventExpense,
-  EventPayout
+  EventPayout,
+  EventManagerAgreement,
+  EventManagerClosureConfirmation
 } from '../../../../core/models/event.models';
 import { EditableFieldComponent, EditableOption } from '../../../../shared/ui/editable-field/editable-field.component';
 import { ProgressBarComponent } from '../../../../shared/ui/progress-bar/progress-bar.component';
 import {
+  allManagersConfirmedClosure,
   grossTicketRevenue,
   isClosureComplete,
   lineup,
   money,
   netResult,
   paidPayouts,
+  participatingManagers,
   pendingPayoutsCount,
+  potentialTicketRevenue,
+  productionCost,
   slotCost,
   soldSeats,
   totalExpenses,
@@ -39,21 +45,25 @@ import {
   template: `
     <div class="space-y-4">
 
-      <!-- Estado del cierre -->
+      <!-- Estado del cierre & Sello -->
       <div class="p-4 rounded-2xl border flex items-center justify-between gap-3 flex-wrap"
-           [class]="complete() ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'">
+           [class]="complete() && allManagersConfirmed() ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'">
         <div class="flex items-center gap-2.5 min-w-0">
-          <span class="material-symbols-outlined text-lg shrink-0" [class]="complete() ? 'text-emerald-400' : 'text-amber-400'">
-            {{ complete() ? 'fact_check' : 'pending_actions' }}
+          <span class="material-symbols-outlined text-lg shrink-0" [class]="complete() && allManagersConfirmed() ? 'text-emerald-400' : 'text-amber-400'">
+            {{ complete() && allManagersConfirmed() ? 'fact_check' : 'pending_actions' }}
           </span>
           <div class="min-w-0">
             <p class="text-xs font-black text-on-surface">
-              {{ complete() ? 'Cierre completo, listo para sellar' : 'Cierre incompleto' }}
+              {{ complete() && allManagersConfirmed() ? 'Cierre completo y finiquitos confirmados por todos los managers' : 'Cierre o confirmaciones pendientes' }}
             </p>
             <p class="text-[11px] text-outline">
-              {{ complete()
-                ? 'Aforo, taquilla y pagos capturados. Sellar deja el expediente en solo lectura para siempre.'
-                : 'Faltan aforo real, taquilla final o liquidar a algún grupo.' }}
+              @if (!complete()) {
+                Falta capturar aforo real, taquilla final o liquidar pagos a los grupos.
+              } @else if (!allManagersConfirmed()) {
+                Se requiere la confirmación y firma de conformidad de TODOS los managers participantes antes de sellar.
+              } @else {
+                Todo verificado y firmado. Sellar congelará el expediente en solo lectura inmutable.
+              }
             </p>
           </div>
         </div>
@@ -62,13 +72,89 @@ import {
           <button
             type="button"
             (click)="seal.emit()"
-            [disabled]="!complete()"
-            class="px-4 py-2.5 min-h-11 rounded-xl bg-zinc-500/20 text-zinc-200 border border-zinc-400/40 hover:bg-zinc-400 hover:text-black text-[11px] font-black flex items-center gap-1.5 transition-all disabled:opacity-40 disabled:pointer-events-none shrink-0"
+            [disabled]="!complete() || !allManagersConfirmed()"
+            [title]="!complete() ? 'Faltan datos del cierre' : (!allManagersConfirmed() ? 'Faltan confirmaciones de managers' : 'Cerrar y sellar expediente')"
+            class="px-4 py-2.5 min-h-11 rounded-xl bg-zinc-500/20 text-zinc-200 border border-zinc-400/40 hover:bg-zinc-400 hover:text-black text-[11px] font-black flex items-center gap-1.5 transition-all disabled:opacity-40 disabled:pointer-events-none shrink-0 shadow-lg"
           >
             <span class="material-symbols-outlined text-sm">lock</span> Cerrar y sellar expediente
           </button>
         }
       </div>
+
+      <!-- ─── REPARTO DE UTILIDADES & FIRMA DE MANAGERS ─── -->
+      <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-teal-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-teal-500/25 border-l-4 border-l-teal-500/70 shadow-2xl space-y-4 backdrop-blur-2xl">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h5 class="text-[10px] font-black uppercase tracking-wider text-teal-300 flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[13px]">handshake</span> Reparto de ganancias y finiquito de managers
+            </h5>
+            <p class="text-[11px] text-outline mt-0.5">
+              {{ managers().length > 1 ? 'Co-organización: cada manager debe dar el visto bueno a su liquidación para poder cerrar.' : 'Organizador único: liquidación directa.' }}
+            </p>
+          </div>
+
+          <span class="px-3 py-1 rounded-xl text-[10px] font-black border"
+            [class]="allManagersConfirmed() ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
+            {{ confirmationsCount() }} de {{ managers().length }} confirmación(es)
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+          @for (m of managers(); track m) {
+            @let conf = confirmationOf(m);
+            @let agr = agreementOf(m);
+            <div class="p-4 rounded-2xl bg-surface-container border space-y-3 shadow-md"
+              [class]="conf ? 'border-emerald-500/30 bg-emerald-500/[0.03]' : 'border-outline-variant/25'">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="w-8 h-8 rounded-xl border flex items-center justify-center material-symbols-outlined text-base shrink-0"
+                    [class]="conf ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' : 'bg-teal-500/15 border-teal-500/30 text-teal-300'">
+                    {{ conf ? 'verified' : 'account_circle' }}
+                  </span>
+                  <div class="min-w-0">
+                    <p class="text-xs font-black text-on-surface truncate">{{ m }}</p>
+                    <p class="text-[10px] text-outline">
+                      {{ agr?.role === 'organizador' ? 'Organizador principal' : 'Co-organizador' }} ·
+                      {{ agr?.settlementKind === 'fijo' ? ('Monto fijo: ' + money(agr?.fixedAmount || 0)) : (agr?.percent ? (agr?.percent + '% utilidad') : '100% utilidad') }}
+                    </p>
+                  </div>
+                </div>
+
+                <span class="px-2.5 py-1 rounded-xl text-[10px] font-mono font-black border shrink-0"
+                  [class]="conf ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'">
+                  {{ conf ? 'Confirmado' : 'Pendiente' }}
+                </span>
+              </div>
+
+              <!-- Estimación de ganancia según acuerdo -->
+              @if (canViewFinances()) {
+                <div class="p-2.5 rounded-xl bg-surface-container-highest/60 border border-outline-variant/15 flex items-center justify-between text-xs">
+                  <span class="text-outline text-[11px] font-medium">Liquidación estimada:</span>
+                  <strong class="text-emerald-400 font-bold font-mono">{{ estimatedShare(agr) }}</strong>
+                </div>
+              }
+
+              <!-- Estado de la firma / Botón de confirmación -->
+              @if (conf) {
+                <p class="text-[10px] text-emerald-300 flex items-center gap-1.5 pt-1 border-t border-outline-variant/15">
+                  <span class="material-symbols-outlined text-[12px]">check_circle</span>
+                  <span>Firmado el {{ conf.confirmedAt }} por {{ conf.confirmedBy || m }}</span>
+                </p>
+              } @else if (canEdit() && !sealed()) {
+                <div class="pt-1 border-t border-outline-variant/15 flex items-center justify-end">
+                  <button
+                    type="button"
+                    (click)="confirmManager(m)"
+                    class="px-3 py-1.5 rounded-xl bg-teal-500/20 text-teal-200 border border-teal-500/40 hover:bg-teal-500 hover:text-black text-[10px] font-black transition-all flex items-center gap-1.5"
+                  >
+                    <span class="material-symbols-outlined text-[12px]">draw</span> Firmar y Confirmar Finiquito
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
 
       <!-- Cifras finales -->
       <section class="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-500/[0.07] via-surface-container-high/90 to-surface-container-high/90 border border-purple-500/25 border-l-4 border-l-purple-500/70 shadow-2xl shadow-purple-500/5 space-y-4 backdrop-blur-2xl">
@@ -284,6 +370,8 @@ export class EventTabClosureComponent {
   patch = output<Partial<EventItem>>();
   seal = output<void>();
 
+  money = money;
+
   readonly expenseCategories: EditableOption[] = [
     { value: 'Sonido', label: 'Sonido' },
     { value: 'Recinto', label: 'Recinto' },
@@ -366,6 +454,54 @@ export class EventTabClosureComponent {
         next.status = paid <= 0 ? 'Pendiente' : (paid >= next.agreedTotal ? 'Pagado' : 'Parcial');
         return next;
       })
+    });
+  }
+
+  confirmManagerClosure = output<{ managerName: string }>();
+
+  managers = computed(() => participatingManagers(this.event()));
+  allManagersConfirmed = computed(() => allManagersConfirmedClosure(this.event()));
+  confirmations = computed(() => this.closure().managerConfirmations || []);
+  confirmationsCount = computed(() => this.confirmations().length);
+
+  confirmationOf(managerName: string): EventManagerClosureConfirmation | undefined {
+    return this.confirmations().find(c => c.managerName === managerName);
+  }
+
+  agreementOf(managerName: string): EventManagerAgreement | undefined {
+    const e = this.event();
+    const agrs = e.managerAgreements || [];
+    return agrs.find(a => a.managerName === managerName) || (
+      (e.ownerManagerName === managerName || e.createdBy === managerName)
+        ? { id: 'owner', managerName, role: 'organizador', settlementKind: 'porcentaje', percent: 100, status: 'Aceptado' }
+        : undefined
+    );
+  }
+
+  estimatedShare(a?: EventManagerAgreement): string {
+    if (!a) return '$0 MXN';
+    const net = Math.max(0, this.net());
+    if (a.settlementKind === 'porcentaje') {
+      const share = net * ((a.percent || 0) / 100);
+      return money(share);
+    } else {
+      return money(a.fixedAmount || 0);
+    }
+  }
+
+  confirmManager(managerName: string): void {
+    const existing = this.confirmations();
+    if (existing.some(c => c.managerName === managerName)) return;
+
+    const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    const newConf: EventManagerClosureConfirmation = {
+      managerName,
+      confirmedAt: now,
+      confirmedBy: managerName
+    };
+
+    this.patchClosure({
+      managerConfirmations: [...existing, newConf]
     });
   }
 

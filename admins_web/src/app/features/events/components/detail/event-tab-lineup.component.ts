@@ -1,6 +1,7 @@
 import { Component, input, output, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
+  EventApproval,
   EventItem,
   EventLineupSlot,
   EventCostItem,
@@ -12,6 +13,7 @@ import {
 import { GroupItem } from '../../../../core/models/admin.models';
 import { EditableFieldComponent, EditableOption } from '../../../../shared/ui/editable-field/editable-field.component';
 import {
+  approvals,
   activeCounterOffer,
   counterOfferSavings,
   dateTimeLabel,
@@ -44,7 +46,8 @@ import {
  */
 import { MandatoryTaskTagComponent } from '../../../../shared/ui/mandatory-task-tag/mandatory-task-tag.component';
 import { SessionService } from '../../../../core/services/session.service';
-import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-tasks';
+import { markIntervention, ResolvedTask } from '../../event-tasks';
+import { MandatoryFields } from '../../mandatory-fields';
 
 /**
  * Cartel del evento, con un sub-apartado completo por grupo.
@@ -73,7 +76,7 @@ import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-
         </div>
 
         <div class="flex items-center gap-3">
-          <app-mandatory-task-tag checklistItemId="lineup" [event]="event()" (intervene)="onInterveneTask($event)" (acceptProposal)="onAcceptProposalTask($event)" (rejectProposal)="onRejectProposalTask($event)" />
+          <app-mandatory-task-tag ref="lineup" [event]="event()" (intervene)="onInterveneTask($event)" />
           @if (canEdit()) {
             <button
               type="button"
@@ -87,10 +90,10 @@ import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-
         </div>
       </div>
 
-      @if (getProposalNotice('lineup')) {
+      @if (mandatory.warning('lineup')) {
         <div class="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs font-bold leading-relaxed flex items-start gap-2.5 shadow-md">
           <span class="material-symbols-outlined text-base text-amber-400 shrink-0 mt-0.5">info</span>
-          <span>{{ getProposalNotice('lineup') }}</span>
+          <span>{{ mandatory.warning('lineup') }}</span>
         </div>
       }
 
@@ -258,6 +261,48 @@ import { ResolvedTask, isTaskUnlockedForActor, resolveTasks } from '../../event-
                       {{ approvalLabel(slot.approval) }}
                     </span>
                   </div>
+
+                  <!-- Por qué dijo que no, y qué pide para decir que sí.
+                       Vivía en una pestaña aparte que solo repetía el estado que
+                       ya se ve arriba; el motivo, en cambio, no estaba en ningún
+                       otro sitio, y un "Rechazado" sin explicación no le sirve a
+                       nadie: lo que hay que leer es qué hay que cambiar. -->
+                  @if (approvalOf(slot); as ap) {
+                    @if (ap.status === 'Rechazado') {
+                      <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-2">
+                        <div class="flex items-start gap-2">
+                          <span class="material-symbols-outlined text-sm text-rose-400 shrink-0">block</span>
+                          <div class="min-w-0 space-y-1">
+                            <p class="text-[10px] font-black uppercase tracking-wider text-rose-300">
+                              {{ ap.managerName }} no aprobó
+                              @if (ap.respondedAt) {
+                                <span class="font-mono font-normal text-rose-300/70 normal-case"> · {{ dateTimeLabel(ap.respondedAt) }}</span>
+                              }
+                            </p>
+                            @if (ap.reason) {
+                              <p class="text-[11px] text-rose-100 leading-relaxed italic">"{{ ap.reason }}"</p>
+                            }
+                          </div>
+                        </div>
+                        @if (ap.requestedChanges?.length) {
+                          <div class="pl-6 space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-rose-300/80">Pide para aprobar</span>
+                            @for (c of ap.requestedChanges; track c) {
+                              <p class="text-[11px] text-rose-100 flex items-start gap-1.5">
+                                <span class="material-symbols-outlined text-[12px] shrink-0 mt-0.5 text-rose-400">chevron_right</span>
+                                <span>{{ c }}</span>
+                              </p>
+                            }
+                          </div>
+                        }
+                      </div>
+                    } @else if (ap.status === 'Aprobado' && ap.respondedAt) {
+                      <p class="text-[10px] text-emerald-300 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[13px]">check_circle</span>
+                        {{ ap.managerName }} aprobó el {{ dateTimeLabel(ap.respondedAt) }}
+                      </p>
+                    }
+                  }
 
                   <!-- Qué es exactamente lo que va a recibir. Son dos cosas muy
                        distintas y de ahí depende cuánto del evento verá. -->
@@ -1584,93 +1629,51 @@ export class EventTabLineupComponent {
 
   private sessionService = inject(SessionService);
 
-  isTaskUnlocked(checklistItemId: string): boolean {
-    const actor = this.sessionService.actor();
-    return isTaskUnlockedForActor(this.event(), checklistItemId, actor.managerName);
+
+
+
+
+  /**
+   * Los datos obligatorios de esta pestaña: de quién son, qué hay que advertir
+   * antes de tocarlos y qué propuestas tienen encima. La lógica vive en un solo
+   * sitio; aquí solo se enchufa el evento y quien lo está mirando.
+   */
+  readonly mandatory = new MandatoryFields(
+    () => this.event(),
+    () => this.sessionService.actor(),
+    patch => this.patch.emit(patch)
+  );
+
+  /**
+   * Si este actor puede escribir aquí.
+   *
+   * Un manager siempre puede —para eso está el aviso de intervención—; el staff
+   * y los administradores solo dentro de la disquera que responde por el punto,
+   * porque no tienen a quién responderle del dato de otra.
+   */
+  isTaskUnlocked(ref: string): boolean {
+    // Cerrado solo mientras falte confirmar la intervención, y solo para quien
+    // puede confirmarla. El staff de otra disquera no tiene esa puerta.
+    if (!this.mandatory.locked(ref)) return true;
+    return false;
   }
 
+  /** Deja escrito que un manager ajeno se metió a resolver este punto. */
   onInterveneTask(task: ResolvedTask): void {
-    const actor = this.sessionService.actor();
-    const now = new Date().toISOString().slice(0, 16);
-
-    const updatedTasks = (this.event().tasks || []).map(t => {
-      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
-        return {
-          ...t,
-          intervenedBy: actor,
-          completedBy: actor,
-          completedAt: now,
-          status: 'completada' as const
-        };
-      }
-      return t;
-    });
-
-    this.patch.emit({ tasks: updatedTasks });
+    this.patch.emit(markIntervention(this.event(), task, this.sessionService.actor()));
   }
 
-  onAcceptProposalTask(task: ResolvedTask): void {
-    const prop = task.pendingChangeProposal;
-    if (!prop) return;
 
-    const patchData = prop.proposedChanges || {};
-    const updatedTasks = (this.event().tasks || []).map(t => {
-      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
-        return {
-          ...t,
-          pendingChangeProposal: {
-            ...prop,
-            status: 'aceptada' as const,
-            respondedAt: new Date().toISOString()
-          }
-        };
-      }
-      return t;
-    });
-
-    this.patch.emit({ ...patchData, tasks: updatedTasks });
+  /**
+   * La respuesta del dueño de este grupo, con su motivo.
+   *
+   * El estado vive en el propio slot y el motivo en la ronda de revisión, atados por el
+   * grupo. Estaban separados porque el motivo se leía en otra pestaña; ahora que
+   * esa pestaña no existe, se juntan aquí, que es donde importan.
+   */
+  approvalOf(slot: EventLineupSlot): EventApproval | undefined {
+    // Las respuestas cuelgan de la ronda de revisión en curso, no del evento.
+    return approvals(this.event()).find(a => a.groupId === slot.groupId);
   }
 
-  onRejectProposalTask(task: ResolvedTask): void {
-    const prop = task.pendingChangeProposal;
-    if (!prop) return;
-
-    const updatedTasks = (this.event().tasks || []).map(t => {
-      if (t.id === task.id || t.checklistItemId === task.checklistItemId) {
-        return {
-          ...t,
-          pendingChangeProposal: {
-            ...prop,
-            status: 'rechazada' as const,
-            respondedAt: new Date().toISOString()
-          }
-        };
-      }
-      return t;
-    });
-
-    this.patch.emit({ tasks: updatedTasks });
-  }
-
-  getProposalNotice(checklistItemId: string): string | null {
-    const actorMgr = this.sessionService.actor().managerName;
-    const tasks = resolveTasks(this.event());
-    const task = tasks.find(t =>
-      t.checklistItemId === checklistItemId ||
-      t.formSectionRef === checklistItemId ||
-      t.id === `task-sys-${checklistItemId}` ||
-      (checklistItemId === 'lineup' && (t.checklistItemId === 'lineup' || t.formSectionRef === 'lineup' || t.formSectionRef === 'cartel'))
-    );
-
-    if (!task || !task.done) return null;
-
-    const ownerMgr = task.completedBy?.managerName || task.assignedManager || this.event().ownerManagerName || this.event().createdBy;
-    const isOwner = ownerMgr === actorMgr;
-
-    if (!isOwner) {
-      return `Esta tarea obligatoria fue completada por ${ownerMgr}. Si modificas este dato, se le enviará una propuesta de cambio que el encargado deberá aprobar o rechazar para que se aplique al expediente.`;
-    }
-
-    return null;
-  }
 }
