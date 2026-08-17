@@ -13,18 +13,18 @@ import { money } from '../finance-metrics';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div class="w-full max-w-lg rounded-3xl bg-surface-container border border-outline-variant/30 shadow-2xl p-6 space-y-5">
+      <div class="w-full max-w-lg rounded-3xl bg-[#1A1A1A] border border-white/10 shadow-2xl p-6 space-y-5">
 
         <!-- Encabezado -->
-        <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
           <div class="flex items-center gap-2.5">
-            <span class="w-9 h-9 rounded-2xl flex items-center justify-center material-symbols-outlined text-xl"
+            <span class="w-9 h-9 rounded-2xl flex items-center justify-center material-symbols-outlined text-xl shadow-inner"
               [class]="mode() === 'cobro' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'">
               {{ mode() === 'cobro' ? 'point_of_sale' : 'send_money' }}
             </span>
             <div>
-              <h3 class="text-base font-black text-on-surface">
-                {{ mode() === 'cobro' ? 'Registrar Cobro de Cliente' : 'Dispersar Pago a Proveedor / Artista' }}
+              <h3 class="text-base font-black text-on-surface font-['Epilogue']">
+                {{ mode() === 'cobro' ? 'Registrar Cobranza de Cliente' : 'Dispersar Liquidación a Proveedor / Talento' }}
               </h3>
               <p class="text-[11px] text-outline font-mono">{{ targetId() }}</p>
             </div>
@@ -32,24 +32,24 @@ import { money } from '../finance-metrics';
           <button
             type="button"
             (click)="closed.emit()"
-            class="w-8 h-8 rounded-xl bg-surface-container-high text-outline hover:text-on-surface flex items-center justify-center transition-all"
+            class="w-8 h-8 rounded-xl bg-[#222222] text-outline hover:text-on-surface flex items-center justify-center transition-all cursor-pointer"
           >
             <span class="material-symbols-outlined text-base">close</span>
           </button>
         </div>
 
         <!-- Resumen de la Cuenta -->
-        <div class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-2 text-xs">
+        <div class="p-4 rounded-2xl bg-[#141414] border border-white/5 space-y-2 text-xs">
           <div class="flex justify-between">
-            <span class="text-outline">Concepto:</span>
+            <span class="text-outline font-['Epilogue']">Concepto / Glosa:</span>
             <span class="font-bold text-on-surface text-right truncate max-w-xs">{{ concept() }}</span>
           </div>
           <div class="flex justify-between">
-            <span class="text-outline">{{ mode() === 'cobro' ? 'Cliente / Deudor:' : 'Beneficiario:' }}</span>
+            <span class="text-outline font-['Epilogue']">{{ mode() === 'cobro' ? 'Cliente / Deudor:' : 'Beneficiario:' }}</span>
             <span class="font-medium text-primary">{{ entityName() }}</span>
           </div>
-          <div class="flex justify-between border-t border-outline-variant/20 pt-2 font-mono">
-            <span class="text-outline">Saldo Pendiente:</span>
+          <div class="flex justify-between border-t border-white/10 pt-2 font-mono">
+            <span class="text-outline font-['Epilogue']">Saldo Pendiente:</span>
             <span class="font-black text-sm" [class]="mode() === 'cobro' ? 'text-amber-300' : 'text-rose-400'">
               {{ money(pendingAmount()) }}
             </span>
@@ -60,25 +60,25 @@ import { money } from '../finance-metrics';
         <div class="space-y-4 text-xs">
           <!-- Monto a Aplicar -->
           <div>
-            <label class="font-bold text-outline uppercase text-[10px] block mb-1">Monto a Aplicar (MXN)</label>
+            <label class="font-bold text-outline uppercase text-[10px] block mb-1 font-['Epilogue']">Monto a Aplicar (MXN)</label>
             <input
               type="number"
               [ngModel]="paymentAmount()"
               (ngModelChange)="paymentAmount.set($event)"
               placeholder="0.00"
-              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-2 text-on-surface font-mono font-bold text-sm focus:outline-none focus:border-primary"
+              class="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-on-surface font-mono font-bold text-sm focus:outline-none focus:border-primary"
             />
           </div>
 
           <!-- Cuenta Bancaria -->
           <div>
-            <label class="font-bold text-outline uppercase text-[10px] block mb-1">
-              {{ mode() === 'cobro' ? 'Cuenta Receptora' : 'Cuenta de Origen de Fondos' }}
+            <label class="font-bold text-outline uppercase text-[10px] block mb-1 font-['Epilogue']">
+              {{ mode() === 'cobro' ? 'Cuenta Receptora de Fondos' : 'Cuenta de Origen de Fondos' }}
             </label>
             <select
               [ngModel]="selectedAccountId()"
               (ngModelChange)="selectedAccountId.set($event)"
-              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-2 text-on-surface focus:outline-none focus:border-primary"
+              class="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-on-surface focus:outline-none focus:border-primary"
             >
               @for (acc of accounts(); track acc.id) {
                 <option [value]="acc.id">{{ acc.name }} · Saldo: {{ money(acc.balance) }}</option>
@@ -88,23 +88,23 @@ import { money } from '../finance-metrics';
 
           <!-- Clave SPEI / Comprobante -->
           <div>
-            <label class="font-bold text-outline uppercase text-[10px] block mb-1">Clave de Rastreo SPEI / Folio Bancario</label>
+            <label class="font-bold text-outline uppercase text-[10px] block mb-1 font-['Epilogue']">Clave de Rastreo SPEI / Folio Bancario</label>
             <input
               type="text"
               [ngModel]="reference()"
               (ngModelChange)="reference.set($event)"
               placeholder="Ej. SPEI-BANCO-2026-991"
-              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-2 text-on-surface font-mono focus:outline-none focus:border-primary"
+              class="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-on-surface font-mono focus:outline-none focus:border-primary"
             />
           </div>
         </div>
 
         <!-- Botones de Acción -->
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
           <button
             type="button"
             (click)="closed.emit()"
-            class="px-4 py-2.5 rounded-xl bg-surface-container-high text-outline text-xs font-bold hover:text-on-surface"
+            class="px-4 py-2.5 rounded-xl bg-[#222222] text-outline text-xs font-bold hover:text-on-surface cursor-pointer font-['Epilogue']"
           >
             Cancelar
           </button>
@@ -112,12 +112,12 @@ import { money } from '../finance-metrics';
             type="button"
             (click)="confirm()"
             [disabled]="!isValid()"
-            class="px-5 py-2.5 rounded-xl text-xs font-black shadow-lg transition-all disabled:opacity-50 disabled:pointer-events-none"
+            class="px-5 py-2.5 rounded-xl text-xs font-black shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-['Epilogue']"
             [class]="mode() === 'cobro'
-              ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-emerald-500/20'
-              : 'bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20'"
+              ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black shadow-emerald-500/20'
+              : 'bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-white shadow-rose-500/20'"
           >
-            Confirmar y Aplicar {{ mode() === 'cobro' ? 'Cobro' : 'Pago' }}
+            Confirmar y Aplicar {{ mode() === 'cobro' ? 'Cobro' : 'Dispersión' }}
           </button>
         </div>
 

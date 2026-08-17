@@ -16,15 +16,15 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
     <div class="space-y-6 animate-fade-in">
 
       <!-- ENCABEZADO -->
-      <div class="p-5 rounded-3xl bg-surface-container/80 border border-outline-variant/30 backdrop-blur-xl flex items-center justify-between gap-4">
+      <div class="p-5 rounded-3xl bg-[#181818] border border-white/10 shadow-xl flex items-center justify-between gap-4">
         <div>
-          <div class="flex items-center gap-2">
-            <span class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center material-symbols-outlined text-lg">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center material-symbols-outlined text-lg shadow-inner">
               event_upcoming
             </span>
-            <h2 class="text-base sm:text-lg font-black text-on-surface">Agenda Cronológica de Operaciones</h2>
+            <h2 class="text-base sm:text-lg font-black text-on-surface font-['Epilogue']">Cronograma Operativo & Control de Vencimientos</h2>
           </div>
-          <p class="text-xs text-outline mt-0.5">Control de fechas límite de entrega, llamados a técnicos y compromisos del equipo</p>
+          <p class="text-xs text-outline mt-0.5 font-['Epilogue']">Control de hitos críticos de entrega, montajes en recintos, llamados a staff técnico y plazos contractuales</p>
         </div>
       </div>
 
@@ -32,16 +32,16 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
       @if (overdueTasks().length > 0) {
         <div class="p-6 rounded-3xl bg-rose-950/20 border border-rose-500/40 shadow-xl space-y-4">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 flex items-center justify-center material-symbols-outlined text-lg animate-pulse">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 flex items-center justify-center material-symbols-outlined text-lg animate-pulse shadow-inner">
                 warning
               </span>
               <div>
-                <h3 class="text-sm font-black text-rose-300">Tareas Vencidas (Atención Inmediata)</h3>
-                <p class="text-[11px] text-rose-200/80">Requeridas antes de hoy y aún no completadas</p>
+                <h3 class="text-sm font-black text-rose-300 font-['Epilogue']">Asignaciones en Mora Operativa</h3>
+                <p class="text-[11px] text-rose-200/80 font-['Epilogue']">Hitos con fecha límite excedida que requieren escalamiento o resolución prioritaria</p>
               </div>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-black bg-rose-500/30 text-rose-200">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-black bg-rose-500/30 text-rose-200 border border-rose-500/50">
               {{ overdueTasks().length }}
             </span>
           </div>
@@ -50,18 +50,18 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
             @for (tsk of overdueTasks(); track tsk.id) {
               <div
                 (click)="openDetail.emit(tsk)"
-                class="p-4 rounded-2xl bg-surface-container-high border border-rose-500/30 hover:border-rose-400 transition-all cursor-pointer space-y-2 group"
+                class="p-4 rounded-2xl bg-[#141414] border border-rose-500/30 hover:border-rose-400 transition-all cursor-pointer space-y-2 group shadow-md"
               >
                 <div class="flex justify-between items-center text-xs">
-                  <span class="font-mono font-bold text-rose-400">Venció: {{ tsk.dueDate }}</span>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-black border uppercase" [class]="getPriorityBadgeClass(tsk.priority)">
+                  <span class="font-mono font-bold text-rose-400">Expiró: {{ tsk.dueDate }}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-black border uppercase font-mono" [class]="getPriorityBadgeClass(tsk.priority)">
                     {{ tsk.priority }}
                   </span>
                 </div>
-                <h4 class="text-xs sm:text-sm font-black text-on-surface group-hover:text-rose-300 transition-colors">{{ tsk.title }}</h4>
-                <div class="flex justify-between text-[11px] text-outline pt-2 border-t border-outline-variant/20">
-                  <span>Resp: <b class="text-on-surface">{{ tsk.assignedTo }}</b></span>
-                  <span class="text-rose-300 font-bold">{{ tsk.status }}</span>
+                <h4 class="text-xs sm:text-sm font-black text-on-surface group-hover:text-rose-300 transition-colors font-['Epilogue']">{{ tsk.title }}</h4>
+                <div class="flex justify-between text-[11px] text-outline pt-2 border-t border-white/5 font-['Epilogue']">
+                  <span>Responsable: <b class="text-on-surface font-sans">{{ tsk.assignedTo }}</b></span>
+                  <span class="text-rose-300 font-bold font-mono">{{ tsk.status }}</span>
                 </div>
               </div>
             }
@@ -70,42 +70,42 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
       }
 
       <!-- ─── 2. TAREAS PARA HOY & ESTA SEMANA ─── -->
-      <div class="p-6 rounded-3xl bg-surface-container border border-outline-variant/30 shadow-xl space-y-4">
-        <div class="flex items-center gap-2 border-b border-outline-variant/20 pb-3">
+      <div class="p-6 rounded-3xl bg-[#181818] border border-white/10 shadow-xl space-y-4">
+        <div class="flex items-center gap-2 border-b border-white/10 pb-3">
           <span class="material-symbols-outlined text-primary text-lg">today</span>
-          <h3 class="text-sm font-black text-on-surface">Compromisos Próximos & Llamados de la Semana</h3>
+          <h3 class="text-sm font-black text-on-surface font-['Epilogue']">Hitos y Vencimientos Programados</h3>
         </div>
 
         <div class="space-y-3">
           @for (tsk of upcomingTasks(); track tsk.id) {
             <div
               (click)="openDetail.emit(tsk)"
-              class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/20 hover:border-primary/50 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+              class="p-4 rounded-2xl bg-[#141414] border border-white/5 hover:border-primary/50 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group shadow-sm"
             >
               <div class="space-y-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border" [class]="getCategoryBadgeClass(tsk.category)">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold border font-['Epilogue']" [class]="getCategoryBadgeClass(tsk.category)">
                     {{ tsk.category || 'General' }}
                   </span>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-black border uppercase" [class]="getPriorityBadgeClass(tsk.priority)">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-black border uppercase font-mono" [class]="getPriorityBadgeClass(tsk.priority)">
                     {{ tsk.priority }}
                   </span>
                   @if (tsk.relatedTitle) {
-                    <span class="text-[11px] text-primary font-bold">· {{ tsk.relatedTitle }}</span>
+                    <span class="text-[11px] text-primary font-bold font-['Epilogue']">· {{ tsk.relatedTitle }}</span>
                   }
                 </div>
-                <h4 class="text-xs sm:text-sm font-black text-on-surface group-hover:text-primary transition-colors">{{ tsk.title }}</h4>
-                <p class="text-[11px] text-outline line-clamp-1">{{ tsk.description }}</p>
+                <h4 class="text-xs sm:text-sm font-black text-on-surface group-hover:text-primary transition-colors font-['Epilogue']">{{ tsk.title }}</h4>
+                <p class="text-[11px] text-outline line-clamp-1 font-['Epilogue']">{{ tsk.description }}</p>
               </div>
 
               <div class="flex items-center gap-4 text-xs font-mono shrink-0 self-end sm:self-auto">
                 <div class="text-right">
                   <span class="font-bold text-on-surface block">{{ tsk.dueDate }}</span>
-                  <span class="text-[10px] text-outline font-sans">{{ tsk.dueTime || 'Horario Abierto' }}</span>
+                  <span class="text-[10px] text-outline font-sans font-['Epilogue']">{{ tsk.dueTime || 'Horario Abierto' }}</span>
                 </div>
-                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container border border-outline-variant/30">
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1A1A1A] border border-white/10 shadow-sm">
                   <span [class]="getStatusDotClass(tsk.status)" class="w-2.5 h-2.5 rounded-full"></span>
-                  <span class="text-xs font-bold text-on-surface font-sans">{{ tsk.status }}</span>
+                  <span class="text-xs font-bold text-on-surface font-sans font-['Epilogue']">{{ tsk.status }}</span>
                 </div>
               </div>
             </div>

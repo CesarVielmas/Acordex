@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#111111] text-[#f5f5f5] min-h-screen font-body-md text-body-md antialiased;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(242, 202, 80, 0.03) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(210, 177, 0, 0.02) 0px, transparent 50%);
+    background-attachment: fixed;
+    
+    /* --- ULTRA PREMIUM GLOBAL SCROLLBAR --- */
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(242, 202, 80, 0.25);
+      border-radius: 100px;
+      transition: all 0.4s ease;
+    }
+
+    &:hover::-webkit-scrollbar-thumb {
+      background: rgba(242, 202, 80, 0.5);
+      box-shadow: 0 0 12px rgba(242, 202, 80, 0.3);
+    }
+
+    &::-webkit-scrollbar-thumb:active {
+      background: rgba(242, 202, 80, 0.9);
+    }
+  }
+
+  /* Firefox Support */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(242, 202, 80, 0.3) transparent;
+  }
+
+  /* Material Symbols Configuration */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .material-symbols-fill {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-scale-up {
+    animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2s infinite ease-in-out;
+  }
+
+  /* Luxury Gold Glow Cards */
+  .luxury-card {
+    background: linear-gradient(135deg, rgba(35, 34, 34, 0.85) 0%, rgba(22, 22, 22, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    backdrop-filter: blur(16px);
+  }
+
+  .luxury-card:hover {
+    border-color: rgba(242, 202, 80, 0.3);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), 0 0 25px rgba(242, 202, 80, 0.08);
+  }
+
+  .luxury-gold-btn {
+    background: linear-gradient(135deg, #f2ca50 0%, #e6bd35 50%, #cca01a 100%);
+    color: #111111;
+    font-weight: 800;
+    box-shadow: 0 4px 20px rgba(242, 202, 80, 0.3);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .luxury-gold-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 25px rgba(242, 202, 80, 0.45);
+    filter: brightness(1.05);
+  }
+
+  .luxury-gold-btn:active {
+    transform: scale(0.97);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(242, 202, 80, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(242, 202, 80, 0.55);
+  }
+}
+
+/* Modal Shells & Backdrop */
+.group-app-backdrop {
+  animation: fadeIn 200ms ease-out forwards;
+  background: rgba(3, 7, 18, 0.88);
+  backdrop-filter: blur(12px);
+}
+
+.group-app-modal {
+  animation: scaleUp 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(242, 202, 80, 0.1), transparent 35%),
+    radial-gradient(circle at 100% 100%, rgba(210, 177, 0, 0.07), transparent 35%),
+    #181717;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+/* Stories gradient ring */
+.story-ring-gradient {
+  background: linear-gradient(135deg, #f2ca50 0%, #ff9a8a 50%, #f2cc00 100%);
+  padding: 2.5px;
+  border-radius: 9999px;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.story-ring-gradient:hover {
+  transform: scale(1.06);
+}
+
+.story-ring-seen {
+  background: rgba(153, 144, 124, 0.35);
+  padding: 2px;
+  border-radius: 9999px;
+  display: inline-block;
+}

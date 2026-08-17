@@ -22,7 +22,7 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
     <div class="space-y-6 animate-fade-in">
 
       <!-- ─── BARRA DE FILTROS & BÚSQUEDA ─── -->
-      <div class="p-4 sm:p-5 rounded-3xl bg-surface-container/80 border border-outline-variant/30 backdrop-blur-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="p-4 sm:p-5 rounded-3xl bg-[#181818] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
 
         <!-- Buscador -->
         <div class="relative flex-1 max-w-md">
@@ -31,8 +31,8 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
             type="text"
             [ngModel]="searchQuery()"
             (ngModelChange)="searchQuery.set($event)"
-            placeholder="Buscar por título, responsable o evento..."
-            class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-all"
+            placeholder="Buscar por asignación, responsable o evento..."
+            class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#141414] border border-white/10 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-primary transition-all font-['Epilogue']"
           />
         </div>
 
@@ -43,7 +43,7 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
           <select
             [ngModel]="selectedCategory()"
             (ngModelChange)="selectedCategory.set($event)"
-            class="px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface text-xs focus:outline-none focus:border-primary"
+            class="px-3 py-2 rounded-xl bg-[#141414] border border-white/10 text-on-surface text-xs focus:outline-none focus:border-primary font-['Epilogue']"
           >
             <option value="ALL">Todas las Categorías</option>
             <option value="Producción & Escenario">Producción & Escenario</option>
@@ -59,13 +59,13 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
           <select
             [ngModel]="selectedPriority()"
             (ngModelChange)="selectedPriority.set($event)"
-            class="px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface text-xs focus:outline-none focus:border-primary"
+            class="px-3 py-2 rounded-xl bg-[#141414] border border-white/10 text-on-surface text-xs focus:outline-none focus:border-primary font-['Epilogue']"
           >
             <option value="ALL">Todas las Prioridades</option>
-            <option value="Urgente">Urgente</option>
-            <option value="Alta">Alta</option>
-            <option value="Media">Media</option>
-            <option value="Baja">Baja</option>
+            <option value="Urgente">Prioridad Crítica / Urgente</option>
+            <option value="Alta">Prioridad Alta</option>
+            <option value="Media">Prioridad Media</option>
+            <option value="Baja">Prioridad Ordinaria / Baja</option>
           </select>
 
           <!-- Botón de Limpiar Filtros -->
@@ -73,7 +73,7 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
             <button
               type="button"
               (click)="clearFilters()"
-              class="px-3 py-2 rounded-xl bg-surface-container-highest text-outline hover:text-on-surface font-bold text-xs transition-all"
+              class="px-3 py-2 rounded-xl bg-[#222222] text-outline hover:text-on-surface font-bold text-xs transition-all cursor-pointer font-['Epilogue']"
             >
               Limpiar
             </button>
@@ -85,15 +85,15 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
       <!-- ─── 4 COLUMNAS KANBAN ─── -->
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
         @for (col of columns; track col.status) {
-          <div class="bg-surface-container/70 rounded-3xl p-4 sm:p-5 border border-outline-variant/30 flex flex-col min-h-[550px] shadow-lg">
+          <div class="bg-[#181818] rounded-3xl p-4 sm:p-5 border border-white/10 flex flex-col min-h-[550px] shadow-xl">
 
             <!-- Encabezado de Columna -->
-            <div class="flex items-center justify-between pb-3 mb-4 border-b border-outline-variant/20">
-              <h3 class="text-sm font-black text-on-surface flex items-center gap-2">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-white/10">
+              <h3 class="text-sm font-black text-on-surface flex items-center gap-2 font-['Epilogue']">
                 <span [class]="getStatusDotClass(col.status)" class="w-3 h-3 rounded-full"></span>
                 {{ col.title }}
               </h3>
-              <span class="text-xs font-mono font-black px-2.5 py-0.5 rounded-full bg-surface-container-high text-primary border border-outline-variant/30">
+              <span class="text-xs font-mono font-black px-2.5 py-0.5 rounded-full bg-[#141414] text-primary border border-white/10 shadow-sm">
                 {{ getFilteredTasksByStatus(col.status).length }}
               </span>
             </div>
@@ -103,42 +103,42 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
               @for (tsk of getFilteredTasksByStatus(col.status); track tsk.id) {
                 <div
                   (click)="openDetail.emit(tsk)"
-                  class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 hover:border-primary/50 transition-all shadow-md space-y-3 group cursor-pointer hover:scale-[1.01]"
+                  class="p-4 rounded-2xl bg-[#141414] border border-white/5 hover:border-primary/50 transition-all shadow-md space-y-3 group cursor-pointer hover:scale-[1.01]"
                 >
 
                   <!-- Badges Superiores -->
                   <div class="flex items-center justify-between gap-1.5 flex-wrap">
                     @if (tsk.category) {
-                      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border" [class]="getCategoryBadgeClass(tsk.category)">
+                      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border font-['Epilogue']" [class]="getCategoryBadgeClass(tsk.category)">
                         {{ tsk.category }}
                       </span>
                     }
 
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1 font-mono">
                       <span class="px-2 py-0.5 rounded-md text-[10px] font-black border uppercase" [class]="getPriorityBadgeClass(tsk.priority)">
                         {{ tsk.priority }}
                       </span>
                       @if (tsk.privacy === 'Privada') {
-                        <span class="w-5 h-5 rounded bg-rose-500/20 text-rose-300 flex items-center justify-center material-symbols-outlined text-xs" title="Solo Encargado">lock</span>
+                        <span class="w-5 h-5 rounded bg-rose-500/20 text-rose-300 flex items-center justify-center material-symbols-outlined text-xs shadow-inner" title="Confidencial Encargado">lock</span>
                       } @else if (tsk.privacy === 'Delicada') {
-                        <span class="w-5 h-5 rounded bg-amber-500/20 text-amber-300 flex items-center justify-center material-symbols-outlined text-xs" title="Encargado y Admin">shield</span>
+                        <span class="w-5 h-5 rounded bg-amber-500/20 text-amber-300 flex items-center justify-center material-symbols-outlined text-xs shadow-inner" title="Encargado y Admin">shield</span>
                       }
                     </div>
                   </div>
 
                   <!-- Título y Descripción -->
                   <div>
-                    <h4 class="text-xs sm:text-sm font-black text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+                    <h4 class="text-xs sm:text-sm font-black text-on-surface group-hover:text-primary transition-colors line-clamp-2 font-['Epilogue']">
                       {{ tsk.title }}
                     </h4>
-                    <p class="text-[11px] text-outline mt-1 line-clamp-2 leading-relaxed">
+                    <p class="text-[11px] text-outline mt-1 line-clamp-2 leading-relaxed font-['Epilogue']">
                       {{ tsk.description }}
                     </p>
                   </div>
 
                   <!-- Proyecto / Evento Vinculado -->
                   @if (tsk.relatedTitle || tsk.eventName) {
-                    <div class="p-2 rounded-xl bg-surface-container border border-outline-variant/20 flex items-center gap-1.5 text-[11px] text-primary font-bold truncate">
+                    <div class="p-2 rounded-xl bg-[#1A1A1A] border border-white/5 flex items-center gap-1.5 text-[11px] text-primary font-bold truncate font-['Epilogue']">
                       <span class="material-symbols-outlined text-xs shrink-0">
                         {{ tsk.relatedToType === 'cotizacion' ? 'celebration' : (tsk.relatedToType === 'grupo' ? 'mic' : 'confirmation_number') }}
                       </span>
@@ -150,12 +150,12 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
                   @if (tsk.subtasks && tsk.subtasks.length > 0) {
                     <div class="space-y-1">
                       <div class="flex justify-between text-[10px] font-mono text-outline">
-                        <span>Checklist:</span>
+                        <span class="font-['Epilogue']">Hitos / Checklist:</span>
                         <span>{{ getCompletedSubtasksCount(tsk) }}/{{ tsk.subtasks.length }}</span>
                       </div>
-                      <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                      <div class="w-full h-1.5 bg-[#202020] rounded-full overflow-hidden border border-white/5">
                         <div
-                          class="h-full bg-emerald-400 rounded-full"
+                          class="h-full bg-emerald-400 rounded-full shadow-sm"
                           [style.width.%]="(getCompletedSubtasksCount(tsk) / tsk.subtasks.length) * 100"
                         ></div>
                       </div>
@@ -163,17 +163,17 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
                   }
 
                   <!-- Card Footer -->
-                  <div class="pt-2.5 border-t border-outline-variant/20 flex items-center justify-between gap-2 text-xs">
+                  <div class="pt-2.5 border-t border-white/5 flex items-center justify-between gap-2 text-xs">
                     <div class="flex items-center gap-1.5 min-w-0">
-                      <span class="w-6 h-6 rounded-full bg-surface-container text-primary font-black text-[10px] flex items-center justify-center shrink-0 border border-outline-variant/30">
+                      <span class="w-6 h-6 rounded-full bg-[#202020] text-primary font-black text-[10px] flex items-center justify-center shrink-0 border border-white/10 font-mono shadow-sm">
                         {{ tsk.assignedTo.charAt(0) }}
                       </span>
-                      <span class="text-[10px] text-outline font-medium truncate">{{ tsk.assignedTo }}</span>
+                      <span class="text-[10px] text-outline font-medium truncate font-['Epilogue']">{{ tsk.assignedTo }}</span>
                     </div>
 
                     <div class="flex items-center gap-2 font-mono text-[10px] text-outline shrink-0">
                       @if (tsk.comments && tsk.comments.length > 0) {
-                        <span class="flex items-center gap-0.5 text-primary">
+                        <span class="flex items-center gap-0.5 text-primary font-bold">
                           <span class="material-symbols-outlined text-xs">comment</span> {{ tsk.comments.length }}
                         </span>
                       }
@@ -190,7 +190,7 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
                         type="button"
                         (click)="changeStatus.emit({ taskId: tsk.id, status: 'Pendiente' })"
                         title="Mover a Pendiente"
-                        class="p-1 rounded-lg bg-surface-container hover:bg-surface-container-highest text-outline hover:text-amber-400 transition-all text-xs"
+                        class="p-1.5 rounded-lg bg-[#202020] hover:bg-[#282828] text-outline hover:text-amber-400 transition-all text-xs cursor-pointer"
                       >
                         <span class="material-symbols-outlined text-sm">schedule</span>
                       </button>
@@ -200,7 +200,7 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
                         type="button"
                         (click)="changeStatus.emit({ taskId: tsk.id, status: 'En Proceso' })"
                         title="Mover a En Proceso"
-                        class="p-1 rounded-lg bg-surface-container hover:bg-surface-container-highest text-outline hover:text-cyan-400 transition-all text-xs"
+                        class="p-1.5 rounded-lg bg-[#202020] hover:bg-[#282828] text-outline hover:text-cyan-400 transition-all text-xs cursor-pointer"
                       >
                         <span class="material-symbols-outlined text-sm">engineering</span>
                       </button>
@@ -210,7 +210,7 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
                         type="button"
                         (click)="changeStatus.emit({ taskId: tsk.id, status: 'En Revisión' })"
                         title="Enviar a Revisión"
-                        class="p-1 rounded-lg bg-surface-container hover:bg-surface-container-highest text-outline hover:text-purple-400 transition-all text-xs"
+                        class="p-1.5 rounded-lg bg-[#202020] hover:bg-[#282828] text-outline hover:text-purple-400 transition-all text-xs cursor-pointer"
                       >
                         <span class="material-symbols-outlined text-sm">rule</span>
                       </button>
@@ -220,7 +220,7 @@ import { getCategoryBadgeClass, getPriorityBadgeClass, getStatusDotClass } from 
                         type="button"
                         (click)="changeStatus.emit({ taskId: tsk.id, status: 'Completada' })"
                         title="Marcar Completada"
-                        class="p-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black transition-all text-xs"
+                        class="p-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black transition-all text-xs cursor-pointer"
                       >
                         <span class="material-symbols-outlined text-sm">check</span>
                       </button>

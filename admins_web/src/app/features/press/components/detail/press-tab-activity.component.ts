@@ -133,7 +133,16 @@ export class PressTabActivityComponent {
   readonly meta = pressStateMeta;
 
   readonly timeline = computed(() => this.event().timeline || []);
-  readonly activity = computed(() => [...(this.event().activity || [])].reverse());
+
+  /**
+   * La bitácora, lo más reciente primero.
+   *
+   * Al revés que la línea de tiempo, que se lee como una historia de principio a
+   * fin. Aquí no se viene a leer una historia: se viene a averiguar quién tocó
+   * esto **hace un rato**, y ese movimiento tiene que estar arriba.
+   */
+  readonly activity = computed(() =>
+    [...(this.event().activity || [])].sort((a, b) => b.at.localeCompare(a.at)));
 
   when(iso?: string): string {
     return stampLabel(iso);

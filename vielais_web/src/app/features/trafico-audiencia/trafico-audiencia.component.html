@@ -1,0 +1,139 @@
+<div class="space-y-8 max-w-7xl mx-auto pb-20 animate-fade-in select-none">
+  
+  <!-- ================= TOP HEADER BAR ================= -->
+  <div class="cyber-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10">
+      <div class="flex items-center gap-2">
+        <span class="rounded-md bg-cyan-500/20 px-2 py-0.5 text-[10px] font-mono font-black text-cyan-300 border border-cyan-500/30">
+          AUDIENCE & CONVERSION TELEMETRY
+        </span>
+      </div>
+      <h1 class="font-['Epilogue'] text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight mt-1">
+        Tráfico Diario & Embudo de Conversión
+      </h1>
+      <p class="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl leading-relaxed">
+        Telemetría de navegación en tiempo real de clients_web: visitantes únicos, canales de adquisición, retención por página y tasa de conversión de reservas.
+      </p>
+    </div>
+
+    <div class="relative z-10 rounded-2xl bg-white/[0.04] p-4 border border-white/10 flex items-center gap-3.5">
+      <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-300">
+        <span class="material-symbols-outlined text-2xl">group</span>
+      </div>
+      <div>
+        <span class="text-xs font-mono font-bold text-neutral-400 block">Visitantes Hoy</span>
+        <span class="font-['Epilogue'] text-xl font-black text-white">{{ metrics.trafficAnalytics().todayVisitors | number }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 4 TRAFFIC TELEMETRY METRICS ================= -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div class="cyber-card rounded-3xl p-6 space-y-2">
+      <span class="text-xs font-mono font-bold text-neutral-400 uppercase">Páginas Vistas Hoy</span>
+      <div class="font-['Epilogue'] text-3xl font-black text-white">
+        {{ metrics.trafficAnalytics().todayPageviews | number }}
+      </div>
+      <span class="text-[11px] font-mono text-cyan-400 block">4.9 páginas / usuario</span>
+    </div>
+
+    <div class="cyber-card rounded-3xl p-6 space-y-2">
+      <span class="text-xs font-mono font-bold text-neutral-400 uppercase">Duración Promedio</span>
+      <div class="font-['Epilogue'] text-3xl font-black text-white">
+        4m 24s
+      </div>
+      <span class="text-[11px] font-mono text-emerald-400 block">Alta retención de catálogo</span>
+    </div>
+
+    <div class="cyber-card rounded-3xl p-6 space-y-2">
+      <span class="text-xs font-mono font-bold text-neutral-400 uppercase">Tasa de Rebote</span>
+      <div class="font-['Epilogue'] text-3xl font-black text-white">
+        {{ metrics.trafficAnalytics().bounceRatePercent }}%
+      </div>
+      <span class="text-[11px] font-mono text-cyan-300 block">Tráfico calificado</span>
+    </div>
+
+    <div class="cyber-card rounded-3xl p-6 space-y-2">
+      <span class="text-xs font-mono font-bold text-neutral-400 uppercase">Dispositivos Móviles</span>
+      <div class="font-['Epilogue'] text-3xl font-black text-white">
+        {{ metrics.trafficAnalytics().mobileSharePercent }}%
+      </div>
+      <span class="text-[11px] font-mono text-neutral-400 block">25.8% Desktop</span>
+    </div>
+  </div>
+
+  <!-- ================= ACQUISITION CHANNELS & REGIONS ================= -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Acquisition Channels -->
+    <div class="cyber-card rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl">
+      <h3 class="font-['Epilogue'] text-base font-black text-white flex items-center gap-2 border-b border-white/10 pb-4">
+        <span class="material-symbols-outlined text-cyan-400">traffic</span>
+        <span>Canales de Adquisición de Tráfico</span>
+      </h3>
+
+      <div class="space-y-4">
+        <div *ngFor="let ch of metrics.trafficAnalytics().channels" class="rounded-2xl bg-white/[0.03] p-4 border border-white/5 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2.5 font-bold text-white">
+              <span class="material-symbols-outlined text-primary">{{ ch.icon }}</span>
+              <span>{{ ch.channel }}</span>
+            </div>
+            <div class="font-mono text-right">
+              <span class="font-black text-white">{{ ch.visitors | number }}</span>
+              <span class="text-neutral-400 text-[11px]"> ({{ ch.sharePercent }}%)</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
+            <span>Tasa de Conversión de este canal:</span>
+            <span class="font-bold text-emerald-400">{{ ch.conversionRate }}%</span>
+          </div>
+          <div class="h-2 w-full rounded-full bg-black/50 overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-cyan-500 to-primary rounded-full" [style.width.%]="ch.sharePercent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Geographic Sessions Breakdown -->
+    <div class="cyber-card rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl">
+      <h3 class="font-['Epilogue'] text-base font-black text-white flex items-center gap-2 border-b border-white/10 pb-4">
+        <span class="material-symbols-outlined text-primary">public</span>
+        <span>Regiones Geográficas con Mayor Tráfico</span>
+      </h3>
+
+      <div class="space-y-3">
+        <div *ngFor="let geo of metrics.trafficAnalytics().geoBreakdown" class="rounded-2xl bg-white/[0.02] p-3.5 border border-white/5 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-white text-xs">{{ geo.region }}</div>
+            <div class="text-[10.5px] text-neutral-400">{{ geo.country }} • {{ geo.sessions | number }} sesiones</div>
+          </div>
+          <div class="text-right font-mono">
+            <span class="text-[10px] text-neutral-500 uppercase block">Comisión Generada</span>
+            <span class="text-xs font-black text-primary">${{ geo.commissionGenerated | number }} MXN</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HOURLY TRAFFIC MATRIX ================= -->
+  <div class="cyber-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <h3 class="font-['Epilogue'] text-base font-black text-white">Curva de Tráfico por Hora del Día</h3>
+        <p class="text-xs text-neutral-400 mt-0.5">Picos de visitas y envío de solicitudes de cotización en tiempo real.</p>
+      </div>
+      <span class="font-mono text-xs text-cyan-400 font-bold">Pico: 20:00 hrs (740 usuarios)</span>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-2 text-center text-xs">
+      <div *ngFor="let h of metrics.trafficAnalytics().hourlyTraffic" class="rounded-2xl bg-white/[0.02] p-3 border border-white/5 hover:border-cyan-500/40 transition">
+        <span class="text-[10px] font-mono text-neutral-500 block">{{ h.hour }}</span>
+        <strong class="text-white font-black text-sm my-1 block">{{ h.visitors }}</strong>
+        <span class="text-[9.5px] font-mono text-primary font-bold">{{ h.quotes }} cotiz.</span>
+      </div>
+    </div>
+  </div>
+</div>

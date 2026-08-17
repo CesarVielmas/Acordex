@@ -761,6 +761,81 @@ Su energía sobre el escenario contagia a los asistentes desde el primer minuto 
       ];
     }
 
+    // Carga de cambios en tiempo real desde group_web / admins_web
+    try {
+      const overrideKey = `acordex_band_override_${slug}`;
+      const rawOverride = localStorage.getItem(overrideKey) || localStorage.getItem(`acordex_band_override_${idOrName}`);
+      if (rawOverride) {
+        const override = JSON.parse(rawOverride);
+        bandResult = {
+          ...bandResult,
+          name: override.name || bandResult.name,
+          tag: override.genre || override.tag || bandResult.tag,
+          imageUrl: override.avatarUrl || override.imageUrl || bandResult.imageUrl,
+          heroCoverUrl: override.coverUrl || override.heroCoverUrl || bandResult.heroCoverUrl,
+          bio: override.about || override.bio || bandResult.bio,
+          biographyFull: override.history || override.biographyFull || bandResult.biographyFull,
+          originCity: override.originCity || bandResult.originCity,
+          foundedYear: override.foundedYear || bandResult.foundedYear,
+          managerName: override.managerName || bandResult.managerName,
+          managerPhone: override.bookingPhone || override.managerPhone || bandResult.managerPhone,
+          managerEmail: override.bookingEmail || override.managerEmail || bandResult.managerEmail,
+          officeAddress: override.officeAddress || bandResult.officeAddress,
+          minimumHours: override.minimumHours || bandResult.minimumHours,
+          mixVideoTitle: override.mixVideoTitle || bandResult.mixVideoTitle,
+          mixVideoUrl: override.mixVideoUrl || bandResult.mixVideoUrl,
+          technicalRider: override.audio?.riderRequirements || override.technicalRider || bandResult.technicalRider,
+          socials: { ...bandResult.socials, ...(override.socials || {}) },
+          milestones: override.milestones || bandResult.milestones,
+          awards: override.awards || bandResult.awards,
+          topTracks: override.tracks ? override.tracks.map((t: any, idx: number) => ({
+            id: t.id ? Number(String(t.id).replace(/\D/g, '')) || idx + 1 : idx + 1,
+            title: t.title,
+            genre: t.genre || 'Regional',
+            plays: t.plays || '1.0M',
+            duration: t.durationLabel || t.duration || '3:30',
+            releaseYear: t.releaseYear || '2024',
+            isPopular: t.isPopular ?? true,
+            spotifyUrl: t.spotifyUrl
+          })) : bandResult.topTracks,
+          galleryImages: override.gallery ? override.gallery.map((g: any) => ({
+            url: g.url,
+            caption: g.caption || bandResult.name
+          })) : bandResult.galleryImages,
+          highlightVideos: override.videos ? override.videos.map((v: any) => ({
+            title: v.title,
+            videoUrl: v.videoUrl || 'https://vjs.zencdn.net/v/oceans.mp4',
+            thumbnailUrl: v.thumbnailUrl,
+            duration: v.duration || '3:45'
+          })) : bandResult.highlightVideos,
+          packages: override.packages || bandResult.packages,
+          membersList: override.members ? override.members.map((m: any, idx: number) => ({
+            id: typeof m.id === 'number' ? m.id : idx + 1,
+            name: m.name,
+            role: m.role,
+            instrument: m.instrument || m.role,
+            photoUrl: m.photoUrl,
+            coverPhotoUrl: m.coverPhotoUrl || override.coverUrl || bandResult.heroCoverUrl,
+            bio: m.bio,
+            fullBio: m.fullBio || m.bio,
+            experienceYears: m.experienceYears || 5,
+            age: m.age || 28,
+            hometown: m.hometown || bandResult.originCity,
+            quote: m.quote || '«Música con pasión y entrega.»',
+            galleryPhotos: m.galleryPhotos || [m.photoUrl],
+            videos: m.videos || [],
+            socials: {
+              instagram: m.socials?.instagram ? { url: m.socials.instagram, handle: '@' + (m.socials.instagram.split('/').pop() || m.name) } : undefined,
+              spotify: m.socials?.spotify ? { url: m.socials.spotify } : undefined,
+              tiktok: m.socials?.tiktok ? { url: m.socials.tiktok, handle: '@' + (m.socials.tiktok.split('/').pop() || m.name) } : undefined
+            }
+          })) : bandResult.membersList
+        };
+      }
+    } catch (e) {
+      console.warn('Sync override error in clients_web', e);
+    }
+
     return bandResult;
   }
 

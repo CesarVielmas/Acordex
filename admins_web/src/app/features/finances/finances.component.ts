@@ -107,40 +107,40 @@ export type FinanceTab =
       } @else {
 
         <!-- ─── ENCABEZADO PRINCIPAL ─── -->
-        <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-surface-container-high/90 via-surface-container/80 to-surface-container-high/90 backdrop-blur-xl border border-outline-variant/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
-          <div class="absolute -right-12 -top-12 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-[#1A1A1A] via-[#161616] to-[#121212] backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+          <div class="absolute -right-12 -top-12 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div class="relative z-10 min-w-0">
             <div class="flex items-center gap-3 flex-wrap">
-              <h1 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight">Finanzas & Ganancias de la Disquera</h1>
-              <app-badge label="Control de Tesorería" variant="success" />
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary border border-primary/30">
-                Datos en Vivo Conectados
+              <h1 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight font-['Epilogue']">Control Financiero & Tesorería Ejecutiva</h1>
+              <app-badge label="Módulo de Tesorería" variant="success" />
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary border border-primary/30 shadow-sm">
+                Conexión en Vivo · Operación Principal
               </span>
             </div>
             <p class="text-xs text-outline mt-1 max-w-2xl leading-relaxed">
-              Monitorea en tiempo real todo el dinero que entra por boletos y bodas, los gastos de músicos y sonido, y la ganancia libre para Acordex.
+              Consolidación auditada de ingresos por taquillas y contrataciones privadas, costos directos de talento y producción, y margen operativo neto de Acordex Records.
             </p>
           </div>
 
           <!-- Acciones Rápidas -->
-          <div class="relative z-10 flex items-center gap-2 flex-wrap">
+          <div class="relative z-10 flex items-center gap-2.5 flex-wrap">
             <button
               type="button"
               (click)="openNewTransactionModal.set(true)"
-              class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-primary to-primary-hover text-on-primary text-xs font-black shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5"
+              class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-primary to-primary-hover text-on-primary text-xs font-black shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer font-['Epilogue']"
             >
               <span class="material-symbols-outlined text-base">add_card</span>
-              Registrar Entrada / Salida
+              Registrar Movimiento Contable
             </button>
 
             <button
               type="button"
               (click)="setTab('cashcut')"
-              class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black text-xs font-black shadow-lg shadow-emerald-500/25 transition-all flex items-center gap-1.5"
+              class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black text-xs font-black shadow-lg shadow-emerald-500/25 transition-all flex items-center gap-1.5 cursor-pointer font-['Epilogue']"
             >
               <span class="material-symbols-outlined text-base">receipt_long</span>
-              Hacer Corte de Caja
+              Arqueo de Caja
             </button>
           </div>
         </div>
@@ -154,7 +154,7 @@ export type FinanceTab =
         />
 
         <!-- ─── BARRA DE PESTAÑAS ─── -->
-        <div class="border-b border-outline-variant/30 pb-2">
+        <div class="border-b border-white/10 pb-2">
           <app-tab-pills
             [tabs]="tabOptions"
             [active]="activeTab()"
@@ -164,7 +164,7 @@ export type FinanceTab =
 
         <!-- ─── CONTENIDO DE PESTAÑAS ─── -->
 
-        <!-- 1. GANANCIAS & PÉRDIDAS (BALANCE GENERAL) -->
+        <!-- 1. ESTADO DE RESULTADOS (BALANCE GENERAL P&L) -->
         @if (activeTab() === 'pnl') {
           <app-finance-tab-pl
             [pl]="currentPL()"
@@ -172,7 +172,7 @@ export type FinanceTab =
           />
         }
 
-        <!-- 2. CORTE DE CAJA & ARQUEO DIARIO -->
+        <!-- 2. ARQUEO Y CIERRE DE CAJA DIARIO -->
         @if (activeTab() === 'cashcut') {
           <app-finance-tab-cashcut
             [transactions]="mockData.financeTransactions()"
@@ -182,7 +182,7 @@ export type FinanceTab =
           />
         }
 
-        <!-- 3. DINERO EN BANCOS & MOVIMIENTOS -->
+        <!-- 3. TESORERÍA Y LIBRO DIARIO DE BANCOS -->
         @if (activeTab() === 'cashflow') {
           <app-finance-tab-cashflow
             [transactions]="mockData.financeTransactions()"
@@ -193,7 +193,7 @@ export type FinanceTab =
           />
         }
 
-        <!-- 4. DINERO POR COBRAR (CLIENTES QUE NOS DEBEN) -->
+        <!-- 4. CUENTAS POR COBRAR (CxC) -->
         @if (activeTab() === 'receivables') {
           <app-finance-tab-receivables
             [receivables]="receivables()"
@@ -201,7 +201,7 @@ export type FinanceTab =
           />
         }
 
-        <!-- 5. DINERO POR PAGAR (COMPROMISOS PENDIENTES) -->
+        <!-- 5. CUENTAS POR PAGAR (CxP) -->
         @if (activeTab() === 'payables') {
           <app-finance-tab-payables
             [payables]="payables()"
@@ -209,7 +209,7 @@ export type FinanceTab =
           />
         }
 
-        <!-- 6. ¿QUÉ GRUPO DEJA MÁS DINERO? (TALENTO) -->
+        <!-- 6. RENTABILIDAD POR TALENTO / AGRUPACIÓN -->
         @if (activeTab() === 'talent') {
           <app-finance-tab-talent
             [performance]="groupPerformance()"
@@ -217,7 +217,7 @@ export type FinanceTab =
           />
         }
 
-        <!-- 7. REPARTO CON SOCIOS Y MANAGERS -->
+        <!-- 7. LIQUIDACIONES DE COPRODUCCIÓN & MANAGERS -->
         @if (activeTab() === 'managers') {
           <app-finance-tab-managers
             [settlements]="managerSettlements()"
@@ -225,7 +225,7 @@ export type FinanceTab =
           />
         }
 
-        <!-- 8. CALCULADORA DE GANANCIAS FUTURAS -->
+        <!-- 8. PROYECCIONES & SIMULACIÓN FINANCIERA -->
         @if (activeTab() === 'simulator') {
           <app-finance-tab-simulator
             [basePL]="currentPL()"
@@ -313,14 +313,14 @@ export class FinancesComponent {
   selectedTalentForStatement = signal<GroupFinancialPerformance | null>(null);
 
   readonly tabOptions: TabPillItem[] = [
-    { value: 'pnl', label: 'Ganancias & Pérdidas', icon: 'query_stats' },
-    { value: 'cashcut', label: 'Corte de Caja & Arqueo', icon: 'receipt_long' },
-    { value: 'cashflow', label: 'Dinero en Bancos', icon: 'account_balance' },
-    { value: 'receivables', label: 'Dinero por Cobrar', icon: 'point_of_sale' },
-    { value: 'payables', label: 'Dinero por Pagar', icon: 'send_money' },
-    { value: 'talent', label: '¿Qué Grupo deja más?', icon: 'stars' },
-    { value: 'managers', label: 'Reparto con Socios', icon: 'handshake' },
-    { value: 'simulator', label: 'Calculadora de Ganancias', icon: 'auto_graph' }
+    { value: 'pnl', label: 'Estado de Resultados (P&L)', icon: 'query_stats' },
+    { value: 'cashcut', label: 'Arqueo y Cierre de Caja', icon: 'receipt_long' },
+    { value: 'cashflow', label: 'Tesorería & Libro Diario', icon: 'account_balance' },
+    { value: 'receivables', label: 'Cuentas por Cobrar (CxC)', icon: 'point_of_sale' },
+    { value: 'payables', label: 'Cuentas por Pagar (CxP)', icon: 'send_money' },
+    { value: 'talent', label: 'Rentabilidad por Talento', icon: 'stars' },
+    { value: 'managers', label: 'Liquidaciones de Coproducción', icon: 'handshake' },
+    { value: 'simulator', label: 'Simulador y Proyecciones', icon: 'auto_graph' }
   ];
 
   setTab(tabId: string): void {

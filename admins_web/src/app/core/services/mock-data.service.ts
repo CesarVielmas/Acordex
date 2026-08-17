@@ -4,6 +4,7 @@ import { RoleService } from './role.service';
 import { SessionService } from './session.service';
 import { describeEventPatch } from '../../features/events/event-activity';
 import { reconcileTasks } from '../../features/events/event-tasks';
+import { describePressPatch } from '../../features/press/press-activity';
 import {
   Quote,
   QuoteState,
@@ -32,9 +33,7 @@ import {
   PressEventItem,
   PressTimelineStep,
   NewPressDraft,
-  emptyAccreditationConfig,
-  emptyStageSetup,
-  emptyTalentBrief
+  emptyAccreditationConfig
 } from '../models/press.models';
 import { distinguishTierColors, ensureCroquisPlans } from '../../features/events/croquis/croquis-metrics';
 import { INITIAL_PRESS_EVENTS } from './press-mock.data';
@@ -4674,17 +4673,20 @@ export class MockDataService {
   /**
    * Clave versionada: el modelo de prensa cambió por completo. Antes era una
    * tarjeta de solo lectura con un arreglo de nombres de medios; ahora es un
-   * expediente con ciclo de vida, checklist, tareas y acreditaciones reales. Lo
-   * guardado con la forma anterior no trae ninguno de los campos que ahora se
-   * necesitan, así que se parte de los mocks nuevos en vez de migrar un dato que
-   * no puede contestar las preguntas que ahora se le hacen.
+   * expediente con ciclo de vida, checklist, tareas y acreditaciones reales.
+   *
+   * `v3` es otro corte del mismo tipo: el montaje dejó de ser un bloque de
+   * campos fijos —sonido, backdrop, control de fila— y pasó a ser lo que
+   * siempre fue, gasto desglosado; y el compromiso del talento pasó de uno solo
+   * para todo el evento a uno por grupo. Lo guardado con la forma anterior no
+   * puede contestar ninguna de las dos preguntas nuevas.
    *
    * El orden de las transiciones importa y es el mismo que en Eventos: primero
    * sale la convocatoria programada y después se concluye lo que ya se celebró.
    * Al revés, un evento programado para una fecha pasada se quedaría atrapado.
    */
   readonly pressEvents = signal<PressEventItem[]>(
-    this.storage.getItem<PressEventItem[]>('acordex_press_v2', INITIAL_PRESS_EVENTS)
+    this.storage.getItem<PressEventItem[]>('acordex_press_v3', INITIAL_PRESS_EVENTS)
       .map(ev => concludePressIfPast(convokeIfDue(ev)))
   );
 
@@ -5595,7 +5597,7 @@ export class MockDataService {
 
   private commitPress(updated: PressEventItem[]): void {
     this.pressEvents.set(updated);
-    this.storage.setItem('acordex_press_v2', updated);
+    this.storage.setItem('acordex_press_v3', updated);
   }
 
   pressEventById(id: string): PressEventItem | undefined {
@@ -5606,18 +5608,43 @@ export class MockDataService {
     this.commitPress(this.pressEvents().map(ev => (ev.id === id ? patch(ev) : ev)));
   }
 
-  /** Agrega un hito a la línea de tiempo del evento de prensa. */
+  /**
+   * Agrega un hito a la línea de tiempo del evento de prensa **y** su entrada en
+   * la bitácora.
+   *
+   * Las dos cosas juntas y no una a elección de quien programe la acción: la
+   * línea de tiempo contesta «¿en qué fase está y cómo llegó ahí?» y la bitácora
+   * contesta «¿quién movió esto?». Registrar solo la primera dejaba las
+   * transiciones —convocar, posponer, cancelar, sellar— fuera del histórico fino,
+   * que es justo donde se van a buscar.
+   */
   private appendPressTimeline(
     ev: PressEventItem,
     step: Omit<PressTimelineStep, 'id' | 'completedAt' | 'actorName'>
   ): PressEventItem {
+    const at = this.nowStamp();
     const entry: PressTimelineStep = {
       ...step,
       id: `tl-${ev.id}-${(ev.timeline?.length || 0) + 1}`,
-      completedAt: this.nowStamp(),
+      completedAt: at,
       actorName: this.currentActorName()
     };
-    return { ...ev, timeline: [...(ev.timeline || []), entry] };
+
+    const traza: EventActivity = {
+      id: `act-fase-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      at,
+      actor: this.session.actor(),
+      channel: 'evento',
+      kind: 'estado',
+      summary: `${this.currentActorName()} · ${step.phaseName}: ${step.summaryNote}`,
+      targetLabel: step.state
+    };
+
+    return {
+      ...ev,
+      timeline: [...(ev.timeline || []), entry],
+      activity: [traza, ...(ev.activity || [])]
+    };
   }
 
   /**
@@ -5633,19 +5660,34 @@ export class MockDataService {
     const before = this.pressEventById(pressId);
     this.patchPress(pressId, ev => ({ ...ev, ...updates }));
     const after = this.pressEventById(pressId);
+    if (!before || !after) return;
 
-    if (before && after) {
-      const recon = reconcileTasks(before, after, this.session.actor());
-      if (recon) {
-        this.patchPress(pressId, ev => ({
-          ...ev,
-          tasks: recon.tasks,
-          activity: [...(recon.activity || []), ...(ev.activity || [])]
-        }));
-      }
+    const actor = this.session.actor();
+
+    // 1. Qué cambió, contado en castellano. Se calcula del antes y el después
+    //    completos —y no lo escribe cada pantalla— porque en cuanto eso depende
+    //    de acordarse, la mitad de los movimientos deja de registrarse.
+    const diff = describePressPatch(before, after, actor);
+
+    // 2. Puntos del checklist que se cerraron o se reabrieron solos.
+    const recon = reconcileTasks(before, after, actor);
+
+    if (diff.length || recon) {
+      this.patchPress(pressId, ev => ({
+        ...ev,
+        tasks: recon ? recon.tasks : ev.tasks,
+        activity: [...diff, ...(recon?.activity || []), ...(ev.activity || [])]
+      }));
     }
 
-    this.addAudit('Edición de Prensa', 'Firmas & Prensa', `Actualizó el expediente ${pressId}`);
+    this.addAudit('Edición de Prensa', 'Firmas & Prensa',
+      diff[0]?.summary || `Actualizó el expediente ${pressId}`);
+  }
+
+  /** Deja constancia de un movimiento que no es una edición de campo. */
+  appendPressActivity(pressId: string, entries: EventActivity[]): void {
+    if (!entries?.length) return;
+    this.patchPress(pressId, ev => ({ ...ev, activity: [...entries, ...(ev.activity || [])] }));
   }
 
   /**
@@ -5978,8 +6020,7 @@ export class MockDataService {
       lineup: [],
       accreditation: { ...emptyAccreditationConfig(), capacity: draft.capacity },
       accreditationRequests: [],
-      stage: emptyStageSetup(),
-      talent: emptyTalentBrief(),
+      talentCommitments: [],
       timeline: [
         {
           id: 'tl-new-1',

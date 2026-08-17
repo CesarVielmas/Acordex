@@ -53,7 +53,7 @@ import { MandatoryFields } from '../../mandatory-fields';
           <div class="flex items-center justify-between gap-3 flex-wrap border-b border-outline-variant/20 pb-4">
             <h5 class="text-xs font-black uppercase tracking-wider text-violet-300 flex items-center gap-2.5">
               <span class="w-8 h-8 rounded-xl bg-violet-500/15 border border-violet-500/30 text-violet-300 flex items-center justify-center material-symbols-outlined text-lg">receipt_long</span>
-              <span>En qué se va el dinero</span>
+              <span>Desglose del Gasto de Producción</span>
             </h5>
             <span class="px-3.5 py-1.5 rounded-2xl bg-surface-container-highest border border-outline-variant/30 text-xs font-mono font-black text-on-surface shadow-sm">
               Total {{ money(totalCost()) }}
@@ -139,7 +139,7 @@ import { MandatoryFields } from '../../mandatory-fields';
           <div class="flex items-center justify-between gap-3 flex-wrap border-b border-outline-variant/20 pb-4">
             <h5 class="text-xs font-black uppercase tracking-wider text-teal-300 flex items-center gap-2.5">
               <span class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center material-symbols-outlined text-lg">assignment_ind</span>
-              <span>Quién se hace cargo de cada rubro</span>
+              <span>Rubros Asignados por Disquera</span>
             </h5>
             <span class="text-[10px] font-mono font-bold text-outline uppercase tracking-wider">
               {{ assignedCount() }} rubro(s) repartido(s)

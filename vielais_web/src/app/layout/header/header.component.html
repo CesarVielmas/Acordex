@@ -1,0 +1,57 @@
+<header class="sticky top-0 z-30 flex items-center justify-between border-b border-white/[0.08] bg-[#0b0e17]/95 px-4 sm:px-6 lg:px-8 h-[74px] backdrop-blur-2xl shadow-2xl select-none">
+  
+  <!-- ================= LEFT: LIVE PULSE TICKER ================= -->
+  <div class="flex items-center gap-4">
+    <div class="flex items-center gap-2.5 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-xs font-bold text-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.15)]">
+      <span class="h-2 w-2 rounded-full bg-cyan-accent animate-ping"></span>
+      <span class="font-mono text-sm font-black text-white">{{ metrics.activeLiveUsers() }}</span>
+      <span class="text-[11px] text-neutral-300 font-medium">usuarios activos ahora</span>
+    </div>
+
+    <div class="hidden md:flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-xs text-neutral-300 font-mono">
+      <span class="text-neutral-500">API Latency:</span>
+      <span class="font-bold text-emerald-400">{{ metrics.systemTelemetry().apiLatencyP50Ms }}ms (p50)</span>
+    </div>
+  </div>
+
+  <!-- ================= RIGHT: MASTER ECOSYSTEM SWITCHER & SIMULATOR ================= -->
+  <div class="flex items-center gap-3">
+    <!-- Test Booking Simulator Button -->
+    <button 
+      type="button"
+      (click)="simulateQuickBooking()"
+      class="hidden lg:flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-black text-primary hover:bg-primary hover:text-black transition-all shadow-sm active:scale-95"
+      title="Simular nueva contratación y acreditación de comisión"
+    >
+      <span class="material-symbols-outlined text-base">bolt</span>
+      <span>Simular Venta</span>
+    </button>
+
+    <!-- Master Switcher Links to Other Portals -->
+    <div class="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.02] p-1 text-[11px] font-bold">
+      <a href="http://localhost:4200" target="_blank" class="rounded-xl px-2.5 py-1.5 text-neutral-400 hover:text-white hover:bg-white/5 transition flex items-center gap-1">
+        <span>Clients</span>
+        <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+      </a>
+      <a href="http://localhost:4201" target="_blank" class="rounded-xl px-2.5 py-1.5 text-neutral-400 hover:text-white hover:bg-white/5 transition flex items-center gap-1">
+        <span>Admins</span>
+        <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+      </a>
+      <a href="http://localhost:4202" target="_blank" class="rounded-xl px-2.5 py-1.5 text-neutral-400 hover:text-white hover:bg-white/5 transition flex items-center gap-1">
+        <span>Groups</span>
+        <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+      </a>
+    </div>
+
+    <!-- Developer Avatar Pill -->
+    <div class="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 pr-3">
+      <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-accent text-black font-black text-xs font-mono shadow-md">
+        V
+      </div>
+      <div class="hidden sm:block text-left">
+        <span class="block text-xs font-bold text-white leading-tight">Vielais</span>
+        <span class="text-[9.5px] font-mono text-cyan-400 leading-tight">Master Dev</span>
+      </div>
+    </div>
+  </div>
+</header>

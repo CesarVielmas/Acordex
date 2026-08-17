@@ -2,6 +2,7 @@ import { Component, input, output, computed, signal, inject } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { EventItem, EventPublicProfile, EventRule, ArtistGreetingVideo } from '../../../../core/models/event.models';
 import { GroupItem } from '../../../../core/models/admin.models';
+import { PressEventItem } from '../../../../core/models/press.models';
 import { EditableFieldComponent, EditableOption } from '../../../../shared/ui/editable-field/editable-field.component';
 import { EventTabLineupComponent } from './event-tab-lineup.component';
 import { MandatoryTaskTagComponent } from '../../../../shared/ui/mandatory-task-tag/mandatory-task-tag.component';
@@ -622,6 +623,8 @@ import {
           [canEdit]="canEditLineup()"
           [canViewFinances]="canViewFinances()"
           [availableGroups]="availableGroups()"
+          [allEvents]="allEvents()"
+          [allPressEvents]="allPressEvents()"
           (patch)="patch.emit($event)"
         />
       </section>
@@ -649,6 +652,9 @@ export class EventTabPublicComponent {
   canEditLineup = input<boolean>(false);
   canViewFinances = input<boolean>(false);
   availableGroups = input<GroupItem[]>([]);
+  /** La agenda completa: de ahí sale si un grupo está libre el día del evento. */
+  allEvents = input<EventItem[]>([]);
+  allPressEvents = input<PressEventItem[]>([]);
   showPreview = input<boolean>(false);
 
   patch = output<Partial<EventItem>>();

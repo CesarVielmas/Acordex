@@ -50,11 +50,30 @@ export function pressCompleteness(e: PressEventItem): CompletenessReport {
   const slots = pressLineup(e);
   const zonas = pressZones(e);
   const acred = e.accreditation;
-  const montaje = e.stage;
-  const talento = e.talent;
+  const gasto = e.productionItems || [];
+  const compromisos = e.talentCommitments || [];
 
   const esFirma = e.pressType === 'Firma de Autógrafos';
   const esRueda = e.pressType === 'Rueda de Prensa';
+
+  /** Si hay algo presupuestado en alguno de estos rubros. */
+  const gastoEn = (rubros: string[]) =>
+    gasto.some(p => rubros.includes(p.category) && (p.amount || 0) > 0);
+
+  /** El compromiso de un grupo, o uno vacío si todavía no se ha capturado. */
+  const compromiso = (s: EventLineupSlot) => compromisos.find(c => c.slotId === s.id);
+  const sinLlegada = slots.filter(s => !compromiso(s)?.arrivalTime?.trim());
+  const sinVocero = slots.filter(s => !compromiso(s)?.spokespersonName?.trim());
+  const sinDuracion = slots.filter(s => !(compromiso(s)?.committedMinutes || 0));
+
+  /**
+   * Un punto que se mide grupo por grupo lo responde el dueño de cada grupo.
+   * El compromiso de un grupo ajeno lo pacta su disquera, no la que organiza.
+   */
+  const porGrupo = (pendientes: EventLineupSlot[]) => ({
+    owners: slots.length ? [...new Set(slots.map(profileOwner))] : [organizer],
+    pendingOwners: [...new Set(pendientes.map(profileOwner))]
+  });
 
   /** La ficha pública de un grupo vive en el expediente de su dueño. */
   const profileOwner = (s: EventLineupSlot) => (s.isExternal ? s.managerName : organizer);
@@ -226,89 +245,107 @@ export function pressCompleteness(e: PressEventItem): CompletenessReport {
     },
 
     // ─── Producción ─────────────────────────────────────────────────────────
+    // Se mide contra el **desglose de gasto**, no contra campos sueltos. Antes
+    // los mismos conceptos —el sonido, el templete, la seguridad— se capturaban
+    // dos veces: una como «datos del montaje» y otra como partida, y ninguna de
+    // las dos versiones era la buena. Un evento de prensa no genera ingreso: todo
+    // lo que se monta es gasto, así que el gasto es el único sitio donde vive.
+    {
+      id: 'presupuesto',
+      group: 'Producción',
+      label: 'Presupuesto desglosado',
+      hint: 'Captura en qué se va el dinero, partida por partida: es el único número del expediente',
+      required: true,
+      done: gasto.length > 0 && gasto.some(p => (p.amount || 0) > 0)
+    },
     {
       id: 'sede_montaje',
       group: 'Producción',
-      label: esFirma ? 'Mesa de firmas montada' : 'Templete montado',
+      label: esFirma ? 'Mesa de firmas presupuestada' : 'Templete presupuestado',
       hint: esFirma
-        ? 'Define el montaje: mesa de firmas, sillas y el paso de la fila'
-        : 'Define el montaje: templete, presídium y el lugar de las cámaras',
+        ? 'Mesa, sillas y el paso de la fila: da de alta las partidas de Mobiliario o Escenario'
+        : 'Templete, presídium y backdrop: da de alta las partidas de Escenario o Mobiliario',
       required: true,
-      done: !!montaje?.setupKind && montaje.setupKind !== 'Por Definir'
+      done: gastoEn(['Escenario y Estructuras', 'Mobiliario'])
     },
     {
       id: 'sonido_prensa',
       group: 'Producción',
-      label: 'Sonido con responsable',
+      label: 'Audio presupuestado',
       hint: esRueda
         ? 'Sin audio, las preguntas de la sala no se oyen en los videos que publiquen los medios'
-        : 'Quién lleva el audio del evento y con quién se le localiza',
+        : 'Equipo de sonido del evento',
       required: esRueda,
-      done: !!montaje?.soundProvider?.trim() && !!montaje?.soundContact?.trim()
-    },
-    {
-      id: 'backdrop',
-      group: 'Producción',
-      label: 'Backdrop con logos',
-      hint: 'Es el fondo de todas las fotos que se publiquen: sin él, la marca no sale en ninguna',
-      required: true,
-      done: !!montaje?.backdropUrl?.trim() && (montaje?.backdropSponsors || []).length > 0
+      done: gastoEn(['Audio'])
     },
     {
       id: 'control_fila',
       group: 'Producción',
-      label: 'Personal de control de fila',
+      label: 'Personal presupuestado',
       hint: esFirma
-        ? 'Cuánta gente cuida la fila y quién la coordina: en una firma es lo que evita que se desborde'
+        ? 'Quién cuida la fila: en una firma es lo que evita que se desborde. Da de alta las partidas de Personal y Staff'
         : 'Personal que ordena el acceso de los medios a la sala',
       required: esFirma,
-      done: (montaje?.queueStaffCount || 0) > 0 && !!montaje?.queueStaffLead?.trim()
+      done: gastoEn(['Personal y Staff'])
     },
     {
       id: 'seguridad_prensa',
       group: 'Producción',
-      label: 'Seguridad con contacto',
-      hint: 'Quién responde por la seguridad del grupo y del recinto, con su teléfono',
+      label: 'Seguridad presupuestada',
+      hint: 'Quién responde por la seguridad del grupo y del recinto',
       required: true,
-      done: !!montaje?.securityProvider?.trim() && !!montaje?.securityContact?.trim()
+      done: gastoEn(['Seguridad'])
+    },
+    {
+      id: 'gasto_cerrado',
+      group: 'Producción',
+      label: 'Presupuesto cerrado con proveedores',
+      hint: 'Un presupuesto con todo en «Estimado» es un cálculo de cabeza: cotiza y contrata',
+      required: false,
+      done: gasto.length > 0 && gasto.every(p => p.status === 'Contratado' || p.status === 'Pagado')
     },
 
     // ─── Talento ────────────────────────────────────────────────────────────
+    // Cada punto se mide **grupo por grupo**: a una rueda vienen dos o tres y
+    // cada uno llega a su hora y manda a su propio vocero.
     {
       id: 'llegada_grupo',
       group: 'Talento',
-      label: 'Hora de llegada del grupo',
-      hint: 'A qué hora debe estar el grupo en el recinto, antes de que entren los medios',
+      label: 'Hora de llegada de cada grupo',
+      hint: 'A qué hora debe estar cada grupo en el recinto, antes de que entren los medios',
       required: true,
-      done: !!talento?.arrivalTime?.trim()
+      done: slots.length > 0 && sinLlegada.length === 0,
+      ...porGrupo(sinLlegada)
     },
     {
       id: 'vocero',
       group: 'Talento',
-      label: 'Vocero designado',
+      label: 'Vocero designado de cada grupo',
       hint: esRueda
-        ? 'Quién habla por el grupo. Sin vocero designado contesta quien se anime, y eso es como se generan las notas que nadie quería'
-        : 'Quién atiende a los medios durante la firma',
+        ? 'Quién habla por cada grupo. Sin vocero contesta quien se anime, y así se generan las notas que nadie quería'
+        : 'Quién atiende a los medios por cada grupo durante la firma',
       required: esRueda,
-      done: !!talento?.spokespersonName?.trim()
+      done: slots.length > 0 && sinVocero.length === 0,
+      ...porGrupo(sinVocero)
     },
     {
       id: 'duracion_prensa',
       group: 'Talento',
-      label: 'Duración comprometida',
-      hint: 'Cuántos minutos se compromete el grupo: es lo que se le promete a los medios y a los fans',
+      label: 'Duración comprometida por grupo',
+      hint: 'Cuántos minutos da cada grupo: es lo que se le promete a los medios y a los fans',
       required: true,
-      done: (talento?.committedMinutes || 0) > 0
+      done: slots.length > 0 && sinDuracion.length === 0,
+      ...porGrupo(sinDuracion)
     },
     {
       id: 'temas_vetados',
       group: 'Talento',
       label: 'Temas vetados ("no preguntar por")',
       hint: esRueda
-        ? 'Lo que el grupo no va a contestar. Se le comunica a los medios acreditados antes de empezar'
-        : 'Temas que el grupo prefiere no tocar durante la firma',
+        ? 'Lo que cada grupo no va a contestar. Se le comunica a los medios acreditados antes de empezar'
+        : 'Temas que los grupos prefieren no tocar durante la firma',
       required: esRueda,
-      done: (talento?.bannedTopics || []).length > 0
+      done: slots.length > 0 && compromisos.some(c => (c.bannedTopics || []).length > 0)
     }
   ];
 
@@ -401,9 +438,9 @@ export const PRESS_FIELD_TO_CHECKLIST: Record<string, string[]> = {
   // Acreditación: la ventana, el cupo y las zonas se capturan en el mismo bloque.
   acreditacion: ['ventana_registro', 'cupo', 'zonas', 'kit_prensa'],
 
-  // Producción.
-  montaje: ['sede_montaje', 'sonido_prensa', 'backdrop', 'control_fila', 'seguridad_prensa'],
+  // Producción: todo cuelga del desglose de gasto.
+  gasto: ['presupuesto', 'sede_montaje', 'sonido_prensa', 'control_fila', 'seguridad_prensa', 'gasto_cerrado'],
 
-  // Talento.
+  // Talento, grupo por grupo.
   talento: ['llegada_grupo', 'vocero', 'duracion_prensa', 'temas_vetados']
 };

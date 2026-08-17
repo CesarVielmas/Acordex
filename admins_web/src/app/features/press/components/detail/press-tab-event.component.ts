@@ -2,13 +2,20 @@ import { Component, computed, inject, input, output, signal } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
+  EventItem,
   EventLineupSlot,
   EventPublicProfile,
   EventRule,
+  LineupEngagementKind,
   emptyPublicProfile
 } from '../../../../core/models/event.models';
 import { GroupItem } from '../../../../core/models/admin.models';
-import { PressEventItem, PressEventType } from '../../../../core/models/press.models';
+import {
+  FanAccessPolicy,
+  PhotoPolicy,
+  PressEventItem,
+  PressEventType
+} from '../../../../core/models/press.models';
 import { SessionService } from '../../../../core/services/session.service';
 import { EditableFieldComponent, EditableOption } from '../../../../shared/ui/editable-field/editable-field.component';
 import { MandatoryTaskTagComponent } from '../../../../shared/ui/mandatory-task-tag/mandatory-task-tag.component';
@@ -16,6 +23,7 @@ import { MandatoryFields } from '../../../events/mandatory-fields';
 import { markIntervention, ResolvedTask } from '../../../events/event-tasks';
 import { slugify } from '../../../events/event-metrics';
 import { PressFileDropComponent } from '../press-file-drop.component';
+import { GroupPickerComponent } from '../../../../shared/ui/group-picker/group-picker.component';
 import { pressLineup, pressPublicProfile, pressWhenLabel } from '../../press-metrics';
 
 /**
@@ -29,10 +37,45 @@ import { pressLineup, pressPublicProfile, pressWhenLabel } from '../../press-met
 @Component({
   selector: 'app-press-tab-event',
   standalone: true,
-  imports: [CommonModule, FormsModule, EditableFieldComponent, MandatoryTaskTagComponent, PressFileDropComponent],
+  imports: [
+    CommonModule, FormsModule, EditableFieldComponent,
+    MandatoryTaskTagComponent, PressFileDropComponent, GroupPickerComponent
+  ],
   host: { class: 'block' },
   template: `
     <div class="space-y-6">
+
+      <!-- ─── BARRA SUPERIOR: VISTA PREVIA DE CLIENTE ─── -->
+      <div class="p-5 rounded-3xl bg-gradient-to-r from-blue-500/10 via-surface-container-high/95 to-blue-500/5 border border-blue-500/30 flex items-center justify-between gap-4 backdrop-blur-2xl shadow-2xl flex-wrap">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-300 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
+            <span class="material-symbols-outlined text-2xl font-bold">newspaper</span>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h4 class="text-base font-black uppercase tracking-wider text-on-surface truncate">Ficha del evento de prensa</h4>
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase tracking-widest">
+                {{ event().pressType }}
+              </span>
+            </div>
+            <p class="text-xs text-outline font-medium truncate mt-0.5">
+              Todo lo que se captura aquí es exactamente lo que el visitante encuentra en el portal
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="togglePreview.emit(!showPreview())"
+          [class]="showPreview()
+            ? 'bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 text-white font-black shadow-[0_0_25px_rgba(59,130,246,0.4)] scale-[1.03] border border-blue-300/60 ring-2 ring-blue-400/30'
+            : 'bg-surface-container-high/90 text-on-surface border border-outline-variant/30 hover:border-blue-500/50 hover:bg-surface-bright shadow-lg'"
+          class="px-5 py-3 min-h-12 rounded-2xl text-xs font-black transition-all duration-300 flex items-center gap-2.5 shrink-0"
+        >
+          <span class="material-symbols-outlined text-xl font-bold">{{ showPreview() ? 'visibility_off' : 'visibility' }}</span>
+          <span>{{ showPreview() ? 'Cerrar Vista Previa' : 'Ver Vista Previa de Cliente' }}</span>
+        </button>
+      </div>
 
       @if (mandatory.notice(); as aviso) {
         <div class="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/35 text-[11px] text-amber-100 flex items-start gap-2">
@@ -105,6 +148,14 @@ import { pressLineup, pressPublicProfile, pressWhenLabel } from '../../press-met
             (save)="mandatory.save('identidad_prensa', 'Hora de inicio', { startTime: $event })"
           />
           <app-editable-field
+            label="Hora de cierre"
+            hint="cuándo se cierra el acceso"
+            [value]="event().endTime ?? ''"
+            placeholder="19:00"
+            [readonly]="!canEditIdentity()"
+            (save)="mandatory.save('identidad_prensa', 'Hora de cierre', { endTime: $event })"
+          />
+          <app-editable-field
             label="Recinto"
             [value]="event().venue"
             [readonly]="!canEditIdentity()"
@@ -131,6 +182,49 @@ import { pressLineup, pressPublicProfile, pressWhenLabel } from '../../press-met
           placeholder="Calle, número, colonia, código postal y ciudad"
           (save)="mandatory.save('identidad_prensa', 'Dirección del recinto', { venueAddress: $event })"
         />
+
+        <!-- Reglas de acceso. Estos tres datos son las dos tarjetas que el portal
+             pintaba con el texto escrito a mano en la plantilla: decía siempre
+             "Permitido" y "Solo Acreditados", así que una firma donde el grupo no
+             quiere fotos se veía idéntica a una donde sí, y una firma para fans se
+             anunciaba como si fuera solo para prensa. -->
+        <div class="p-4 rounded-2xl bg-black/25 border border-amber-500/20 space-y-3">
+          <span class="text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[13px]">badge</span> Reglas de acceso que ve el visitante
+          </span>
+          <p class="text-[10.5px] text-on-surface-variant leading-relaxed">
+            Son las dos primeras cosas que mira quien decide si va: si puede llevar cámara y si puede entrar sin ser
+            prensa. El portal las pinta en tarjetas bajo la descripción.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <app-editable-field
+              label="Fotografías"
+              type="select"
+              [options]="photoOptions"
+              [value]="event().photoPolicy ?? ''"
+              [readonly]="!canEditPublic()"
+              placeholder="Sin definir"
+              (save)="mandatory.save('identidad_prensa', 'Política de fotografías', { photoPolicy: asPhoto($event) })"
+            />
+            <app-editable-field
+              label="Acceso de fans"
+              type="select"
+              [options]="fanOptions"
+              [value]="event().fanAccess ?? ''"
+              [readonly]="!canEditPublic()"
+              placeholder="Sin definir"
+              (save)="mandatory.save('identidad_prensa', 'Acceso de fans', { fanAccess: asFan($event) })"
+            />
+            <app-editable-field
+              label="Aforo de fans"
+              hint="si no es solo prensa"
+              type="number"
+              [value]="event().fanCapacity ?? ''"
+              [readonly]="!canEditPublic()"
+              (save)="mandatory.save('identidad_prensa', 'Aforo de fans', { fanCapacity: toNumber($event) })"
+            />
+          </div>
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <app-press-file-drop
@@ -160,13 +254,13 @@ import { pressLineup, pressPublicProfile, pressWhenLabel } from '../../press-met
             <span class="w-8 h-8 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-300 flex items-center justify-center material-symbols-outlined text-lg">public</span>
             <span>Lo que ve el público en el portal</span>
           </h5>
-          <a
-            [href]="portalUrl()"
-            target="_blank"
+          <button
+            type="button"
+            (click)="togglePreview.emit(true)"
             class="px-3 py-1.5 rounded-xl bg-sky-500/15 text-sky-300 border border-sky-500/35 hover:bg-sky-500 hover:text-white text-[10px] font-black transition-all flex items-center gap-1.5"
           >
-            <span class="material-symbols-outlined text-[13px]">open_in_new</span> Abrir la ficha del cliente
-          </a>
+            <span class="material-symbols-outlined text-[13px]">visibility</span> Ver cómo queda
+          </button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -405,16 +499,67 @@ import { pressLineup, pressPublicProfile, pressWhenLabel } from '../../press-met
         </div>
 
         @if (addOpen() && canEditLineup()) {
-          <div class="p-3.5 rounded-2xl bg-black/30 border border-violet-500/25 space-y-2">
-            <span class="text-[10px] font-black uppercase tracking-wider text-outline">Elige un grupo del catálogo</span>
-            <div class="flex flex-wrap gap-2">
-              @for (g of availableGroups(); track g.id) {
-                <button type="button" (click)="addGroup(g)"
-                  class="px-3 py-2 rounded-xl bg-white/5 border border-white/12 hover:border-violet-400/60 hover:text-violet-200 text-[11px] font-bold text-on-surface-variant transition-all">
-                  {{ g.name }}
-                </button>
+          <div class="p-4 rounded-2xl bg-black/30 border border-violet-500/25 space-y-3.5">
+            <app-group-picker
+              [groups]="availableGroups()"
+              [events]="allEvents()"
+              [pressEvents]="allPressEvents()"
+              [eventDate]="event().date"
+              [excludeId]="event().id"
+              [ownerManager]="ownerManager()"
+              [usedGroupIds]="usedGroupIds()"
+              [proposedTime]="proposedTime()"
+              (selectedChange)="pickGroup($event)"
+            />
+
+            <!-- Igual que en el cartel de Eventos: cuando el grupo es de otra
+                 disquera hay que decir **por qué vía** entra, porque no es lo
+                 mismo pagarle una tarifa que invitar a su manager a co-organizar.
+                 De quién sea el grupo no se puede deducir cuál de las dos eligió
+                 el organizador. -->
+            @if (picked(); as g) {
+              @if (isExternalGroup(g)) {
+                <div class="p-3.5 rounded-2xl bg-sky-500/[0.07] border border-sky-500/25 space-y-2.5">
+                  <span class="text-[10px] font-black uppercase tracking-wider text-sky-300">
+                    {{ g.name }} es de {{ g.groupLeaderName }} · ¿por qué vía entra?
+                  </span>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button type="button" (click)="engagement.set('cotizacion')"
+                      class="p-3 rounded-xl border text-left transition-all"
+                      [class]="engagement() === 'cotizacion' ? 'bg-sky-500/20 border-sky-400/50' : 'bg-white/5 border-white/12 hover:border-sky-400/50'">
+                      <span class="text-[11px] font-black text-on-surface block">Contratación directa</span>
+                      <span class="text-[10px] text-outline block leading-snug mt-0.5">
+                        Se le paga una tarifa y ahí termina. No entra al expediente ni ve el gasto.
+                      </span>
+                    </button>
+                    <button type="button" (click)="engagement.set('coorganizacion')"
+                      class="p-3 rounded-xl border text-left transition-all"
+                      [class]="engagement() === 'coorganizacion' ? 'bg-sky-500/20 border-sky-400/50' : 'bg-white/5 border-white/12 hover:border-sky-400/50'">
+                      <span class="text-[11px] font-black text-on-surface block">Co-organiza el evento</span>
+                      <span class="text-[10px] text-outline block leading-snug mt-0.5">
+                        Su manager entra al expediente: se le pueden encargar puntos y comparte el gasto.
+                      </span>
+                    </button>
+                  </div>
+                  <p class="text-[10.5px] text-sky-100/80 leading-relaxed">
+                    La solicitud sale con la fecha y el horario de este evento, y
+                    <strong>{{ g.groupLeaderName }}</strong> la confirma o la rechaza viendo su propia agenda.
+                    {{ isDraft()
+                      ? 'Como el evento sigue en borrador, sale al mandarlo a revisión: pedirle algo a alguien por un evento que quizá ni se arme quema la relación en cada intento.'
+                      : 'Sale ahora mismo.' }}
+                  </p>
+                </div>
               }
-            </div>
+
+              <div class="flex items-center justify-end gap-2">
+                <button type="button" (click)="cancelPick()"
+                  class="px-3 py-2 rounded-xl text-[11px] font-bold text-outline hover:text-on-surface transition-colors">Cancelar</button>
+                <button type="button" (click)="confirmAddGroup()"
+                  class="px-4 py-2 rounded-xl bg-violet-500 text-white text-[11px] font-black hover:bg-violet-400 transition-all flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[14px]">add</span> Agregar {{ g.name }}
+                </button>
+              </div>
+            }
           </div>
         }
 
@@ -535,13 +680,19 @@ export class PressTabEventComponent {
 
   readonly event = input.required<PressEventItem>();
   readonly availableGroups = input<GroupItem[]>([]);
+  /** Toda la agenda del panel: de ahí sale si un grupo está libre ese día. */
+  readonly allEvents = input<EventItem[]>([]);
+  readonly allPressEvents = input<PressEventItem[]>([]);
   readonly canEditIdentity = input<boolean>(false);
   readonly canEditPublic = input<boolean>(false);
   readonly canEditLineup = input<boolean>(false);
 
+  readonly showPreview = input<boolean>(false);
+
   readonly patch = output<Partial<PressEventItem>>();
   readonly openTasks = output<void>();
   readonly uploadPhoto = output<void>();
+  readonly togglePreview = output<boolean>();
 
   readonly placeholderImage = 'https://images.unsplash.com/photo-1459749411177-042180ce673c?w=300&auto=format&fit=crop&q=80';
 
@@ -550,7 +701,23 @@ export class PressTabEventComponent {
     { value: 'Rueda de Prensa', label: 'Rueda de Prensa' }
   ];
 
+  readonly photoOptions: EditableOption[] = [
+    { value: 'Permitido', label: 'Permitido' },
+    { value: 'Sin flash', label: 'Sin flash' },
+    { value: 'Solo prensa acreditada', label: 'Solo prensa acreditada' },
+    { value: 'No permitido', label: 'No permitido' }
+  ];
+
+  readonly fanOptions: EditableOption[] = [
+    { value: 'Solo Acreditados', label: 'Solo acreditados' },
+    { value: 'Entrada Libre', label: 'Entrada libre' },
+    { value: 'Con Boleto del Concierto', label: 'Con boleto del concierto' },
+    { value: 'Con Registro Previo', label: 'Con registro previo' }
+  ];
+
   readonly addOpen = signal(false);
+  readonly picked = signal<GroupItem | null>(null);
+  readonly engagement = signal<LineupEngagementKind>('cotizacion');
 
   readonly mandatory = new MandatoryFields<PressEventItem>(
     () => this.event(),
@@ -570,25 +737,22 @@ export class PressTabEventComponent {
     return pressWhenLabel(this.event());
   }
 
-  /**
-   * La ficha del cliente para este evento.
-   *
-   * El portal la busca por número, así que se manda la parte numérica del id: es
-   * lo que permite comprobar de un clic que lo capturado aquí es exactamente lo
-   * que el visitante ve allá, que es la única prueba real de que el apartado
-   * está haciendo su trabajo.
-   */
-  portalUrl(): string {
-    const numero = (this.event().id.match(/\d+/) || ['1'])[0];
-    return `http://localhost:4200/events/firma-prensa?id=${numero}`;
-  }
-
   toNumber(value: string): number {
     return Number(value) || 0;
   }
 
   asType(value: string): PressEventType {
     return value === 'Rueda de Prensa' ? 'Rueda de Prensa' : 'Firma de Autógrafos';
+  }
+
+  asPhoto(value: string): PhotoPolicy | undefined {
+    const validas: PhotoPolicy[] = ['Permitido', 'Sin flash', 'Solo prensa acreditada', 'No permitido'];
+    return validas.includes(value as PhotoPolicy) ? (value as PhotoPolicy) : undefined;
+  }
+
+  asFan(value: string): FanAccessPolicy | undefined {
+    const validas: FanAccessPolicy[] = ['Solo Acreditados', 'Entrada Libre', 'Con Boleto del Concierto', 'Con Registro Previo'];
+    return validas.includes(value as FanAccessPolicy) ? (value as FanAccessPolicy) : undefined;
   }
 
   videoKind(url: string): 'local' | 'youtube' {
@@ -675,12 +839,52 @@ export class PressTabEventComponent {
     return !s.isExternal || s.managerName === this.session.actor().managerName;
   }
 
-  addGroup(g: GroupItem): void {
-    // El grupo es "de otro encargado" cuando su líder no es quien arma el evento,
-    // igual que en el cartel de Eventos. De ahí sale que su ficha pública sea un
-    // punto obligatorio a nombre de su disquera y no de la nuestra.
-    const owner = this.event().ownerManagerName || this.event().createdBy;
-    const propio = g.groupLeaderName === owner;
+  readonly isDraft = computed(() => this.event().state === 'Borrador');
+
+  /**
+   * El grupo es "de otra disquera" cuando su líder no es quien arma el evento,
+   * igual que en el cartel de Eventos. De ahí sale que su ficha pública y su
+   * compromiso sean puntos obligatorios a nombre de su disquera y no de la
+   * nuestra.
+   */
+  isExternalGroup(g: GroupItem): boolean {
+    return g.groupLeaderName !== (this.event().ownerManagerName || this.event().createdBy);
+  }
+
+  readonly ownerManager = computed(() => this.event().ownerManagerName || this.event().createdBy);
+  readonly usedGroupIds = computed(() => this.slots().map(s => s.groupId));
+
+  /** El horario que se le va a proponer al grupo, ya legible. */
+  readonly proposedTime = computed(() => {
+    const e = this.event();
+    if (!e.startTime) return '';
+    return e.endTime ? `${e.startTime} – ${e.endTime} hrs` : `${e.startTime} hrs`;
+  });
+
+  pickGroup(g: GroupItem | null): void {
+    this.picked.set(g);
+    if (g) this.engagement.set(this.isExternalGroup(g) ? 'cotizacion' : 'propio');
+  }
+
+  cancelPick(): void {
+    this.picked.set(null);
+    this.addOpen.set(false);
+  }
+
+  /**
+   * Da de alta el grupo y, si entra co-organizando, invita a su manager.
+   *
+   * La invitación nace `Sin Enviar` mientras el evento siga en borrador y sale al
+   * mandarlo a revisión, igual que en Eventos: pedirle a alguien que co-organice
+   * un evento que quizá ni se arme quema la relación en cada intento.
+   */
+  confirmAddGroup(): void {
+    const g = this.picked();
+    if (!g) return;
+
+    const externo = this.isExternalGroup(g);
+    const via: LineupEngagementKind = externo ? this.engagement() : 'propio';
+    const borrador = this.isDraft();
 
     const slot: EventLineupSlot = {
       id: `sl-${Date.now().toString(36)}`,
@@ -690,22 +894,43 @@ export class PressTabEventComponent {
       genre: g.genre || '',
       rating: g.rating || 0,
       profileSlug: slugify(g.name),
-      isExternal: !propio,
-      engagementKind: propio ? 'propio' : 'coorganizacion',
+      isExternal: externo,
+      engagementKind: via,
       managerName: g.groupLeaderName,
       managerEmail: g.groupLeaderEmail,
       managerPhone: g.groupLeaderPhone,
       order: this.slots().length + 1,
       isHeadliner: this.slots().length === 0,
       costItems: [],
-      approval: propio ? 'No Requiere' : 'Sin Enviar'
+      approval: externo ? (borrador ? 'Sin Enviar' : 'Pendiente') : 'No Requiere'
     };
 
-    this.addOpen.set(false);
-    this.patch.emit({
+    const cambios: Partial<PressEventItem> = {
       lineup: [...this.slots(), slot],
       groupName: this.slots().length === 0 ? g.name : this.event().groupName
-    });
+    };
+
+    // La invitación solo se manda una vez por disquera: si ya está dentro por
+    // otro grupo, agregar el segundo no vuelve a preguntarle.
+    const yaInvitado = (this.event().managerAgreements || []).some(a => a.managerName === g.groupLeaderName);
+    if (via === 'coorganizacion' && !yaInvitado) {
+      cambios.managerAgreements = [
+        ...(this.event().managerAgreements || []),
+        {
+          id: `ma-${Date.now().toString(36)}`,
+          managerName: g.groupLeaderName,
+          role: 'coorganizador' as const,
+          settlementKind: 'fijo' as const,
+          fixedAmount: 0,
+          status: borrador ? 'Sin Enviar' as const : 'Pendiente' as const,
+          invitedAt: borrador ? undefined : new Date().toISOString().slice(0, 16)
+        }
+      ];
+    }
+
+    this.picked.set(null);
+    this.addOpen.set(false);
+    this.patch.emit(cambios);
   }
 
   patchSlot(id: string, changes: Partial<EventLineupSlot>): void {

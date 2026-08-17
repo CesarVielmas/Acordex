@@ -1,0 +1,154 @@
+<div class="space-y-8 max-w-7xl mx-auto pb-20 animate-fade-in select-none">
+  
+  <!-- ================= TOP HEADER BAR ================= -->
+  <div class="cyber-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10">
+      <div class="flex items-center gap-2">
+        <span class="rounded-md bg-emerald-500/20 px-2 py-0.5 text-[10px] font-mono font-black text-emerald-300 border border-emerald-500/30">
+          INFRASTRUCTURE & SERVER TELEMETRY
+        </span>
+      </div>
+      <h1 class="font-['Epilogue'] text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight mt-1">
+        Telemetría & Salud del Cluster Acordex
+      </h1>
+      <p class="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl leading-relaxed">
+        Estado de microservicios, latencia de base de datos, túneles WebSocket activos, memoria en uso y bitácora de auditoría en vivo.
+      </p>
+    </div>
+
+    <div class="relative z-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 flex items-center gap-3">
+      <span class="h-3 w-3 rounded-full bg-emerald-400 animate-ping"></span>
+      <div>
+        <span class="text-xs font-mono font-bold text-emerald-300 block">Uptime del Cluster</span>
+        <span class="font-['Epilogue'] text-xl font-black text-white">{{ metrics.systemTelemetry().uptimePercent }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 4 TELEMETRY KPIS ================= -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div class="cyber-card rounded-3xl p-6 space-y-2">
+      <span class="text-xs font-mono font-bold text-neutral-400 uppercase">Latencia API (p50 / p95)</span>
+      <div class="font-['Epilogue'] text-3xl font-black text-white">
+        {{ metrics.systemTelemetry().apiLatencyP50Ms }}ms <span class="text-xs text-neutral-400 font-mono">/ {{ metrics.systemTelemetry().apiLatencyP95Ms }}ms</span>
+      </div>
+      <span class="text-[11px] font-mono text-emerald-400 block">Respuestas sub-50ms</span>
+    </div>
+
+    <div class="cyber-card rounded-3xl p-6 space-y-2">
+      <span class="text-xs font-mono font-bold text-neutral-400 uppercase">Túneles WebSocket</span>
+      <div class="font-['Epilogue'] text-3xl font-black text-white">
+        {{ metrics.systemTelemetry().activeWebSocketTunnels }}
+      </div>
+      <span class="text-[11px] font-mono text-cyan-300 block">Canales de chat & cotizaciones</span>
+    </div>
+
+    <div class="cyber-card rounded-3xl p-6 space-y-2">
+      <span class="text-xs font-mono font-bold text-neutral-400 uppercase">Memoria RAM Asignada</span>
+      <div class="font-['Epilogue'] text-3xl font-black text-white">
+        {{ metrics.systemTelemetry().memoryUsageMb }} MB
+      </div>
+      <span class="text-[11px] font-mono text-neutral-400 block">Capacidad 1024 MB</span>
+    </div>
+
+    <div class="cyber-card rounded-3xl p-6 space-y-2">
+      <span class="text-xs font-mono font-bold text-neutral-400 uppercase">Tasa de Errores</span>
+      <div class="font-['Epilogue'] text-3xl font-black text-emerald-400">
+        {{ metrics.systemTelemetry().errorRatePercent }}%
+      </div>
+      <span class="text-[11px] font-mono text-emerald-400 block">0 fallas críticas</span>
+    </div>
+  </div>
+
+  <!-- ================= MICROSERVICES STATUS GRID ================= -->
+  <div class="cyber-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <h3 class="font-['Epilogue'] text-lg font-black text-white">Estado de Microservicios & Gateways</h3>
+        <p class="text-xs text-neutral-400 mt-0.5">Topología distribuida de la infraestructura de Acordex.</p>
+      </div>
+      <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-mono font-bold text-emerald-400 border border-emerald-500/30">
+        5 / 5 Operacionales
+      </span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div *ngFor="let s of metrics.systemTelemetry().services" class="rounded-2xl bg-white/[0.03] p-4 border border-white/10 space-y-2 hover:border-cyan-500/40 transition">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-cyan-400 text-xl">{{ s.icon }}</span>
+            <strong class="font-bold text-white text-xs">{{ s.serviceName }}</strong>
+          </div>
+          <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 pt-2 text-[11px] font-mono text-neutral-400 border-t border-white/5">
+          <div>
+            <span class="block text-[9.5px] uppercase">Latencia</span>
+            <strong class="text-white">{{ s.latencyMs }}ms</strong>
+          </div>
+          <div>
+            <span class="block text-[9.5px] uppercase">Uptime</span>
+            <strong class="text-emerald-400">{{ s.uptimePercent }}%</strong>
+          </div>
+          <div>
+            <span class="block text-[9.5px] uppercase">Nodos</span>
+            <strong class="text-white">{{ s.instancesCount }} pods</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= LIVE AUDIT LOG VIEWER ================= -->
+  <div class="cyber-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+      <div>
+        <h3 class="font-['Epilogue'] text-lg font-black text-white">Consola de Eventos & Auditoría</h3>
+        <p class="text-xs text-neutral-400 mt-0.5">Historial de pagos, sincronizaciones, inicios de sesión y alertas de API.</p>
+      </div>
+
+      <!-- Level Filter -->
+      <div class="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-[#141824] p-1 text-xs font-mono">
+        <button 
+          *ngFor="let lvl of ['ALL', 'SUCCESS', 'INFO', 'WARN']"
+          type="button"
+          (click)="activeLogLevel.set(lvl)"
+          class="rounded-xl px-3 py-1.5 font-bold transition-all"
+          [ngClass]="activeLogLevel() === lvl ? 'bg-cyan-accent text-black font-black' : 'text-neutral-400 hover:text-white'"
+        >
+          {{ lvl }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Logs Stream -->
+    <div class="space-y-2 font-mono text-xs max-h-96 overflow-y-auto pr-1">
+      <div *ngFor="let log of filteredLogs" class="rounded-2xl bg-white/[0.02] p-3.5 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/[0.04] transition">
+        <div class="flex items-start sm:items-center gap-3 min-w-0">
+          <span 
+            class="rounded-md px-2 py-0.5 text-[9px] font-black uppercase flex-shrink-0"
+            [ngClass]="{
+              'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30': log.level === 'SUCCESS',
+              'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30': log.level === 'INFO',
+              'bg-amber-500/20 text-amber-400 border border-amber-500/30': log.level === 'WARN'
+            }"
+          >
+            {{ log.level }}
+          </span>
+          <div class="min-w-0">
+            <span class="font-bold text-white">{{ log.action }}</span>
+            <p class="text-[11px] text-neutral-400 leading-snug mt-0.5">{{ log.details }}</p>
+          </div>
+        </div>
+
+        <div class="text-left sm:text-right flex-shrink-0 text-[10.5px] text-neutral-500">
+          <div>{{ log.timestamp }}</div>
+          <div *ngIf="log.source" class="text-cyan-400">src: {{ log.source }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

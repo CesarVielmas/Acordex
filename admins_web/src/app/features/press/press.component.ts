@@ -19,8 +19,11 @@ import { accreditationStats, isStaleUnconvoked, pressSpend } from './press-metri
  *
  * Mismo tablero por fase que Eventos, porque un evento de prensa es un evento: se
  * arma, se revisa, se convoca, ocurre y se cierra. Lo que cambia es lo que se
- * mide: aquí no hay taquilla ni aforo de pago, así que las cifras de arriba
- * hablan de solicitudes, acreditados y gasto.
+ * mide: aquí no hay taquilla ni aforo de pago —tampoco croquis, porque no es un
+ * evento masivo con butacas sino un espacio preferencial donde la gente se
+ * acomoda—, así que las cifras de arriba hablan de solicitudes, acreditados y
+ * gasto. Un evento de prensa se sube para crear auge: **todo lo que pasa por él
+ * es dinero que sale**.
  *
  * El rol Usuario de campo solo ve lo que ya es público: un borrador trae gasto y
  * datos de contacto de medios que no le corresponden.
@@ -50,7 +53,7 @@ import { accreditationStats, isStaleUnconvoked, pressSpend } from './press-metri
                 Firmas & Ruedas de Prensa
               </h1>
               <p class="text-xs text-outline mt-0.5">
-                Acreditación de medios, montaje y control de gasto · sin boletaje ni taquilla
+                Acreditación de medios y desglose de gasto · sin boletaje ni taquilla
                 · {{ allStates.length }} fases del ciclo
               </p>
             </div>
@@ -201,6 +204,8 @@ import { accreditationStats, isStaleUnconvoked, pressSpend } from './press-metri
         <app-press-detail-modal
           [event]="selected()"
           [availableGroups]="mockData.groups()"
+          [allEvents]="mockData.events()"
+          [allPressEvents]="mockData.pressEvents()"
           (closed)="selected.set(null)"
           (patch)="applyPatch($event)"
           (submitReview)="submitReview($event)"

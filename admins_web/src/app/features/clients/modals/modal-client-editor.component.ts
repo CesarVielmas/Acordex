@@ -12,25 +12,25 @@ import { ClientItem } from '../../../core/models/admin.models';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div class="w-full max-w-2xl rounded-3xl bg-surface-container border border-outline-variant/30 shadow-2xl p-6 sm:p-7 space-y-5 my-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div class="w-full max-w-2xl rounded-3xl bg-[#1A1A1A] border border-white/10 shadow-2xl p-6 sm:p-7 space-y-5 my-8 max-h-[90vh] overflow-y-auto custom-scrollbar">
 
         <!-- Encabezado -->
-        <div class="flex items-center justify-between border-b border-outline-variant/20 pb-4">
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
           <div class="flex items-center gap-2.5">
-            <span class="w-9 h-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center material-symbols-outlined text-xl">
+            <span class="w-9 h-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center material-symbols-outlined text-xl shadow-inner">
               {{ isEditing() ? 'edit' : 'person_add' }}
             </span>
             <div>
-              <h3 class="text-base sm:text-lg font-black text-on-surface">
-                {{ isEditing() ? 'Editar Cliente CRM' : 'Registrar Nuevo Cliente' }}
+              <h3 class="text-base sm:text-lg font-black text-on-surface font-['Epilogue']">
+                {{ isEditing() ? 'Editar Cuenta Comercial CRM' : 'Alta de Nuevo Cliente / Promotor' }}
               </h3>
-              <p class="text-xs text-outline">Datos comerciales, fiscales y preferencias de contratación</p>
+              <p class="text-xs text-outline font-['Epilogue']">Expediente comercial, perfil tributario y condiciones preferenciales</p>
             </div>
           </div>
           <button
             type="button"
             (click)="closed.emit()"
-            class="w-8 h-8 rounded-xl bg-surface-container-high text-outline hover:text-on-surface flex items-center justify-center transition-all cursor-pointer"
+            class="w-8 h-8 rounded-xl bg-[#222222] text-outline hover:text-on-surface flex items-center justify-center transition-all cursor-pointer"
           >
             <span class="material-symbols-outlined text-base">close</span>
           </button>
@@ -42,22 +42,22 @@ import { ClientItem } from '../../../core/models/admin.models';
           <!-- 1. DATOS BÁSICOS -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label class="font-bold text-on-surface">Nombre Completo del Contacto <span class="text-rose-400">*</span></label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Nombre Completo del Titular <span class="text-rose-400">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="formName"
                 placeholder="Ej. Roberto Gómez Garza"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
               />
             </div>
 
             <div class="space-y-1.5">
-              <label class="font-bold text-on-surface">Empresa / Razón Social <span class="text-rose-400">*</span></label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Razón Social / Empresa <span class="text-rose-400">*</span></label>
               <input
                 type="text"
                 [(ngModel)]="formCompany"
                 placeholder="Ej. Promociones del Norte SA de CV"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
               />
             </div>
           </div>
@@ -65,43 +65,43 @@ import { ClientItem } from '../../../core/models/admin.models';
           <!-- 2. SEGMENTO, TIER & STATUS -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="space-y-1.5">
-              <label class="font-bold text-on-surface">Segmento</label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Segmento Comercial</label>
               <select
                 [(ngModel)]="formSegment"
-                class="w-full px-3 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface focus:outline-none focus:border-primary text-xs"
+                class="w-full px-3 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
               >
-                <option value="Empresario de Palenque / Feria">Empresario de Palenque / Feria</option>
-                <option value="Promotor de Bailes">Promotor de Bailes</option>
-                <option value="Particular (Boda/XV)">Particular (Boda/XV)</option>
-                <option value="Corporativo / Empresa">Corporativo / Empresa</option>
-                <option value="Gobierno / Municipio">Gobierno / Municipio</option>
+                <option value="Empresario de Palenque / Feria">Empresarios de Palenques & Ferias</option>
+                <option value="Promotor de Bailes">Promotores de Espectáculos Masivos</option>
+                <option value="Particular (Boda/XV)">Eventos Sociales Particulares</option>
+                <option value="Corporativo / Empresa">Eventos Corporativos & Marcas</option>
+                <option value="Gobierno / Municipio">Patronatos & Gobiernos Municipales</option>
               </select>
             </div>
 
             <div class="space-y-1.5">
-              <label class="font-bold text-on-surface">Nivel / Tier</label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Clasificación / Tier</label>
               <select
                 [(ngModel)]="formTier"
-                class="w-full px-3 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface focus:outline-none focus:border-primary text-xs"
+                class="w-full px-3 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
               >
-                <option value="Diamante">💎 Diamante</option>
-                <option value="Oro">🥇 Oro</option>
-                <option value="Plata">🥈 Plata</option>
-                <option value="Prospecto">🎯 Prospecto</option>
+                <option value="Diamante">💎 Tier Diamante</option>
+                <option value="Oro">🥇 Tier Oro</option>
+                <option value="Plata">🥈 Tier Plata</option>
+                <option value="Prospecto">🎯 Prospecto Comercial</option>
               </select>
             </div>
 
             <div class="space-y-1.5">
-              <label class="font-bold text-on-surface">Estatus CRM</label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Estatus Operativo</label>
               <select
                 [(ngModel)]="formStatus"
-                class="w-full px-3 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface focus:outline-none focus:border-primary text-xs"
+                class="w-full px-3 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
               >
-                <option value="Frecuente">Frecuente</option>
+                <option value="Frecuente">Frecuente (Alta Recurrencia)</option>
                 <option value="Activo">Activo</option>
-                <option value="Prospecto">Prospecto</option>
+                <option value="Prospecto">En Prospección</option>
                 <option value="Inactivo">Inactivo</option>
-                <option value="Lista Negra">Lista Negra</option>
+                <option value="Lista Negra">Lista Negra / Restringido</option>
               </select>
             </div>
           </div>
@@ -109,107 +109,107 @@ import { ClientItem } from '../../../core/models/admin.models';
           <!-- 3. CONTACTO & UBICACIÓN -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label class="font-bold text-on-surface">Correo Electrónico</label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Correo Electrónico Corporativo</label>
               <input
                 type="email"
                 [(ngModel)]="formEmail"
                 placeholder="contacto@empresa.com"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
               />
             </div>
 
             <div class="space-y-1.5">
-              <label class="font-bold text-on-surface">Teléfono / WhatsApp</label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Teléfono / WhatsApp Directo</label>
               <input
                 type="text"
                 [(ngModel)]="formPhone"
                 placeholder="+52 81 8392 1029"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs font-mono shadow-inner"
               />
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label class="font-bold text-on-surface">Ciudad</label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Plaza / Ciudad Principal</label>
               <input
                 type="text"
                 [(ngModel)]="formCity"
                 placeholder="Monterrey"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
               />
             </div>
 
             <div class="space-y-1.5">
-              <label class="font-bold text-on-surface">Estado</label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Estado / Región</label>
               <input
                 type="text"
                 [(ngModel)]="formState"
                 placeholder="Nuevo León"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
               />
             </div>
           </div>
 
           <!-- 4. DATOS FISCALES / FACTURACIÓN (COLAPSIBLE / OPCIONAL) -->
-          <div class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/30 space-y-3">
-            <h4 class="font-bold text-on-surface flex items-center gap-1.5">
+          <div class="p-4 rounded-2xl bg-[#141414] border border-white/5 space-y-3 shadow-inner">
+            <h4 class="font-bold text-on-surface flex items-center gap-1.5 font-['Epilogue']">
               <span class="material-symbols-outlined text-primary text-base">receipt_long</span>
-              Datos Fiscales de Facturación (Opcional)
+              Datos Fiscales de Facturación SAT (Opcional)
             </h4>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div class="space-y-1">
-                <span class="text-[10px] text-outline uppercase font-bold">RFC</span>
+                <span class="text-[10px] text-outline uppercase font-bold font-['Epilogue']">RFC Tributario</span>
                 <input
                   type="text"
                   [(ngModel)]="formRfc"
                   placeholder="PNO180412KJ9"
-                  class="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface text-xs focus:outline-none focus:border-primary uppercase font-mono"
+                  class="w-full px-3 py-2 rounded-xl bg-[#1A1A1A] border border-white/10 text-on-surface text-xs focus:outline-none focus:border-primary uppercase font-mono"
                 />
               </div>
 
               <div class="space-y-1">
-                <span class="text-[10px] text-outline uppercase font-bold">Régimen Fiscal</span>
+                <span class="text-[10px] text-outline uppercase font-bold font-['Epilogue']">Régimen Fiscal</span>
                 <input
                   type="text"
                   [(ngModel)]="formTaxRegime"
-                  placeholder="601 - General de Ley"
-                  class="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface text-xs focus:outline-none focus:border-primary"
+                  placeholder="601 - General de Ley Personas Morales"
+                  class="w-full px-3 py-2 rounded-xl bg-[#1A1A1A] border border-white/10 text-on-surface text-xs focus:outline-none focus:border-primary font-['Epilogue']"
                 />
               </div>
             </div>
 
             <div class="space-y-1">
-              <span class="text-[10px] text-outline uppercase font-bold">Dirección Fiscal Completa</span>
+              <span class="text-[10px] text-outline uppercase font-bold font-['Epilogue']">Domicilio Fiscal Completo</span>
               <input
                 type="text"
                 [(ngModel)]="formBillingAddress"
                 placeholder="Av. Constitución 2400, Monterrey, NL, CP 64060"
-                class="w-full px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface text-xs focus:outline-none focus:border-primary"
+                class="w-full px-3 py-2 rounded-xl bg-[#1A1A1A] border border-white/10 text-on-surface text-xs focus:outline-none focus:border-primary font-['Epilogue']"
               />
             </div>
           </div>
 
           <!-- 5. NOTAS DE SERVICIO -->
           <div class="space-y-1.5">
-            <label class="font-bold text-on-surface">Notas y Hábitos de Contratación</label>
+            <label class="font-bold text-on-surface font-['Epilogue']">Notas & Preferencias de Contratación</label>
             <textarea
               [(ngModel)]="formNotes"
               rows="2"
-              placeholder="Preferencias de pago, horarios para contactar, requerimientos especiales..."
-              class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs"
+              placeholder="Condiciones de pago acordadas, requerimientos de hospedaje, preferencias de elenco..."
+              class="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
             ></textarea>
           </div>
 
         </div>
 
         <!-- Botones de Acción -->
-        <div class="flex items-center justify-end gap-3 pt-3 border-t border-outline-variant/20 text-xs">
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-white/10 text-xs">
           <button
             type="button"
             (click)="closed.emit()"
-            class="px-4 py-2.5 rounded-xl bg-surface-container-high text-outline hover:text-on-surface font-bold transition-all cursor-pointer"
+            class="px-4 py-2.5 rounded-xl bg-[#222222] hover:bg-[#282828] text-outline hover:text-on-surface font-bold transition-all cursor-pointer font-['Epilogue']"
           >
             Cancelar
           </button>
@@ -217,7 +217,7 @@ import { ClientItem } from '../../../core/models/admin.models';
             type="button"
             (click)="submitForm()"
             [disabled]="!formName.trim() || !formCompany.trim()"
-            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-on-primary font-black shadow-lg shadow-primary/20 hover:opacity-95 transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 font-['Epilogue']"
           >
             <span class="material-symbols-outlined text-base">save</span>
             {{ isEditing() ? 'Guardar Cambios' : 'Registrar Cliente' }}

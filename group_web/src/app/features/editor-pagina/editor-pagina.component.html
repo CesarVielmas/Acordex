@@ -1,0 +1,684 @@
+<div *ngIf="formData() as form" class="space-y-8 max-w-7xl mx-auto pb-20 animate-fade-in">
+  
+  <!-- ================= TOP HERO CMS BAR ================= -->
+  <div class="luxury-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10">
+      <div class="flex flex-wrap items-center gap-2.5">
+        <h1 class="font-['Epilogue'] text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+          Editor de Página Pública
+        </h1>
+        <span class="rounded-full bg-primary/20 px-3.5 py-1 text-xs font-extrabold text-primary border border-primary/40 flex items-center gap-1.5 shadow-sm">
+          <span class="material-symbols-outlined text-xs">public</span>
+          clients_web (/grupo/{{ form.slug || form.id }})
+        </span>
+      </div>
+      <p class="text-xs sm:text-sm text-neutral-400 mt-2 max-w-2xl leading-relaxed">
+        Personaliza tu vitrina oficial en Acordex. Modifica fotos de portada, biografía, músicos, catálogo musical, rider técnico y paquetes de contratación en tiempo real.
+      </p>
+    </div>
+
+    <!-- Actions -->
+    <div class="relative z-10 flex flex-wrap items-center gap-3 flex-shrink-0">
+      <button 
+        type="button" 
+        (click)="openLivePreview()"
+        class="flex items-center gap-2 rounded-2xl border border-primary/50 bg-primary/10 px-5 py-3 text-xs font-extrabold text-primary hover:bg-primary/20 transition-all duration-200 shadow-md hover:shadow-[0_0_20px_rgba(242,202,80,0.2)] active:scale-95"
+      >
+        <span class="material-symbols-outlined text-lg">visibility</span>
+        <span>Vista Previa en Vivo</span>
+      </button>
+
+      <button 
+        type="button" 
+        (click)="saveAllChanges()"
+        class="luxury-gold-btn flex items-center gap-2 rounded-2xl px-6 py-3 text-xs uppercase tracking-wider active:scale-95"
+      >
+        <span class="material-symbols-outlined text-lg font-black">save</span>
+        <span>Guardar Cambios</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Success Notification Alert -->
+  <div *ngIf="isSavedAlert()" class="rounded-3xl border border-emerald-500/50 bg-emerald-500/15 p-5 text-xs font-bold text-emerald-300 flex items-center gap-3 animate-fade-in shadow-xl shadow-emerald-500/10">
+    <span class="material-symbols-outlined text-2xl text-emerald-400">check_circle</span>
+    <div class="flex-1">
+      <span class="block text-white font-extrabold text-sm">¡Página pública actualizada con éxito!</span>
+      <span class="text-emerald-300/90 font-normal">Los cambios se han guardado y están sincronizados con clients_web y admins_web.</span>
+    </div>
+  </div>
+
+  <!-- ================= TABS NAVIGATION BAR ================= -->
+  <div class="flex border border-white/10 bg-[#161616]/90 backdrop-blur-xl rounded-2xl p-1.5 gap-1.5 overflow-x-auto no-scrollbar shadow-lg">
+    <button 
+      *ngFor="let tab of tabs"
+      (click)="setTab(tab.id)"
+      class="flex items-center gap-2.5 rounded-xl px-4 py-3 text-xs font-bold transition-all duration-200 flex-shrink-0"
+      [ngClass]="activeEditorTab() === tab.id ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-[1.02]' : 'text-neutral-400 hover:text-white hover:bg-white/5'"
+    >
+      <span class="material-symbols-outlined text-base">{{ tab.icon }}</span>
+      <span>{{ tab.label }}</span>
+      <span *ngIf="tab.badge" class="rounded-full px-2 py-0.5 text-[9.5px] font-extrabold" [ngClass]="activeEditorTab() === tab.id ? 'bg-black/20 text-black' : 'bg-primary/20 text-primary'">
+        {{ tab.badge }}
+      </span>
+    </button>
+  </div>
+
+  <!-- ================= TAB 1: IDENTIDAD & PORTADA ================= -->
+  <div *ngIf="activeEditorTab() === 'identidad'" class="luxury-card rounded-3xl p-6 sm:p-8 lg:p-10 space-y-8 animate-fade-in">
+    <div class="flex items-center justify-between border-b border-white/10 pb-5">
+      <div>
+        <h3 class="font-['Epilogue'] text-lg sm:text-xl font-extrabold text-white flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-primary text-2xl">badge</span>
+          <span>Identidad Principal, Portada Hero & Video Mix</span>
+        </h3>
+        <p class="text-xs text-neutral-400 mt-1">Controla la primera impresión visual que tendrán los promotores y clientes.</p>
+      </div>
+    </div>
+
+    <!-- Hero Cover Preview Card -->
+    <div class="space-y-4">
+      <label class="block font-extrabold text-white text-xs uppercase tracking-wider">Foto de Portada Panorámica Hero (Cover):</label>
+      <div class="relative h-64 sm:h-72 w-full overflow-hidden rounded-3xl bg-black border border-white/15 shadow-2xl group">
+        <img [src]="form.coverUrl || form.avatarUrl" alt="Cover preview" class="h-full w-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+        <div class="absolute bottom-5 left-5 right-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <img [src]="form.avatarUrl" alt="Avatar" class="h-20 w-20 rounded-2xl object-cover ring-2 ring-primary shadow-2xl" />
+            <div>
+              <span class="rounded-full bg-primary/30 px-3 py-0.5 text-[10.5px] font-extrabold text-primary uppercase tracking-wider backdrop-blur-md border border-primary/40">{{ form.genre }}</span>
+              <h4 class="text-xl sm:text-2xl font-black text-white uppercase mt-1">{{ form.name }}</h4>
+              <span class="text-xs text-neutral-300">📍 {{ form.originCity }}, {{ form.state || 'México' }}</span>
+            </div>
+          </div>
+          <span class="rounded-xl bg-black/70 px-3.5 py-1.5 text-xs text-neutral-300 backdrop-blur-md border border-white/10 font-bold self-start sm:self-auto">Vista Previa Hero</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+        <div>
+          <label class="block font-bold text-white mb-1.5 text-xs">URL de Portada Panorámica</label>
+          <input 
+            type="text" 
+            [(ngModel)]="form.coverUrl"
+            placeholder="https://images.unsplash.com/..."
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white placeholder:text-neutral-500 focus:border-primary focus:bg-white/[0.08] focus:outline-none transition"
+          />
+        </div>
+        <div>
+          <label class="block font-bold text-white mb-1.5 text-xs">URL de Foto de Avatar Cuadrado</label>
+          <input 
+            type="text" 
+            [(ngModel)]="form.avatarUrl"
+            placeholder="https://images.unsplash.com/..."
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white placeholder:text-neutral-500 focus:border-primary focus:bg-white/[0.08] focus:outline-none transition"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Basic Information Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-6 border-t border-white/10 text-xs">
+      <div>
+        <label class="block font-bold text-white mb-1.5">Nombre Comercial de la Agrupación</label>
+        <input 
+          type="text" 
+          [(ngModel)]="form.name"
+          class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:bg-white/[0.08] focus:outline-none transition font-semibold"
+        />
+      </div>
+
+      <div>
+        <label class="block font-bold text-white mb-1.5">Género Musical Principal</label>
+        <input 
+          type="text" 
+          [(ngModel)]="form.genre"
+          class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:bg-white/[0.08] focus:outline-none transition font-semibold"
+        />
+      </div>
+
+      <div>
+        <label class="block font-bold text-white mb-1.5">Slug URL (acordex.com/grupo/...)</label>
+        <input 
+          type="text" 
+          [(ngModel)]="form.slug"
+          placeholder="banda-los-reyes"
+          class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:bg-white/[0.08] focus:outline-none transition font-mono"
+        />
+      </div>
+    </div>
+
+    <!-- Presentation Video Mix -->
+    <div class="space-y-4 pt-6 border-t border-white/10 text-xs">
+      <h4 class="font-extrabold text-white text-sm flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-xl">smart_display</span>
+        <span>Video Mix de Presentación en Vivo (Cabecera)</span>
+      </h4>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label class="block font-bold text-white mb-1.5">Título del Video Mix</label>
+          <input 
+            type="text" 
+            [(ngModel)]="form.mixVideoTitle"
+            placeholder="Mix Estelar Sinaloense en Concierto..."
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:bg-white/[0.08] focus:outline-none transition"
+          />
+        </div>
+
+        <div>
+          <label class="block font-bold text-white mb-1.5">URL de Streaming o MP4</label>
+          <input 
+            type="text" 
+            [(ngModel)]="form.mixVideoUrl"
+            placeholder="https://vjs.zencdn.net/v/oceans.mp4"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:bg-white/[0.08] focus:outline-none transition font-mono"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 2: INTEGRANTES & FICHAS ARTÍSTICAS ================= -->
+  <div *ngIf="activeEditorTab() === 'integrantes'" class="luxury-card rounded-3xl p-6 sm:p-8 lg:p-10 space-y-8 animate-fade-in">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+      <div>
+        <h3 class="font-['Epilogue'] text-lg sm:text-xl font-extrabold text-white flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-primary text-2xl">groups</span>
+          <span>Integrantes, Músicos & Fichas Artísticas</span>
+        </h3>
+        <p class="text-xs text-neutral-400 mt-1">
+          Actualmente hay <strong>{{ form.members.length }} músicos</strong> registrados. Los clientes pueden ver sus fotos, trayectoria e instrumentos.
+        </p>
+      </div>
+
+      <button 
+        type="button" 
+        (click)="openAddNewMemberModal()"
+        class="luxury-gold-btn flex items-center gap-2 rounded-2xl px-5 py-3 text-xs uppercase tracking-wider"
+      >
+        <span class="material-symbols-outlined text-base">person_add</span>
+        <span>+ Agregar Nuevo Integrante</span>
+      </button>
+    </div>
+
+    <!-- Musicians Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+      <div 
+        *ngFor="let m of form.members"
+        class="rounded-3xl border border-white/10 bg-white/[0.03] p-5 flex flex-col justify-between hover:border-primary/40 hover:bg-white/[0.06] transition-all duration-300 group shadow-lg"
+      >
+        <div class="space-y-3.5">
+          <div class="flex items-start gap-4">
+            <img [src]="m.photoUrl" [alt]="m.name" class="h-16 w-16 rounded-2xl object-cover ring-2 ring-primary/40 flex-shrink-0 shadow-md" />
+            <div class="min-w-0">
+              <h4 class="font-bold text-white text-sm truncate">{{ m.name }}</h4>
+              <span class="text-xs text-primary font-extrabold block truncate">{{ m.role }}</span>
+              <span class="text-[11px] text-neutral-300 block">🎺 {{ m.instrument || 'Instrumento' }}</span>
+              <span class="text-[10px] text-neutral-500 block">{{ m.experienceYears }} años exp. • {{ m.age }} años</span>
+            </div>
+          </div>
+
+          <p *ngIf="m.quote" class="text-xs italic text-neutral-300 bg-white/[0.03] p-3 rounded-2xl border border-white/5 line-clamp-2">
+            {{ m.quote }}
+          </p>
+
+          <p class="text-xs text-neutral-400 line-clamp-2 leading-relaxed">
+            {{ m.bio }}
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-white/10 mt-4">
+          <button 
+            type="button" 
+            (click)="openEditMemberModal(m)"
+            class="flex items-center gap-1.5 rounded-xl bg-white/[0.06] px-3.5 py-2 text-xs font-bold text-primary hover:bg-primary hover:text-black transition"
+          >
+            <span class="material-symbols-outlined text-sm">edit</span>
+            <span>Editar Ficha</span>
+          </button>
+
+          <button 
+            type="button" 
+            (click)="removeMember(m.id)"
+            class="rounded-xl p-2 text-rose-400 hover:bg-rose-500/20 transition"
+            title="Eliminar Integrante"
+          >
+            <span class="material-symbols-outlined text-base">delete</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 3: MULTIMEDIA, CANCIONES & VIDEOS ================= -->
+  <div *ngIf="activeEditorTab() === 'multimedia'" class="luxury-card rounded-3xl p-6 sm:p-8 lg:p-10 space-y-10 animate-fade-in">
+    <div>
+      <h3 class="font-['Epilogue'] text-lg sm:text-xl font-extrabold text-white flex items-center gap-2.5">
+        <span class="material-symbols-outlined text-primary text-2xl">library_music</span>
+        <span>Multimedia, Canciones, Galería & Videos Destacados</span>
+      </h3>
+      <p class="text-xs text-neutral-400 mt-1">Gestiona el catálogo de temas musicales, fotografías oficiales y clips en concierto.</p>
+    </div>
+
+    <!-- SECCIÓN 1: CANCIONES & SENCILLOS -->
+    <div class="space-y-4 rounded-3xl bg-white/[0.02] p-6 border border-white/10 shadow-lg">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h4 class="font-extrabold text-white text-xs uppercase tracking-wider flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-lg">music_note</span>
+          <span>1. Catálogo de Canciones & Sencillos ({{ form.tracks.length }} canciones)</span>
+        </h4>
+      </div>
+
+      <div class="space-y-3">
+        <div 
+          *ngFor="let t of form.tracks; let i = index"
+          class="flex items-center justify-between rounded-2xl bg-white/[0.04] p-4 border border-white/10 hover:border-primary/40 transition"
+        >
+          <div class="flex items-center gap-3.5 min-w-0">
+            <button 
+              type="button" 
+              (click)="playTrack(t)"
+              class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-black hover:scale-105 transition flex-shrink-0 shadow-md"
+            >
+              <span class="material-symbols-outlined text-base">
+                {{ currentlyPlayingTrack()?.id === t.id ? 'pause' : 'play_arrow' }}
+              </span>
+            </button>
+            <div class="min-w-0">
+              <div class="font-bold text-white text-xs truncate">{{ t.title }}</div>
+              <div class="text-[11px] text-neutral-400">{{ t.genre }} • {{ t.durationLabel || '3:30' }} • {{ t.releaseYear }}</div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <span class="text-xs font-bold text-primary hidden sm:inline">{{ t.plays }}</span>
+            <button (click)="removeTrack(i)" class="text-rose-400 hover:text-rose-300 p-1.5 hover:bg-rose-500/10 rounded-xl transition">
+              <span class="material-symbols-outlined text-base">delete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Track Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-3">
+        <input #newTTitle type="text" placeholder="Título de la Canción" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <input #newTGenre type="text" placeholder="Género (Banda, Cumbia)" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <input #newTDuration type="text" placeholder="Duración (3:45)" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <input #newTSpotify type="text" placeholder="Spotify URL" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+      </div>
+      <button (click)="addTrack(newTTitle.value, newTGenre.value, newTDuration.value, newTSpotify.value); newTTitle.value=''; newTGenre.value=''; newTDuration.value=''; newTSpotify.value=''" class="rounded-2xl bg-primary px-5 py-2.5 text-xs font-extrabold text-black hover:bg-primary-fixed shadow-md shadow-primary/20">+ Agregar Canción</button>
+    </div>
+
+    <!-- SECCIÓN 2: GALERÍA FOTOGRÁFICA OFICIAL -->
+    <div class="space-y-4 rounded-3xl bg-white/[0.02] p-6 border border-white/10 shadow-lg">
+      <h4 class="font-extrabold text-white text-xs uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-3">
+        <span class="material-symbols-outlined text-primary text-lg">collections</span>
+        <span>2. Galería de Fotos Oficiales ({{ form.gallery.length }} fotos)</span>
+      </h4>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div *ngFor="let g of form.gallery; let i = index" class="group relative h-40 rounded-3xl overflow-hidden bg-black border border-white/10 shadow-md">
+          <img [src]="g.url" [alt]="g.caption" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-3 flex flex-col justify-between">
+            <div class="flex justify-end">
+              <button (click)="removeGalleryImage(i)" class="flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-rose-400 hover:bg-black transition">
+                <span class="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+            <div>
+              <span class="rounded-md bg-primary px-2 py-0.5 text-[9px] font-extrabold text-black uppercase">{{ g.category }}</span>
+              <p class="text-[10.5px] text-white truncate mt-1">{{ g.caption }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2">
+        <input #newGUrl type="text" placeholder="URL de la Foto" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <input #newGCaption type="text" placeholder="Pie de Foto" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <button (click)="addGalleryImage(newGUrl.value, newGCaption.value, 'En Vivo'); newGUrl.value=''; newGCaption.value=''" class="rounded-2xl bg-primary px-5 py-2.5 text-xs font-extrabold text-black hover:bg-primary-fixed shadow-md shadow-primary/20">+ Agregar Foto Oficial</button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: VIDEOS DESTACADOS EN CONCIERTO -->
+    <div class="space-y-4 rounded-3xl bg-white/[0.02] p-6 border border-white/10 shadow-lg">
+      <h4 class="font-extrabold text-white text-xs uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-3">
+        <span class="material-symbols-outlined text-primary text-lg">movie</span>
+        <span>3. Videos Destacados en Concierto ({{ form.videos.length }} videos)</span>
+      </h4>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div *ngFor="let v of form.videos; let i = index" class="flex items-center justify-between rounded-2xl bg-white/[0.04] p-4 border border-white/10">
+          <div class="flex items-center gap-4 min-w-0">
+            <img [src]="v.thumbnailUrl" [alt]="v.title" class="h-12 w-16 rounded-xl object-cover flex-shrink-0 shadow-md" />
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-white truncate">{{ v.title }}</div>
+              <div class="text-[10px] text-neutral-400">{{ v.duration }}</div>
+            </div>
+          </div>
+          <button (click)="removeHighlightVideo(i)" class="text-rose-400 hover:text-rose-300 p-2 hover:bg-rose-500/10 rounded-xl transition">
+            <span class="material-symbols-outlined text-base">delete</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2">
+        <input #newVTitle type="text" placeholder="Título del Video" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <input #newVThumb type="text" placeholder="URL Miniatura" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <button (click)="addHighlightVideo(newVTitle.value, 'https://vjs.zencdn.net/v/oceans.mp4', newVThumb.value, '3:45'); newVTitle.value=''; newVThumb.value=''" class="rounded-2xl bg-primary px-5 py-2.5 text-xs font-extrabold text-black hover:bg-primary-fixed shadow-md shadow-primary/20">+ Agregar Video</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 4: HISTORIA, HITOS & RECONOCIMIENTOS ================= -->
+  <div *ngIf="activeEditorTab() === 'trayectoria'" class="luxury-card rounded-3xl p-6 sm:p-8 lg:p-10 space-y-8 animate-fade-in">
+    <h3 class="font-['Epilogue'] text-lg sm:text-xl font-extrabold text-white flex items-center gap-2.5 border-b border-white/10 pb-5">
+      <span class="material-symbols-outlined text-primary text-2xl">timeline</span>
+      <span>Historia, Biografía, Origen & Hitos</span>
+    </h3>
+
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+      <div>
+        <label class="block font-bold text-white mb-1.5">Año de Fundación</label>
+        <input type="number" [(ngModel)]="form.foundedYear" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-semibold" />
+      </div>
+      <div>
+        <label class="block font-bold text-white mb-1.5">Ciudad de Origen</label>
+        <input type="text" [(ngModel)]="form.originCity" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-semibold" />
+      </div>
+      <div>
+        <label class="block font-bold text-white mb-1.5">Estado</label>
+        <input type="text" [(ngModel)]="form.state" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-semibold" />
+      </div>
+      <div>
+        <label class="block font-bold text-white mb-1.5">País</label>
+        <input type="text" [(ngModel)]="form.country" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-semibold" />
+      </div>
+    </div>
+
+    <div>
+      <label class="block font-bold text-white mb-1.5 text-xs">Descripción Resumida (About)</label>
+      <input type="text" [(ngModel)]="form.about" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none" />
+    </div>
+
+    <div>
+      <label class="block font-bold text-white mb-1.5 text-xs">Historia y Trayectoria Completa</label>
+      <textarea [(ngModel)]="form.history" rows="5" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-4 text-xs text-white focus:border-primary focus:outline-none leading-relaxed"></textarea>
+    </div>
+
+    <!-- Dotación de Instrumentos -->
+    <div class="space-y-3 pt-4 border-t border-white/10 text-xs">
+      <label class="block font-bold text-white">Dotación Instrumental en Escenario:</label>
+      <div class="flex flex-wrap gap-2.5">
+        <span *ngFor="let inst of form.instruments; let i = index" class="rounded-2xl bg-white/[0.06] px-4 py-2 text-xs text-white border border-white/10 flex items-center gap-2 shadow-sm">
+          <span>🎺 {{ inst }}</span>
+          <button (click)="removeInstrument(i)" class="text-rose-400 hover:text-rose-300">
+            <span class="material-symbols-outlined text-sm">close</span>
+          </button>
+        </span>
+      </div>
+      <div class="flex items-center gap-3 pt-2">
+        <input #instInput type="text" placeholder="Ej: Tuba electroacústica, Trompetas Bb (3)..." class="flex-1 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <button (click)="addInstrument(instInput.value); instInput.value = ''" class="rounded-2xl bg-primary px-5 py-2.5 text-xs font-bold text-black hover:bg-primary-fixed shadow-md">+ Agregar</button>
+      </div>
+    </div>
+
+    <!-- Hitos Históricos (Milestones) -->
+    <div class="space-y-4 pt-4 border-t border-white/10 text-xs">
+      <label class="block font-bold text-white">Línea de Tiempo de Hitos & Reconocimientos:</label>
+      <div class="space-y-2.5">
+        <div *ngFor="let m of form.milestones; let i = index" class="flex items-start justify-between rounded-2xl bg-white/[0.04] p-4 border border-white/10">
+          <div>
+            <span class="text-xs font-black text-primary">{{ m.year }} - {{ m.title }}</span>
+            <p class="text-xs text-neutral-300 mt-1">{{ m.description }}</p>
+          </div>
+          <button (click)="removeMilestone(i)" class="text-rose-400 hover:text-rose-300 p-1.5 hover:bg-rose-500/10 rounded-xl transition">
+            <span class="material-symbols-outlined text-base">delete</span>
+          </button>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2">
+        <input #mYearInput type="text" placeholder="Año (2024)" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <input #mTitleInput type="text" placeholder="Título del Hito" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <input #mDescInput type="text" placeholder="Descripción breve" class="sm:col-span-2 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+      </div>
+      <button (click)="addMilestone(mYearInput.value, mTitleInput.value, mDescInput.value); mYearInput.value=''; mTitleInput.value=''; mDescInput.value=''" class="rounded-2xl bg-primary px-5 py-2.5 text-xs font-bold text-black hover:bg-primary-fixed shadow-md">+ Agregar Hito a la Línea de Tiempo</button>
+    </div>
+
+    <!-- Premios & Galardones (Awards) -->
+    <div class="space-y-3 pt-4 border-t border-white/10 text-xs">
+      <label class="block font-bold text-white">Premios & Galardones Oficiales:</label>
+      <div class="flex flex-wrap gap-2.5">
+        <span *ngFor="let aw of form.awards; let i = index" class="rounded-2xl bg-white/[0.06] px-4 py-2 text-xs text-white border border-white/10 flex items-center gap-2 shadow-sm">
+          <span>🏆 {{ aw }}</span>
+          <button (click)="removeAward(i)" class="text-rose-400 hover:text-rose-300">
+            <span class="material-symbols-outlined text-sm">close</span>
+          </button>
+        </span>
+      </div>
+      <div class="flex items-center gap-3 pt-2">
+        <input #awInput type="text" placeholder="Ej: Certificado de Excelencia Acordex 2026..." class="flex-1 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <button (click)="addAward(awInput.value); awInput.value = ''" class="rounded-2xl bg-primary px-5 py-2.5 text-xs font-bold text-black hover:bg-primary-fixed shadow-md">+ Agregar Premio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 5: RIDER TÉCNICO & AUDIO ================= -->
+  <div *ngIf="activeEditorTab() === 'rider'" class="luxury-card rounded-3xl p-6 sm:p-8 lg:p-10 space-y-8 animate-fade-in">
+    <h3 class="font-['Epilogue'] text-lg sm:text-xl font-extrabold text-white flex items-center gap-2.5 border-b border-white/10 pb-5">
+      <span class="material-symbols-outlined text-primary text-2xl">speaker</span>
+      <span>Rider Técnico & Especificaciones de Sonido</span>
+    </h3>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
+      <div>
+        <label class="block font-bold text-white mb-1.5">Consola Digital Oficial</label>
+        <input type="text" [(ngModel)]="form.audio.consoleModel" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-semibold" />
+      </div>
+
+      <div>
+        <label class="block font-bold text-white mb-1.5">Ingeniero de Sonido de Cabecera</label>
+        <input type="text" [(ngModel)]="form.audio.engineerName" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-semibold" />
+      </div>
+    </div>
+
+    <!-- Requerimientos de Escenario -->
+    <div class="space-y-4 pt-3 text-xs">
+      <label class="block font-bold text-white">Requerimientos Técnicos para el Evento:</label>
+      <div class="space-y-2.5">
+        <div *ngFor="let req of form.audio.riderRequirements; let i = index" class="flex items-center justify-between rounded-2xl bg-white/[0.04] p-4 border border-white/10">
+          <span class="text-neutral-200">{{ req }}</span>
+          <button (click)="removeRiderRequirement(i)" class="text-rose-400 hover:text-rose-300 p-1.5 hover:bg-rose-500/10 rounded-xl transition">
+            <span class="material-symbols-outlined text-base">delete</span>
+          </button>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 pt-2">
+        <input #newRiderInput type="text" placeholder="Ej: Tarima mínima de 10x8m con techo impermeable..." class="flex-1 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <button (click)="addRiderRequirement(newRiderInput.value); newRiderInput.value = ''" class="rounded-2xl bg-primary px-5 py-2.5 text-xs font-bold text-black hover:bg-primary-fixed shadow-md">+ Agregar Requisito</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 6: TARIFAS, PAQUETES & CONTACTO ================= -->
+  <div *ngIf="activeEditorTab() === 'contacto'" class="luxury-card rounded-3xl p-6 sm:p-8 lg:p-10 space-y-8 animate-fade-in">
+    <h3 class="font-['Epilogue'] text-lg sm:text-xl font-extrabold text-white flex items-center gap-2.5 border-b border-white/10 pb-5">
+      <span class="material-symbols-outlined text-primary text-2xl">payments</span>
+      <span>Tarifas, Paquetes de Contratación & Contacto</span>
+    </h3>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
+      <div>
+        <label class="block font-bold text-white mb-1.5">Tarifa Base Sugerida por Hora (MXN)</label>
+        <input type="number" [(ngModel)]="form.artistFeeBase" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-bold" />
+      </div>
+
+      <div>
+        <label class="block font-bold text-white mb-1.5">Mínimo de Horas por Contrato</label>
+        <input type="number" [(ngModel)]="form.minimumHours" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-bold" />
+      </div>
+    </div>
+
+    <!-- Paquetes de Contratación -->
+    <div class="space-y-4 pt-4 border-t border-white/10 text-xs">
+      <label class="block font-bold text-white">Paquetes de Contratación para Clientes:</label>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div *ngFor="let pkg of form.packages; let i = index" class="rounded-3xl bg-white/[0.04] p-5 border border-white/10 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-white text-sm">{{ pkg.name }}</h4>
+            <button (click)="removePackage(i)" class="text-rose-400 hover:text-rose-300 p-1.5 hover:bg-rose-500/10 rounded-xl transition">
+              <span class="material-symbols-outlined text-base">delete</span>
+            </button>
+          </div>
+          <div class="font-extrabold text-primary text-lg">{{ pkg.price }} ({{ pkg.hours }} hrs)</div>
+          <p class="text-xs text-neutral-400">{{ pkg.description }}</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2">
+        <input #pNameInput type="text" placeholder="Nombre Paquete" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <input #pHoursInput type="number" placeholder="Horas (4)" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <input #pPriceInput type="text" placeholder="Precio ($140,000 MXN)" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+        <input #pDescInput type="text" placeholder="Descripción breve" class="rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white focus:border-primary focus:outline-none" />
+      </div>
+      <button (click)="addPackage(pNameInput.value, +pHoursInput.value, pPriceInput.value, pDescInput.value, 'Show en vivo, Staff'); pNameInput.value=''; pHoursInput.value=''; pPriceInput.value=''; pDescInput.value=''" class="rounded-2xl bg-primary px-5 py-2.5 text-xs font-bold text-black hover:bg-primary-fixed shadow-md">+ Agregar Paquete</button>
+    </div>
+
+    <!-- Contacto de Oficina -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 text-xs pt-4 border-t border-white/10">
+      <div>
+        <label class="block font-bold text-white mb-1.5">Nombre Representante / Manager</label>
+        <input type="text" [(ngModel)]="form.managerName" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-semibold" />
+      </div>
+      <div>
+        <label class="block font-bold text-white mb-1.5">Teléfono de Contrataciones</label>
+        <input type="text" [(ngModel)]="form.bookingPhone" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-semibold" />
+      </div>
+      <div>
+        <label class="block font-bold text-white mb-1.5">Correo Oficial</label>
+        <input type="text" [(ngModel)]="form.bookingEmail" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none font-semibold" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 7: VISIBILIDAD DE SECCIONES ================= -->
+  <div *ngIf="activeEditorTab() === 'secciones'" class="luxury-card rounded-3xl p-6 sm:p-8 lg:p-10 space-y-6 animate-fade-in">
+    <div class="border-b border-white/10 pb-5">
+      <h3 class="font-['Epilogue'] text-lg sm:text-xl font-extrabold text-white">Conmutadores de Visibilidad en clients_web</h3>
+      <p class="text-xs text-neutral-400 mt-1">Controla qué bloques de información aparecen o se ocultan cuando un cliente entra a tu perfil.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+      <div 
+        *ngFor="let sec of sectionList"
+        (click)="toggleSectionVisibility(sec.key)"
+        class="cursor-pointer rounded-3xl border p-5 transition-all duration-200 flex items-center justify-between gap-4 select-none shadow-md"
+        [ngClass]="form.sectionVisibility[sec.key] ? 'border-primary/60 bg-primary/10' : 'border-white/10 bg-white/[0.02] opacity-70'"
+      >
+        <div class="flex items-center gap-3.5">
+          <span class="material-symbols-outlined text-primary text-2xl">{{ sec.icon }}</span>
+          <div>
+            <div class="text-xs font-bold text-white">{{ sec.label }}</div>
+            <div class="text-[11px] text-neutral-400 mt-0.5">{{ sec.desc }}</div>
+          </div>
+        </div>
+
+        <div 
+          class="h-7 w-12 rounded-full transition flex items-center px-1 flex-shrink-0"
+          [ngClass]="form.sectionVisibility[sec.key] ? 'bg-primary justify-end' : 'bg-neutral-700 justify-start'"
+        >
+          <span class="h-5 w-5 rounded-full bg-white shadow-md"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MEMBER EDIT MODAL ================= -->
+<div *ngIf="isMemberModalOpen() && editingMember() as m" class="fixed inset-0 z-50 flex items-center justify-center group-app-backdrop p-3 sm:p-6">
+  <div class="absolute inset-0" (click)="closeMemberModal()"></div>
+  <div class="relative z-10 w-full max-w-2xl overflow-hidden rounded-3xl group-app-modal shadow-2xl bg-[#181818] border border-white/15 max-h-[90vh] flex flex-col animate-fade-in ring-1 ring-white/10">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-white/10 px-6 py-5">
+      <div class="flex items-center gap-2.5">
+        <span class="material-symbols-outlined text-primary text-2xl">person</span>
+        <h3 class="font-['Epilogue'] font-extrabold text-white text-base sm:text-lg">
+          {{ m.name ? 'Ficha de: ' + m.name : 'Agregar Nuevo Integrante' }}
+        </h3>
+      </div>
+      <button (click)="closeMemberModal()" class="text-neutral-400 hover:text-white p-1 hover:bg-white/10 rounded-full transition">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <!-- Body Form -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-5 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-bold text-white mb-1.5">Nombre Artístico</label>
+          <input type="text" [(ngModel)]="m.name" placeholder="Ej: Mateo Reyes" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none" />
+        </div>
+        <div>
+          <label class="block font-bold text-white mb-1.5">Rol / Puesto</label>
+          <input type="text" [(ngModel)]="m.role" placeholder="Ej: Vocalista Principal & Líder" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block font-bold text-white mb-1.5">Instrumento</label>
+          <input type="text" [(ngModel)]="m.instrument" placeholder="Ej: Voz Principal, Tuba..." class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none" />
+        </div>
+        <div>
+          <label class="block font-bold text-white mb-1.5">Edad</label>
+          <input type="number" [(ngModel)]="m.age" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none" />
+        </div>
+        <div>
+          <label class="block font-bold text-white mb-1.5">Años Experiencia</label>
+          <input type="number" [(ngModel)]="m.experienceYears" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold text-white mb-1.5">URL Foto del Músico</label>
+        <div class="flex items-center gap-4">
+          <img [src]="m.photoUrl" [alt]="m.name" class="h-14 w-14 rounded-2xl object-cover ring-2 ring-primary/40 flex-shrink-0 shadow-md" />
+          <input type="text" [(ngModel)]="m.photoUrl" placeholder="https://..." class="flex-1 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold text-white mb-1.5">Frase Artística Célebre</label>
+        <input type="text" [(ngModel)]="m.quote" placeholder="«La música sinaloense se canta con el corazón...»" class="w-full rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs text-white focus:border-primary focus:outline-none" />
+      </div>
+
+      <div>
+        <label class="block font-bold text-white mb-1.5">Biografía Resumida</label>
+        <textarea [(ngModel)]="m.bio" rows="2" placeholder="Breve semblanza que se muestra en tarjetas..." class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3.5 text-xs text-white focus:border-primary focus:outline-none"></textarea>
+      </div>
+
+      <div>
+        <label class="block font-bold text-white mb-1.5">Biografía & Trayectoria Completa</label>
+        <textarea [(ngModel)]="m.fullBio" rows="4" placeholder="Historia completa del músico, inicios, estudios y giras..." class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3.5 text-xs text-white focus:border-primary focus:outline-none leading-relaxed"></textarea>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 border-t border-white/10 px-6 py-4 bg-white/[0.02]">
+      <button (click)="closeMemberModal()" class="rounded-2xl border border-white/15 px-5 py-2.5 text-xs font-bold text-white hover:bg-white/10 transition">
+        Cancelar
+      </button>
+      <button (click)="saveMemberModal()" class="luxury-gold-btn rounded-2xl px-6 py-2.5 text-xs font-extrabold text-black">
+        Guardar Integrante
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Unified Live Preview Modal matching clients_web -->
+<app-live-preview-modal
+  *ngIf="isLivePreviewOpen() && formData()"
+  [profile]="formData()!"
+  (close)="closeLivePreview()"
+></app-live-preview-modal>

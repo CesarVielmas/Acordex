@@ -1,0 +1,172 @@
+<div class="space-y-8 max-w-7xl mx-auto pb-20 animate-fade-in">
+  
+  <!-- ================= TOP HEADER BAR ================= -->
+  <div class="luxury-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10">
+      <h1 class="font-['Epilogue'] text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+        Evidencias & Fotos de Eventos
+      </h1>
+      <p class="text-xs sm:text-sm text-neutral-400 mt-2 max-w-2xl leading-relaxed">
+        Carga material oficial de presentaciones en vivo, pruebas de sonido, camerinos y convivencia con fans que se sincroniza automáticamente con tu galería pública en Acordex.
+      </p>
+    </div>
+
+    <!-- Stats Pill -->
+    <div class="relative z-10 flex items-center gap-3.5 rounded-2xl border border-white/15 bg-white/[0.04] p-3.5 pr-5 shadow-lg backdrop-blur-md self-start md:self-auto">
+      <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/20 text-primary">
+        <span class="material-symbols-outlined text-2xl">photo_library</span>
+      </div>
+      <div>
+        <span class="text-white font-extrabold text-sm block leading-tight">{{ groupData.events().length }} Eventos Registrados</span>
+        <span class="text-[11px] text-neutral-400">Galerías activas en Acordex</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FILTERS & SEARCH BAR ================= -->
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+    <!-- Filter Tabs -->
+    <div class="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-[#161616] p-1.5 w-full sm:w-auto shadow-md">
+      <button 
+        type="button"
+        (click)="activeFilter.set('todos')"
+        class="flex-1 sm:flex-none rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200"
+        [ngClass]="activeFilter() === 'todos' ? 'bg-primary text-black shadow-md' : 'text-neutral-400 hover:text-white hover:bg-white/5'"
+      >
+        Todos ({{ groupData.events().length }})
+      </button>
+      <button 
+        type="button"
+        (click)="activeFilter.set('programados')"
+        class="flex-1 sm:flex-none rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200"
+        [ngClass]="activeFilter() === 'programados' ? 'bg-primary text-black shadow-md' : 'text-neutral-400 hover:text-white hover:bg-white/5'"
+      >
+        Programados / En Curso
+      </button>
+      <button 
+        type="button"
+        (click)="activeFilter.set('completados')"
+        class="flex-1 sm:flex-none rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200"
+        [ngClass]="activeFilter() === 'completados' ? 'bg-primary text-black shadow-md' : 'text-neutral-400 hover:text-white hover:bg-white/5'"
+      >
+        Historial Completados
+      </button>
+    </div>
+
+    <!-- Search Input -->
+    <div class="relative w-full sm:w-80">
+      <span class="material-symbols-outlined absolute left-3.5 top-3 text-lg text-neutral-400">search</span>
+      <input 
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Buscar por recinto, ciudad o fecha..."
+        class="w-full rounded-2xl border border-white/15 bg-white/[0.04] py-2.5 pl-10 pr-4 text-xs text-white placeholder:text-neutral-500 focus:border-primary focus:bg-white/[0.08] focus:outline-none transition shadow-sm"
+      />
+    </div>
+  </div>
+
+  <!-- ================= EVENTS LIST WITH EVIDENCE SHELVES ================= -->
+  <div class="space-y-6">
+    <div 
+      *ngFor="let ev of filteredEvents"
+      class="luxury-card rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 hover:border-primary/40"
+    >
+      <!-- Event Header Card -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 bg-white/[0.02] p-5 sm:p-6">
+        <div>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span 
+              class="rounded-full px-3 py-0.5 text-[10.5px] font-extrabold uppercase tracking-wider"
+              [ngClass]="{
+                'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30': ev.status === 'Programado',
+                'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse': ev.status === 'En Curso',
+                'bg-neutral-500/20 text-neutral-300': ev.status === 'Completado'
+              }"
+            >
+              {{ ev.status }}
+            </span>
+            <span class="text-xs font-extrabold text-primary">{{ ev.type }}</span>
+            <span class="text-xs text-neutral-400 font-medium">• 📅 {{ ev.date }}</span>
+          </div>
+
+          <h3 class="font-['Epilogue'] text-lg sm:text-xl font-black text-white mt-1.5">{{ ev.title }}</h3>
+          <p class="text-xs text-neutral-400 mt-0.5">📍 {{ ev.venue }} • {{ ev.city }}, {{ ev.state }}</p>
+        </div>
+
+        <!-- Add Evidence CTA Button -->
+        <button 
+          type="button"
+          (click)="openUploader(ev)"
+          class="luxury-gold-btn flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-black self-start sm:self-auto uppercase tracking-wider active:scale-95"
+        >
+          <span class="material-symbols-outlined text-base font-black">add_a_photo</span>
+          <span>Subir Fotos / Evidencias</span>
+        </button>
+      </div>
+
+      <!-- Evidences Gallery Grid Shelf -->
+      <div class="p-5 sm:p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-xs font-bold text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-lg">collections</span>
+            <span>Galería de Evidencias ({{ ev.evidences.length }} archivos cargados)</span>
+          </div>
+          <span class="text-[11px] text-neutral-400 font-medium">Sincronizado con clients_web</span>
+        </div>
+
+        <div *ngIf="ev.evidences.length > 0; else noEvidences" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+          <div 
+            *ngFor="let item of ev.evidences"
+            (click)="viewImage(item.url || item.mediaUrl || '')"
+            class="group relative h-36 overflow-hidden rounded-2xl bg-black cursor-pointer border border-white/10 shadow-md"
+          >
+            <img [src]="item.url || item.mediaUrl" [alt]="item.caption" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition p-2.5 flex flex-col justify-end">
+              <span class="rounded bg-primary px-1.5 py-0.2 text-[8.5px] font-extrabold text-black uppercase w-fit">{{ item.category }}</span>
+              <span class="text-[10.5px] text-white truncate font-medium mt-0.5">{{ item.caption }}</span>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noEvidences>
+          <div class="rounded-3xl border border-dashed border-white/15 bg-white/[0.01] py-8 text-center">
+            <span class="material-symbols-outlined text-3xl text-neutral-500">no_photography</span>
+            <p class="text-xs text-neutral-400 mt-1">Aún no se han cargado evidencias fotográficas para este show.</p>
+            <button 
+              type="button" 
+              (click)="openUploader(ev)"
+              class="mt-2 text-xs font-bold text-primary hover:underline"
+            >
+              + Haz clic aquí para cargar las primeras fotos
+            </button>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+
+    <div *ngIf="filteredEvents.length === 0" class="luxury-card rounded-3xl p-12 text-center text-neutral-400">
+      <span class="material-symbols-outlined text-4xl text-neutral-600 mb-2">search_off</span>
+      <p class="text-sm font-semibold">No se encontraron eventos que coincidan con los filtros de búsqueda.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Evidence Uploader Modal -->
+<app-evidence-uploader-modal
+  *ngIf="isUploaderOpen()"
+  [event]="selectedEvent()"
+  (close)="closeUploader()"
+></app-evidence-uploader-modal>
+
+<!-- Image Lightbox Modal -->
+<div *ngIf="selectedEvidenceImage()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 group-app-backdrop">
+  <div class="relative max-w-4xl max-h-[85vh] overflow-hidden rounded-3xl ring-1 ring-white/20 shadow-2xl">
+    <button (click)="closeImageView()" class="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-md hover:bg-white/20 transition">
+      <span class="material-symbols-outlined text-xl">close</span>
+    </button>
+    <img [src]="selectedEvidenceImage()!" alt="Evidence Fullscreen" class="max-h-[85vh] w-auto rounded-3xl object-contain shadow-2xl" />
+  </div>
+</div>

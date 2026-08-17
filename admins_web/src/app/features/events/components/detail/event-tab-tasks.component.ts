@@ -62,7 +62,7 @@ import { money } from '../../event-metrics';
             </div>
             <div class="space-y-1.5 min-w-0 flex-1">
               <h4 class="font-['Epilogue'] font-black text-xl sm:text-2xl text-on-surface tracking-tight leading-tight">
-                Quién responde por qué
+                Asignación de Responsabilidades
               </h4>
               <p class="text-[11px] text-outline leading-relaxed max-w-2xl">
                 Los <strong class="text-sky-300">puntos del expediente</strong> los cierra el sistema al capturar el dato; aquí solo se decide de quién son.

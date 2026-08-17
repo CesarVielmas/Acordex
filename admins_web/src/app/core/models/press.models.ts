@@ -198,47 +198,62 @@ export function emptyAccreditationConfig(): PressAccreditationConfig {
   return { zones: [], allAccessLabel: 'ALL ACCESS' };
 }
 
-// ─── Montaje y talento ────────────────────────────────────────────────────────
+// ─── Reglas de acceso que el portal pinta ─────────────────────────────────────
 
-export type PressSetupKind = 'Por Definir' | 'Templete' | 'Mesa de Firmas' | 'Templete y Mesa';
+/**
+ * Qué se puede hacer con las cámaras.
+ *
+ * El portal tiene una tarjeta de "Fotografías" bajo la descripción y hasta ahora
+ * decía **Permitido** escrito a mano en la plantilla. Una firma donde el grupo no
+ * quiere fotos y una donde sí se veían idénticas para el que iba a asistir.
+ */
+export type PhotoPolicy = 'Permitido' | 'Sin flash' | 'Solo prensa acreditada' | 'No permitido';
 
-/** Qué se monta en el recinto y quién responde por cada pieza. */
-export interface PressStageSetup {
-  setupKind: PressSetupKind;
-  /** Quién pone el audio: sin sonido no hay preguntas que se oigan. */
-  soundProvider?: string;
-  soundContact?: string;
-  /** Backdrop con logos: es el fondo de todas las fotos que se publiquen. */
-  backdropUrl?: string;
-  backdropSponsors: string[];
-  /** Personal de control de fila; en una firma es lo que evita el desmadre. */
-  queueStaffCount?: number;
-  queueStaffLead?: string;
-  securityProvider?: string;
-  securityContact?: string;
-  notes?: string;
-}
+/**
+ * Quién puede entrar además de la prensa.
+ *
+ * La otra tarjeta fija del portal: decía **Solo Acreditados** siempre. En una
+ * firma de autógrafos eso es justo lo contrario de lo normal —los fans son el
+ * evento— y el dato es el que decide si hay fila que controlar.
+ */
+export type FanAccessPolicy =
+  | 'Solo Acreditados'
+  | 'Entrada Libre'
+  | 'Con Boleto del Concierto'
+  | 'Con Registro Previo';
 
-export function emptyStageSetup(): PressStageSetup {
-  return { setupKind: 'Por Definir', backdropSponsors: [] };
-}
+// ─── Compromiso del talento ───────────────────────────────────────────────────
 
-/** Lo que el grupo se compromete a dar, y lo que no. */
-export interface PressTalentBrief {
-  /** Hora a la que el grupo debe estar en el recinto. */
+/**
+ * Lo que **un grupo concreto** se compromete a dar en este evento.
+ *
+ * Va por grupo y no en un solo bloque para todo el evento, que es como estaba y
+ * era una simplificación falsa: a una rueda de prensa vienen dos o tres grupos y
+ * cada uno llega a su hora, manda a su propio vocero y tiene sus propios temas
+ * que no va a tocar. Un único «hora de llegada» para todos obliga a elegir la de
+ * alguien y a apuntar las otras dos en una nota que nadie lee.
+ */
+export interface PressGroupCommitment {
+  /** El grupo del `lineup` al que pertenece este compromiso. */
+  slotId: string;
+  groupId: string;
+  groupName: string;
+  /** Hora a la que **este** grupo debe estar en el recinto. */
   arrivalTime?: string;
-  /** Quién habla por el grupo. Sin vocero, contesta quien se anime. */
+  /** Hora a la que se retira, si tiene otro compromiso después. */
+  departureTime?: string;
+  /** Quién habla por él. Sin vocero designado contesta quien se anime. */
   spokespersonName?: string;
   spokespersonRole?: string;
-  /** Minutos comprometidos de atención a prensa o de firma. */
+  /** Minutos que se compromete a dar de atención a prensa o de firma. */
   committedMinutes?: number;
-  /** El "no preguntar por": temas que el grupo no va a contestar. */
+  /** Su «no preguntar por». Cada grupo trae el suyo. */
   bannedTopics: string[];
   notes?: string;
 }
 
-export function emptyTalentBrief(): PressTalentBrief {
-  return { bannedTopics: [] };
+export function emptyCommitment(slotId: string, groupId: string, groupName: string): PressGroupCommitment {
+  return { slotId, groupId, groupName, bannedTopics: [] };
 }
 
 // ─── Convocatoria y cierre ────────────────────────────────────────────────────
@@ -322,6 +337,19 @@ export interface PressEventItem {
   date: string;
   /** Hora de inicio en 24h ('16:00'). El portal la muestra en la portada. */
   startTime?: string;
+  /** Hora a la que se cierra el acceso. */
+  endTime?: string;
+
+  /**
+   * Las dos tarjetas que el portal pinta bajo la descripción y que hasta ahora
+   * estaban escritas a mano en la plantilla del cliente. Se capturan aquí porque
+   * son lo primero que mira quien decide si va: si puede llevar cámara y si
+   * puede entrar sin ser prensa.
+   */
+  photoPolicy?: PhotoPolicy;
+  fanAccess?: FanAccessPolicy;
+  /** Cuántos fans caben, cuando el acceso no es solo para prensa. */
+  fanCapacity?: number;
   /** Ciudad y estado. */
   location: string;
   venue: string;
@@ -354,10 +382,21 @@ export interface PressEventItem {
   accreditation: PressAccreditationConfig;
   accreditationRequests: PressAccreditationRequest[];
 
-  stage: PressStageSetup;
-  talent: PressTalentBrief;
+  /**
+   * Lo que se compromete cada grupo que viene, uno por uno.
+   */
+  talentCommitments: PressGroupCommitment[];
 
-  /** Desglose de gasto. Igual que en Eventos, pero sin nada que entre. */
+  /**
+   * Desglose de gasto: **el corazón del expediente**.
+   *
+   * Todo lo que se monta vive aquí y no en campos sueltos —el sonido, el
+   * templete, el backdrop, el control de fila, la seguridad, el café—. Tenerlo
+   * partido en dos sitios era el error: los mismos conceptos se capturaban una
+   * vez como «datos del montaje» y otra como partidas, y ninguna de las dos
+   * versiones era la buena. Aquí no entra dinero, así que este desglose es el
+   * único número del expediente y es lo que después se compara con la cobertura.
+   */
   productionItems?: EventProductionItem[];
   productionResponsibilities?: EventProductionResponsibility[];
 

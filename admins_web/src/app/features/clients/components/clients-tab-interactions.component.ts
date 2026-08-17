@@ -25,21 +25,21 @@ interface FlatInteraction {
     <div class="space-y-6 animate-fade-in">
 
       <!-- ENCABEZADO -->
-      <div class="p-5 rounded-3xl bg-surface-container/80 border border-outline-variant/30 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="p-5 rounded-3xl bg-[#181818] border border-white/10 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div class="flex items-center gap-2">
-            <span class="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-300 flex items-center justify-center material-symbols-outlined text-lg">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-300 flex items-center justify-center material-symbols-outlined text-lg shadow-inner">
               chat
             </span>
-            <h2 class="text-base sm:text-lg font-black text-on-surface">Bitácora de Seguimiento Comercial</h2>
+            <h2 class="text-base sm:text-lg font-black text-on-surface font-['Epilogue']">Bitácora de Interacciones & Seguimiento Comercial</h2>
           </div>
-          <p class="text-xs text-outline mt-0.5">Historial cronológico de llamadas, mensajes de WhatsApp, reuniones y acuerdos</p>
+          <p class="text-xs text-outline mt-0.5 font-['Epilogue']">Registro cronológico de llamadas de prospección, negociaciones vía WhatsApp, reuniones ejecutivas y acuerdos de contratación</p>
         </div>
 
         <button
           type="button"
           (click)="showNewInteractionForm.set(!showNewInteractionForm())"
-          class="px-4 py-2 rounded-xl bg-primary text-on-primary font-bold text-xs hover:bg-primary-hover transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+          class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-primary to-primary-hover text-on-primary font-bold text-xs hover:opacity-95 transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer shadow-lg shadow-primary/20 font-['Epilogue']"
         >
           <span class="material-symbols-outlined text-base">add_comment</span>
           Registrar Interacción
@@ -48,18 +48,18 @@ interface FlatInteraction {
 
       <!-- FORMULARIO RÁPIDO DE NUEVA INTERACCIÓN -->
       @if (showNewInteractionForm()) {
-        <div class="p-6 rounded-3xl bg-surface-container border border-primary/40 shadow-xl space-y-4 animate-fade-in">
-          <h3 class="text-sm font-black text-on-surface flex items-center gap-2">
+        <div class="p-6 rounded-3xl bg-[#181818] border border-primary/40 shadow-2xl space-y-4 animate-fade-in">
+          <h3 class="text-sm font-black text-on-surface flex items-center gap-2 font-['Epilogue']">
             <span class="material-symbols-outlined text-primary">add_circle</span>
-            Nueva Nota o Interacción con Cliente
+            Nueva Entrada en Bitácora de Atención Comercial
           </h3>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div class="space-y-1">
-              <label class="font-bold text-on-surface">Cliente</label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Cliente / Titular</label>
               <select
                 [(ngModel)]="newFormClientId"
-                class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface text-xs focus:outline-none focus:border-primary"
+                class="w-full px-3 py-2 rounded-xl bg-[#141414] border border-white/10 text-on-surface text-xs focus:outline-none focus:border-primary font-['Epilogue'] shadow-inner"
               >
                 <option value="">Selecciona un cliente...</option>
                 @for (cli of clients(); track cli.id) {
@@ -69,36 +69,36 @@ interface FlatInteraction {
             </div>
 
             <div class="space-y-1">
-              <label class="font-bold text-on-surface">Canal de Contacto</label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Canal de Contacto</label>
               <select
                 [(ngModel)]="newFormType"
-                class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface text-xs focus:outline-none focus:border-primary"
+                class="w-full px-3 py-2 rounded-xl bg-[#141414] border border-white/10 text-on-surface text-xs focus:outline-none focus:border-primary font-['Epilogue'] shadow-inner"
               >
                 <option value="whatsapp">📱 Mensaje de WhatsApp</option>
                 <option value="llamada">📞 Llamada Telefónica</option>
                 <option value="reunion">🤝 Reunión Presencial / Virtual</option>
-                <option value="cotizacion">📄 Envío de Cotización</option>
-                <option value="nota">📝 Nota Interna de Servicio</option>
+                <option value="cotizacion">📄 Envío de Cotización Formal</option>
+                <option value="nota">📝 Nota Interna de Operación</option>
               </select>
             </div>
 
             <div class="space-y-1">
-              <label class="font-bold text-on-surface">Atendido por</label>
+              <label class="font-bold text-on-surface font-['Epilogue']">Atendido por</label>
               <input
                 type="text"
                 [(ngModel)]="newFormAuthor"
-                class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface text-xs focus:outline-none focus:border-primary"
+                class="w-full px-3 py-2 rounded-xl bg-[#141414] border border-white/10 text-on-surface text-xs focus:outline-none focus:border-primary font-['Epilogue'] shadow-inner"
               />
             </div>
           </div>
 
           <div class="space-y-1 text-xs">
-            <label class="font-bold text-on-surface">Resumen de la Conversación o Acuerdo</label>
+            <label class="font-bold text-on-surface font-['Epilogue']">Resumen Ejecutivo de la Negociación o Acuerdo</label>
             <textarea
               [(ngModel)]="newFormSummary"
               rows="2"
               placeholder="Detalles de la llamada, fecha solicitada, presupuesto estimado o dudas del cliente..."
-              class="w-full px-3 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface text-xs focus:outline-none focus:border-primary"
+              class="w-full px-3 py-2 rounded-xl bg-[#141414] border border-white/10 text-on-surface text-xs focus:outline-none focus:border-primary font-['Epilogue'] shadow-inner"
             ></textarea>
           </div>
 
@@ -106,7 +106,7 @@ interface FlatInteraction {
             <button
               type="button"
               (click)="showNewInteractionForm.set(false)"
-              class="px-4 py-2 rounded-xl bg-surface-container-high text-outline hover:text-on-surface font-bold transition-all cursor-pointer"
+              class="px-4 py-2 rounded-xl bg-[#222222] hover:bg-[#282828] text-outline hover:text-on-surface font-bold transition-all cursor-pointer font-['Epilogue']"
             >
               Cancelar
             </button>
@@ -114,7 +114,7 @@ interface FlatInteraction {
               type="button"
               (click)="submitInteraction()"
               [disabled]="!newFormClientId || !newFormSummary.trim()"
-              class="px-5 py-2 rounded-xl bg-primary text-on-primary font-bold hover:bg-primary-hover disabled:opacity-50 transition-all cursor-pointer"
+              class="px-5 py-2 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-on-primary font-bold hover:opacity-95 disabled:opacity-50 transition-all cursor-pointer font-['Epilogue'] shadow-md shadow-primary/20"
             >
               Guardar en Bitácora
             </button>
@@ -123,39 +123,39 @@ interface FlatInteraction {
       }
 
       <!-- LISTA CRONOLÓGICA DE INTERACCIONES -->
-      <div class="p-6 rounded-3xl bg-surface-container border border-outline-variant/30 shadow-xl space-y-4">
-        <h3 class="text-sm font-black text-on-surface flex items-center gap-2 border-b border-outline-variant/20 pb-3">
+      <div class="p-6 rounded-3xl bg-[#181818] border border-white/10 shadow-xl space-y-4">
+        <h3 class="text-sm font-black text-on-surface flex items-center gap-2 border-b border-white/10 pb-3 font-['Epilogue']">
           <span class="material-symbols-outlined text-primary text-base">history</span>
-          Historial de Conversaciones Recientes
+          Historial Cronológico de Interacciones
         </h3>
 
         <div class="space-y-3">
           @for (item of allInteractions(); track item.id) {
-            <div class="p-4 rounded-2xl bg-surface-container-high border border-outline-variant/20 hover:border-outline-variant/40 transition-all space-y-2">
+            <div class="p-4 rounded-2xl bg-[#141414] border border-white/5 hover:border-primary/40 transition-all space-y-2 shadow-sm">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5">
-                  <span class="w-8 h-8 rounded-xl flex items-center justify-center material-symbols-outlined text-base"
+                  <span class="w-8 h-8 rounded-xl flex items-center justify-center material-symbols-outlined text-base shadow-inner"
                     [class]="item.type === 'whatsapp' ? 'bg-emerald-500/20 text-emerald-300' : (item.type === 'llamada' ? 'bg-cyan-500/20 text-cyan-300' : (item.type === 'reunion' ? 'bg-purple-500/20 text-purple-300' : 'bg-primary/20 text-primary'))">
                     {{ item.type === 'whatsapp' ? 'chat' : (item.type === 'llamada' ? 'call' : (item.type === 'reunion' ? 'handshake' : 'note')) }}
                   </span>
 
                   <div>
-                    <h4 class="text-xs font-black text-on-surface">
+                    <h4 class="text-xs font-black text-on-surface font-['Epilogue']">
                       {{ item.clientName }} <span class="text-outline font-normal">({{ item.clientCompany }})</span>
                     </h4>
-                    <span class="text-[10px] text-outline">Atendió: <b class="text-on-surface">{{ item.authorName }}</b></span>
+                    <span class="text-[10px] text-outline font-['Epilogue']">Atendió: <b class="text-on-surface font-sans">{{ item.authorName }}</b></span>
                   </div>
                 </div>
 
                 <span class="text-[10px] font-mono text-outline self-end sm:self-auto">{{ item.date }}</span>
               </div>
 
-              <p class="text-xs text-on-surface/90 leading-relaxed pl-10">
+              <p class="text-xs text-on-surface/90 leading-relaxed pl-10 font-['Epilogue']">
                 {{ item.summary }}
               </p>
             </div>
           } @empty {
-            <div class="text-center py-8 text-outline text-xs italic">
+            <div class="text-center py-8 text-outline text-xs italic font-['Epilogue']">
               No hay interacciones registradas aún.
             </div>
           }

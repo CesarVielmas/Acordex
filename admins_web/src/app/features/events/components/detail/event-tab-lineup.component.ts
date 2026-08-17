@@ -1,5 +1,6 @@
 import { Component, input, output, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
   EventApproval,
   EventItem,
@@ -11,9 +12,17 @@ import {
   LineupEngagementKind
 } from '../../../../core/models/event.models';
 import { GroupItem } from '../../../../core/models/admin.models';
+import { PressEventItem } from '../../../../core/models/press.models';
+import {
+  AVAILABILITY_META,
+  AvailabilityLevel,
+  availabilityOn,
+  monthLoad
+} from '../../../groups/group-availability';
 import { EditableFieldComponent, EditableOption } from '../../../../shared/ui/editable-field/editable-field.component';
 import {
   approvals,
+  shortDate,
   activeCounterOffer,
   counterOfferSavings,
   dateTimeLabel,
@@ -55,7 +64,7 @@ import { MandatoryFields } from '../../mandatory-fields';
 @Component({
   selector: 'app-event-tab-lineup',
   standalone: true,
-  imports: [CommonModule, EditableFieldComponent, MandatoryTaskTagComponent],
+  imports: [CommonModule, FormsModule, EditableFieldComponent, MandatoryTaskTagComponent],
   host: { class: 'block' },
   template: `
     <div class="space-y-4">
@@ -1004,6 +1013,72 @@ import { MandatoryFields } from '../../mandatory-fields';
 
           <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 space-y-6 relative z-10">
 
+            <!-- 0. Filtros. Con veinte grupos en el catálogo, una lista sin
+                 buscador obliga a leerla entera en cada evento; y el filtro que
+                 de verdad ahorra tiempo es el de disponibilidad, porque elegir a
+                 alguien que ya está comprometido ese día es trabajo tirado. -->
+            <section class="space-y-2.5">
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base text-outline">search</span>
+                <input
+                  [ngModel]="groupTerm()"
+                  (ngModelChange)="groupTerm.set($event)"
+                  placeholder="Buscar por nombre, género o manager"
+                  class="w-full pl-10 pr-3 py-2.5 rounded-xl bg-black/40 border border-outline-variant/25 focus:border-primary/60 text-xs text-on-surface focus:outline-none transition-colors"
+                />
+              </div>
+
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button type="button" (click)="groupAvailFilter.set('todas')"
+                  [class]="groupAvailFilter() === 'todas' ? 'bg-primary text-on-primary border-primary' : 'bg-white/5 text-outline border-white/12 hover:text-on-surface'"
+                  class="px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5">
+                  Cualquiera <span class="font-mono opacity-70">{{ availabilityCounts().todas }}</span>
+                </button>
+                <button type="button" (click)="groupAvailFilter.set('libre')" [disabled]="!event().date"
+                  [class]="groupAvailFilter() === 'libre' ? 'bg-emerald-500 text-black border-emerald-400' : 'bg-white/5 text-outline border-white/12 hover:text-on-surface'"
+                  class="px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                  Libres <span class="font-mono opacity-70">{{ availabilityCounts().libre }}</span>
+                </button>
+                <button type="button" (click)="groupAvailFilter.set('apartado')" [disabled]="!event().date"
+                  [class]="groupAvailFilter() === 'apartado' ? 'bg-amber-400 text-black border-amber-300' : 'bg-white/5 text-outline border-white/12 hover:text-on-surface'"
+                  class="px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                  Apartados <span class="font-mono opacity-70">{{ availabilityCounts().apartado }}</span>
+                </button>
+                <button type="button" (click)="groupAvailFilter.set('ocupado')" [disabled]="!event().date"
+                  [class]="groupAvailFilter() === 'ocupado' ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/5 text-outline border-white/12 hover:text-on-surface'"
+                  class="px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none">
+                  <span class="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0"></span>
+                  Ocupados <span class="font-mono opacity-70">{{ availabilityCounts().ocupado }}</span>
+                </button>
+
+                @if (groupGenres().length > 1) {
+                  <span class="w-px h-5 bg-white/10 mx-0.5"></span>
+                  <select [ngModel]="groupGenreFilter()" (ngModelChange)="groupGenreFilter.set($event)"
+                    class="px-3 py-1.5 rounded-xl bg-white/5 border border-white/12 text-[10px] font-bold text-on-surface focus:outline-none focus:border-primary/60">
+                    <option value="todos" class="bg-surface-container">Todos los géneros</option>
+                    @for (g of groupGenres(); track g) {
+                      <option [value]="g" class="bg-surface-container">{{ g }}</option>
+                    }
+                  </select>
+                }
+              </div>
+
+              @if (event().date) {
+                <p class="text-[10.5px] text-outline leading-relaxed">
+                  La disponibilidad sale de lo que cada grupo ya tiene agendado el
+                  <strong class="text-on-surface">{{ shortDate(event().date) }}</strong> en otros eventos y firmas:
+                  no se captura a mano, así que no se puede desincronizar.
+                </p>
+              } @else {
+                <p class="text-[10.5px] text-amber-300/80 leading-relaxed">
+                  El evento no tiene fecha todavía, así que no se puede saber quién está libre. Captúrala y este
+                  filtro empieza a funcionar.
+                </p>
+              }
+            </section>
+
             <!-- 1. Grupos propios: se añaden directo y se les pone presupuesto. -->
             <section class="space-y-3">
               <div class="flex items-center justify-between gap-2 flex-wrap">
@@ -1021,6 +1096,20 @@ import { MandatoryFields } from '../../mandatory-fields';
                     <div class="min-w-0">
                       <p class="text-xs font-black text-on-surface truncate">{{ g.name }}</p>
                       <p class="text-[10px] text-outline truncate">{{ g.genre }} · {{ g.agendaStatus }}</p>
+                      @let disp = availability(g);
+                      <div class="flex items-center gap-1.5 flex-wrap mt-1">
+                        <span class="px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-wider flex items-center gap-1"
+                          [class]="availabilityMeta(disp.level).badge">
+                          <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="availabilityMeta(disp.level).dot"></span>
+                          {{ availabilityMeta(disp.level).label }}
+                        </span>
+                        @if (disp.conflicts.length) {
+                          <span class="text-[9.5px] text-outline truncate max-w-[190px]">{{ disp.conflicts[0].title }}</span>
+                        }
+                        @if (monthLoadOf(g).busyDays) {
+                          <span class="text-[9.5px] text-outline font-mono">{{ monthLoadOf(g).busyDays }}d ese mes</span>
+                        }
+                      </div>
                     </div>
                   </div>
                   <div class="flex items-center gap-2.5 shrink-0">
@@ -1093,7 +1182,20 @@ import { MandatoryFields } from '../../mandatory-fields';
                       <div class="min-w-0">
                         <p class="text-xs font-black text-on-surface truncate">{{ g.name }}</p>
                         <p class="text-[10px] text-outline truncate">{{ g.genre }} · Manager: {{ g.groupLeaderName }}</p>
-                        <p class="text-[10px] text-outline truncate">Agenda: {{ g.agendaStatus }}</p>
+                        @let dispExt = availability(g);
+                        <div class="flex items-center gap-1.5 flex-wrap mt-1">
+                          <span class="px-2 py-0.5 rounded-lg border text-[9px] font-black uppercase tracking-wider flex items-center gap-1"
+                            [class]="availabilityMeta(dispExt.level).badge">
+                            <span class="w-1.5 h-1.5 rounded-full shrink-0" [class]="availabilityMeta(dispExt.level).dot"></span>
+                            {{ availabilityMeta(dispExt.level).label }}
+                          </span>
+                          @if (dispExt.conflicts.length) {
+                            <span class="text-[9.5px] text-outline truncate max-w-[170px]">{{ dispExt.conflicts[0].title }}</span>
+                          }
+                        </div>
+                        <p class="text-[9.5px] text-outline/80 truncate mt-0.5">
+                          Lo que nos consta de su agenda; la suya la confirma él al recibir la solicitud
+                        </p>
                       </div>
                     </div>
                     @if (canViewFinances()) {
@@ -1155,6 +1257,8 @@ export class EventTabLineupComponent {
   event = input.required<EventItem>();
   canEdit = input<boolean>(false);
   canViewFinances = input<boolean>(false);
+
+  readonly shortDate = shortDate;
   /** Catálogo de grupos disponibles para agregar al cartel. */
   availableGroups = input<GroupItem[]>([]);
 
@@ -1183,10 +1287,73 @@ export class EventTabLineupComponent {
 
   totalCost = computed(() => money(lineupTotalCost(this.event())));
 
+  /**
+   * Toda la agenda del panel.
+   *
+   * La disponibilidad de un grupo no se captura: se deriva de lo que ya tiene
+   * agendado en otros eventos y en las firmas de prensa. Una agenda que hubiera
+   * que mantener a mano diría que hay hueco donde no lo hay el primer día que
+   * alguien se olvidara de actualizarla, y eso se paga con el grupo citado en
+   * dos sitios el mismo día.
+   */
+  allEvents = input<EventItem[]>([]);
+  allPressEvents = input<PressEventItem[]>([]);
+
   /** Grupos del catálogo que todavía no están en el cartel. */
   selectableGroups = computed(() => {
     const used = new Set(this.slots().map(s => s.groupId));
     return this.availableGroups().filter(g => !used.has(g.id));
+  });
+
+  // ─── Filtros del catálogo ───────────────────────────────────────────────────
+  // Con veinte grupos, una lista sin buscador obliga a leerla entera cada vez.
+
+  groupTerm = signal('');
+  groupAvailFilter = signal<'todas' | AvailabilityLevel>('todas');
+  groupGenreFilter = signal('todos');
+
+  /** Cómo está ese grupo el día del evento, y con qué choca si no está libre. */
+  availability(g: GroupItem) {
+    return availabilityOn(g.id, this.event().date, this.allEvents(), this.allPressEvents(), this.event().id);
+  }
+
+  availabilityMeta(level: AvailabilityLevel) {
+    return AVAILABILITY_META[level];
+  }
+
+  monthLoadOf(g: GroupItem) {
+    return monthLoad(g.id, this.event().date, this.allEvents(), this.allPressEvents(), this.event().id);
+  }
+
+  /** Aplica búsqueda, disponibilidad y género a una lista de candidatos. */
+  private applyGroupFilters(list: GroupItem[]): GroupItem[] {
+    const t = this.groupTerm().trim().toLowerCase();
+    const disp = this.groupAvailFilter();
+    const genero = this.groupGenreFilter();
+
+    return list.filter(g => {
+      if (disp !== 'todas' && this.availability(g).level !== disp) return false;
+      if (genero !== 'todos' && g.genre !== genero) return false;
+      if (!t) return true;
+      return g.name.toLowerCase().includes(t)
+        || (g.genre || '').toLowerCase().includes(t)
+        || (g.groupLeaderName || '').toLowerCase().includes(t);
+    });
+  }
+
+  groupGenres = computed(() =>
+    [...new Set(this.selectableGroups().map(g => g.genre).filter(Boolean))].sort());
+
+  /** Cuántos candidatos hay de cada nivel de disponibilidad, para los chips. */
+  availabilityCounts = computed(() => {
+    const list = this.selectableGroups();
+    const cuenta = (nivel: AvailabilityLevel) => list.filter(g => this.availability(g).level === nivel).length;
+    return {
+      todas: list.length,
+      libre: cuenta('libre'),
+      apartado: cuenta('apartado'),
+      ocupado: cuenta('ocupado')
+    };
   });
 
   addModalOpen = signal(false);
@@ -1202,7 +1369,7 @@ export class EventTabLineupComponent {
 
   /** Grupos propios del organizador. */
   ownGroups = computed(() =>
-    this.selectableGroups().filter(g => g.groupLeaderName === this.ownerName())
+    this.applyGroupFilters(this.selectableGroups().filter(g => g.groupLeaderName === this.ownerName()))
   );
 
   /**
@@ -1211,7 +1378,7 @@ export class EventTabLineupComponent {
    * manager ya está dentro del evento.
    */
   foreignGroups = computed(() =>
-    this.selectableGroups().filter(g => g.groupLeaderName !== this.ownerName())
+    this.applyGroupFilters(this.selectableGroups().filter(g => g.groupLeaderName !== this.ownerName()))
   );
 
   /** Acuerdo del manager de un grupo en este evento, si ya existe alguno. */

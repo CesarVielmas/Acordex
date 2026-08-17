@@ -7,6 +7,7 @@ import {
   PressZone
 } from '../../core/models/press.models';
 import { EventLineupSlot, EventProductionItem, EventPublicProfile } from '../../core/models/event.models';
+import { PressGroupCommitment, emptyCommitment } from '../../core/models/press.models';
 import { emptyPublicProfile } from '../../core/models/event.models';
 
 /**
@@ -38,6 +39,25 @@ export function pressZones(e: PressEventItem): PressZone[] {
 
 export function pressProductionItems(e: PressEventItem): EventProductionItem[] {
   return e.productionItems || [];
+}
+
+/**
+ * El compromiso de un grupo, siempre con forma.
+ *
+ * Devuelve uno vacío en vez de `undefined` para que la pantalla no tenga que
+ * decidir si pinta el bloque: un grupo sin compromiso capturado es un grupo con
+ * el compromiso en blanco, no un grupo que no lo necesita.
+ */
+export function commitmentOf(e: PressEventItem, slot: EventLineupSlot): PressGroupCommitment {
+  return (e.talentCommitments || []).find(c => c.slotId === slot.id)
+    || emptyCommitment(slot.id, slot.groupId, slot.groupName);
+}
+
+/** Cuánto gasto hay presupuestado en un rubro. */
+export function spendInCategories(e: PressEventItem, rubros: string[]): number {
+  return pressProductionItems(e)
+    .filter(p => rubros.includes(p.category))
+    .reduce((sum, p) => sum + (p.amount || 0), 0);
 }
 
 /** Quién arma el evento. Contra él se decide qué pendiente es "de alguien más". */

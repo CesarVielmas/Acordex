@@ -1,0 +1,57 @@
+<div class="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-surface-variant/40 bg-surface/95 px-2 py-2 backdrop-blur-xl md:hidden">
+  <a 
+    routerLink="/dashboard" 
+    routerLinkActive="text-primary font-bold"
+    [routerLinkActiveOptions]="{ exact: true }"
+    class="flex flex-col items-center gap-1 text-[10px] text-on-surface-variant"
+  >
+    <span class="material-symbols-outlined text-xl">space_dashboard</span>
+    <span>Inicio</span>
+  </a>
+
+  <a 
+    routerLink="/eventos-evidencias" 
+    routerLinkActive="text-primary font-bold"
+    class="flex flex-col items-center gap-1 text-[10px] text-on-surface-variant"
+  >
+    <span class="material-symbols-outlined text-xl">photo_camera</span>
+    <span>Evidencias</span>
+  </a>
+
+  <a 
+    routerLink="/publicaciones" 
+    routerLinkActive="text-primary font-bold"
+    class="flex flex-col items-center gap-1 text-[10px] text-on-surface-variant"
+  >
+    <span class="material-symbols-outlined text-xl">dynamic_feed</span>
+    <span>Muro</span>
+  </a>
+
+  <a 
+    routerLink="/calendario" 
+    routerLinkActive="text-primary font-bold"
+    class="flex flex-col items-center gap-1 text-[10px] text-on-surface-variant"
+  >
+    <span class="material-symbols-outlined text-xl">calendar_month</span>
+    <span>Agenda</span>
+  </a>
+
+  <a 
+    routerLink="/chat" 
+    routerLinkActive="text-primary font-bold"
+    class="relative flex flex-col items-center gap-1 text-[10px] text-on-surface-variant"
+  >
+    <span class="material-symbols-outlined text-xl">forum</span>
+    <span>Chat</span>
+    <span *ngIf="groupData.pendingQuotesCount() > 0" class="absolute -top-1 right-2 h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+  </a>
+
+  <a 
+    routerLink="/editor-pagina" 
+    routerLinkActive="text-primary font-bold"
+    class="flex flex-col items-center gap-1 text-[10px] text-on-surface-variant"
+  >
+    <span class="material-symbols-outlined text-xl">web</span>
+    <span>Acordex</span>
+  </a>
+</div>

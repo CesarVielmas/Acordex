@@ -212,6 +212,8 @@ import { daysUntilEvent, grossTicketRevenue, occupancyPercent, soldSeats } from 
         <app-event-detail-modal
           [event]="selectedEvent()"
           [availableGroups]="mockData.groups()"
+          [allEvents]="mockData.events()"
+          [allPressEvents]="mockData.pressEvents()"
           (closed)="selectedEvent.set(null)"
           (uploadEvidence)="openUploadModal($event)"
           (submitReview)="submitForReview($event)"

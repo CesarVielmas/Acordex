@@ -1,0 +1,194 @@
+<div class="space-y-8 max-w-7xl mx-auto pb-20 animate-fade-in select-none">
+  
+  <!-- ================= TOP HEADER BAR ================= -->
+  <div class="cyber-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10">
+      <div class="flex items-center gap-2">
+        <span class="rounded-md bg-primary/20 px-2 py-0.5 text-[10px] font-mono font-black text-primary border border-primary/30">
+          PROFITABILITY & TAKE RATE ENGINE
+        </span>
+      </div>
+      <h1 class="font-['Epilogue'] text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight mt-1">
+        Comisiones por Grupo Musical & Manager
+      </h1>
+      <p class="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl leading-relaxed">
+        Matriz financiera exhaustiva que detalla el volumen de ventas brutas (GMV), la comisión neta devengada para Vielais ({{ metrics.globalTakeRatePercent() }}%), retenciones en custodia y dispersiones bancarias.
+      </p>
+    </div>
+
+    <!-- Take-rate Pill -->
+    <div class="relative z-10 rounded-2xl bg-white/[0.04] p-4 border border-white/10 flex items-center gap-4">
+      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20 text-primary">
+        <span class="material-symbols-outlined text-2xl">payments</span>
+      </div>
+      <div>
+        <span class="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400 block">Total Comisiones</span>
+        <span class="font-['Epilogue'] text-xl font-black text-primary">${{ metrics.ownerSummary().netCommissionsTotal | number }} MXN</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SEARCH & FILTERS BAR ================= -->
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+    <!-- Genre Filter Tabs -->
+    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto">
+      <button 
+        *ngFor="let g of genres"
+        type="button"
+        (click)="selectedGenre.set(g)"
+        class="rounded-2xl border px-4 py-2 text-xs font-bold transition-all flex-shrink-0"
+        [ngClass]="selectedGenre() === g ? 'border-primary bg-primary/20 text-primary shadow-sm' : 'border-white/10 bg-white/[0.03] text-neutral-400 hover:text-white'"
+      >
+        {{ g }}
+      </button>
+    </div>
+
+    <!-- Search Input -->
+    <div class="relative w-full sm:w-80">
+      <span class="material-symbols-outlined absolute left-3.5 top-3 text-lg text-neutral-400">search</span>
+      <input 
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Buscar grupo o manager..."
+        class="w-full rounded-2xl border border-white/15 bg-white/[0.04] py-2.5 pl-10 pr-4 text-xs text-white placeholder:text-neutral-500 focus:border-cyan-400 focus:outline-none transition"
+      />
+    </div>
+  </div>
+
+  <!-- ================= FULL FINANCIAL MATRIX TABLE ================= -->
+  <div class="cyber-card rounded-3xl overflow-hidden shadow-2xl p-6 space-y-4">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-neutral-300">
+        <thead>
+          <tr class="border-b border-white/10 text-[10.5px] font-mono font-extrabold uppercase tracking-wider text-neutral-500">
+            <th class="pb-3 px-3">Agrupación Musical</th>
+            <th class="pb-3 px-3">Manager / Contacto</th>
+            <th class="pb-3 px-3 text-center">Shows (Cerrados / Tot)</th>
+            <th class="pb-3 px-3 text-right">GMV (Ventas Brutas)</th>
+            <th class="pb-3 px-3 text-right text-primary">Comisión Neta ({{ metrics.globalTakeRatePercent() }}%)</th>
+            <th class="pb-3 px-3 text-right text-amber-400">Escrow Custodia</th>
+            <th class="pb-3 px-3 text-right text-emerald-400">Dispersado Grupo</th>
+            <th class="pb-3 px-3 text-center">Ticket Prom.</th>
+            <th class="pb-3 px-3 text-center">Crecimiento</th>
+            <th class="pb-3 px-3 text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          <tr *ngFor="let g of filteredGroups" class="hover:bg-white/[0.03] transition group">
+            <!-- Group Info -->
+            <td class="py-4 px-3">
+              <div class="flex items-center gap-3">
+                <img [src]="g.avatarUrl" [alt]="g.groupName" class="h-10 w-10 rounded-xl object-cover ring-1 ring-primary/40 flex-shrink-0 shadow-md" />
+                <div class="min-w-0">
+                  <div class="font-bold text-white text-xs truncate">{{ g.groupName }}</div>
+                  <div class="text-[10px] text-neutral-400">{{ g.genre }}</div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Manager -->
+            <td class="py-4 px-3">
+              <div class="font-semibold text-white">{{ g.managerName }}</div>
+              <div class="text-[10px] font-mono text-neutral-400">{{ g.managerPhone }}</div>
+            </td>
+
+            <!-- Bookings -->
+            <td class="py-4 px-3 text-center font-mono font-bold text-white">
+              {{ g.completedBookings }} / {{ g.totalBookings }}
+            </td>
+
+            <!-- GMV -->
+            <td class="py-4 px-3 text-right font-mono font-bold text-white">
+              ${{ g.grossMerchandiseValue | number }}
+            </td>
+
+            <!-- Net Commission to Vielais -->
+            <td class="py-4 px-3 text-right font-mono font-black text-primary text-sm">
+              ${{ g.commissionEarnedNet | number }}
+            </td>
+
+            <!-- Escrow -->
+            <td class="py-4 px-3 text-right font-mono font-semibold text-amber-400">
+              ${{ g.escrowPending | number }}
+            </td>
+
+            <!-- Payouts -->
+            <td class="py-4 px-3 text-right font-mono font-semibold text-emerald-400">
+              ${{ g.paidOutToGroup | number }}
+            </td>
+
+            <!-- Average Ticket -->
+            <td class="py-4 px-3 text-center font-mono font-medium text-neutral-300">
+              ${{ g.averageTicket | number }}
+            </td>
+
+            <!-- Trend -->
+            <td class="py-4 px-3 text-center font-mono font-bold text-emerald-400">
+              +{{ g.trendGrowthPercent }}%
+            </td>
+
+            <!-- Action Details -->
+            <td class="py-4 px-3 text-center">
+              <button 
+                type="button" 
+                (click)="openDetail(g)"
+                class="rounded-xl bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500 hover:text-black transition"
+              >
+                Inspeccionar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ================= GROUP FINANCIAL DETAIL MODAL ================= -->
+<div *ngIf="selectedGroupDetail() as g" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 group-app-backdrop">
+  <div class="absolute inset-0" (click)="closeDetail()"></div>
+  <div class="relative z-10 w-full max-w-2xl rounded-3xl cyber-card p-6 sm:p-8 space-y-6 shadow-2xl animate-fade-in border border-white/20">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div class="flex items-center gap-3.5">
+        <img [src]="g.avatarUrl" [alt]="g.groupName" class="h-12 w-12 rounded-2xl object-cover ring-2 ring-primary/50" />
+        <div>
+          <h3 class="font-['Epilogue'] font-black text-white text-lg">{{ g.groupName }}</h3>
+          <span class="text-xs text-neutral-400">{{ g.genre }} • Manager: {{ g.managerName }}</span>
+        </div>
+      </div>
+      <button (click)="closeDetail()" class="text-neutral-400 hover:text-white p-1 rounded-full">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5 text-xs font-mono">
+      <div class="rounded-2xl bg-white/[0.03] p-3.5 border border-white/10 text-center">
+        <span class="text-neutral-400 block text-[10px] uppercase">GMV Generado</span>
+        <strong class="text-white font-black text-base mt-1 block">${{ g.grossMerchandiseValue | number }}</strong>
+      </div>
+      <div class="rounded-2xl bg-white/[0.03] p-3.5 border border-white/10 text-center">
+        <span class="text-primary block text-[10px] uppercase">Comisión Vielais</span>
+        <strong class="text-primary font-black text-base mt-1 block">${{ g.commissionEarnedNet | number }}</strong>
+      </div>
+      <div class="rounded-2xl bg-white/[0.03] p-3.5 border border-white/10 text-center">
+        <span class="text-amber-400 block text-[10px] uppercase">Fondos en Escrow</span>
+        <strong class="text-amber-400 font-black text-base mt-1 block">${{ g.escrowPending | number }}</strong>
+      </div>
+    </div>
+
+    <div class="space-y-2 text-xs text-neutral-300">
+      <div><strong>Teléfono Manager:</strong> {{ g.managerPhone }}</div>
+      <div><strong>Presentaciones Realizadas:</strong> {{ g.completedBookings }} de {{ g.totalBookings }} confirmadas ({{ ((g.completedBookings / g.totalBookings)*100).toFixed(0) }}% tasa de éxito)</div>
+      <div><strong>Tasa de Disputas:</strong> {{ g.disputeRate }}% (Excelente récord)</div>
+    </div>
+
+    <div class="flex items-center justify-end border-t border-white/10 pt-4">
+      <button (click)="closeDetail()" class="cyber-btn-cyan rounded-2xl px-6 py-2.5 text-xs font-black">
+        Cerrar Inspección
+      </button>
+    </div>
+  </div>
+</div>

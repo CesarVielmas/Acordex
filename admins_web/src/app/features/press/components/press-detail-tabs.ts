@@ -43,11 +43,12 @@ export function getTabForPressChecklistItem(id: string): PressDetailTab {
     case 'kit_prensa':
       return 'acreditaciones';
 
+    case 'presupuesto':
     case 'sede_montaje':
     case 'sonido_prensa':
-    case 'backdrop':
     case 'control_fila':
     case 'seguridad_prensa':
+    case 'gasto_cerrado':
     case 'llegada_grupo':
     case 'vocero':
     case 'duracion_prensa':

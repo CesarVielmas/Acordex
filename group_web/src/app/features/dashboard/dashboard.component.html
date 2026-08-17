@@ -1,0 +1,292 @@
+<div class="space-y-8 max-w-7xl mx-auto pb-20 animate-fade-in">
+
+  <!-- ================= TOP HERO BANNER ================= -->
+  <div class="luxury-card rounded-3xl p-6 sm:p-8 lg:p-10 relative overflow-hidden shadow-2xl">
+    <!-- Ambient Gold Glow Background -->
+    <div class="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary/15 blur-3xl pointer-events-none"></div>
+    <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-[#d2b100]/10 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <!-- Left: Identity & Badges -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+        <div class="relative flex-shrink-0">
+          <div class="story-ring-gradient cursor-pointer" (click)="openStoryCreator()" title="Subir nueva historia de 24h">
+            <img 
+              [src]="groupData.activeProfile().avatarUrl" 
+              [alt]="groupData.activeProfile().name"
+              class="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover ring-4 ring-[#161616] shadow-2xl"
+            />
+          </div>
+          <span 
+            class="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-black ring-2 ring-[#161616]"
+            title="En línea y activo"
+          >
+            <span class="material-symbols-outlined text-xs font-black">check</span>
+          </span>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="rounded-full bg-primary/20 px-3 py-0.5 text-[10.5px] font-black uppercase tracking-wider text-primary border border-primary/30">
+              {{ groupData.activeProfile().genre }}
+            </span>
+            <span class="flex items-center gap-1 text-xs text-neutral-400 font-medium">
+              <span class="material-symbols-outlined text-sm text-neutral-400">location_on</span>
+              <span>{{ groupData.activeProfile().originCity }}, {{ groupData.activeProfile().state || 'México' }}</span>
+            </span>
+          </div>
+
+          <h1 class="font-['Epilogue'] text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-2">
+            <span>{{ groupData.activeProfile().name }}</span>
+            <span *ngIf="groupData.activeProfile().verified" class="material-symbols-outlined text-primary text-2xl fill-current" title="Verificado Oficial">
+              verified
+            </span>
+          </h1>
+
+          <div class="flex flex-wrap items-center gap-4 text-xs text-neutral-300 pt-1">
+            <span>👥 <strong>{{ groupData.activeProfile().members.length }}</strong> Músicos</span>
+            <span>⭐ <strong>{{ groupData.activeProfile().rating }}</strong> ({{ groupData.activeProfile().reviewsCount }} reseñas)</span>
+            <span>❤️ <strong>{{ groupData.activeProfile().followersCount }}</strong> Fans</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Action CTAs Dock -->
+      <div class="flex flex-wrap items-center gap-3 self-start lg:self-auto flex-shrink-0">
+        <button 
+          type="button" 
+          (click)="openStoryCreator()"
+          class="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs font-extrabold text-white hover:border-primary hover:bg-white/[0.08] transition shadow-md active:scale-95"
+        >
+          <span class="material-symbols-outlined text-primary text-base font-black">history_toggle_off</span>
+          <span>+ Historia (24h)</span>
+        </button>
+
+        <a 
+          routerLink="/publicaciones"
+          class="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3 text-xs font-extrabold text-white hover:border-primary hover:bg-white/[0.08] transition shadow-md active:scale-95"
+        >
+          <span class="material-symbols-outlined text-primary text-base font-black">edit_note</span>
+          <span>Publicar Muro</span>
+        </a>
+
+        <a 
+          routerLink="/editor-pagina"
+          class="luxury-gold-btn flex items-center gap-2 rounded-2xl px-5 py-3 text-xs uppercase tracking-wider active:scale-95"
+        >
+          <span class="material-symbols-outlined text-base font-black">tune</span>
+          <span>Editor Página</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 24H STORIES STRIP ================= -->
+  <div class="space-y-3">
+    <div class="flex items-center justify-between px-1">
+      <div class="flex items-center gap-2">
+        <h2 class="font-['Epilogue'] text-sm sm:text-base font-extrabold text-white">Historias Activas (24 Horas)</h2>
+        <span class="rounded-full bg-primary/20 px-2.5 py-0.5 text-[10px] font-black text-primary">
+          {{ groupData.stories().length }} activas
+        </span>
+      </div>
+      <a routerLink="/historias" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+        <span>Gestionar todas</span>
+        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+      </a>
+    </div>
+
+    <!-- Stories Carousel -->
+    <div class="flex items-center gap-4 overflow-x-auto no-scrollbar py-2 px-1">
+      <!-- Create New Story Trigger Bubble -->
+      <button 
+        type="button" 
+        (click)="openStoryCreator()"
+        class="flex flex-col items-center gap-2 flex-shrink-0 group cursor-pointer"
+      >
+        <div class="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-primary/60 bg-primary/10 text-primary transition-all group-hover:scale-105 group-hover:border-primary group-hover:bg-primary/20 shadow-lg">
+          <span class="material-symbols-outlined text-2xl font-black">add</span>
+        </div>
+        <span class="text-[11px] font-bold text-neutral-300">Subir Historia</span>
+      </button>
+
+      <!-- Active Stories Bubbles -->
+      <div 
+        *ngFor="let story of groupData.stories(); let i = index"
+        (click)="openStoryViewer(i)"
+        class="flex flex-col items-center gap-2 flex-shrink-0 group cursor-pointer"
+      >
+        <div class="story-ring-gradient">
+          <div class="h-16 w-16 overflow-hidden rounded-full ring-2 ring-[#161616]">
+            <img [src]="story.mediaUrl" [alt]="story.caption || 'Historia'" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+          </div>
+        </div>
+        <span class="truncate text-[11px] font-medium text-neutral-300 max-w-[70px] text-center">
+          {{ story.caption || 'Historia ' + (i+1) }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 4 METRICS CARDS (KPIS) ================= -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <!-- Card 1: Próximos Eventos -->
+    <div class="luxury-card rounded-3xl p-6 relative overflow-hidden group">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-extrabold uppercase tracking-wider text-neutral-400">Eventos Confirmados</span>
+        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400">
+          <span class="material-symbols-outlined text-2xl">event_available</span>
+        </div>
+      </div>
+      <div class="font-['Epilogue'] text-3xl font-black text-white mt-4">{{ upcomingEventsCount() }}</div>
+      <div class="text-[11px] text-neutral-400 mt-1 flex items-center gap-1">
+        <span class="text-emerald-400 font-bold">100% activos</span>
+        <span>en agenda Acordex</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Cotizaciones Pendientes -->
+    <div class="luxury-card rounded-3xl p-6 relative overflow-hidden group">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-extrabold uppercase tracking-wider text-neutral-400">Cotizaciones</span>
+        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+          <span class="material-symbols-outlined text-2xl">forum</span>
+        </div>
+      </div>
+      <div class="font-['Epilogue'] text-3xl font-black text-white mt-4">{{ groupData.pendingQuotesCount() }}</div>
+      <div class="text-[11px] text-neutral-400 mt-1 flex items-center gap-1">
+        <span class="text-primary font-bold">Por responder</span>
+        <span>en chat directo</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Horas en Escenario -->
+    <div class="luxury-card rounded-3xl p-6 relative overflow-hidden group">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-extrabold uppercase tracking-wider text-neutral-400">Horas en Vivo</span>
+        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-400">
+          <span class="material-symbols-outlined text-2xl">podium</span>
+        </div>
+      </div>
+      <div class="font-['Epilogue'] text-3xl font-black text-white mt-4">148 hrs</div>
+      <div class="text-[11px] text-neutral-400 mt-1 flex items-center gap-1">
+        <span class="text-blue-400 font-bold">Historial anual</span>
+        <span>giras y conciertos</span>
+      </div>
+    </div>
+
+    <!-- Card 4: Calificación Promedio -->
+    <div class="luxury-card rounded-3xl p-6 relative overflow-hidden group">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-extrabold uppercase tracking-wider text-neutral-400">Calificación Clientes</span>
+        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400">
+          <span class="material-symbols-outlined text-2xl">star</span>
+        </div>
+      </div>
+      <div class="font-['Epilogue'] text-3xl font-black text-white mt-4">{{ groupData.activeProfile().rating }} / 5.0</div>
+      <div class="text-[11px] text-neutral-400 mt-1 flex items-center gap-1">
+        <span class="text-amber-400 font-bold">{{ groupData.activeProfile().reviewsCount }} reseñas</span>
+        <span>100% verificadas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= GIG SPOTLIGHT (NEXT UPCOMING EVENT) ================= -->
+  <div *ngIf="nextEvent() as nextEv" class="space-y-4">
+    <div class="flex items-center justify-between px-1">
+      <div class="flex items-center gap-2">
+        <span class="flex h-3 w-3 rounded-full bg-emerald-400 animate-pulse"></span>
+        <h2 class="font-['Epilogue'] text-base sm:text-lg font-extrabold text-white">Próxima Presentación en Vivo</h2>
+      </div>
+      <a routerLink="/calendario" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+        <span>Ver calendario completo</span>
+        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+      </a>
+    </div>
+
+    <div class="luxury-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="rounded-full bg-emerald-500/20 px-3 py-0.5 text-[10.5px] font-black uppercase tracking-wider text-emerald-400 border border-emerald-500/30">
+              {{ nextEv.status }}
+            </span>
+            <span class="text-xs font-black text-primary">{{ nextEv.type }}</span>
+            <span class="text-xs text-neutral-400 font-medium">• 📅 {{ nextEv.date }}</span>
+          </div>
+
+          <h3 class="font-['Epilogue'] text-xl sm:text-2xl font-black text-white mt-2">{{ nextEv.title }}</h3>
+          <p class="text-xs sm:text-sm text-neutral-400 mt-0.5">📍 {{ nextEv.venue }} • {{ nextEv.city }}, {{ nextEv.state }}</p>
+        </div>
+
+        <button 
+          type="button"
+          (click)="openEvidenceUploader(nextEv)"
+          class="luxury-gold-btn flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black self-start lg:self-auto uppercase tracking-wider active:scale-95"
+        >
+          <span class="material-symbols-outlined text-lg font-black">add_a_photo</span>
+          <span>Cargar Evidencias del Show</span>
+        </button>
+      </div>
+
+      <!-- Schedule & Logistics Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-white/10 text-xs">
+        <div class="rounded-2xl bg-white/[0.03] p-4 border border-white/10">
+          <span class="text-[10.5px] text-amber-400 font-black uppercase tracking-wider block">Hora de Prueba de Sonido</span>
+          <span class="text-base font-black text-white mt-1 block">{{ nextEv.callTime }} hrs</span>
+        </div>
+
+        <div class="rounded-2xl bg-white/[0.03] p-4 border border-white/10">
+          <span class="text-[10.5px] text-primary font-black uppercase tracking-wider block">Hora del Show Principal</span>
+          <span class="text-base font-black text-white mt-1 block">{{ nextEv.showTime }} hrs</span>
+        </div>
+
+        <div class="rounded-2xl bg-white/[0.03] p-4 border border-white/10">
+          <span class="text-[10.5px] text-emerald-400 font-black uppercase tracking-wider block">Honorarios Pactados</span>
+          <span class="text-base font-black text-emerald-400 mt-1 block">${{ nextEv.honorarios | number }} MXN</span>
+        </div>
+      </div>
+
+      <div *ngIf="nextEv.logisticsNotes" class="text-xs text-neutral-300 bg-white/[0.02] p-4 rounded-2xl border border-white/5 leading-relaxed">
+        <strong>Notas de Logística:</strong> {{ nextEv.logisticsNotes }}
+      </div>
+
+      <!-- Evidences Shelf -->
+      <div class="space-y-3 pt-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-white uppercase tracking-wider">Evidencias & Fotos de este Show ({{ nextEv.evidences.length }})</span>
+          <a routerLink="/eventos-evidencias" class="text-xs font-bold text-primary hover:underline">Ver todas</a>
+        </div>
+
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+          <div *ngFor="let evPhoto of nextEv.evidences.slice(0, 6)" class="relative h-24 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-md">
+            <img [src]="evPhoto.url || evPhoto.mediaUrl" [alt]="evPhoto.caption" class="h-full w-full object-cover" />
+          </div>
+          <div *ngIf="nextEv.evidences.length === 0" class="col-span-3 sm:col-span-6 text-center py-6 text-xs text-neutral-500 italic bg-white/[0.01] rounded-2xl border border-dashed border-white/10">
+            Aún no hay fotos subidas para este evento. Haz clic en "Cargar Evidencias del Show".
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+<app-story-viewer-modal
+  *ngIf="isStoryViewerOpen()"
+  [stories]="groupData.stories()"
+  [initialIndex]="selectedStoryIndex()"
+  (close)="closeStoryViewer()"
+  (deleteStory)="deleteStory($event)"
+></app-story-viewer-modal>
+
+<app-story-creator-modal
+  *ngIf="isStoryCreatorOpen()"
+  (close)="closeStoryCreator()"
+></app-story-creator-modal>
+
+<app-evidence-uploader-modal
+  *ngIf="isEvidenceUploaderOpen()"
+  [event]="selectedEventForEvidence()"
+  (close)="closeEvidenceUploader()"
+></app-evidence-uploader-modal>

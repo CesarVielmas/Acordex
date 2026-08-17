@@ -12,36 +12,36 @@ import { ClientItem, GroupItem } from '../../../core/models/admin.models';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div class="w-full max-w-lg rounded-3xl bg-surface-container border border-outline-variant/30 shadow-2xl p-6 space-y-5">
+      <div class="w-full max-w-lg rounded-3xl bg-[#1A1A1A] border border-white/10 shadow-2xl p-6 space-y-5">
 
         <!-- Encabezado -->
-        <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
           <div class="flex items-center gap-2">
-            <span class="w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center material-symbols-outlined text-lg">
+            <span class="w-8 h-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center material-symbols-outlined text-lg shadow-inner">
               local_offer
             </span>
             <div>
-              <h3 class="text-base font-black text-on-surface">Enviar Oferta Especial CRM</h3>
-              <p class="text-xs text-outline">Propuesta comercial preferencial con descuento de temporada</p>
+              <h3 class="text-base font-black text-on-surface font-['Epilogue']">Despacho de Propuesta Comercial Preferencial</h3>
+              <p class="text-xs text-outline font-['Epilogue']">Generación de propuesta con bonificación y condiciones para promotor</p>
             </div>
           </div>
           <button
             type="button"
             (click)="closed.emit()"
-            class="w-8 h-8 rounded-xl bg-surface-container-high text-outline hover:text-on-surface flex items-center justify-center transition-all cursor-pointer"
+            class="w-8 h-8 rounded-xl bg-[#222222] text-outline hover:text-on-surface flex items-center justify-center transition-all cursor-pointer"
           >
             <span class="material-symbols-outlined text-base">close</span>
           </button>
         </div>
 
         <!-- Banner del Cliente Destinatario -->
-        <div class="p-3.5 rounded-2xl bg-surface-container-high border border-outline-variant/20 flex items-center gap-3 text-xs">
-          <div class="w-10 h-10 rounded-xl bg-primary/20 text-primary font-black flex items-center justify-center font-mono">
+        <div class="p-3.5 rounded-2xl bg-[#141414] border border-white/5 flex items-center gap-3 text-xs shadow-inner">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-black flex items-center justify-center font-mono border border-primary/30 shadow-sm">
             {{ client().name.charAt(0) }}
           </div>
           <div>
-            <h4 class="font-bold text-on-surface">{{ client().name }}</h4>
-            <p class="text-outline">{{ client().company }} · {{ client().email }}</p>
+            <h4 class="font-bold text-on-surface font-['Epilogue']">{{ client().name }}</h4>
+            <p class="text-outline font-['Epilogue']">{{ client().company }} · {{ client().email }}</p>
           </div>
         </div>
 
@@ -50,26 +50,26 @@ import { ClientItem, GroupItem } from '../../../core/models/admin.models';
 
           <!-- 1. PORCENTAJE DE DESCUENTO -->
           <div class="space-y-1.5">
-            <label class="font-bold text-on-surface">Porcentaje de Descuento</label>
+            <label class="font-bold text-on-surface font-['Epilogue']">Bonificación Comercial / Descuento</label>
             <select
               [(ngModel)]="formDiscountPercent"
-              class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface focus:outline-none focus:border-primary text-xs"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
             >
-              <option value="5">5% - Descuento Cliente Frecuente</option>
-              <option value="10">10% - Promoción Especial de Temporada</option>
-              <option value="15">15% - Paquete 2 Fechas Consecutivas</option>
-              <option value="20">20% - Preventa Exclusiva Anual</option>
+              <option value="5">5% - Bonificación Cuenta Recurrente</option>
+              <option value="10">10% - Promoción Especial de Temporada Alta</option>
+              <option value="15">15% - Paquete 2 Fechas Consecutivas Regionales</option>
+              <option value="20">20% - Contratación Anticipada Anual</option>
             </select>
           </div>
 
           <!-- 2. GRUPO SUGERIDO -->
           <div class="space-y-1.5">
-            <label class="font-bold text-on-surface">Agrupación Recomendada</label>
+            <label class="font-bold text-on-surface font-['Epilogue']">Agrupación Musical Promocionada</label>
             <select
               [(ngModel)]="formSuggestedGroup"
-              class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface focus:outline-none focus:border-primary text-xs"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
             >
-              <option value="">Cualquier grupo del catálogo...</option>
+              <option value="">Cualquier elenco del catálogo Acordex...</option>
               @for (g of groups(); track g.id) {
                 <option [value]="g.name">{{ g.name }} ({{ g.genre }})</option>
               }
@@ -78,23 +78,23 @@ import { ClientItem, GroupItem } from '../../../core/models/admin.models';
 
           <!-- 3. MENSAJE Y CONDICIONES -->
           <div class="space-y-1.5">
-            <label class="font-bold text-on-surface">Detalle de la Propuesta / Mensaje</label>
+            <label class="font-bold text-on-surface font-['Epilogue']">Especificaciones de la Propuesta & Condiciones</label>
             <textarea
               [(ngModel)]="formDetails"
               rows="3"
               placeholder="Detalla las condiciones especiales, vigencia de la oferta y beneficios del paquete..."
-              class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary text-xs font-['Epilogue'] shadow-inner"
             ></textarea>
           </div>
 
         </div>
 
         <!-- Botones de Acción -->
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20 text-xs">
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-white/10 text-xs">
           <button
             type="button"
             (click)="closed.emit()"
-            class="px-4 py-2.5 rounded-xl bg-surface-container-high text-outline hover:text-on-surface font-bold transition-all cursor-pointer"
+            class="px-4 py-2.5 rounded-xl bg-[#222222] hover:bg-[#282828] text-outline hover:text-on-surface font-bold transition-all cursor-pointer font-['Epilogue']"
           >
             Cancelar
           </button>
@@ -102,10 +102,10 @@ import { ClientItem, GroupItem } from '../../../core/models/admin.models';
             type="button"
             (click)="dispatchOffer()"
             [disabled]="!formDetails.trim()"
-            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-black shadow-md hover:scale-105 transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-on-primary font-black shadow-md hover:opacity-95 transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 font-['Epilogue']"
           >
             <span class="material-symbols-outlined text-base">send</span>
-            Enviar Oferta
+            Enviar Propuesta
           </button>
         </div>
 

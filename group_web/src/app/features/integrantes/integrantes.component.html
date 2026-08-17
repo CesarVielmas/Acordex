@@ -1,0 +1,238 @@
+<div class="space-y-6">
+  <!-- Header Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-variant/40 pb-4">
+    <div>
+      <h1 class="font-display-xl text-2xl sm:text-3xl font-extrabold text-on-surface">
+        Fichas & Perfiles de Integrantes
+      </h1>
+      <p class="text-xs sm:text-sm text-on-surface-variant mt-1">
+        Edita la información personal de cada músico y vocalista (rol, instrumentos, biografía, frases y redes) que los clientes ven en Acordex.
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2 rounded-2xl border border-surface-variant/50 bg-surface-container px-4 py-2 text-xs">
+      <span class="material-symbols-outlined text-primary text-xl">badge</span>
+      <span class="text-on-surface font-bold">{{ groupData.activeProfile().members.length }} Músicos Registrados</span>
+    </div>
+  </div>
+
+  <!-- Members Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div 
+      *ngFor="let member of groupData.activeProfile().members"
+      class="overflow-hidden rounded-3xl border border-surface-variant/40 bg-surface-container shadow-xl flex flex-col justify-between transition hover:border-primary/50"
+    >
+      <div class="p-5 space-y-4">
+        <!-- Top Avatar & Name -->
+        <div class="flex items-start gap-3.5">
+          <img [src]="member.photoUrl" [alt]="member.name" class="h-16 w-16 rounded-2xl object-cover ring-2 ring-primary/40 shadow-lg" />
+          <div class="min-w-0 flex-1">
+            <h3 class="font-headline-md text-base font-bold text-on-surface truncate">{{ member.name }}</h3>
+            <span class="text-xs text-primary font-semibold block truncate">{{ member.role }}</span>
+            <div class="mt-1 flex items-center gap-2 text-[11px] text-on-surface-variant">
+              <span>{{ member.hometown }}</span>
+              <span>•</span>
+              <span>{{ member.age }} años</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instrument & Exp Badge -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <span *ngIf="member.instrument" class="rounded-full bg-primary/10 border border-primary/25 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+            🎷 {{ member.instrument }}
+          </span>
+          <span class="rounded-full bg-surface-container-high px-2.5 py-0.5 text-[11px] font-medium text-on-surface-variant">
+            {{ member.experienceYears }} años exp.
+          </span>
+        </div>
+
+        <!-- Quote -->
+        <p class="text-xs text-on-surface-variant italic line-clamp-2 bg-surface-container-high/60 p-3 rounded-2xl border border-surface-variant/30">
+          {{ member.quote }}
+        </p>
+
+        <!-- Bio preview -->
+        <p class="text-xs text-on-surface-variant line-clamp-3 leading-relaxed">
+          {{ member.bio }}
+        </p>
+      </div>
+
+      <!-- Footer Actions & Socials -->
+      <div class="flex items-center justify-between border-t border-surface-variant/30 bg-surface-container-high/40 p-3.5 px-5">
+        <div class="flex items-center gap-2 text-on-surface-variant text-xs">
+          <span *ngIf="member.socials.instagram" class="text-pink-400 font-semibold text-[11px]">IG</span>
+          <span *ngIf="member.socials.spotify" class="text-emerald-400 font-semibold text-[11px]">Spotify</span>
+        </div>
+
+        <button 
+          type="button" 
+          (click)="openEditModal(member)"
+          class="flex items-center gap-1 rounded-xl bg-primary/15 px-3.5 py-1.5 text-xs font-bold text-primary border border-primary/30 hover:bg-primary/25 transition"
+        >
+          <span class="material-symbols-outlined text-sm">edit</span>
+          <span>Editar Ficha</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Member Modal -->
+<div *ngIf="editingMember()" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 group-app-backdrop">
+  <div class="absolute inset-0" (click)="closeEditModal()"></div>
+
+  <div class="relative z-10 w-full max-w-2xl overflow-hidden rounded-3xl group-app-modal p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between border-b border-surface-variant/40 pb-3">
+      <div class="flex items-center gap-2.5">
+        <span class="material-symbols-outlined text-primary text-xl">person_edit</span>
+        <h3 class="font-headline-md text-base font-bold text-on-surface">Editar Información de {{ editingMember()?.name }}</h3>
+      </div>
+      <button (click)="closeEditModal()" class="text-on-surface-variant hover:text-white">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <!-- Form Grid -->
+    <div class="space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Nombre Completo / Artístico</label>
+          <input 
+            type="text" 
+            [ngModel]="formName()" 
+            (ngModelChange)="formName.set($event)"
+            class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3.5 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Puesto / Rol en la Agrupación</label>
+          <input 
+            type="text" 
+            [ngModel]="formRole()" 
+            (ngModelChange)="formRole.set($event)"
+            class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3.5 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Instrumento Principal</label>
+          <input 
+            type="text" 
+            [ngModel]="formInstrument()" 
+            (ngModelChange)="formInstrument.set($event)"
+            class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3.5 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Ciudad de Origen</label>
+          <input 
+            type="text" 
+            [ngModel]="formHometown()" 
+            (ngModelChange)="formHometown.set($event)"
+            class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3.5 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Años de Experiencia</label>
+          <input 
+            type="number" 
+            [ngModel]="formExperienceYears()" 
+            (ngModelChange)="formExperienceYears.set($event)"
+            class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3.5 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-on-surface mb-1">Frase / Lema Artístico</label>
+        <input 
+          type="text" 
+          [ngModel]="formQuote()" 
+          (ngModelChange)="formQuote.set($event)"
+          class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3.5 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+        />
+      </div>
+
+      <div>
+        <label class="block font-semibold text-on-surface mb-1">Biografía Corta (Para tarjetas de presentación)</label>
+        <textarea 
+          [ngModel]="formBio()" 
+          (ngModelChange)="formBio.set($event)"
+          rows="2"
+          class="w-full rounded-xl border border-surface-variant/60 bg-surface-container p-3 text-xs text-on-surface focus:border-primary focus:outline-none"
+        ></textarea>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-on-surface mb-1">Biografía Completa & Trayectoria</label>
+        <textarea 
+          [ngModel]="formFullBio()" 
+          (ngModelChange)="formFullBio.set($event)"
+          rows="4"
+          class="w-full rounded-xl border border-surface-variant/60 bg-surface-container p-3 text-xs text-on-surface focus:border-primary focus:outline-none"
+        ></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Instagram (@usuario)</label>
+          <input 
+            type="text" 
+            [ngModel]="formInstagram()" 
+            (ngModelChange)="formInstagram.set($event)"
+            placeholder="https://instagram.com/..." 
+            class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Spotify Artista URL</label>
+          <input 
+            type="text" 
+            [ngModel]="formSpotify()" 
+            (ngModelChange)="formSpotify.set($event)"
+            placeholder="https://spotify.com/..." 
+            class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">TikTok (@usuario)</label>
+          <input 
+            type="text" 
+            [ngModel]="formTiktok()" 
+            (ngModelChange)="formTiktok.set($event)"
+            placeholder="https://tiktok.com/@..." 
+            class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center justify-end gap-3 pt-3 border-t border-surface-variant/40">
+      <button 
+        type="button" 
+        (click)="closeEditModal()"
+        class="rounded-xl border border-surface-variant/60 px-4 py-2 text-xs font-semibold text-on-surface-variant hover:bg-surface-container"
+      >
+        Cancelar
+      </button>
+
+      <button 
+        type="button" 
+        (click)="saveMemberChanges()"
+        class="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-primary to-tertiary px-5 py-2 text-xs font-bold text-on-primary shadow-lg shadow-primary/20 hover:opacity-95 transition"
+      >
+        <span class="material-symbols-outlined text-base">save</span>
+        <span>Guardar Cambios</span>
+      </button>
+    </div>
+  </div>
+</div>

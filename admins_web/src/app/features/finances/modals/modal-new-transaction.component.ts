@@ -10,25 +10,24 @@ import { FinanceAccount, FinanceCategory, FinanceTransactionType } from '../../.
   selector: 'app-modal-new-transaction',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  template: `
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div class="w-full max-w-lg rounded-3xl bg-surface-container border border-outline-variant/30 shadow-2xl p-6 space-y-5">
+  template: `    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+      <div class="w-full max-w-lg rounded-3xl bg-[#1A1A1A] border border-white/10 shadow-2xl p-6 space-y-5">
 
         <!-- Encabezado -->
-        <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
           <div class="flex items-center gap-2.5">
-            <span class="w-9 h-9 rounded-2xl bg-primary/20 text-primary flex items-center justify-center material-symbols-outlined text-xl">
+            <span class="w-9 h-9 rounded-2xl bg-primary/20 text-primary flex items-center justify-center material-symbols-outlined text-xl shadow-inner">
               add_card
             </span>
             <div>
-              <h3 class="text-base font-black text-on-surface">Registrar Movimiento de Tesorería</h3>
-              <p class="text-[11px] text-outline">Captura de ingresos y egresos para el libro diario</p>
+              <h3 class="text-base font-black text-on-surface font-['Epilogue']">Registrar Movimiento Contable</h3>
+              <p class="text-[11px] text-outline font-['Epilogue']">Asiento contable de tesorería para el libro diario</p>
             </div>
           </div>
           <button
             type="button"
             (click)="closed.emit()"
-            class="w-8 h-8 rounded-xl bg-surface-container-high text-outline hover:text-on-surface flex items-center justify-center transition-all"
+            class="w-8 h-8 rounded-xl bg-[#222222] text-outline hover:text-on-surface flex items-center justify-center transition-all cursor-pointer"
           >
             <span class="material-symbols-outlined text-base">close</span>
           </button>
@@ -39,27 +38,27 @@ import { FinanceAccount, FinanceCategory, FinanceTransactionType } from '../../.
 
           <!-- Tipo (Ingreso / Egreso) -->
           <div>
-            <label class="font-bold text-outline uppercase text-[10px] block mb-1">Tipo de Movimiento</label>
+            <label class="font-bold text-outline uppercase text-[10px] block mb-1 font-['Epilogue']">Naturaleza del Movimiento</label>
             <div class="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 (click)="type.set('ingreso')"
-                class="py-2.5 rounded-xl font-bold border transition-all text-center"
+                class="py-2.5 rounded-xl font-bold border transition-all text-center cursor-pointer font-['Epilogue']"
                 [class]="type() === 'ingreso'
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 shadow-md'
-                  : 'bg-surface-container-high border-outline-variant/30 text-outline hover:text-on-surface'"
+                  : 'bg-[#141414] border-white/10 text-outline hover:text-on-surface'"
               >
                 + Ingreso a Caja / Banco
               </button>
               <button
                 type="button"
                 (click)="type.set('egreso')"
-                class="py-2.5 rounded-xl font-bold border transition-all text-center"
+                class="py-2.5 rounded-xl font-bold border transition-all text-center cursor-pointer font-['Epilogue']"
                 [class]="type() === 'egreso'
                   ? 'bg-rose-500/20 text-rose-300 border-rose-500 shadow-md'
-                  : 'bg-surface-container-high border-outline-variant/30 text-outline hover:text-on-surface'"
+                  : 'bg-[#141414] border-white/10 text-outline hover:text-on-surface'"
               >
-                - Egreso / Gasto
+                - Egreso / Liquidación
               </button>
             </div>
           </div>
@@ -67,62 +66,73 @@ import { FinanceAccount, FinanceCategory, FinanceTransactionType } from '../../.
           <!-- Monto y Fecha -->
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="font-bold text-outline uppercase text-[10px] block mb-1">Monto (MXN)</label>
+              <label class="font-bold text-outline uppercase text-[10px] block mb-1 font-['Epilogue']">Monto (MXN)</label>
               <input
                 type="number"
                 [ngModel]="amount()"
                 (ngModelChange)="amount.set($event)"
                 placeholder="0.00"
-                class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-2 text-on-surface font-mono font-bold focus:outline-none focus:border-primary"
+                class="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-on-surface font-mono font-bold focus:outline-none focus:border-primary"
               />
             </div>
             <div>
-              <label class="font-bold text-outline uppercase text-[10px] block mb-1">Fecha</label>
+              <label class="font-bold text-outline uppercase text-[10px] block mb-1 font-['Epilogue']">Fecha Contable</label>
               <input
                 type="date"
                 [ngModel]="date()"
                 (ngModelChange)="date.set($event)"
-                class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-2 text-on-surface font-mono focus:outline-none focus:border-primary"
+                class="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-on-surface font-mono focus:outline-none focus:border-primary"
               />
             </div>
           </div>
 
           <!-- Categoría -->
           <div>
-            <label class="font-bold text-outline uppercase text-[10px] block mb-1">Categoría Contable</label>
+            <label class="font-bold text-outline uppercase text-[10px] block mb-1 font-['Epilogue']">Categoría Contable</label>
             <select
               [ngModel]="category()"
               (ngModelChange)="category.set($event)"
-              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-2 text-on-surface focus:outline-none focus:border-primary"
+              class="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-on-surface focus:outline-none focus:border-primary"
             >
               @if (type() === 'ingreso') {
                 <option value="taquilla_evento">Taquilla de Evento Masivo</option>
-                <option value="anticipo_cotizacion">Anticipo de Cotización / Show</option>
-                <option value="contrato_privado">Liquidación Contrato Privado</option>
-                <option value="patrocinio">Patrocinio Comercial</option>
-                <option value="concesion_barra">Concesión de Barra / Alimentos</option>
-                <option value="otro_ingreso">Otro Ingreso Extraordinario</option>
+                <option value="anticipo_cotizacion">Anticipo de Cotización Privada</option>
+                <option value="finiquito_cotizacion">Liquidación Final de Contratación</option>
+                <option value="patrocinio_marca">Patrocinio / Marca Comercial</option>
+                <option value="concesion_barras">Concesión de Barras y Bebidas</option>
+                <option value="otro_ingreso">Otros Ingresos Extraordinarios</option>
               } @else {
-                <option value="honorarios_artistas">Honorarios / Caché de Artista</option>
+                <option value="honorarios_artista">Honorarios / Caché de Artista</option>
                 <option value="produccion_audio">Producción, Audio & Escenario</option>
-                <option value="renta_recinto">Renta de Recinto / Palenque</option>
-                <option value="viaticos_logistica">Viáticos, Vuelos & Hospedaje</option>
-                <option value="seguridad_vallas">Seguridad Privada & Vallas</option>
-                <option value="marketing_prensa">Marketing, Medios & Prensa</option>
-                <option value="permisos_impuestos">Permisos Municipales & Protección Civil</option>
-                <option value="finiquito_manager">Finiquito a Manager Co-organizador</option>
-                <option value="otro_egreso">Otro Egreso Operativo</option>
+                <option value="recinto_venue">Renta de Recinto / Palenque</option>
+                <option value="viaticos_hospedaje">Viáticos, Vuelos & Hospedaje</option>
+                <option value="marketing_pauta">Publicidad & Campañas de Prensa</option>
+                <option value="seguridad_permisos">Permisos Municipales & Protección Civil</option>
+                <option value="reparto_manager">Liquidación a Co-productor / Manager</option>
+                <option value="otro_egreso">Otros Gastos Operativos</option>
               }
             </select>
           </div>
 
-          <!-- Cuenta Bancaria Receptora -->
+          <!-- Concepto -->
           <div>
-            <label class="font-bold text-outline uppercase text-[10px] block mb-1">Cuenta Bancaria Receptora / Origen</label>
+            <label class="font-bold text-outline uppercase text-[10px] block mb-1 font-['Epilogue']">Concepto / Glosa</label>
+            <input
+              type="text"
+              [ngModel]="concept()"
+              (ngModelChange)="concept.set($event)"
+              placeholder="Ej. Liquidación de rider de sonido para Palenque..."
+              class="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-on-surface focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          <!-- Cuenta Bancaria -->
+          <div>
+            <label class="font-bold text-outline uppercase text-[10px] block mb-1 font-['Epilogue']">Cuenta Bancaria / Caja</label>
             <select
               [ngModel]="accountId()"
               (ngModelChange)="accountId.set($event)"
-              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-2 text-on-surface focus:outline-none focus:border-primary"
+              class="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-on-surface focus:outline-none focus:border-primary"
             >
               @for (acc of accounts(); track acc.id) {
                 <option [value]="acc.id">{{ acc.name }} ({{ acc.bankName }})</option>
@@ -130,48 +140,37 @@ import { FinanceAccount, FinanceCategory, FinanceTransactionType } from '../../.
             </select>
           </div>
 
-          <!-- Concepto -->
+          <!-- Referencia SPEI -->
           <div>
-            <label class="font-bold text-outline uppercase text-[10px] block mb-1">Concepto Detallado</label>
-            <input
-              type="text"
-              [ngModel]="concept()"
-              (ngModelChange)="concept.set($event)"
-              placeholder="Ej. Anticipo por renta de generador diésel para Lienzo Charro..."
-              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-2 text-on-surface focus:outline-none focus:border-primary"
-            />
-          </div>
-
-          <!-- Referencia SPEI / Factura -->
-          <div>
-            <label class="font-bold text-outline uppercase text-[10px] block mb-1">Referencia SPEI / Factura / Folio</label>
+            <label class="font-bold text-outline uppercase text-[10px] block mb-1 font-['Epilogue']">Folio / Referencia SPEI (Opcional)</label>
             <input
               type="text"
               [ngModel]="reference()"
               (ngModelChange)="reference.set($event)"
-              placeholder="Ej. SPEI-992182 o FAC-A409"
-              class="w-full bg-surface-container-high border border-outline-variant/30 rounded-xl px-3 py-2 text-on-surface font-mono focus:outline-none focus:border-primary"
+              placeholder="Ej. SPEI-BNTE-881920"
+              class="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-on-surface font-mono focus:outline-none focus:border-primary"
             />
           </div>
 
         </div>
 
         <!-- Botones de Acción -->
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/20">
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
           <button
             type="button"
             (click)="closed.emit()"
-            class="px-4 py-2.5 rounded-xl bg-surface-container-high text-outline text-xs font-bold hover:text-on-surface"
+            class="px-4 py-2.5 rounded-xl bg-[#222222] text-outline text-xs font-bold hover:text-on-surface cursor-pointer font-['Epilogue']"
           >
             Cancelar
           </button>
           <button
             type="button"
-            (click)="save()"
             [disabled]="!isValid()"
-            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-on-primary text-xs font-black shadow-lg shadow-primary/20 disabled:opacity-50 disabled:pointer-events-none transition-all"
+            (click)="save()"
+            class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-on-primary text-xs font-black shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer font-['Epilogue']"
           >
-            Guardar Movimiento
+            <span class="material-symbols-outlined text-sm">save</span>
+            Guardar Asiento
           </button>
         </div>
 

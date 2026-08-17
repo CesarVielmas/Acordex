@@ -1,0 +1,446 @@
+<div class="space-y-8 max-w-7xl mx-auto pb-20 animate-fade-in select-none">
+  
+  <!-- ================= TOP HERO BANNER ================= -->
+  <div class="cyber-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10">
+      <div class="flex items-center gap-2">
+        <span class="rounded-md bg-cyan-500/20 px-2 py-0.5 text-[10px] font-mono font-black text-cyan-300 border border-cyan-500/30">
+          MANAGER NETWORK & HELPDESK
+        </span>
+      </div>
+      <h1 class="font-['Epilogue'] text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight mt-1">
+        Managers & Mesa de Tickets
+      </h1>
+      <p class="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl leading-relaxed">
+        Padrón oficial de representantes artísticos registrados en Acordex, alta de nuevos managers con enlace de onboarding y mesa de ayuda directa con Vielais.
+      </p>
+    </div>
+
+    <!-- Register Action CTA & Quick Metrics -->
+    <div class="relative z-10 flex flex-wrap items-center gap-3">
+      <button 
+        type="button"
+        (click)="openRegisterModal()"
+        class="cyber-btn-gold rounded-2xl px-5 py-3 text-xs font-black flex items-center gap-2 shadow-xl"
+      >
+        <span class="material-symbols-outlined text-lg">person_add</span>
+        <span>Dar de Alta Nuevo Manager</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback Banner -->
+  <div *ngIf="statusFeedback()" class="rounded-2xl bg-cyan-500/15 border border-cyan-500/40 p-4 text-xs font-mono font-bold text-cyan-300 flex items-center gap-2.5 animate-slide-up shadow-xl">
+    <span class="material-symbols-outlined text-lg">check_circle</span>
+    <span>{{ statusFeedback() }}</span>
+  </div>
+
+  <!-- ================= TABS SWITCHER ================= -->
+  <div class="flex items-center gap-2 border-b border-white/10 pb-4">
+    <button 
+      type="button"
+      (click)="activeTab.set('managers')"
+      class="flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-black transition-all"
+      [ngClass]="activeTab() === 'managers' ? 'bg-cyan-accent text-black shadow-lg' : 'bg-white/[0.03] text-neutral-400 hover:text-white border border-white/10'"
+    >
+      <span class="material-symbols-outlined text-base">manage_accounts</span>
+      <span>Directorio de Managers ({{ metrics.managers().length }})</span>
+    </button>
+
+    <button 
+      type="button"
+      (click)="activeTab.set('tickets')"
+      class="flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-black transition-all relative"
+      [ngClass]="activeTab() === 'tickets' ? 'bg-cyan-accent text-black shadow-lg' : 'bg-white/[0.03] text-neutral-400 hover:text-white border border-white/10'"
+    >
+      <span class="material-symbols-outlined text-base">support_agent</span>
+      <span>Mesa de Tickets</span>
+      <span 
+        *ngIf="metrics.openTicketsCount() > 0"
+        class="rounded-full px-2 py-0.2 text-[9px] font-extrabold"
+        [ngClass]="activeTab() === 'tickets' ? 'bg-black text-cyan-accent' : 'bg-rose-500 text-white'"
+      >
+        {{ metrics.openTicketsCount() }} abiertos
+      </span>
+    </button>
+  </div>
+
+  <!-- ================= TAB 1: MANAGERS DIRECTORY ================= -->
+  <div *ngIf="activeTab() === 'managers'" class="space-y-6 animate-fade-in">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div *ngFor="let m of metrics.managers()" class="cyber-card rounded-3xl p-6 space-y-4 relative group">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <img [src]="m.avatarUrl" [alt]="m.fullName" class="h-13 w-13 rounded-2xl object-cover ring-2 ring-cyan-500/40 shadow-md" />
+            <div class="min-w-0">
+              <div class="font-['Epilogue'] font-black text-white text-base truncate">{{ m.fullName }}</div>
+              <div class="text-xs text-neutral-400 font-semibold">{{ m.agencyName }}</div>
+              <div class="text-[10px] text-cyan-400 font-mono mt-0.5">ID: {{ m.id }}</div>
+            </div>
+          </div>
+
+          <span class="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[9.5px] font-black text-emerald-400 uppercase font-mono">
+            {{ m.status }}
+          </span>
+        </div>
+
+        <!-- Groups Under Management -->
+        <div class="rounded-2xl bg-white/[0.03] p-3.5 border border-white/5 space-y-1">
+          <span class="text-[10px] font-mono text-neutral-400 uppercase block">Agrupaciones Representadas:</span>
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            <span *ngFor="let g of m.assignedGroups" class="rounded-lg bg-primary/15 border border-primary/30 px-2 py-0.5 text-[10.5px] font-bold text-primary">
+              🎺 {{ g }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Contact & Banking Info -->
+        <div class="space-y-1 text-xs text-neutral-300 font-mono">
+          <div><span class="text-neutral-500">Email:</span> {{ m.email }}</div>
+          <div><span class="text-neutral-500">Tel:</span> {{ m.phone }}</div>
+          <div><span class="text-neutral-500">CLABE:</span> {{ m.clabe }}</div>
+          <div><span class="text-neutral-500">RFC:</span> {{ m.rfc }}</div>
+        </div>
+
+        <!-- Financial Performance Footprint -->
+        <div class="border-t border-white/5 pt-3 flex items-center justify-between text-xs font-mono">
+          <div>
+            <span class="text-[9.5px] text-neutral-500 uppercase block">GMV Gestionado</span>
+            <strong class="text-white font-bold">${{ m.totalGmvManaged | number }} MXN</strong>
+          </div>
+          <div class="text-right">
+            <span class="text-[9.5px] text-primary uppercase block">Comisión Generada</span>
+            <strong class="text-primary font-black">${{ m.totalCommissionsGenerated | number }} MXN</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TAB 2: SUPPORT TICKETS HELPDESK ================= -->
+  <div *ngIf="activeTab() === 'tickets'" class="space-y-6 animate-fade-in">
+    <!-- Filter Pills -->
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
+      <button 
+        type="button"
+        (click)="ticketFilter.set('ALL')"
+        class="rounded-xl border px-3.5 py-1.5 text-xs font-bold transition"
+        [ngClass]="ticketFilter() === 'ALL' ? 'bg-white/20 text-white border-white/30' : 'bg-white/[0.03] text-neutral-400 border-white/10'"
+      >
+        Todos ({{ metrics.tickets().length }})
+      </button>
+
+      <button 
+        type="button"
+        (click)="ticketFilter.set('OPEN')"
+        class="rounded-xl border px-3.5 py-1.5 text-xs font-bold transition"
+        [ngClass]="ticketFilter() === 'OPEN' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-white/[0.03] text-neutral-400 border-white/10'"
+      >
+        Pendientes & En Revisión
+      </button>
+
+      <button 
+        type="button"
+        (click)="ticketFilter.set('CRITICAL')"
+        class="rounded-xl border px-3.5 py-1.5 text-xs font-bold transition"
+        [ngClass]="ticketFilter() === 'CRITICAL' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-white/[0.03] text-neutral-400 border-white/10'"
+      >
+        Prioridad Alta / Crítica
+      </button>
+
+      <button 
+        type="button"
+        (click)="ticketFilter.set('RESOLVED')"
+        class="rounded-xl border px-3.5 py-1.5 text-xs font-bold transition"
+        [ngClass]="ticketFilter() === 'RESOLVED' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-white/[0.03] text-neutral-400 border-white/10'"
+      >
+        Resueltos
+      </button>
+    </div>
+
+    <!-- Two Columns Split View: Ticket List & Inspector Thread -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Left: Ticket List (5 Cols) -->
+      <div class="lg:col-span-5 space-y-3">
+        <div 
+          *ngFor="let t of filteredTickets"
+          (click)="selectTicket(t)"
+          class="cyber-card cursor-pointer rounded-2xl p-4 sm:p-5 space-y-2 transition hover:border-cyan-500/50"
+          [ngClass]="selectedTicket()?.id === t.id ? 'ring-2 ring-cyan-400 bg-white/[0.06]' : ''"
+        >
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-cyan-400 font-extrabold">{{ t.folio }}</span>
+              <span class="rounded-md bg-white/10 px-2 py-0.2 text-[9px] font-bold text-neutral-300">{{ t.category }}</span>
+            </div>
+            <span 
+              class="rounded-full px-2 py-0.5 text-[9px] font-black uppercase font-mono"
+              [ngClass]="{
+                'bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse': t.status === 'Abierto',
+                'bg-amber-500/20 text-amber-300 border border-amber-500/30': t.status === 'En Revisión',
+                'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': t.status === 'Resuelto'
+              }"
+            >
+              {{ t.status }}
+            </span>
+          </div>
+
+          <h4 class="font-bold text-white text-xs leading-snug line-clamp-1">{{ t.subject }}</h4>
+          <p class="text-[11px] text-neutral-400 line-clamp-2 leading-relaxed">{{ t.description }}</p>
+
+          <div class="flex items-center justify-between border-t border-white/5 pt-2 text-[10.5px] text-neutral-500 font-mono">
+            <span>👤 {{ t.managerName }} ({{ t.groupName || 'General' }})</span>
+            <span>{{ t.createdAt }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Full Ticket Inspector & Response Thread (7 Cols) -->
+      <div class="lg:col-span-7">
+        <div *ngIf="selectedTicket() as t; else emptySelection" class="cyber-card rounded-3xl p-6 sm:p-7 space-y-6 shadow-2xl animate-fade-in border border-white/15">
+          
+          <!-- Ticket Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+            <div>
+              <div class="flex items-center gap-2 text-xs">
+                <span class="font-mono font-black text-cyan-400 text-sm">{{ t.folio }}</span>
+                <span class="rounded-md bg-cyan-500/20 text-cyan-300 px-2 py-0.5 text-[9.5px] font-mono font-bold">{{ t.category }}</span>
+                <span class="rounded-md bg-amber-500/20 text-amber-300 px-2 py-0.5 text-[9.5px] font-mono font-bold">Prioridad: {{ t.priority }}</span>
+              </div>
+              <h3 class="font-['Epilogue'] font-black text-white text-base sm:text-lg mt-1">{{ t.subject }}</h3>
+              <p class="text-xs text-neutral-400 mt-0.5">Manager: <strong class="text-white">{{ t.managerName }}</strong> • {{ t.managerAgency }}</p>
+            </div>
+
+            <!-- Status Controls -->
+            <div class="flex items-center gap-1.5 self-start sm:self-auto">
+              <button 
+                type="button" 
+                (click)="changeTicketStatus('En Revisión')"
+                class="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-bold text-amber-300 hover:bg-amber-500 hover:text-black transition"
+              >
+                En Revisión
+              </button>
+              <button 
+                type="button" 
+                (click)="changeTicketStatus('Resuelto')"
+                class="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold text-emerald-300 hover:bg-emerald-500 hover:text-black transition"
+              >
+                Resolver
+              </button>
+            </div>
+          </div>
+
+          <!-- Description Box -->
+          <div class="rounded-2xl bg-white/[0.03] p-4 border border-white/10 space-y-1">
+            <span class="text-[10px] font-mono uppercase text-neutral-500 block">Descripción Inicial del Manager:</span>
+            <p class="text-xs text-neutral-200 leading-relaxed">{{ t.description }}</p>
+          </div>
+
+          <!-- Conversation Thread -->
+          <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
+            <div 
+              *ngFor="let msg of t.messages"
+              class="rounded-2xl p-3.5 space-y-1 max-w-[85%]"
+              [ngClass]="msg.sender === 'Vielais (Root)' ? 'ml-auto bg-cyan-500/15 border border-cyan-500/30 text-right' : 'mr-auto bg-white/[0.04] border border-white/10 text-left'"
+            >
+              <div class="flex items-center gap-2 text-[10px] font-mono text-neutral-400" [ngClass]="msg.sender === 'Vielais (Root)' ? 'justify-end' : 'justify-start'">
+                <strong class="text-white">{{ msg.senderName }}</strong>
+                <span>• {{ msg.timestamp }}</span>
+              </div>
+              <p class="text-xs text-neutral-200 leading-snug">{{ msg.message }}</p>
+            </div>
+          </div>
+
+          <!-- Reply Box -->
+          <div class="space-y-2 pt-2 border-t border-white/10">
+            <label class="block text-xs font-mono text-cyan-300 font-bold">Responder al Manager (Vielais Root):</label>
+            <div class="flex items-center gap-2">
+              <input 
+                type="text" 
+                [ngModel]="replyText()"
+                (ngModelChange)="replyText.set($event)"
+                (keyup.enter)="sendTicketReply()"
+                placeholder="Escribe tu respuesta técnica o confirmación..."
+                class="flex-1 rounded-2xl border border-white/15 bg-white/[0.04] py-3 px-4 text-xs text-white placeholder:text-neutral-500 focus:border-cyan-400 focus:outline-none"
+              />
+              <button 
+                type="button" 
+                (click)="sendTicketReply()"
+                class="cyber-btn-cyan rounded-2xl px-5 py-3 text-xs font-black flex items-center gap-1.5 shadow-md flex-shrink-0"
+              >
+                <span>Responder</span>
+                <span class="material-symbols-outlined text-base">send</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Private Dev Notes (Only for Vielais) -->
+          <div class="rounded-2xl bg-amber-500/5 border border-amber-500/20 p-4 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10.5px] font-mono font-bold uppercase text-amber-400 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">lock</span>
+                <span>Notas Internas del Desarrollador (Privadas para Vielais):</span>
+              </span>
+              <button (click)="saveDevNotes()" class="text-[10px] font-bold text-amber-300 hover:underline">
+                Guardar Nota
+              </button>
+            </div>
+            <textarea 
+              rows="2"
+              [ngModel]="devNotesText()"
+              (ngModelChange)="devNotesText.set($event)"
+              placeholder="Anotaciones técnicas, status de base de datos o recordatorios..."
+              class="w-full rounded-xl border border-white/10 bg-black/40 p-2.5 text-xs text-neutral-200 placeholder:text-neutral-600 focus:border-amber-400 focus:outline-none"
+            ></textarea>
+          </div>
+        </div>
+
+        <ng-template #emptySelection>
+          <div class="cyber-card rounded-3xl p-12 text-center text-neutral-500 space-y-3">
+            <span class="material-symbols-outlined text-5xl text-neutral-600">contact_support</span>
+            <h4 class="font-bold text-white text-base">Selecciona un ticket para inspeccionar</h4>
+            <p class="text-xs text-neutral-400 max-w-sm mx-auto">Haz clic en cualquier ticket de la lista izquierda para ver el historial de mensajes y responder al manager.</p>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= REGISTER NEW MANAGER MODAL ================= -->
+<div *ngIf="isRegisterModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 group-app-backdrop">
+  <div class="absolute inset-0" (click)="closeRegisterModal()"></div>
+  <div class="relative z-10 w-full max-w-xl rounded-3xl cyber-card p-6 sm:p-8 space-y-6 shadow-2xl animate-fade-in border border-white/20">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <span class="rounded-md bg-cyan-500/20 px-2 py-0.5 text-[9.5px] font-mono text-cyan-300 font-bold uppercase">ONBOARDING DIRECTO</span>
+        <h3 class="font-['Epilogue'] font-black text-white text-xl mt-1">Dar de Alta a Nuevo Manager</h3>
+      </div>
+      <button (click)="closeRegisterModal()" class="text-neutral-400 hover:text-white p-1 rounded-full">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <!-- Onboarding link generated banner -->
+    <div *ngIf="onboardingLinkGenerated()" class="rounded-2xl bg-emerald-500/15 border border-emerald-500/40 p-4 space-y-2 animate-slide-up">
+      <div class="flex items-center gap-2 text-emerald-300 text-xs font-bold">
+        <span class="material-symbols-outlined text-base">check_circle</span>
+        <span>¡Manager dado de alta con éxito! Comparte este enlace de acceso:</span>
+      </div>
+      <div class="rounded-xl bg-black/50 p-2.5 text-[11px] font-mono text-cyan-300 break-all border border-white/10 select-all">
+        {{ onboardingLinkGenerated() }}
+      </div>
+    </div>
+
+    <!-- Form Inputs -->
+    <div class="space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="block font-mono text-neutral-400 mb-1">Nombre Completo:</label>
+          <input 
+            type="text" 
+            [ngModel]="newManagerName()" 
+            (ngModelChange)="newManagerName.set($event)"
+            placeholder="Ej: Lic. Antonio Morales"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3 text-white focus:border-cyan-400 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="block font-mono text-neutral-400 mb-1">Empresa / Agencia:</label>
+          <input 
+            type="text" 
+            [ngModel]="newManagerAgency()" 
+            (ngModelChange)="newManagerAgency.set($event)"
+            placeholder="Ej: Morales Booking & Management"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3 text-white focus:border-cyan-400 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="block font-mono text-neutral-400 mb-1">Correo Electrónico:</label>
+          <input 
+            type="email" 
+            [ngModel]="newManagerEmail()" 
+            (ngModelChange)="newManagerEmail.set($event)"
+            placeholder="manager@agencia.com"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3 text-white focus:border-cyan-400 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="block font-mono text-neutral-400 mb-1">Teléfono Directo:</label>
+          <input 
+            type="text" 
+            [ngModel]="newManagerPhone()" 
+            (ngModelChange)="newManagerPhone.set($event)"
+            placeholder="+52 55 1234 5678"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3 text-white focus:border-cyan-400 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="block font-mono text-neutral-400 mb-1">Cuenta CLABE (Dispersiones):</label>
+          <input 
+            type="text" 
+            [ngModel]="newManagerClabe()" 
+            (ngModelChange)="newManagerClabe.set($event)"
+            placeholder="18 dígitos bancarios"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3 text-white font-mono focus:border-cyan-400 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="block font-mono text-neutral-400 mb-1">RFC Fiscal:</label>
+          <input 
+            type="text" 
+            [ngModel]="newManagerRfc()" 
+            (ngModelChange)="newManagerRfc.set($event)"
+            placeholder="RFC con homoclave"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3 text-white font-mono uppercase focus:border-cyan-400 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="block font-mono text-neutral-400 mb-1">Agrupación Musical Inicial:</label>
+          <select 
+            [ngModel]="newManagerGroup()" 
+            (ngModelChange)="newManagerGroup.set($event)"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3 text-white focus:border-cyan-400 focus:outline-none"
+          >
+            <option *ngFor="let g of availableGroups" [value]="g">{{ g }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-mono text-neutral-400 mb-1">% Comisión de Manager Pactada:</label>
+          <input 
+            type="number" 
+            [ngModel]="newManagerSplit()" 
+            (ngModelChange)="newManagerSplit.set($event)"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3 text-white font-mono focus:border-cyan-400 focus:outline-none"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center justify-end gap-3 border-t border-white/10 pt-4">
+      <button (click)="closeRegisterModal()" class="rounded-2xl border border-white/15 px-5 py-2.5 text-xs font-bold text-white hover:bg-white/10">
+        Cerrar
+      </button>
+      <button (click)="submitNewManager()" class="cyber-btn-gold rounded-2xl px-6 py-2.5 text-xs font-black">
+        Dar de Alta & Generar Enlace
+      </button>
+    </div>
+  </div>
+</div>

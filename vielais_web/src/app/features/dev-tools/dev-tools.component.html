@@ -1,0 +1,157 @@
+<div class="space-y-8 max-w-7xl mx-auto pb-20 animate-fade-in select-none">
+  
+  <!-- ================= TOP HEADER BAR ================= -->
+  <div class="cyber-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden shadow-2xl">
+    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-rose-500/10 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10">
+      <div class="flex items-center gap-2">
+        <span class="rounded-md bg-rose-500/20 px-2 py-0.5 text-[10px] font-mono font-black text-rose-400 border border-rose-500/30">
+          DEVELOPER ROOT SANDBOX
+        </span>
+      </div>
+      <h1 class="font-['Epilogue'] text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight mt-1">
+        Master Dev Tools & Control de Comisiones
+      </h1>
+      <p class="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl leading-relaxed">
+        Ajuste en caliente de la tasa de comisión global, activación de Feature Flags del ecosistema y simulador de contrataciones para pruebas de estrés.
+      </p>
+    </div>
+
+    <div class="relative z-10 rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 flex items-center gap-3">
+      <span class="material-symbols-outlined text-rose-400 text-2xl">admin_panel_settings</span>
+      <div>
+        <span class="text-xs font-mono font-bold text-rose-300 block">Nivel de Acceso</span>
+        <span class="font-['Epilogue'] text-lg font-black text-white font-mono">ROOT_ARCHITECT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Banner -->
+  <div *ngIf="simFeedback()" class="rounded-2xl bg-emerald-500/15 border border-emerald-500/40 p-4 text-xs font-mono font-bold text-emerald-300 flex items-center gap-2.5 animate-slide-up shadow-xl">
+    <span class="material-symbols-outlined text-lg">check_circle</span>
+    <span>{{ simFeedback() }}</span>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- ================= GLOBAL COMMISSION TAKE-RATE CONTROLLER ================= -->
+    <div class="cyber-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+      <div class="border-b border-white/10 pb-4">
+        <h3 class="font-['Epilogue'] text-lg font-black text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">percent</span>
+          <span>Ajuste de Tasa de Comisión Global (Take-Rate)</span>
+        </h3>
+        <p class="text-xs text-neutral-400 mt-0.5">Define el porcentaje que retiene Acordex en cada contrato cerrado.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono text-neutral-300">Porcentaje Actual:</span>
+          <span class="font-['Epilogue'] text-3xl font-black text-primary">{{ takeRateInput() }}%</span>
+        </div>
+
+        <input 
+          type="range" 
+          min="1" 
+          max="25" 
+          step="1"
+          [ngModel]="takeRateInput()"
+          (ngModelChange)="takeRateInput.set($event); updateTakeRate()"
+          class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
+        />
+
+        <div class="flex justify-between text-[10px] font-mono text-neutral-500">
+          <span>1% (Mínimo)</span>
+          <span>10% (Estándar Industria)</span>
+          <span>25% (Máximo)</span>
+        </div>
+
+        <div class="rounded-2xl bg-white/[0.03] p-4 border border-white/5 text-xs text-neutral-400 space-y-1">
+          <p>💡 Al mover este slider, toda la matriz financiera de grupos, estimaciones anuales y proyecciones se recalculan instantáneamente en caliente.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= LIVE EVENT & BOOKING SIMULATOR ================= -->
+    <div class="cyber-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+      <div class="border-b border-white/10 pb-4">
+        <h3 class="font-['Epilogue'] text-lg font-black text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-cyan-400">bolt</span>
+          <span>Simulador de Contrataciones en Vivo</span>
+        </h3>
+        <p class="text-xs text-neutral-400 mt-0.5">Emite un pago ficticio para verificar el flujo de auditoría y acreditación de comisiones.</p>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="block font-mono text-neutral-400 mb-1">Agrupación Musical:</label>
+          <select 
+            [ngModel]="simGroup()" 
+            (ngModelChange)="simGroup.set($event)"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3 text-white focus:border-cyan-400 focus:outline-none"
+          >
+            <option *ngFor="let g of metrics.groupCommissions()" [value]="g.groupName">{{ g.groupName }} ({{ g.genre }})</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-mono text-neutral-400 mb-1">Monto del Contrato ($ MXN):</label>
+          <input 
+            type="number" 
+            [ngModel]="simAmount()" 
+            (ngModelChange)="simAmount.set($event)"
+            class="w-full rounded-2xl border border-white/15 bg-white/[0.04] p-3 text-white font-mono focus:border-cyan-400 focus:outline-none"
+          />
+        </div>
+
+        <button 
+          type="button" 
+          (click)="runSimulation()"
+          class="cyber-btn-gold w-full rounded-2xl py-3.5 text-xs font-black flex items-center justify-center gap-2 shadow-lg"
+        >
+          <span class="material-symbols-outlined text-base">send</span>
+          <span>Ejecutar Simulación & Acreditar ${{ (simAmount() * metrics.globalTakeRatePercent() / 100) | number }} MXN</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MASTER FEATURE FLAGS CONSOLE ================= -->
+  <div class="cyber-card rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <h3 class="font-['Epilogue'] text-lg font-black text-white">Consola Maestra de Feature Flags</h3>
+        <p class="text-xs text-neutral-400 mt-0.5">Control granular de capacidades operativas y de seguridad en el cluster.</p>
+      </div>
+      <button (click)="resetAllCaches()" class="text-xs font-mono text-rose-400 hover:underline">
+        Purgar Caché Local
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div *ngFor="let f of metrics.featureFlags()" class="rounded-2xl bg-white/[0.03] p-5 border border-white/10 flex items-start justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-mono text-neutral-300 font-bold uppercase">{{ f.category }}</span>
+            <strong class="text-white text-xs font-bold">{{ f.name }}</strong>
+          </div>
+          <p class="text-xs text-neutral-400 leading-snug">{{ f.description }}</p>
+          <div class="font-mono text-[10px] text-cyan-400/80">{{ f.key }}</div>
+        </div>
+
+        <!-- Toggle Switch -->
+        <button 
+          type="button"
+          (click)="toggleFlag(f.id)"
+          class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+          [ngClass]="f.enabled ? 'bg-emerald-500' : 'bg-neutral-700'"
+        >
+          <span 
+            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+            [ngClass]="f.enabled ? 'translate-x-5' : 'translate-x-0'"
+          ></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

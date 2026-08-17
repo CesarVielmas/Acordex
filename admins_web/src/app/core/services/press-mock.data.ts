@@ -31,6 +31,10 @@ export const INITIAL_PRESS_EVENTS: PressEventItem[] = [
     pressType: 'Firma de Autógrafos',
     date: '2026-08-22',
     startTime: '16:00',
+    endTime: '19:00',
+    photoPolicy: 'Permitido',
+    fanAccess: 'Con Boleto del Concierto',
+    fanCapacity: 1000,
     location: 'Monterrey, NL',
     venue: 'Plaza Fiesta San Agustín',
     venueAddress: 'Av. Real San Agustín 111, Residencial San Agustín, 66260 San Pedro Garza García, NL',
@@ -215,27 +219,20 @@ export const INITIAL_PRESS_EVENTS: PressEventItem[] = [
       }
     ],
 
-    stage: {
-      setupKind: 'Mesa de Firmas',
-      soundProvider: 'Audio Regio',
-      soundContact: '+52 81 1122 3344',
-      backdropUrl: 'https://images.unsplash.com/photo-1470229722913-7ea0d1e4ba24?w=800&auto=format&fit=crop&q=80',
-      backdropSponsors: ['Acordex Records', 'Plaza Fiesta San Agustín', 'La Mejor FM'],
-      queueStaffCount: 6,
-      queueStaffLead: 'Luis Ibarra',
-      securityProvider: 'Seguridad Delta',
-      securityContact: '+52 81 5566 7788',
-      notes: 'La fila entra por el acceso norte; los medios por el acceso de servicio.'
-    },
-
-    talent: {
-      arrivalTime: '15:00',
-      spokespersonName: 'Ramiro Cantú',
-      spokespersonRole: 'Vocalista',
-      committedMinutes: 120,
-      bannedTopics: ['Separación del acordeonista anterior', 'Demanda con la disquera anterior'],
-      notes: 'El grupo firma sentado; se retiran 15 min antes del cierre de la plaza.'
-    },
+    talentCommitments: [
+      {
+        slotId: 'sl-301-1',
+        groupId: 'GRP-01',
+        groupName: 'Los Elegantes del Norte',
+        arrivalTime: '15:00',
+        departureTime: '18:45',
+        spokespersonName: 'Ramiro Cantú',
+        spokespersonRole: 'Vocalista',
+        committedMinutes: 120,
+        bannedTopics: ['Separación del acordeonista anterior', 'Demanda con la disquera anterior'],
+        notes: 'Firman sentados; se retiran 15 min antes del cierre de la plaza.'
+      }
+    ],
 
     productionItems: [
       { id: 'pi-301-1', category: 'Mobiliario', concept: 'Mesa de firmas, mantel y 6 sillas', supplier: 'Renta Norte', amount: 4800, status: 'Contratado' },
@@ -243,7 +240,8 @@ export const INITIAL_PRESS_EVENTS: PressEventItem[] = [
       { id: 'pi-301-3', category: 'Escenario y Estructuras', concept: 'Backdrop impreso 4x3 con estructura', supplier: 'Gráfica MTY', amount: 9200, status: 'Pagado' },
       { id: 'pi-301-4', category: 'Personal y Staff', concept: '6 elementos de control de fila (6 h)', supplier: 'Staff Regio', amount: 7200, status: 'Cotizado' },
       { id: 'pi-301-5', category: 'Seguridad', concept: 'Seguridad privada para el grupo', supplier: 'Seguridad Delta', amount: 8500, status: 'Contratado' },
-      { id: 'pi-301-6', category: 'Hospitalidad', concept: 'Café, agua y bocadillos para medios', supplier: 'Catering Doña Lupe', amount: 3600, status: 'Estimado' }
+      { id: 'pi-301-6', category: 'Hospitalidad', concept: 'Café, agua y bocadillos para medios', supplier: 'Catering Doña Lupe', quantity: 25, unit: 'persona', unitCost: 144, amount: 3600, status: 'Estimado' },
+      { id: 'pi-301-7', category: 'Publicidad', concept: 'Pauta en redes para convocar a la firma', supplier: 'Agencia Norte Digital', amount: 6500, status: 'Cotizado' }
     ],
 
     convocation: {
@@ -305,6 +303,9 @@ export const INITIAL_PRESS_EVENTS: PressEventItem[] = [
     pressType: 'Rueda de Prensa',
     date: '2026-09-05',
     startTime: '11:00',
+    endTime: '12:30',
+    photoPolicy: 'Solo prensa acreditada',
+    fanAccess: 'Solo Acreditados',
     location: 'Guadalajara, JAL',
     venue: 'Hotel Fiesta Americana Minerva',
     venueAddress: 'Av. Aurelio Ortega 764, Seattle, 45150 Zapopan, JAL',
@@ -454,26 +455,26 @@ export const INITIAL_PRESS_EVENTS: PressEventItem[] = [
       }
     ],
 
-    stage: {
-      setupKind: 'Templete',
-      soundProvider: '',
-      soundContact: '',
-      backdropUrl: '',
-      backdropSponsors: [],
-      securityProvider: 'Seguridad del Hotel',
-      securityContact: '+52 33 3648 0000'
-    },
-
-    talent: {
-      arrivalTime: '10:00',
-      spokespersonName: '',
-      committedMinutes: 45,
-      bannedTopics: []
-    },
+    // Dos grupos y solo uno con su compromiso cerrado: es el caso que hace
+    // visible que el punto se mide grupo por grupo y no de un plumazo.
+    talentCommitments: [
+      {
+        slotId: 'sl-302-1',
+        groupId: 'GRP-04',
+        groupName: 'Grupo Dinastía Real',
+        arrivalTime: '10:00',
+        spokespersonName: 'Óscar Villarreal',
+        spokespersonRole: 'Vocalista',
+        committedMinutes: 45,
+        bannedTopics: ['Cambio de disquera']
+      }
+    ],
 
     productionItems: [
       { id: 'pi-302-1', category: 'Recinto', concept: 'Salón Minerva A (4 h)', supplier: 'Fiesta Americana', amount: 18000, status: 'Contratado', assignedTo: 'Don Raúl Treviño' },
-      { id: 'pi-302-2', category: 'Hospitalidad', concept: 'Café y canapés para 40 personas', supplier: 'Fiesta Americana', amount: 9500, status: 'Cotizado', assignedTo: 'Beto Ramírez (Sierreño Music)' }
+      { id: 'pi-302-2', category: 'Hospitalidad', concept: 'Café y canapés para 40 personas', supplier: 'Fiesta Americana', quantity: 40, unit: 'persona', unitCost: 238, amount: 9500, status: 'Cotizado', assignedTo: 'Beto Ramírez (Sierreño Music)' },
+      { id: 'pi-302-3', category: 'Escenario y Estructuras', concept: 'Templete, presídium y backdrop con logos', supplier: 'Gráfica GDL', amount: 16800, status: 'Estimado' },
+      { id: 'pi-302-4', category: 'Seguridad', concept: 'Control de acceso a la sala', supplier: 'Seguridad del Hotel', amount: 4200, status: 'Estimado' }
     ],
 
     productionResponsibilities: [
@@ -561,8 +562,7 @@ export const INITIAL_PRESS_EVENTS: PressEventItem[] = [
     lineup: [],
     accreditation: { zones: [], allAccessLabel: 'ALL ACCESS' },
     accreditationRequests: [],
-    stage: { setupKind: 'Por Definir', backdropSponsors: [] },
-    talent: { bannedTopics: [] },
+    talentCommitments: [],
 
     timeline: [
       {
@@ -582,6 +582,9 @@ export const INITIAL_PRESS_EVENTS: PressEventItem[] = [
     pressType: 'Rueda de Prensa',
     date: '2026-08-02',
     startTime: '12:00',
+    endTime: '13:30',
+    photoPolicy: 'Sin flash',
+    fanAccess: 'Solo Acreditados',
     location: 'Monterrey, NL',
     venue: 'Auditorio Pabellón M',
     venueAddress: 'Av. Benito Juárez 1102, Centro, 64000 Monterrey, NL',
@@ -683,25 +686,19 @@ export const INITIAL_PRESS_EVENTS: PressEventItem[] = [
       }
     ],
 
-    stage: {
-      setupKind: 'Templete',
-      soundProvider: 'Audio Regio',
-      soundContact: '+52 81 1122 3344',
-      backdropUrl: 'https://images.unsplash.com/photo-1470229722913-7ea0d1e4ba24?w=800&auto=format&fit=crop&q=80',
-      backdropSponsors: ['Acordex Records', 'Pabellón M'],
-      queueStaffCount: 2,
-      queueStaffLead: 'Carlos Méndez',
-      securityProvider: 'Seguridad Delta',
-      securityContact: '+52 81 5566 7788'
-    },
-
-    talent: {
-      arrivalTime: '11:00',
-      spokespersonName: 'Ismael Reyes',
-      spokespersonRole: 'Director musical',
-      committedMinutes: 60,
-      bannedTopics: ['Cambio de integrantes']
-    },
+    talentCommitments: [
+      {
+        slotId: 'sl-304-1',
+        groupId: 'GRP-02',
+        groupName: 'Banda Los Reyes',
+        arrivalTime: '11:00',
+        departureTime: '13:45',
+        spokespersonName: 'Ismael Reyes',
+        spokespersonRole: 'Director musical',
+        committedMinutes: 60,
+        bannedTopics: ['Cambio de integrantes']
+      }
+    ],
 
     productionItems: [
       { id: 'pi-304-1', category: 'Recinto', concept: 'Sala de prensa Pabellón M (4 h)', supplier: 'Pabellón M', amount: 22000, status: 'Pagado' },

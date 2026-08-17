@@ -1,0 +1,193 @@
+<div class="h-[calc(100vh-140px)] flex flex-col md:flex-row rounded-3xl border border-white/10 bg-[#161616] overflow-hidden shadow-2xl animate-fade-in">
+  
+  <!-- ================= LEFT: CONVERSATIONS & QUOTES LIST ================= -->
+  <div class="w-full md:w-84 lg:w-96 flex flex-col border-r border-white/10 bg-[#141414]">
+    <!-- Channel Filter Tabs -->
+    <div class="p-3.5 border-b border-white/10 flex gap-1.5">
+      <button 
+        type="button" 
+        (click)="selectedTab.set('todos')"
+        class="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-center"
+        [ngClass]="selectedTab() === 'todos' ? 'bg-primary text-black shadow-md' : 'text-neutral-400 hover:text-white hover:bg-white/5'"
+      >
+        Todos
+      </button>
+      <button 
+        type="button" 
+        (click)="selectedTab.set('manager')"
+        class="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-center"
+        [ngClass]="selectedTab() === 'manager' ? 'bg-primary text-black shadow-md' : 'text-neutral-400 hover:text-white hover:bg-white/5'"
+      >
+        Manager
+      </button>
+      <button 
+        type="button" 
+        (click)="selectedTab.set('clientes')"
+        class="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-center"
+        [ngClass]="selectedTab() === 'clientes' ? 'bg-primary text-black shadow-md' : 'text-neutral-400 hover:text-white hover:bg-white/5'"
+      >
+        Clientes
+      </button>
+    </div>
+
+    <!-- Pending Quotations Actionable Banner -->
+    <div *ngIf="pendingQuotes.length > 0" class="p-3.5 bg-amber-500/10 border-b border-amber-500/30">
+      <div class="flex items-center justify-between text-xs font-black text-amber-400 mb-1">
+        <span class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">lock</span>
+          <span>Cotizaciones por Aceptar ({{ pendingQuotes.length }})</span>
+        </span>
+      </div>
+      <p class="text-[11px] text-neutral-300 mb-2 leading-tight">
+        Acepta la cotización para desbloquear la línea de chat directo con el cliente.
+      </p>
+
+      <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+        <div 
+          *ngFor="let q of pendingQuotes"
+          class="flex items-center justify-between rounded-xl bg-white/[0.04] p-2.5 border border-white/10"
+        >
+          <div class="min-w-0 flex-1">
+            <div class="truncate text-xs font-bold text-white">{{ q.clientName }}</div>
+            <div class="truncate text-[10px] text-primary">{{ q.eventType }} • Folio {{ q.folio }}</div>
+          </div>
+          <button 
+            type="button" 
+            (click)="openQuoteModal(q)"
+            class="rounded-lg bg-primary px-3 py-1 text-[10px] font-black text-black hover:opacity-90 transition shadow-sm ml-2 flex-shrink-0"
+          >
+            Revisar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Conversations List -->
+    <div class="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+      <div 
+        *ngFor="let conv of filteredConversations"
+        (click)="selectConv(conv.id)"
+        class="flex items-center gap-3 rounded-2xl p-3 cursor-pointer transition-all duration-200"
+        [ngClass]="chatService.selectedConversationId() === conv.id ? 'bg-primary/15 border border-primary/40 shadow-md' : 'hover:bg-white/[0.04] border border-transparent'"
+      >
+        <div class="relative">
+          <img [src]="conv.avatarUrl" [alt]="conv.title" class="h-12 w-12 rounded-2xl object-cover ring-1 ring-primary/40 flex-shrink-0 shadow-md" />
+          <span *ngIf="conv.isOnline" class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-[#141414] animate-pulse"></span>
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-1">
+            <h4 class="truncate text-xs font-bold text-white">{{ conv.title }}</h4>
+            <span class="text-[10px] text-neutral-500 flex-shrink-0">{{ conv.lastMessageTime }}</span>
+          </div>
+
+          <div class="flex items-center justify-between gap-1 mt-0.5">
+            <p class="truncate text-[11px] text-neutral-400">{{ conv.lastMessage }}</p>
+            <span *ngIf="conv.badgeText" class="rounded-full bg-primary/20 px-2 py-0.2 text-[9px] font-extrabold text-primary flex-shrink-0">
+              {{ conv.badgeText }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="filteredConversations.length === 0" class="p-8 text-center text-xs text-neutral-500">
+        No hay conversaciones activas en esta categoría.
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RIGHT: ACTIVE CHAT STREAM ================= -->
+  <div class="flex-1 flex flex-col bg-[#111111] min-w-0">
+    <!-- Chat Header -->
+    <div *ngIf="activeConv as conv" class="flex items-center justify-between border-b border-white/10 bg-[#141414] p-4 px-6">
+      <div class="flex items-center gap-3.5 min-w-0">
+        <img [src]="conv.avatarUrl" [alt]="conv.title" class="h-11 w-11 rounded-2xl object-cover ring-2 ring-primary/40 shadow-md flex-shrink-0" />
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h3 class="truncate text-sm font-extrabold text-white">{{ conv.title }}</h3>
+            <span *ngIf="conv.type === 'client'" class="rounded-full bg-primary/20 px-2 py-0.2 text-[9px] font-extrabold text-primary border border-primary/30">
+              Cliente Cotización
+            </span>
+          </div>
+          <span class="text-[11px] text-emerald-400 font-semibold block leading-none mt-0.5">● En línea</span>
+        </div>
+      </div>
+
+      <div class="text-xs text-neutral-400 font-medium">
+        Firmando como: <strong class="text-white">{{ groupData.activeMember().name }}</strong>
+      </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-4">
+      <div 
+        *ngFor="let msg of messages"
+        class="flex flex-col"
+        [ngClass]="msg.isMe ? 'items-end' : 'items-start'"
+      >
+        <div 
+          class="max-w-lg rounded-3xl p-4 text-xs shadow-xl space-y-1"
+          [ngClass]="msg.isMe ? 'bg-primary text-black font-medium rounded-br-none' : 'bg-white/[0.06] border border-white/10 text-white rounded-bl-none'"
+        >
+          <div class="flex items-center justify-between gap-3 text-[10px] font-bold opacity-75">
+            <span>{{ msg.senderName }}</span>
+            <span>{{ msg.timestamp }}</span>
+          </div>
+          <p class="leading-relaxed whitespace-pre-line">{{ msg.text }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Footer -->
+    <div class="p-4 bg-[#141414] border-t border-white/10 flex items-center gap-3">
+      <input 
+        #chatInput
+        type="text"
+        placeholder="Escribe un mensaje..."
+        (keyup.enter)="sendMessage(chatInput.value); chatInput.value = ''"
+        class="flex-1 rounded-2xl border border-white/15 bg-white/[0.04] px-5 py-3 text-xs text-white placeholder:text-neutral-500 focus:border-primary focus:outline-none transition"
+      />
+      <button 
+        type="button"
+        (click)="sendMessage(chatInput.value); chatInput.value = ''"
+        class="luxury-gold-btn rounded-2xl px-6 py-3 text-xs font-black flex items-center gap-1.5"
+      >
+        <span>Enviar</span>
+        <span class="material-symbols-outlined text-base font-black">send</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Review Quote Modal -->
+<div *ngIf="selectedQuoteForReview() as q" class="fixed inset-0 z-50 flex items-center justify-center group-app-backdrop p-4">
+  <div class="absolute inset-0" (click)="selectedQuoteForReview.set(null)"></div>
+  <div class="relative z-10 w-full max-w-lg overflow-hidden rounded-3xl group-app-modal shadow-2xl bg-[#181818] border border-white/15 p-6 space-y-5 animate-fade-in ring-1 ring-white/10">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <span class="rounded-full bg-primary/20 px-2.5 py-0.5 text-[10px] font-bold text-primary uppercase">Folio: {{ q.folio }}</span>
+        <h3 class="font-['Epilogue'] font-extrabold text-white text-base mt-1">Cotización de {{ q.clientName }}</h3>
+      </div>
+      <button (click)="selectedQuoteForReview.set(null)" class="text-neutral-400 hover:text-white">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <div class="space-y-3 text-xs text-neutral-300">
+      <div><strong>Tipo de Evento:</strong> {{ q.eventType }} ({{ q.durationHours || q.hoursRequested || 4 }} Horas)</div>
+      <div><strong>Fecha Solicitada:</strong> {{ q.proposedDate || q.eventDate }}</div>
+      <div><strong>Ubicación:</strong> {{ q.venue }} • {{ q.city || q.location }}</div>
+      <div><strong>Presupuesto Ofrecido:</strong> ${{ (q.totalAmount || q.artistFee || q.budgetOffered || 0) | number }} MXN</div>
+      <p class="bg-white/[0.03] p-3 rounded-2xl border border-white/5 italic">{{ q.notes || q.specialRequests || 'Sin notas adicionales' }}</p>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+      <button (click)="selectedQuoteForReview.set(null)" class="rounded-2xl border border-white/15 px-4 py-2.5 text-xs font-bold text-white hover:bg-white/10">
+        Rechazar
+      </button>
+      <button (click)="acceptQuote(q)" class="luxury-gold-btn rounded-2xl px-6 py-2.5 text-xs font-black">
+        Aceptar Cotización & Abrir Chat
+      </button>
+    </div>
+  </div>
+</div>

@@ -6,6 +6,7 @@ import {
   EventLineupSlot, LineupApprovalStatus, ArtistGreetingVideo, EventPostponement, EventManagerClosureConfirmation
 } from '../../../core/models/event.models';
 import { GroupItem } from '../../../core/models/admin.models';
+import { PressEventItem } from '../../../core/models/press.models';
 import { eventStateMeta, eventEditPolicy } from '../../../core/models/event-state.meta';
 import { RoleService } from '../../../core/services/role.service';
 import { SessionService } from '../../../core/services/session.service';
@@ -537,7 +538,7 @@ export type EventDetailTab =
                     <div class="flex items-center justify-between gap-3 flex-wrap">
                       <h5 class="text-xs font-black uppercase tracking-wider text-indigo-300 flex items-center gap-2.5">
                         <span class="w-8 h-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center justify-center material-symbols-outlined text-lg">assignment_ind</span>
-                        <span>Quién resuelve lo que falta</span>
+                        <span>Responsables de los Pendientes</span>
                       </h5>
                       <span class="px-3 py-1.5 rounded-xl text-[11px] font-black border"
                         [class]="report().allPendingAreOwn
@@ -598,7 +599,7 @@ export type EventDetailTab =
                     <div class="flex items-center justify-between gap-3 flex-wrap">
                       <h5 class="text-xs font-black uppercase tracking-wider text-teal-300 flex items-center gap-2.5">
                         <span class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center material-symbols-outlined text-lg">groups</span>
-                        <span>Quién carga con qué</span>
+                        <span>Carga de Trabajo por Disquera</span>
                       </h5>
                       <button
                         type="button"
@@ -1095,6 +1096,8 @@ export type EventDetailTab =
               [canEditLineup]="policy().lineup"
               [canViewFinances]="roleService.canViewFinances()"
               [availableGroups]="availableGroups()"
+              [allEvents]="allEvents()"
+              [allPressEvents]="allPressEvents()"
               [showPreview]="showLivePreview()"
               (patch)="patch.emit($event)"
               (togglePreview)="showLivePreview.set($event)"
@@ -2874,6 +2877,15 @@ export class EventDetailModalComponent {
 
   event = input<EventItem | null>(null);
   availableGroups = input<GroupItem[]>([]);
+  /**
+   * La agenda completa del panel.
+   *
+   * Hace falta para saber si un grupo está libre el día del evento: esa
+   * disponibilidad no se captura, se deriva de lo que ese grupo ya tiene
+   * agendado en otros eventos y en las firmas de prensa.
+   */
+  allEvents = input<EventItem[]>([]);
+  allPressEvents = input<PressEventItem[]>([]);
 
   @Output() closed = new EventEmitter<void>();
   @Output() uploadEvidence = new EventEmitter<EventItem>();

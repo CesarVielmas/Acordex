@@ -1,0 +1,536 @@
+<div class="space-y-8 max-w-7xl mx-auto pb-20 animate-fade-in select-none">
+  
+  <!-- ================= TOP HERO BANNER WITH MONTH KPIS ================= -->
+  <div class="luxury-card rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
+    <div class="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-primary/15 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="flex h-3 w-3 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-xs font-extrabold uppercase tracking-widest text-primary">Sincronización en Tiempo Real</span>
+        </div>
+        <h1 class="font-['Epilogue'] text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight mt-1">
+          Calendario Oficial & Agenda en Vivo
+        </h1>
+        <p class="text-xs sm:text-sm text-neutral-400 mt-1 max-w-xl leading-relaxed">
+          Consulta la programación de presentaciones, horarios de prueba de sonido, cotizaciones tentativas por confirmar y logística completa de traslados.
+        </p>
+      </div>
+
+      <!-- Quick Month Metrics Summary -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 self-start lg:self-auto flex-shrink-0">
+        <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 text-center min-w-[120px]">
+          <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-neutral-400 block">Fechas en {{ monthNames[currentMonth()] }}</span>
+          <span class="font-['Epilogue'] text-2xl font-black text-white mt-0.5 block">{{ monthStats().confirmedCount }}</span>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 text-center min-w-[130px]">
+          <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-emerald-400 block">Honorarios Estimados</span>
+          <span class="font-['Epilogue'] text-lg sm:text-xl font-black text-emerald-400 mt-0.5 block">${{ monthStats().totalRevenue | number }}</span>
+        </div>
+
+        <div class="col-span-2 sm:col-span-1 rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 text-center min-w-[120px]">
+          <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-primary block">Cotizaciones</span>
+          <span class="font-['Epilogue'] text-2xl font-black text-primary mt-0.5 block">{{ monthStats().pendingQuotesCount }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CALENDAR NAVIGATION TOOLBAR ================= -->
+  <div class="luxury-card rounded-3xl p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+    
+    <!-- Left: Month / Year Picker Controls -->
+    <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+      <div class="flex items-center gap-1.5">
+        <button 
+          type="button"
+          (click)="prevMonth()"
+          class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white hover:border-primary hover:bg-white/[0.08] transition active:scale-95 shadow-sm"
+          title="Mes Anterior"
+        >
+          <span class="material-symbols-outlined text-lg">chevron_left</span>
+        </button>
+
+        <button 
+          type="button"
+          (click)="goToToday()"
+          class="rounded-2xl border border-white/10 bg-white/[0.04] px-4 h-10 text-xs font-black text-white hover:border-primary hover:bg-white/[0.08] transition active:scale-95 shadow-sm"
+        >
+          Hoy
+        </button>
+
+        <button 
+          type="button"
+          (click)="nextMonth()"
+          class="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white hover:border-primary hover:bg-white/[0.08] transition active:scale-95 shadow-sm"
+          title="Mes Siguiente"
+        >
+          <span class="material-symbols-outlined text-lg">chevron_right</span>
+        </button>
+      </div>
+
+      <h2 class="font-['Epilogue'] text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-xl">calendar_month</span>
+        <span>{{ currentMonthLabel() }}</span>
+      </h2>
+    </div>
+
+    <!-- Right: View Mode Switcher & Toggles -->
+    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+      <!-- Show/Hide Quotes Toggle -->
+      <button 
+        type="button"
+        (click)="showQuotesFilter.update(v => !v)"
+        class="flex items-center gap-2 rounded-2xl border px-3.5 py-2 text-xs font-bold transition-all shadow-sm"
+        [ngClass]="showQuotesFilter() ? 'border-primary/50 bg-primary/10 text-primary' : 'border-white/10 bg-white/[0.03] text-neutral-400'"
+      >
+        <span class="material-symbols-outlined text-sm">mark_email_unread</span>
+        <span>Ver Cotizaciones</span>
+      </button>
+
+      <!-- View Switcher (Mes / Semana / Agenda) -->
+      <div class="flex items-center gap-1 rounded-2xl border border-white/10 bg-[#161616] p-1 shadow-inner">
+        <button 
+          type="button"
+          (click)="viewMode.set('mes')"
+          class="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all"
+          [ngClass]="viewMode() === 'mes' ? 'bg-primary text-black shadow-md' : 'text-neutral-400 hover:text-white'"
+        >
+          <span class="material-symbols-outlined text-base">calendar_view_month</span>
+          <span class="hidden sm:inline">Mes</span>
+        </button>
+
+        <button 
+          type="button"
+          (click)="viewMode.set('semana')"
+          class="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all"
+          [ngClass]="viewMode() === 'semana' ? 'bg-primary text-black shadow-md' : 'text-neutral-400 hover:text-white'"
+        >
+          <span class="material-symbols-outlined text-base">calendar_view_week</span>
+          <span class="hidden sm:inline">Semana</span>
+        </button>
+
+        <button 
+          type="button"
+          (click)="viewMode.set('agenda')"
+          class="flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-extrabold transition-all"
+          [ngClass]="viewMode() === 'agenda' ? 'bg-primary text-black shadow-md' : 'text-neutral-400 hover:text-white'"
+        >
+          <span class="material-symbols-outlined text-base">view_agenda</span>
+          <span class="hidden sm:inline">Agenda</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CATEGORY FILTER CHIPS & COLOR LEGEND ================= -->
+  <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+    <!-- Filter Chips -->
+    <div class="flex flex-wrap items-center gap-2">
+      <button 
+        *ngFor="let t of eventTypes"
+        type="button"
+        (click)="typeFilter.set(t)"
+        class="rounded-2xl border px-3.5 py-1.5 text-xs font-bold transition-all"
+        [ngClass]="typeFilter() === t ? 'border-primary bg-primary/20 text-primary shadow-sm' : 'border-white/10 bg-white/[0.03] text-neutral-400 hover:text-white'"
+      >
+        {{ t }}
+      </button>
+    </div>
+
+    <!-- Color Legend -->
+    <div class="flex flex-wrap items-center gap-3.5 text-[11px] text-neutral-400">
+      <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-primary"></span> Concierto</span>
+      <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span> Festival</span>
+      <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-sky-400"></span> Boda / Privado</span>
+      <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-rose-400"></span> Palenque</span>
+      <span *ngIf="showQuotesFilter()" class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-purple-400"></span> Cotización</span>
+    </div>
+  </div>
+
+  <!-- ================= VIEW 1: REAL MONTH CALENDAR MATRIX ================= -->
+  <div *ngIf="viewMode() === 'mes'" class="luxury-card rounded-3xl overflow-hidden shadow-2xl p-4 sm:p-6 space-y-3 animate-fade-in">
+    
+    <!-- Week Days Header (7 Cols) -->
+    <div class="grid grid-cols-7 gap-2 border-b border-white/10 pb-3 text-center">
+      <div *ngFor="let dayName of weekDays; let i = index" class="text-xs font-black uppercase tracking-wider text-neutral-400">
+        <span class="hidden sm:inline">{{ dayName }}</span>
+        <span class="sm:hidden">{{ weekDaysShort[i] }}</span>
+      </div>
+    </div>
+
+    <!-- 42 Calendar Cells Grid -->
+    <div class="grid grid-cols-7 gap-2 sm:gap-2.5">
+      <div 
+        *ngFor="let cell of calendarMatrix()"
+        class="min-h-[110px] sm:min-h-[135px] rounded-2xl border p-2 flex flex-col justify-between transition-all duration-200 group relative"
+        [ngClass]="{
+          'border-white/15 bg-white/[0.03] hover:border-primary/50 hover:bg-white/[0.06]': cell.isCurrentMonth,
+          'border-white/5 bg-transparent opacity-30': !cell.isCurrentMonth,
+          'ring-2 ring-primary/80 bg-primary/5': cell.isToday
+        }"
+      >
+        <!-- Cell Header (Day Number & Badges) -->
+        <div class="flex items-center justify-between">
+          <span 
+            class="text-xs font-black rounded-lg px-2 py-0.5"
+            [ngClass]="{
+              'bg-primary text-black font-extrabold shadow-sm': cell.isToday,
+              'text-white': cell.isCurrentMonth && !cell.isToday,
+              'text-neutral-500': !cell.isCurrentMonth
+            }"
+          >
+            {{ cell.dayNumber }}
+          </span>
+
+          <span *ngIf="cell.events.length > 0" class="text-[10px] font-black text-emerald-400 hidden sm:inline">
+            {{ cell.events.length }} {{ cell.events.length === 1 ? 'show' : 'shows' }}
+          </span>
+        </div>
+
+        <!-- Cell Events & Quotes Stack -->
+        <div class="space-y-1.5 my-1 overflow-y-auto max-h-[85px] no-scrollbar">
+          <!-- Confirmed Events Pills -->
+          <div 
+            *ngFor="let ev of cell.events"
+            (click)="$event.stopPropagation(); openEventDetail(ev)"
+            class="cursor-pointer rounded-xl border p-1.5 text-left transition-all duration-200 hover:scale-[1.03] shadow-sm"
+            [ngClass]="[getEventTypeColor(ev.type).bg, getEventTypeColor(ev.type).border]"
+            [title]="ev.title + ' • ' + ev.venue"
+          >
+            <div class="flex items-center gap-1">
+              <span class="h-1.5 w-1.5 rounded-full flex-shrink-0" [ngClass]="getEventTypeColor(ev.type).dot"></span>
+              <span class="truncate text-[10.5px] font-black text-white leading-tight">{{ ev.title }}</span>
+            </div>
+            <div class="text-[9.5px] font-medium text-neutral-300 truncate mt-0.5">
+              ⏰ {{ ev.showTime }} • {{ ev.city }}
+            </div>
+          </div>
+
+          <!-- Pending Quotes Pills -->
+          <div 
+            *ngFor="let q of cell.quotes"
+            (click)="$event.stopPropagation(); openQuoteDetail(q)"
+            class="cursor-pointer rounded-xl border border-purple-500/40 bg-purple-500/15 p-1.5 text-left transition-all duration-200 hover:scale-[1.03] shadow-sm"
+            [title]="'Cotización: ' + q.clientName + ' (' + q.eventType + ')'"
+          >
+            <div class="flex items-center gap-1 text-purple-300 font-extrabold text-[10px] truncate leading-tight">
+              <span class="material-symbols-outlined text-[12px]">request_quote</span>
+              <span class="truncate">{{ q.clientName }}</span>
+            </div>
+            <div class="text-[9px] text-purple-200/80 truncate">
+              Folio {{ q.folio }} • ${{ (q.totalAmount || q.artistFee) | number }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty Cell Action on Click -->
+        <div *ngIf="cell.events.length === 0 && cell.quotes.length === 0" class="h-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VIEW 2: REAL WEEK TIMELINE ================= -->
+  <div *ngIf="viewMode() === 'semana'" class="luxury-card rounded-3xl p-6 space-y-6 shadow-2xl animate-fade-in">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <h3 class="font-['Epilogue'] text-lg font-black text-white">Vista Semanal Detallada</h3>
+        <p class="text-xs text-neutral-400 mt-0.5">Línea de tiempo de eventos y citaciones de la semana seleccionada.</p>
+      </div>
+    </div>
+
+    <!-- 7 Day Columns -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-4">
+      <div 
+        *ngFor="let day of weekViewDays()" 
+        class="rounded-3xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between min-h-[380px] hover:border-primary/40 transition"
+        [ngClass]="{'ring-2 ring-primary/70 bg-primary/5': day.isToday}"
+      >
+        <!-- Day Top Bar -->
+        <div class="border-b border-white/10 pb-3 text-center">
+          <span class="text-xs font-extrabold uppercase tracking-widest text-neutral-400 block">
+            {{ weekDaysShort[day.date.getDay() === 0 ? 6 : day.date.getDay() - 1] }}
+          </span>
+          <span class="font-['Epilogue'] text-2xl font-black text-white mt-1 block">
+            {{ day.dayNumber }}
+          </span>
+          <span *ngIf="day.isToday" class="rounded-full bg-primary px-2 py-0.5 text-[9px] font-black text-black uppercase mt-1 inline-block">
+            Hoy
+          </span>
+        </div>
+
+        <!-- Day Events Stack -->
+        <div class="flex-1 space-y-3 py-3 overflow-y-auto">
+          <div 
+            *ngFor="let ev of day.events"
+            (click)="openEventDetail(ev)"
+            class="cursor-pointer rounded-2xl border p-3 text-left space-y-1.5 shadow-md hover:scale-[1.02] transition"
+            [ngClass]="[getEventTypeColor(ev.type).bg, getEventTypeColor(ev.type).border]"
+          >
+            <span class="rounded-md bg-black/40 px-2 py-0.5 text-[9px] font-black text-white uppercase">{{ ev.type }}</span>
+            <h4 class="font-bold text-white text-xs leading-snug">{{ ev.title }}</h4>
+            <div class="text-[10.5px] text-neutral-300 font-medium space-y-0.5">
+              <div>📍 {{ ev.venue }}</div>
+              <div>🎺 Cita: {{ ev.callTime }} hrs</div>
+              <div>🎤 Show: {{ ev.showTime }} hrs</div>
+              <div class="text-emerald-400 font-bold">${{ ev.honorarios | number }} MXN</div>
+            </div>
+          </div>
+
+          <div 
+            *ngFor="let q of day.quotes"
+            (click)="openQuoteDetail(q)"
+            class="cursor-pointer rounded-2xl border border-purple-500/40 bg-purple-500/15 p-3 text-left space-y-1 shadow-md"
+          >
+            <span class="rounded-md bg-purple-900/60 px-2 py-0.5 text-[9px] font-black text-purple-200 uppercase">Cotización</span>
+            <h4 class="font-bold text-white text-xs">{{ q.clientName }}</h4>
+            <div class="text-[10px] text-purple-200/90">
+              Folio {{ q.folio }} • {{ q.eventType }}
+            </div>
+          </div>
+
+          <div *ngIf="day.events.length === 0 && day.quotes.length === 0" class="text-center py-10 text-[11px] text-neutral-500 italic">
+            Sin compromisos
+          </div>
+        </div>
+
+        <!-- Day Footer -->
+        <div class="border-t border-white/5 pt-2 text-center text-[10px] text-neutral-400 font-bold">
+          {{ day.events.length }} confirmados
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VIEW 3: AGENDA CHRONOLOGICAL LIST ================= -->
+  <div *ngIf="viewMode() === 'agenda'" class="space-y-5 animate-fade-in">
+    <div 
+      *ngFor="let ev of filteredEvents()"
+      (click)="openEventDetail(ev)"
+      class="luxury-card group cursor-pointer rounded-3xl p-6 sm:p-7 shadow-2xl transition-all duration-300 hover:border-primary/50 hover:bg-white/[0.04]"
+    >
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <!-- Date Block & Basic Info -->
+        <div class="flex items-start sm:items-center gap-5">
+          <div class="flex flex-col items-center justify-center rounded-2xl bg-white/[0.05] p-3.5 border border-white/10 min-w-[85px] text-center shadow-inner group-hover:border-primary/40 transition">
+            <span class="text-[11px] uppercase font-black text-primary">{{ ev.date.split('-')[1] }}</span>
+            <span class="font-['Epilogue'] text-3xl font-black text-white leading-none my-1">{{ ev.date.split('-')[2] }}</span>
+            <span class="text-[10px] text-neutral-500 font-bold">{{ ev.date.split('-')[0] }}</span>
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center gap-2.5">
+              <span 
+                class="rounded-full px-3 py-0.5 text-[10.5px] font-extrabold uppercase tracking-wider"
+                [ngClass]="{
+                  'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30': ev.status === 'Programado',
+                  'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse': ev.status === 'En Curso',
+                  'bg-neutral-500/20 text-neutral-300': ev.status === 'Completado'
+                }"
+              >
+                {{ ev.status }}
+              </span>
+              <span class="text-xs font-black text-primary">{{ ev.type }}</span>
+            </div>
+
+            <h3 class="font-['Epilogue'] text-lg sm:text-xl font-black text-white group-hover:text-primary transition">
+              {{ ev.title }}
+            </h3>
+            <p class="text-xs text-neutral-400">📍 {{ ev.venue }} • {{ ev.city }}, {{ ev.state }}</p>
+          </div>
+        </div>
+
+        <!-- Schedule Badges & Action -->
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-3.5">
+          <div class="rounded-2xl bg-white/[0.03] p-3.5 text-left sm:text-right border border-white/10">
+            <span class="text-[10px] text-amber-400 font-extrabold block uppercase tracking-wider">Prueba de Sonido</span>
+            <span class="text-sm font-black text-white">{{ ev.callTime }} hrs</span>
+          </div>
+
+          <div class="rounded-2xl bg-white/[0.03] p-3.5 text-left sm:text-right border border-white/10">
+            <span class="text-[10px] text-primary font-extrabold block uppercase tracking-wider">Show Principal</span>
+            <span class="text-sm font-black text-white">{{ ev.showTime }} hrs</span>
+          </div>
+
+          <div class="rounded-2xl bg-white/[0.03] p-3.5 text-left sm:text-right border border-white/10">
+            <span class="text-[10px] text-emerald-400 font-extrabold block uppercase tracking-wider">Honorarios</span>
+            <span class="text-sm font-black text-emerald-400">${{ ev.honorarios | number }} MXN</span>
+          </div>
+
+          <button 
+            type="button" 
+            class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.05] text-white group-hover:bg-primary group-hover:text-black transition flex-shrink-0 shadow-md"
+          >
+            <span class="material-symbols-outlined text-xl">arrow_forward</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= COMPREHENSIVE EVENT / QUOTE INSPECTOR MODAL ================= -->
+<div *ngIf="isDetailOpen()" class="fixed inset-0 z-50 flex items-center justify-center group-app-backdrop p-3 sm:p-6">
+  <div class="absolute inset-0" (click)="closeDetail()"></div>
+  
+  <!-- EVENT INSPECTOR -->
+  <div *ngIf="selectedEvent() as ev" class="relative z-10 w-full max-w-3xl overflow-hidden rounded-3xl group-app-modal shadow-2xl bg-[#181818] border border-white/15 max-h-[90vh] flex flex-col animate-fade-in ring-1 ring-white/10">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-white/10 px-6 py-5 bg-white/[0.02]">
+      <div class="flex items-center gap-3">
+        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary shadow-md">
+          <span class="material-symbols-outlined text-2xl">event</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="rounded-full bg-primary/20 px-2.5 py-0.5 text-[10px] font-black text-primary uppercase">{{ ev.type }}</span>
+            <span class="text-xs text-neutral-400 font-bold">• 📅 {{ ev.date }}</span>
+          </div>
+          <h3 class="font-['Epilogue'] font-black text-white text-lg sm:text-xl mt-0.5">{{ ev.title }}</h3>
+        </div>
+      </div>
+      <button (click)="closeDetail()" class="text-neutral-400 hover:text-white p-1 hover:bg-white/10 rounded-full transition">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <!-- Body Information -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-neutral-300">
+      <!-- 3 Key Metric Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div class="rounded-2xl bg-white/[0.04] p-4 border border-white/10 text-center">
+          <span class="text-[10.5px] text-amber-400 font-black uppercase tracking-wider block">Hora Citación / Soundcheck</span>
+          <span class="font-['Epilogue'] text-lg font-black text-white mt-1 block">{{ ev.callTime }} hrs</span>
+        </div>
+        <div class="rounded-2xl bg-white/[0.04] p-4 border border-white/10 text-center">
+          <span class="text-[10.5px] text-primary font-black uppercase tracking-wider block">Hora del Show en Vivo</span>
+          <span class="font-['Epilogue'] text-lg font-black text-white mt-1 block">{{ ev.showTime }} hrs</span>
+        </div>
+        <div class="rounded-2xl bg-white/[0.04] p-4 border border-white/10 text-center">
+          <span class="text-[10.5px] text-emerald-400 font-black uppercase tracking-wider block">Honorarios Pactados</span>
+          <span class="font-['Epilogue'] text-lg font-black text-emerald-400 mt-1 block">${{ ev.honorarios | number }} MXN</span>
+        </div>
+      </div>
+
+      <!-- Venue & Location -->
+      <div class="rounded-2xl bg-white/[0.03] p-4 border border-white/10 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <strong class="text-white font-extrabold flex items-center gap-1.5 text-sm">
+            <span class="material-symbols-outlined text-primary text-base">location_on</span>
+            <span>Recinto & Dirección Oficial:</span>
+          </strong>
+        </div>
+        <p class="text-neutral-200">{{ ev.venue }}</p>
+        <p class="text-neutral-400">{{ ev.address }}, {{ ev.city }}, {{ ev.state }}</p>
+      </div>
+
+      <!-- Logistics & Dress Code -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div *ngIf="ev.dressCode" class="rounded-2xl bg-white/[0.03] p-4 border border-white/10 space-y-1">
+          <strong class="text-white font-extrabold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-primary text-base">checkroom</span>
+            <span>Código de Vestimenta:</span>
+          </strong>
+          <p class="text-neutral-300">{{ ev.dressCode }}</p>
+        </div>
+
+        <div class="rounded-2xl bg-white/[0.03] p-4 border border-white/10 space-y-1">
+          <strong class="text-white font-extrabold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-primary text-base">person</span>
+            <span>Contacto del Organizador:</span>
+          </strong>
+          <p class="text-neutral-300">{{ ev.contactPerson }} ({{ ev.contactPhone }})</p>
+        </div>
+      </div>
+
+      <!-- Logistics Notes -->
+      <div *ngIf="ev.logisticsNotes" class="rounded-2xl bg-white/[0.03] p-4 border border-white/10 space-y-1">
+        <strong class="text-white font-extrabold flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-primary text-base">local_shipping</span>
+          <span>Notas de Logística y Transporte:</span>
+        </strong>
+        <p class="text-neutral-300 leading-relaxed">{{ ev.logisticsNotes }}</p>
+      </div>
+
+      <!-- Evidences Shelf -->
+      <div class="rounded-2xl bg-white/[0.03] p-4 border border-white/10 space-y-3">
+        <div class="flex items-center justify-between">
+          <strong class="text-white font-extrabold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-primary text-base">photo_camera</span>
+            <span>Evidencias & Fotos ({{ ev.evidences.length }} subidas):</span>
+          </strong>
+          <button (click)="openUploader(ev)" class="text-primary font-bold hover:underline">+ Subir fotos</button>
+        </div>
+        <div *ngIf="ev.evidences.length > 0; else noEvs" class="grid grid-cols-4 sm:grid-cols-6 gap-2">
+          <img *ngFor="let item of ev.evidences.slice(0, 6)" [src]="item.url || item.mediaUrl" [alt]="item.caption" class="h-16 w-full rounded-xl object-cover" />
+        </div>
+        <ng-template #noEvs>
+          <p class="text-neutral-500 italic text-[11px]">Aún no se han cargado evidencias para esta presentación.</p>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="flex items-center justify-between border-t border-white/10 px-6 py-4 bg-white/[0.02]">
+      <button (click)="closeDetail()" class="rounded-2xl border border-white/15 px-5 py-2.5 text-xs font-bold text-white hover:bg-white/10 transition">
+        Cerrar
+      </button>
+
+      <button (click)="openUploader(ev)" class="luxury-gold-btn rounded-2xl px-6 py-2.5 text-xs font-black flex items-center gap-2">
+        <span class="material-symbols-outlined text-base">add_a_photo</span>
+        <span>Cargar Evidencias del Show</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- QUOTE INSPECTOR -->
+  <div *ngIf="selectedQuote() as q" class="relative z-10 w-full max-w-2xl overflow-hidden rounded-3xl group-app-modal shadow-2xl bg-[#181818] border border-white/15 max-h-[90vh] flex flex-col animate-fade-in ring-1 ring-white/10">
+    <div class="flex items-center justify-between border-b border-white/10 px-6 py-5 bg-white/[0.02]">
+      <div>
+        <span class="rounded-full bg-purple-500/20 px-2.5 py-0.5 text-[10px] font-black text-purple-300 uppercase">Cotización Recibida</span>
+        <h3 class="font-['Epilogue'] font-black text-white text-lg mt-1">Folio {{ q.folio }} - {{ q.clientName }}</h3>
+      </div>
+      <button (click)="closeDetail()" class="text-neutral-400 hover:text-white p-1 hover:bg-white/10 rounded-full transition">
+        <span class="material-symbols-outlined text-xl">close</span>
+      </button>
+    </div>
+
+    <div class="p-6 space-y-4 text-xs text-neutral-300">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-2xl bg-white/[0.03] p-3.5 border border-white/10">
+          <span class="text-neutral-400 block">Tipo de Evento:</span>
+          <strong class="text-white font-bold text-sm">{{ q.eventType }} ({{ q.durationHours || q.hoursRequested || 4 }} Horas)</strong>
+        </div>
+        <div class="rounded-2xl bg-white/[0.03] p-3.5 border border-white/10">
+          <span class="text-neutral-400 block">Presupuesto Ofrecido:</span>
+          <strong class="text-emerald-400 font-bold text-sm">${{ (q.totalAmount || q.artistFee || 0) | number }} MXN</strong>
+        </div>
+      </div>
+
+      <div><strong>Fecha Tentativa Solicitada:</strong> {{ q.proposedDate || q.eventDate }}</div>
+      <div><strong>Ubicación:</strong> {{ q.venue }} • {{ q.city || q.location }}</div>
+      <div *ngIf="q.notes || q.specialRequests" class="bg-white/[0.02] p-3 rounded-2xl border border-white/5">
+        <strong>Peticiones Especiales:</strong> {{ q.notes || q.specialRequests }}
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 border-t border-white/10 px-6 py-4 bg-white/[0.02]">
+      <button (click)="closeDetail()" class="rounded-2xl border border-white/15 px-5 py-2.5 text-xs font-bold text-white hover:bg-white/10">
+        Cerrar
+      </button>
+      <a routerLink="/chat" (click)="closeDetail()" class="luxury-gold-btn rounded-2xl px-6 py-2.5 text-xs font-black flex items-center gap-1.5">
+        <span>Ir al Chat para Responder</span>
+        <span class="material-symbols-outlined text-base">forum</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Evidence Uploader Modal -->
+<app-evidence-uploader-modal
+  *ngIf="isUploaderOpen() && selectedEvent()"
+  [event]="selectedEvent()"
+  (close)="closeUploader()"
+></app-evidence-uploader-modal>

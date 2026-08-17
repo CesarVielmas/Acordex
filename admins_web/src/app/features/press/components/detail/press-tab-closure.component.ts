@@ -34,7 +34,7 @@ import { COVERAGE_LABELS } from '../../../../core/models/press.models';
         <div class="flex items-center justify-between gap-3 flex-wrap border-b border-outline-variant/20 pb-4">
           <h5 class="text-xs font-black uppercase tracking-wider text-purple-200 flex items-center gap-2.5">
             <span class="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-200 flex items-center justify-center material-symbols-outlined text-lg">fact_check</span>
-            <span>Quién vino de verdad</span>
+            <span>Asistencia Confirmada</span>
           </h5>
           @if (sealed()) {
             <span class="px-3 py-1.5 rounded-2xl bg-zinc-500/20 text-zinc-300 border border-zinc-500/35 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
@@ -84,7 +84,7 @@ import { COVERAGE_LABELS } from '../../../../core/models/press.models';
       <section class="p-6 rounded-3xl bg-surface-container-high/90 border border-outline-variant/25 shadow-xl space-y-5 backdrop-blur-2xl">
         <h5 class="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-2.5 border-b border-outline-variant/20 pb-4">
           <span class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 text-outline flex items-center justify-center material-symbols-outlined text-lg">trending_up</span>
-          <span>Cobertura que salió</span>
+          <span>Cobertura Publicada</span>
         </h5>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -135,7 +135,7 @@ import { COVERAGE_LABELS } from '../../../../core/models/press.models';
         <section class="p-6 rounded-3xl bg-gradient-to-br from-rose-500/[0.05] via-surface-container-high/90 to-surface-container-high/90 border border-rose-500/20 border-l-4 border-l-rose-400/60 shadow-2xl space-y-5 backdrop-blur-2xl">
           <h5 class="text-xs font-black uppercase tracking-wider text-rose-200 flex items-center gap-2.5 border-b border-outline-variant/20 pb-4">
             <span class="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-200 flex items-center justify-center material-symbols-outlined text-lg">balance</span>
-            <span>Gasto contra impacto</span>
+            <span>Relación Gasto / Impacto</span>
           </h5>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">

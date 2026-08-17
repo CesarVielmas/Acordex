@@ -46,19 +46,19 @@ export type ClientsTab = 'directory' | 'ranking' | 'interactions' | 'offers';
     <div class="space-y-6 sm:space-y-8 animate-fade-in pb-12">
 
       <!-- ─── ENCABEZADO PRINCIPAL ─── -->
-      <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-surface-container-high/90 via-surface-container/80 to-surface-container-high/90 backdrop-blur-xl border border-outline-variant/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
-        <div class="absolute -right-12 -top-12 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-[#1A1A1A] via-[#161616] to-[#121212] backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div class="absolute -right-12 -top-12 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="relative z-10 min-w-0">
           <div class="flex items-center gap-3 flex-wrap">
-            <h1 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight">Directorio de Clientes & CRM</h1>
-            <app-badge label="Cartera Comercial" variant="primary" />
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary border border-primary/30">
-              CRM Conectado
+            <h1 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight font-['Epilogue']">Cartera Comercial & Gestión CRM</h1>
+            <app-badge label="Inteligencia de Cuentas" variant="primary" />
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary border border-primary/30 shadow-sm">
+              Operación Comercial Conectada
             </span>
           </div>
           <p class="text-xs text-outline mt-1 max-w-2xl leading-relaxed">
-            Gestión 360° de promotores de palenques, patronatos de ferias, particulares para bodas, historial de cotizaciones y campañas preferenciales.
+            Directorio consolidado de empresarios de palenques, comités de ferias regionales, promotores de espectáculos y contratantes particulares con scoring comercial y trazabilidad de cotizaciones reales.
           </p>
         </div>
 
@@ -67,7 +67,7 @@ export type ClientsTab = 'directory' | 'ranking' | 'interactions' | 'offers';
           <button
             type="button"
             (click)="printClients()"
-            class="px-3.5 py-2.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-on-surface hover:bg-surface-container-highest text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+            class="px-3.5 py-2.5 rounded-2xl bg-[#202020] hover:bg-[#282828] border border-white/10 text-on-surface text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer font-['Epilogue']"
           >
             <span class="material-symbols-outlined text-base">print</span>
             Imprimir
@@ -76,7 +76,7 @@ export type ClientsTab = 'directory' | 'ranking' | 'interactions' | 'offers';
           <button
             type="button"
             (click)="openCreateModal()"
-            class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-primary to-primary-container text-on-primary font-black text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
+            class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-primary to-primary-hover text-on-primary font-black text-xs shadow-lg shadow-primary/20 hover:opacity-95 transition-all flex items-center gap-2 cursor-pointer font-['Epilogue']"
           >
             <span class="material-symbols-outlined text-lg">person_add</span>
             Nuevo Cliente
@@ -88,7 +88,7 @@ export type ClientsTab = 'directory' | 'ranking' | 'interactions' | 'offers';
       <app-clients-kpis [kpis]="clientsKPIs()" />
 
       <!-- ─── NAVEGACIÓN DE PESTAÑAS ─── -->
-      <div class="border-b border-outline-variant/30 pb-2">
+      <div class="border-b border-white/10 pb-2">
         <app-tab-pills
           [tabs]="tabOptions"
           [active]="activeTab()"
@@ -182,10 +182,10 @@ export class ClientsComponent {
   selectedClientForOffer = signal<ClientItem | null>(null);
 
   readonly tabOptions: TabPillItem[] = [
-    { value: 'directory', label: 'Directorio & CRM', icon: 'contacts' },
-    { value: 'ranking', label: 'Ranking Top Clientes', icon: 'leaderboard' },
-    { value: 'interactions', label: 'Bitácora de Seguimiento', icon: 'chat' },
-    { value: 'offers', label: 'Ofertas & Fidelización', icon: 'local_offer' }
+    { value: 'directory', label: 'Directorio de Cuentas & CRM', icon: 'contacts' },
+    { value: 'ranking', label: 'Ranking de Facturación Top Clientes', icon: 'leaderboard' },
+    { value: 'interactions', label: 'Bitácora de Interacciones & Citas', icon: 'chat' },
+    { value: 'offers', label: 'Propuestas Preferenciales & Fidelización', icon: 'local_offer' }
   ];
 
   setTab(tabId: string): void {

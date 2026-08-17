@@ -1,0 +1,293 @@
+<div class="space-y-6">
+  <!-- Header Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-variant/40 pb-4">
+    <div>
+      <h1 class="font-display-xl text-2xl sm:text-3xl font-extrabold text-on-surface">
+        Multimedia, Fotos, Videos & Canciones
+      </h1>
+      <p class="text-xs sm:text-sm text-on-surface-variant mt-1">
+        Administra el contenido oficial grupal de la agrupación y el material individual de cada músico o integrante.
+      </p>
+    </div>
+
+    <!-- Section Switcher (Grupal vs Individual) -->
+    <div class="flex items-center gap-1 rounded-2xl border border-surface-variant/50 bg-surface-container p-1">
+      <button 
+        type="button" 
+        (click)="activeSection.set('grupal')"
+        class="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition"
+        [ngClass]="activeSection() === 'grupal' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'"
+      >
+        <span class="material-symbols-outlined text-base">groups</span>
+        <span>Contenido Grupal</span>
+      </button>
+
+      <button 
+        type="button" 
+        (click)="activeSection.set('individual')"
+        class="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold transition"
+        [ngClass]="activeSection() === 'individual' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'"
+      >
+        <span class="material-symbols-outlined text-base">person</span>
+        <span>Individual por Músico</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 1: CONTENIDO GRUPAL -->
+  <div *ngIf="activeSection() === 'grupal'" class="space-y-8 animate-fade-in">
+    <!-- Tracks & Music Player Section -->
+    <div class="rounded-3xl border border-surface-variant/40 bg-surface-container p-5 sm:p-6 shadow-xl">
+      <div class="flex items-center justify-between border-b border-surface-variant/30 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-2xl">library_music</span>
+          <div>
+            <h2 class="font-headline-md text-base sm:text-lg font-bold text-on-surface">Canciones & Repertorio Oficial</h2>
+            <p class="text-[11px] text-on-surface-variant">Sencillos y temas más escuchados por clientes en Acordex</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div 
+          *ngFor="let track of groupData.activeProfile().tracks"
+          class="flex items-center justify-between rounded-2xl bg-surface-container-high p-3.5 border border-surface-variant/40 transition hover:border-primary/50"
+        >
+          <div class="flex items-center gap-3 min-w-0">
+            <button 
+              type="button"
+              (click)="playTrack(track)"
+              class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary shadow-md hover:scale-105 active:scale-95 transition"
+            >
+              <span class="material-symbols-outlined text-xl">
+                {{ currentlyPlayingTrack()?.id === track.id ? 'pause' : 'play_arrow' }}
+              </span>
+            </button>
+
+            <div class="min-w-0">
+              <div class="truncate text-xs font-bold text-on-surface">{{ track.title }}</div>
+              <div class="text-[11px] text-on-surface-variant">{{ track.genre }} • {{ track.durationLabel }}</div>
+            </div>
+          </div>
+
+          <div class="text-right flex-shrink-0">
+            <span class="text-xs font-bold text-primary">{{ track.plays }}</span>
+            <div class="text-[10px] text-emerald-400 font-semibold">★ {{ track.approval }}% aprobación</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group Photos Gallery -->
+    <div class="rounded-3xl border border-surface-variant/40 bg-surface-container p-5 sm:p-6 shadow-xl">
+      <div class="flex items-center justify-between border-b border-surface-variant/30 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-2xl">photo_camera</span>
+          <div>
+            <h2 class="font-headline-md text-base sm:text-lg font-bold text-on-surface">Fotografías Oficiales de la Banda</h2>
+            <p class="text-[11px] text-on-surface-variant">Galería de prensa y presentaciones en vivo</p>
+          </div>
+        </div>
+
+        <button 
+          type="button" 
+          (click)="openPhotoModal()"
+          class="flex items-center gap-1 rounded-xl bg-primary/10 px-3.5 py-1.5 text-xs font-bold text-primary border border-primary/30 hover:bg-primary/20 transition"
+        >
+          <span class="material-symbols-outlined text-base">add_photo_alternate</span>
+          <span>+ Agregar Foto</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div 
+          *ngFor="let img of groupData.activeProfile().gallery"
+          (click)="viewMedia(img.url)"
+          class="group relative h-40 overflow-hidden rounded-2xl bg-black cursor-pointer ring-1 ring-white/10"
+        >
+          <img [src]="img.url" [alt]="img.caption" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition p-2.5 flex flex-col justify-end">
+            <span class="text-[9px] font-bold text-primary">{{ img.category }}</span>
+            <span class="text-xs text-white truncate">{{ img.caption }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Highlight Videos -->
+    <div class="rounded-3xl border border-surface-variant/40 bg-surface-container p-5 sm:p-6 shadow-xl">
+      <div class="flex items-center justify-between border-b border-surface-variant/30 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-2xl">video_library</span>
+          <div>
+            <h2 class="font-headline-md text-base sm:text-lg font-bold text-on-surface">Videos Destacados & En Vivo</h2>
+            <p class="text-[11px] text-on-surface-variant">Reels de presentaciones, mixes y videoclips</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div 
+          *ngFor="let vid of groupData.activeProfile().videos"
+          class="overflow-hidden rounded-2xl bg-surface-container-high border border-surface-variant/40"
+        >
+          <div class="relative h-48 w-full bg-black">
+            <img [src]="vid.thumbnailUrl" [alt]="vid.title" class="h-full w-full object-cover" />
+            <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <span class="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-on-primary shadow-lg">
+                <span class="material-symbols-outlined text-2xl">play_arrow</span>
+              </span>
+            </div>
+          </div>
+          <div class="p-3.5 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-bold text-on-surface">{{ vid.title }}</div>
+              <div class="text-[10px] text-on-surface-variant">{{ vid.views }} reproducciones • {{ vid.duration }}</div>
+            </div>
+            <span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+              {{ vid.category }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: INDIVIDUAL POR MÚSICO -->
+  <div *ngIf="activeSection() === 'individual'" class="space-y-6 animate-fade-in">
+    <!-- Member Selector Bar -->
+    <div class="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+      <button 
+        *ngFor="let m of groupData.activeProfile().members"
+        type="button"
+        (click)="selectMember(m.id)"
+        class="flex items-center gap-2.5 rounded-2xl border px-3.5 py-2 transition flex-shrink-0"
+        [ngClass]="currentMember.id === m.id ? 'border-primary bg-primary/15 text-on-surface shadow-md' : 'border-surface-variant/50 bg-surface-container text-on-surface-variant hover:border-primary/40'"
+      >
+        <img [src]="m.photoUrl" [alt]="m.name" class="h-8 w-8 rounded-full object-cover ring-1 ring-primary/40" />
+        <div class="text-left">
+          <div class="text-xs font-bold">{{ m.name }}</div>
+          <div class="text-[10px] text-primary">{{ m.instrument || m.role }}</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Member Media Detail Box -->
+    <div class="rounded-3xl border border-surface-variant/40 bg-surface-container p-6 shadow-xl space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-surface-variant/30 pb-4">
+        <div class="flex items-center gap-4">
+          <img [src]="currentMember.photoUrl" [alt]="currentMember.name" class="h-16 w-16 rounded-2xl object-cover ring-2 ring-primary/40 shadow-xl" />
+          <div>
+            <h3 class="font-display-xl text-lg font-bold text-on-surface">{{ currentMember.name }}</h3>
+            <p class="text-xs text-primary font-semibold">{{ currentMember.role }}</p>
+            <p class="text-xs text-on-surface-variant mt-0.5">{{ currentMember.hometown }} • {{ currentMember.experienceYears }} años de experiencia</p>
+          </div>
+        </div>
+
+        <button 
+          type="button" 
+          (click)="openPhotoModal()"
+          class="flex items-center gap-1 rounded-xl bg-primary/10 px-4 py-2 text-xs font-bold text-primary border border-primary/30 hover:bg-primary/20 transition"
+        >
+          <span class="material-symbols-outlined text-base">add_a_photo</span>
+          <span>+ Subir Foto de {{ currentMember.name }}</span>
+        </button>
+      </div>
+
+      <!-- Member Photos -->
+      <div>
+        <h4 class="text-xs font-bold text-on-surface mb-3">Fotos Individuales en Escenario & Estudio</h4>
+        <div *ngIf="currentMember.galleryPhotos.length > 0; else noMemberPhotos" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div 
+            *ngFor="let photo of currentMember.galleryPhotos"
+            (click)="viewMedia(photo)"
+            class="group relative h-40 overflow-hidden rounded-2xl bg-black cursor-pointer ring-1 ring-white/10"
+          >
+            <img [src]="photo" alt="Foto individual" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+          </div>
+        </div>
+
+        <ng-template #noMemberPhotos>
+          <div class="py-6 text-center text-xs text-on-surface-variant border border-dashed border-surface-variant/50 rounded-2xl">
+            Este integrante aún no tiene fotos individuales cargadas.
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Member Solo Videos -->
+      <div>
+        <h4 class="text-xs font-bold text-on-surface mb-3">Solos & Videos Individuales</h4>
+        <div *ngIf="currentMember.videos && currentMember.videos.length > 0; else noMemberVideos" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div *ngFor="let vid of currentMember.videos" class="rounded-2xl bg-surface-container-high p-3 border border-surface-variant/30 flex items-center gap-3">
+            <div class="relative h-16 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-black">
+              <img [src]="vid.thumbnailUrl" [alt]="vid.title" class="h-full w-full object-cover" />
+              <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <span class="material-symbols-outlined text-white text-base">play_circle</span>
+              </div>
+            </div>
+            <div class="min-w-0">
+              <div class="truncate text-xs font-bold text-on-surface">{{ vid.title }}</div>
+              <div class="text-[10px] text-on-surface-variant">{{ vid.duration }}</div>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noMemberVideos>
+          <div class="py-6 text-center text-xs text-on-surface-variant border border-dashed border-surface-variant/50 rounded-2xl">
+            No hay videos de solos registrados para este músico.
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Add Photo -->
+<div *ngIf="isAddPhotoModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4 group-app-backdrop">
+  <div class="relative w-full max-w-md rounded-3xl group-app-modal p-6 shadow-2xl space-y-4">
+    <div class="flex items-center justify-between border-b border-surface-variant/40 pb-3">
+      <h3 class="font-headline-md text-base font-bold text-on-surface">Agregar Nueva Fotografía</h3>
+      <button (click)="closePhotoModal()" class="text-on-surface-variant hover:text-white">
+        <span class="material-symbols-outlined text-lg">close</span>
+      </button>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block font-semibold text-on-surface mb-1">URL de la Imagen</label>
+        <input 
+          type="text" 
+          [ngModel]="newPhotoUrl()"
+          (ngModelChange)="newPhotoUrl.set($event)"
+          class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+        />
+      </div>
+
+      <div>
+        <label class="block font-semibold text-on-surface mb-1">Pie de Foto / Título</label>
+        <input 
+          type="text" 
+          [ngModel]="newPhotoCaption()"
+          (ngModelChange)="newPhotoCaption.set($event)"
+          placeholder="Ej: Sesión en vivo Palenque 2026"
+          class="w-full rounded-xl border border-surface-variant/60 bg-surface-container px-3 py-2 text-xs text-on-surface focus:border-primary focus:outline-none"
+        />
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-2 pt-3 border-t border-surface-variant/40">
+      <button (click)="closePhotoModal()" class="rounded-xl border border-surface-variant/60 px-4 py-2 text-xs font-semibold text-on-surface-variant">Cancelar</button>
+      <button (click)="saveNewPhoto()" class="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-on-primary">Guardar Foto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image Lightbox -->
+<div *ngIf="selectedMediaUrl()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 group-app-backdrop">
+  <div class="relative max-w-4xl max-h-[85vh] overflow-hidden rounded-3xl">
+    <button (click)="closeMediaView()" class="absolute top-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-white/20">
+      <span class="material-symbols-outlined text-xl">close</span>
+    </button>
+    <img [src]="selectedMediaUrl()!" alt="Media Fullscreen" class="max-h-[85vh] w-auto rounded-3xl object-contain shadow-2xl" />
+  </div>
+</div>

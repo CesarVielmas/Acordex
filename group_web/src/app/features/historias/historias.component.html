@@ -1,0 +1,131 @@
+<div class="space-y-8 max-w-7xl mx-auto pb-20 animate-fade-in">
+  
+  <!-- ================= TOP HEADER BAR ================= -->
+  <div class="luxury-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10">
+      <h1 class="font-['Epilogue'] text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+        Historias en Vivo (24 Horas)
+      </h1>
+      <p class="text-xs sm:text-sm text-neutral-400 mt-2 max-w-xl leading-relaxed">
+        Publica momentos efímeros, clips de ensayos, pruebas de sonido y avisos que desaparecen automáticamente tras 24 horas.
+      </p>
+    </div>
+
+    <!-- Create Story CTA -->
+    <button 
+      type="button" 
+      (click)="openCreator()"
+      class="luxury-gold-btn relative z-10 flex items-center gap-2 rounded-2xl px-6 py-3.5 text-xs font-black uppercase tracking-wider self-start md:self-auto active:scale-95"
+    >
+      <span class="material-symbols-outlined text-lg font-black">add_circle</span>
+      <span>Subir Nueva Historia</span>
+    </button>
+  </div>
+
+  <!-- ================= ACTIVE STORIES GRID ================= -->
+  <div class="space-y-4">
+    <div class="flex items-center justify-between px-1">
+      <h2 class="font-['Epilogue'] text-base sm:text-lg font-extrabold text-white flex items-center gap-2.5">
+        <span class="flex h-3 w-3 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>Historias Activas Actualmente ({{ groupData.stories().length }})</span>
+      </h2>
+    </div>
+
+    <div *ngIf="groupData.stories().length > 0; else emptyStories" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div 
+        *ngFor="let s of groupData.stories(); let i = index"
+        class="luxury-card group relative overflow-hidden rounded-3xl p-3 flex flex-col justify-between hover:border-primary/50 transition-all duration-300 shadow-2xl"
+      >
+        <!-- Story Thumbnail Top (9:16 Look) -->
+        <div class="relative h-80 sm:h-96 w-full overflow-hidden rounded-2xl bg-black cursor-pointer shadow-inner" (click)="openViewer(i)">
+          <img 
+            *ngIf="s.mediaType === 'image'" 
+            [src]="s.mediaUrl" 
+            [alt]="s.caption || 'Story'" 
+            class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" 
+          />
+          <video 
+            *ngIf="s.mediaType === 'video'" 
+            [src]="s.mediaUrl" 
+            muted 
+            class="h-full w-full object-cover"
+          ></video>
+
+          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/40 p-4 flex flex-col justify-between">
+            <!-- Top Tag & Delete -->
+            <div class="flex items-center justify-between">
+              <span class="rounded-full bg-black/70 px-3 py-1 text-[10px] font-extrabold text-primary backdrop-blur-md border border-white/10 flex items-center gap-1 shadow-md">
+                <span class="material-symbols-outlined text-xs">timer</span>
+                <span>{{ getTimeRemaining(s.expiresAt) }}</span>
+              </span>
+              <button 
+                type="button" 
+                (click)="$event.stopPropagation(); deleteStory(s.id)"
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-rose-400 backdrop-blur-md hover:bg-rose-500/30 transition shadow-md"
+                title="Eliminar historia"
+              >
+                <span class="material-symbols-outlined text-base">delete</span>
+              </button>
+            </div>
+
+            <!-- Bottom Caption & Info -->
+            <div>
+              <p *ngIf="s.caption" class="text-xs text-white font-bold line-clamp-2 drop-shadow-md leading-snug">{{ s.caption }}</p>
+              <div class="flex items-center gap-2 text-[10.5px] text-neutral-300 mt-1 font-medium">
+                <span>Por {{ s.authorName }}</span>
+                <span *ngIf="s.locationTag">• 📍 {{ s.locationTag }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Story Stats Footer -->
+        <div class="flex items-center justify-between px-2 pt-3 text-xs">
+          <div class="flex items-center gap-1.5 font-bold text-primary">
+            <span class="material-symbols-outlined text-base">visibility</span>
+            <span>{{ s.viewsCount }} vistas</span>
+          </div>
+
+          <button 
+            type="button" 
+            (click)="openViewer(i)"
+            class="font-black text-white hover:text-primary transition text-xs flex items-center gap-1"
+          >
+            <span>Reproducir</span>
+            <span class="material-symbols-outlined text-base">play_circle</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #emptyStories>
+      <div class="luxury-card rounded-3xl py-16 text-center">
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/20 text-primary mb-3">
+          <span class="material-symbols-outlined text-3xl">history_toggle_off</span>
+        </div>
+        <h3 class="text-base font-bold text-white">No hay historias activas actualmente</h3>
+        <p class="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">Sube una foto o video de tu ensayo, viaje o concierto para que tus seguidores se mantengan al día.</p>
+        <button (click)="openCreator()" class="luxury-gold-btn rounded-2xl px-6 py-2.5 text-xs font-black mt-4 uppercase tracking-wider">
+          + Subir Historia Ahora
+        </button>
+      </div>
+    </ng-template>
+  </div>
+</div>
+
+<!-- Story Viewer Modal -->
+<app-story-viewer-modal
+  *ngIf="isViewerOpen()"
+  [stories]="groupData.stories()"
+  [initialIndex]="selectedStoryIndex()"
+  (close)="closeViewer()"
+  (deleteStory)="deleteStory($event)"
+></app-story-viewer-modal>
+
+<!-- Story Creator Modal -->
+<app-story-creator-modal
+  *ngIf="isCreatorOpen()"
+  (close)="closeCreator()"
+></app-story-creator-modal>

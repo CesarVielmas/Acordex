@@ -1,0 +1,216 @@
+<div class="max-w-4xl mx-auto space-y-8 pb-20 animate-fade-in">
+  
+  <!-- ================= TOP HEADER BAR ================= -->
+  <div class="luxury-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+    <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10">
+      <h1 class="font-['Epilogue'] text-2xl sm:text-3xl font-black text-white tracking-tight">
+        Muro & Publicaciones Oficiales
+      </h1>
+      <p class="text-xs sm:text-sm text-neutral-400 mt-2 max-w-xl leading-relaxed">
+        Comparte comunicados, fotos de giras, anuncios de nuevos sencillos y responde directamente a tus seguidores en Acordex.
+      </p>
+    </div>
+
+    <div class="relative z-10 rounded-2xl bg-white/[0.04] p-3.5 border border-white/10 flex items-center gap-3">
+      <span class="material-symbols-outlined text-primary text-2xl">dynamic_feed</span>
+      <div>
+        <span class="text-xs font-bold text-white block">{{ groupData.posts().length }} Publicaciones</span>
+        <span class="text-[10.5px] text-neutral-400">Canal oficial activo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= POST CREATOR STUDIO BOX ================= -->
+  <div class="luxury-card rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-7 space-y-4">
+    <div class="flex items-start gap-4">
+      <img 
+        [src]="groupData.activeMember().photoUrl" 
+        [alt]="groupData.activeMember().name"
+        class="h-12 w-12 rounded-2xl object-cover ring-2 ring-primary/50 flex-shrink-0 shadow-md"
+      />
+      <div class="flex-1 min-w-0">
+        <div class="flex flex-wrap items-center gap-2 text-xs text-neutral-400 mb-2">
+          <span class="font-bold text-white">{{ groupData.activeMember().name }}</span>
+          <span>publicando a nombre de</span>
+          <span class="text-primary font-extrabold">{{ groupData.activeProfile().name }}</span>
+        </div>
+
+        <textarea 
+          [ngModel]="newPostText()"
+          (ngModelChange)="newPostText.set($event)"
+          (focus)="isExpandedCreator.set(true)"
+          placeholder="¿Qué novedades, agradecimientos o fotos quieres compartir con tus fans hoy?"
+          rows="3"
+          class="w-full resize-none rounded-2xl border border-white/15 bg-white/[0.04] p-4 text-xs sm:text-sm text-white placeholder:text-neutral-500 focus:border-primary focus:bg-white/[0.08] focus:outline-none transition leading-relaxed"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Image Preview if selected -->
+    <div *ngIf="newPostImageUrl()" class="relative mt-2 h-64 w-full overflow-hidden rounded-3xl bg-black border border-white/15 shadow-xl">
+      <img [src]="newPostImageUrl()" alt="Post Preview" class="h-full w-full object-cover" />
+      <button 
+        type="button"
+        (click)="newPostImageUrl.set('')"
+        class="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/80 text-white hover:bg-black transition backdrop-blur-md"
+      >
+        <span class="material-symbols-outlined text-base">close</span>
+      </button>
+    </div>
+
+    <!-- Expandable Media & Settings Controls -->
+    <div *ngIf="isExpandedCreator()" class="space-y-4 pt-4 border-t border-white/10 animate-fade-in">
+      <!-- Preset Photos -->
+      <div>
+        <span class="text-xs font-bold text-white block mb-2">Adjuntar Fotografía Oficial:</span>
+        <div class="flex flex-wrap gap-2.5">
+          <button 
+            *ngFor="let p of presetPostImages"
+            type="button"
+            (click)="selectPresetImage(p.url)"
+            class="rounded-2xl border px-3.5 py-1.5 text-xs font-bold transition-all duration-200"
+            [ngClass]="newPostImageUrl() === p.url ? 'border-primary bg-primary/20 text-primary shadow-sm' : 'border-white/15 bg-white/[0.03] text-neutral-400 hover:text-white hover:border-white/30'"
+          >
+            {{ p.label }}
+          </button>
+          <label class="cursor-pointer rounded-2xl border border-dashed border-primary/60 bg-primary/10 px-3.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 flex items-center gap-1.5 transition">
+            <span class="material-symbols-outlined text-base">upload_file</span>
+            <span>Subir Archivo</span>
+            <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Visibility Setting & Submit Buttons -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-neutral-400 font-bold">Visibilidad:</span>
+          <select 
+            [ngModel]="newPostVisibility()"
+            (ngModelChange)="newPostVisibility.set($event)"
+            class="rounded-xl border border-white/15 bg-[#1a1a1a] px-3.5 py-2 text-xs text-white focus:border-primary focus:outline-none font-semibold"
+          >
+            <option value="Publicada">Pública en Acordex</option>
+            <option value="Privada">Solo Clientes Registrados</option>
+            <option value="Oculta">Oculta (Borrador)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button 
+            type="button" 
+            (click)="isExpandedCreator.set(false)"
+            class="rounded-2xl border border-white/15 px-4 py-2.5 text-xs font-bold text-neutral-400 hover:text-white hover:bg-white/5 transition"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="button" 
+            (click)="submitPost()"
+            class="luxury-gold-btn flex items-center gap-2 rounded-2xl px-6 py-2.5 text-xs font-black uppercase tracking-wider"
+          >
+            <span class="material-symbols-outlined text-base font-black">send</span>
+            <span>Publicar en Muro</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= POSTS FEED STREAM ================= -->
+  <div class="space-y-6">
+    <div 
+      *ngFor="let post of groupData.posts()"
+      class="luxury-card rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-7 space-y-5"
+    >
+      <!-- Post Author Header -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3.5">
+          <img [src]="post.authorPhotoUrl" [alt]="post.authorName" class="h-11 w-11 rounded-2xl object-cover ring-2 ring-primary/40 shadow-md" />
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-white text-sm">{{ post.authorName }}</h3>
+              <span class="rounded-full bg-primary/20 px-2 py-0.2 text-[9.5px] font-extrabold text-primary border border-primary/30">{{ post.authorRole }}</span>
+            </div>
+            <span class="text-[11px] text-neutral-500 font-medium">{{ post.timestamp }} • 🌐 {{ post.visibility }}</span>
+          </div>
+        </div>
+
+        <button 
+          type="button" 
+          (click)="deletePost(post.id)"
+          class="rounded-xl p-2 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
+          title="Eliminar publicación"
+        >
+          <span class="material-symbols-outlined text-base">delete</span>
+        </button>
+      </div>
+
+      <!-- Post Content Body -->
+      <p class="text-xs sm:text-sm text-neutral-200 leading-relaxed whitespace-pre-line">
+        {{ post.content }}
+      </p>
+
+      <!-- Post Media Image if attached -->
+      <div *ngIf="post.mediaUrl" class="relative max-h-96 w-full overflow-hidden rounded-3xl bg-black border border-white/10 shadow-xl">
+        <img [src]="post.mediaUrl" [alt]="post.content" class="w-full h-auto object-cover max-h-96" />
+      </div>
+
+      <!-- Engagement Metrics & Action Buttons -->
+      <div class="flex items-center justify-between pt-3 border-t border-white/10 text-xs">
+        <div class="flex items-center gap-6">
+          <button 
+            type="button"
+            (click)="toggleLike(post.id)"
+            class="flex items-center gap-1.5 font-bold transition"
+            [ngClass]="post.isLikedByMe ? 'text-rose-400' : 'text-neutral-400 hover:text-white'"
+          >
+            <span class="material-symbols-outlined text-lg" [ngClass]="{'material-symbols-fill': post.isLikedByMe}">favorite</span>
+            <span>{{ post.likesCount }} me gusta</span>
+          </button>
+
+          <span class="flex items-center gap-1.5 text-neutral-400 font-medium">
+            <span class="material-symbols-outlined text-lg">chat_bubble</span>
+            <span>{{ post.comments.length }} comentarios</span>
+          </span>
+        </div>
+
+        <span class="text-neutral-500 text-[11px]">Canal oficial Acordex</span>
+      </div>
+
+      <!-- Comments Thread Section -->
+      <div class="space-y-3 pt-3 border-t border-white/5">
+        <div *ngFor="let comm of post.comments" class="flex items-start gap-3 rounded-2xl bg-white/[0.02] p-3 border border-white/5">
+          <img [src]="comm.authorAvatar" [alt]="comm.authorName" class="h-8 w-8 rounded-xl object-cover ring-1 ring-white/10 flex-shrink-0" />
+          <div class="min-w-0 flex-1 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-white">{{ comm.authorName }}</span>
+              <span class="text-[10px] text-neutral-500">{{ comm.timestamp }}</span>
+            </div>
+            <p class="text-neutral-300 mt-0.5 leading-relaxed">{{ comm.comment }}</p>
+          </div>
+        </div>
+
+        <!-- Add Comment Input Box -->
+        <div class="flex items-center gap-2 pt-2">
+          <input 
+            #commInput
+            type="text"
+            placeholder="Escribe una respuesta como agrupación oficial..."
+            (keyup.enter)="addComment(post.id, commInput.value); commInput.value = ''"
+            class="flex-1 rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-2.5 text-xs text-white placeholder:text-neutral-500 focus:border-primary focus:outline-none transition"
+          />
+          <button 
+            type="button"
+            (click)="addComment(post.id, commInput.value); commInput.value = ''"
+            class="luxury-gold-btn rounded-2xl px-5 py-2.5 text-xs font-black"
+          >
+            Responder
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

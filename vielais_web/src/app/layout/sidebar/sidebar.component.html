@@ -1,0 +1,116 @@
+<aside 
+  class="relative flex h-screen flex-col justify-between border-r border-white/10 bg-[#0d111a] p-3.5 select-none transition-all duration-300 ease-in-out shadow-2xl"
+  [ngClass]="layout.isSidebarCollapsed() ? 'w-20' : 'w-72'"
+>
+  <!-- ================= COLLAPSE / EXPAND TOGGLE BUTTON (CENTERED ON RIGHT EDGE) ================= -->
+  <button 
+    type="button"
+    (click)="layout.toggleSidebar()"
+    class="absolute top-1/2 -right-3.5 -translate-y-1/2 z-50 flex h-7 w-7 items-center justify-center rounded-full bg-cyan-accent text-black border-2 border-[#0d111a] shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer focus:outline-none"
+    [title]="layout.isSidebarCollapsed() ? 'Expandir barra' : 'Colapsar barra'"
+  >
+    <span class="material-symbols-outlined text-base font-black transition-transform duration-300" [ngClass]="{'rotate-180': layout.isSidebarCollapsed()}">
+      chevron_left
+    </span>
+  </button>
+
+  <!-- ================= TOP: BRAND & VIELAIS IDENTITY ================= -->
+  <div class="flex flex-col gap-4">
+    <!-- Brand Logo -->
+    <a 
+      routerLink="/dashboard" 
+      class="flex items-center gap-3 px-2 py-1 group cursor-pointer overflow-hidden rounded-2xl transition hover:bg-white/[0.04]"
+      [title]="layout.isSidebarCollapsed() ? 'Vielais Acordex Developer Hub' : ''"
+    >
+      <img 
+        src="acordex_without_bg.png" 
+        alt="Acordex Logo" 
+        class="h-10 w-10 sm:h-11 sm:w-11 object-contain transition-transform duration-300 group-hover:scale-105 flex-shrink-0" 
+      />
+      <div *ngIf="!layout.isSidebarCollapsed()" class="min-w-0 transition-opacity duration-200">
+        <div class="font-['Epilogue'] font-black text-xl text-white tracking-tighter leading-none flex items-center gap-1.5">
+          <span>VIELAIS</span>
+          <span class="rounded-md bg-cyan-500/20 px-1.5 py-0.2 text-[9px] font-extrabold text-cyan-400 font-mono border border-cyan-500/30">DEV</span>
+        </div>
+        <div class="text-[9px] font-extrabold uppercase tracking-widest text-primary mt-0.5">ACORDEX METRICS HUB</div>
+      </div>
+    </a>
+
+    <!-- Architect Badge Card -->
+    <div 
+      class="rounded-2xl border border-white/10 bg-white/[0.03] p-3 shadow-inner transition-all overflow-hidden"
+      [ngClass]="layout.isSidebarCollapsed() ? 'p-1.5 text-center' : 'p-3'"
+    >
+      <div class="flex items-center gap-3" [ngClass]="layout.isSidebarCollapsed() ? 'justify-center' : ''">
+        <div class="relative flex-shrink-0">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500/30 to-primary/30 text-white border border-cyan-400/40 shadow-md">
+            <span class="material-symbols-outlined text-xl text-cyan-300">terminal</span>
+          </div>
+          <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[#0d111a] animate-pulse"></span>
+        </div>
+
+        <div *ngIf="!layout.isSidebarCollapsed()" class="min-w-0 flex-1">
+          <div class="truncate text-xs font-black text-white">Vielais (Creator)</div>
+          <div class="truncate text-[10.5px] font-mono text-cyan-400">root@acordex-engine</div>
+          <div class="mt-1 flex items-center gap-1.5 text-[10px] text-neutral-400">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+            <span>0 SEO • Modo Privado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="space-y-1 pt-1">
+      <a
+        *ngFor="let item of navItems"
+        [routerLink]="item.route"
+        routerLinkActive="bg-cyan-500/15 text-cyan-300 border-r-2 border-cyan-400 font-bold shadow-sm"
+        [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+        class="group relative flex items-center rounded-xl transition hover:bg-white/[0.04] hover:text-white"
+        [ngClass]="layout.isSidebarCollapsed() ? 'justify-center p-3 text-neutral-400' : 'justify-between px-3.5 py-2.5 text-xs font-medium text-neutral-400'"
+        [title]="layout.isSidebarCollapsed() ? item.label : ''"
+      >
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
+            {{ item.icon }}
+          </span>
+          <span *ngIf="!layout.isSidebarCollapsed()" class="truncate">{{ item.label }}</span>
+        </div>
+
+        <!-- Badge when expanded -->
+        <span 
+          *ngIf="!layout.isSidebarCollapsed() && item.badge && item.badge()"
+          class="rounded-full px-2 py-0.5 text-[10px] font-bold flex-shrink-0"
+          [ngClass]="item.badgeColor || 'bg-white/10 text-white'"
+        >
+          {{ item.badge() }}
+        </span>
+
+        <!-- Badge when collapsed -->
+        <span 
+          *ngIf="layout.isSidebarCollapsed() && item.badge && item.badge()"
+          class="absolute top-1.5 right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-cyan-accent text-[8px] font-black text-black ring-2 ring-[#0d111a]"
+        >
+        </span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- ================= BOTTOM: SYSTEM PULSE ================= -->
+  <div 
+    class="rounded-2xl border border-white/10 bg-white/[0.02] transition-all overflow-hidden"
+    [ngClass]="layout.isSidebarCollapsed() ? 'p-2 text-center' : 'p-3'"
+  >
+    <div class="flex items-center justify-between text-[11px] text-neutral-400" [ngClass]="layout.isSidebarCollapsed() ? 'justify-center' : ''">
+      <span class="flex items-center gap-1.5">
+        <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span *ngIf="!layout.isSidebarCollapsed()" class="text-white font-medium">Telemetry Online</span>
+      </span>
+      <span *ngIf="!layout.isSidebarCollapsed()" class="font-mono text-cyan-400">v4.0.0</span>
+    </div>
+    <div *ngIf="!layout.isSidebarCollapsed()" class="mt-1 text-[10px] text-neutral-500 truncate font-mono">
+      Cluster Acordex Core Engine
+    </div>
+  </div>
+</aside>

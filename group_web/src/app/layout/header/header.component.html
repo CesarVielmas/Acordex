@@ -1,0 +1,236 @@
+<header class="sticky top-0 z-30 flex items-center justify-between border-b border-white/[0.08] bg-[#141414]/90 px-4 sm:px-6 lg:px-8 h-[76px] backdrop-blur-2xl shadow-2xl select-none transition-all">
+  
+  <!-- ================= LEFT: GROUP SELECTOR & LIVE STATUS ================= -->
+  <div class="flex items-center gap-3 sm:gap-4">
+    <!-- Active Group Selector Pill -->
+    <div class="relative">
+      <button 
+        type="button"
+        (click)="toggleGroupDropdown()"
+        class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-1.5 pr-3.5 text-left transition-all duration-200 hover:border-primary/50 hover:bg-white/[0.08] hover:shadow-[0_0_20px_rgba(242,202,80,0.15)] focus:outline-none"
+      >
+        <img 
+          [src]="groupData.activeProfile().avatarUrl" 
+          [alt]="groupData.activeProfile().name"
+          class="h-10 w-10 rounded-xl object-cover ring-2 ring-primary/50 shadow-md flex-shrink-0"
+        />
+        <div class="hidden sm:block">
+          <div class="flex items-center gap-1.5">
+            <span class="font-['Epilogue'] text-xs sm:text-sm font-extrabold tracking-tight text-white">
+              {{ groupData.activeProfile().name }}
+            </span>
+            <span *ngIf="groupData.activeProfile().verified" class="material-symbols-outlined text-primary text-[15px] fill-current" title="Perfil Verificado Acordex">
+              verified
+            </span>
+          </div>
+          <span class="text-[10.5px] font-medium text-neutral-400 block leading-none mt-0.5">{{ groupData.activeProfile().genre }}</span>
+        </div>
+        <span class="material-symbols-outlined text-base text-neutral-400 transition-transform duration-200" [ngClass]="{'rotate-180 text-primary': isGroupDropdownOpen()}">
+          expand_more
+        </span>
+      </button>
+
+      <!-- Dropdown Groups -->
+      <div 
+        *ngIf="isGroupDropdownOpen()" 
+        class="absolute left-0 top-full mt-2 w-84 origin-top-left rounded-3xl border border-white/15 bg-[#181818]/98 p-3 shadow-2xl backdrop-blur-3xl animate-fade-in z-50 ring-1 ring-white/10"
+      >
+        <div class="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-primary">
+          Cambiar Agrupación Musical
+        </div>
+        <div class="space-y-1 mt-1">
+          <button 
+            *ngFor="let g of groupData.activeGroupSummaryList()"
+            type="button"
+            (click)="selectGroup(g.id)"
+            class="flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition-all duration-200 hover:bg-white/[0.08]"
+            [ngClass]="{'bg-primary/15 border border-primary/40 shadow-sm': g.id === groupData.activeGroupId()}"
+          >
+            <img [src]="g.image" [alt]="g.name" class="h-11 w-11 rounded-xl object-cover flex-shrink-0 ring-1 ring-white/10" />
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-xs font-bold text-white">{{ g.name }}</div>
+              <div class="text-[11px] text-neutral-400">{{ g.genre }} • {{ g.followersCount }} fans</div>
+            </div>
+            <span *ngIf="g.id === groupData.activeGroupId()" class="material-symbols-outlined text-primary text-base">
+              check_circle
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Status Selector Pill -->
+    <div class="relative">
+      <button 
+        type="button"
+        (click)="toggleStatusDropdown()"
+        class="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs font-bold text-white transition-all duration-200 hover:bg-white/[0.08] hover:border-white/20 shadow-sm"
+      >
+        <span 
+          class="h-2 w-2 rounded-full flex-shrink-0"
+          [ngClass]="{
+            'bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]': groupData.activeProfile().liveStatus === 'Disponible',
+            'bg-primary shadow-[0_0_8px_rgba(242,202,80,0.8)]': groupData.activeProfile().liveStatus === 'En Gira',
+            'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]': groupData.activeProfile().liveStatus === 'En Ensayo',
+            'bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.8)]': groupData.activeProfile().liveStatus === 'En Escenario',
+            'bg-neutral-500': groupData.activeProfile().liveStatus === 'Descanso'
+          }"
+        ></span>
+        <span class="hidden md:inline">{{ groupData.activeProfile().liveStatus }}</span>
+        <span class="material-symbols-outlined text-xs text-neutral-400">expand_more</span>
+      </button>
+
+      <!-- Status Dropdown -->
+      <div 
+        *ngIf="isStatusDropdownOpen()" 
+        class="absolute left-0 top-full mt-2 w-56 rounded-2xl border border-white/15 bg-[#181818]/98 p-2 shadow-2xl backdrop-blur-3xl animate-fade-in z-50 ring-1 ring-white/10"
+      >
+        <div class="px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-primary">
+          Estado en Escenario
+        </div>
+        <div class="space-y-1 mt-1">
+          <button 
+            *ngFor="let opt of statusOptions"
+            type="button"
+            (click)="setStatus(opt.label)"
+            class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/[0.08]"
+            [ngClass]="{'bg-primary/15 text-primary font-bold': opt.label === groupData.activeProfile().liveStatus}"
+          >
+            <span class="h-2.5 w-2.5 rounded-full" [ngClass]="opt.color"></span>
+            <span>{{ opt.label }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RIGHT: IDENTITY SIGNER, SHORTCUTS & NOTIFICATIONS ================= -->
+  <div class="flex items-center gap-2.5 sm:gap-3.5">
+    <!-- Active Member Signer Switcher -->
+    <div class="relative">
+      <button 
+        type="button"
+        (click)="toggleMemberDropdown()"
+        class="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.04] p-1.5 pr-3 transition-all duration-200 hover:border-primary/40 hover:bg-white/[0.08] shadow-sm"
+        title="Cambiar integrante activo para firmar publicaciones, historias o evidencias"
+      >
+        <img 
+          [src]="groupData.activeMember().photoUrl" 
+          [alt]="groupData.activeMember().name"
+          class="h-8 w-8 rounded-xl object-cover ring-1 ring-primary/50 flex-shrink-0"
+        />
+        <div class="hidden xl:block text-left min-w-0">
+          <div class="text-xs font-bold text-white leading-tight truncate max-w-[120px]">{{ groupData.activeMember().name }}</div>
+          <div class="text-[10.5px] text-primary font-semibold leading-tight truncate max-w-[120px]">{{ groupData.activeMember().role }}</div>
+        </div>
+        <span class="material-symbols-outlined text-sm text-neutral-400">tune</span>
+      </button>
+
+      <!-- Dropdown Members -->
+      <div 
+        *ngIf="isMemberDropdownOpen()" 
+        class="absolute right-0 top-full mt-2 w-76 origin-top-right rounded-3xl border border-white/15 bg-[#181818]/98 p-3 shadow-2xl backdrop-blur-3xl animate-fade-in z-50 ring-1 ring-white/10"
+      >
+        <div class="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-primary">
+          Firmar Acciones Como
+        </div>
+        <div class="space-y-1 mt-1 max-h-64 overflow-y-auto pr-1">
+          <button 
+            *ngFor="let m of groupData.activeProfile().members"
+            type="button"
+            (click)="selectMember(m.id)"
+            class="flex w-full items-center gap-3 rounded-2xl p-2 text-left transition hover:bg-white/[0.08]"
+            [ngClass]="{'bg-primary/15 border border-primary/40 text-primary font-bold': m.id === groupData.activeMemberId()}"
+          >
+            <img [src]="m.photoUrl" [alt]="m.name" class="h-9 w-9 rounded-xl object-cover flex-shrink-0 ring-1 ring-white/10" />
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-xs font-bold text-white">{{ m.name }}</div>
+              <div class="truncate text-[10.5px] text-neutral-400">{{ m.role }}</div>
+            </div>
+            <span *ngIf="m.id === groupData.activeMemberId()" class="material-symbols-outlined text-primary text-base">
+              check_circle
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Action Shortcut: Editor Página Acordex -->
+    <a 
+      routerLink="/editor-pagina"
+      class="hidden lg:flex items-center gap-1.5 rounded-2xl border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary transition-all duration-200 hover:bg-primary hover:text-black hover:shadow-[0_0_20px_rgba(242,202,80,0.3)] shadow-sm"
+      title="Editor y personalización completa de tu perfil público"
+    >
+      <span class="material-symbols-outlined text-base">web</span>
+      <span>Editor Página</span>
+    </a>
+
+    <!-- Notifications Bell Dropdown -->
+    <div class="relative">
+      <button 
+        type="button"
+        (click)="toggleNotifDropdown()"
+        class="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white transition-all duration-200 hover:border-primary/50 hover:bg-white/[0.08] shadow-sm"
+      >
+        <span class="material-symbols-outlined text-xl">notifications</span>
+        <span 
+          *ngIf="groupData.unreadNotificationsCount() > 0"
+          class="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9.5px] font-black text-white shadow-lg shadow-rose-500/50 animate-pulse"
+        >
+          {{ groupData.unreadNotificationsCount() }}
+        </span>
+      </button>
+
+      <!-- Notifications Dropdown Panel -->
+      <div 
+        *ngIf="isNotifDropdownOpen()" 
+        class="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-3xl border border-white/15 bg-[#181818]/98 p-4 shadow-2xl backdrop-blur-3xl animate-fade-in z-50 ring-1 ring-white/10"
+      >
+        <div class="flex items-center justify-between border-b border-white/10 pb-3 px-1">
+          <div class="flex items-center gap-2">
+            <span class="font-['Epilogue'] text-sm font-extrabold text-white">Notificaciones</span>
+            <span class="rounded-full bg-primary/20 px-2.5 py-0.5 text-[10px] font-extrabold text-primary">
+              {{ groupData.unreadNotificationsCount() }} nuevas
+            </span>
+          </div>
+          <button 
+            type="button" 
+            (click)="groupData.markAllNotificationsAsRead()"
+            class="text-[11px] font-bold text-primary hover:underline"
+          >
+            Marcar leídas
+          </button>
+        </div>
+
+        <div class="mt-2 space-y-1.5 max-h-72 overflow-y-auto pr-1">
+          <div 
+            *ngFor="let n of groupData.notifications()"
+            (click)="markNotifAsRead(n.id, n.actionRoute)"
+            class="cursor-pointer rounded-2xl p-3 transition hover:bg-white/[0.08]"
+            [ngClass]="{'bg-white/[0.04] border-l-2 border-primary': !n.read, 'opacity-70': n.read}"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <span class="text-xs font-bold text-white">{{ n.title }}</span>
+              <span class="text-[10px] text-neutral-400 flex-shrink-0">{{ n.timestamp }}</span>
+            </div>
+            <p class="text-xs text-neutral-300 mt-1 leading-snug">{{ n.message }}</p>
+            <div *ngIf="n.actionLabel" class="mt-1.5 flex items-center gap-1 text-[11px] font-bold text-primary">
+              <span>{{ n.actionLabel }}</span>
+              <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 border-t border-white/10 pt-2.5 text-center">
+          <a 
+            routerLink="/notificaciones"
+            (click)="isNotifDropdownOpen.set(false)"
+            class="text-xs font-bold text-primary hover:underline"
+          >
+            Ver Centro de Notificaciones Completo
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

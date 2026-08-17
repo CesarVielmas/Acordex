@@ -72,19 +72,19 @@ export type StatsTab =
     <div class="space-y-6 sm:space-y-8 animate-fade-in pb-12">
 
       <!-- ─── ENCABEZADO PRINCIPAL ─── -->
-      <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-surface-container-high/90 via-surface-container/80 to-surface-container-high/90 backdrop-blur-xl border border-outline-variant/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
-        <div class="absolute -right-12 -top-12 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-[#1A1A1A] via-[#161616] to-[#121212] backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div class="absolute -right-12 -top-12 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="relative z-10 min-w-0">
           <div class="flex items-center gap-3 flex-wrap">
-            <h1 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight">Estadísticas & Inteligencia de Audiencia</h1>
+            <h1 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight font-['Epilogue']">Inteligencia de Audiencia & Business Analytics</h1>
             <app-badge label="Métricas en Tiempo Real" variant="success" />
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary border border-primary/30">
-              Live Data Conectado
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-primary/15 text-primary border border-primary/30 shadow-sm">
+              Live Data · Operación Principal
             </span>
           </div>
           <p class="text-xs text-outline mt-1 max-w-2xl leading-relaxed">
-            Consolidación visual de boletos vendidos, aforos de palenques, embudo de cotizaciones para bodas, streaming en Spotify y demografía de fans.
+            Consolidación analítica de boletería vendida, aforos de recintos masivos, embudo de conversión en contrataciones privadas, streaming en Spotify y métricas demográficas.
           </p>
         </div>
 
@@ -93,10 +93,10 @@ export type StatsTab =
           <button
             type="button"
             (click)="printAnalytics()"
-            class="px-4 py-2.5 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-on-surface hover:bg-surface-container-highest text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+            class="px-4 py-2.5 rounded-2xl bg-[#202020] hover:bg-[#282828] border border-white/10 text-on-surface text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer font-['Epilogue']"
           >
             <span class="material-symbols-outlined text-base">print</span>
-            Imprimir Reporte Estadístico
+            Imprimir Reporte Analítico
           </button>
         </div>
       </div>
@@ -105,7 +105,7 @@ export type StatsTab =
       <app-stats-kpis [summary]="globalSummary()" />
 
       <!-- ─── BARRA DE PESTAÑAS ─── -->
-      <div class="border-b border-outline-variant/30 pb-2">
+      <div class="border-b border-white/10 pb-2">
         <app-tab-pills
           [tabs]="tabOptions"
           [active]="activeTab()"
@@ -193,12 +193,12 @@ export class StatsComponent {
   selectedArtistForModal = signal<ArtistStatsDetail | null>(null);
 
   readonly tabOptions: TabPillItem[] = [
-    { value: 'overview', label: 'Resumen General', icon: 'query_stats' },
-    { value: 'events', label: 'Eventos & Taquilla', icon: 'confirmation_number' },
-    { value: 'quotes', label: 'Cotizaciones & Embudo', icon: 'filter_alt' },
-    { value: 'talent', label: 'Artistas & Redes', icon: 'cell_tower' },
-    { value: 'demographics', label: 'Demografía & Fans', icon: 'group' },
-    { value: 'predictions', label: 'Predicciones & Tendencias', icon: 'auto_awesome' }
+    { value: 'overview', label: 'Panel Consolidado', icon: 'query_stats' },
+    { value: 'events', label: 'Boletería & Aforos', icon: 'confirmation_number' },
+    { value: 'quotes', label: 'Embudo de Contrataciones', icon: 'filter_alt' },
+    { value: 'talent', label: 'Audiencia Digital & Streaming', icon: 'cell_tower' },
+    { value: 'demographics', label: 'Segmentación Demográfica', icon: 'group' },
+    { value: 'predictions', label: 'Modelado Predictivo', icon: 'auto_awesome' }
   ];
 
   setTab(tabId: string): void {
